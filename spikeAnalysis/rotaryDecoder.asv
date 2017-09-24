@@ -1,6 +1,7 @@
 % things to do:
 % -convert to real world units
-% -combine both for loops into one?
+% -get the initial state of the pins so you're not missing the first index
+% - combine both for loops into one?
 
 
 file = 'C:\Users\Rick\Google Drive\columbia\analysis\run.mat';
@@ -14,6 +15,13 @@ aTimes = encoderA.times';
 aStates = logical(encoderA.level)';
 bTimes = encoderB.times';
 bStates = logical(encoderB.level)';
+
+% pad beginnings with initial pin states
+% aStates = [~aStates(1) aStates];
+% aTimes = [0 aTimes];
+% bStates = [~bStates(1) bStates];
+% bTimes = [0 bTimes];
+%
 
 tics = nan([2, length(aTimes) + length(bTimes) + 1]); % add one for the initial state
 tics(:,1) = [~aStates(1); ~bStates(1)];               % initialize baseline state of encoders
@@ -61,15 +69,15 @@ lookUp = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0] * -1;
 
 
 
-% compute first transition
+% compute first event
 transitionCode = [num2str(~aStates(1))... % the initial state is always the opposite of the state detected at the first event
                   num2str(~bStates(1))...
                   num2str(allStates(1,1))...
                   num2str(allStates(2,1))];
 transitions(1) = lookUp(bin2dec(transitionCode));
-positions(1) = transitions(1); 
 
-% compute remaining transitions
+
+
 for i = 2:length(allStates)
     
     transitionCode = [num2str(allStates(1,i-1))...
@@ -78,14 +86,14 @@ for i = 2:length(allStates)
                       num2str(allStates(2,i))];
     
     transitions(i) = lookUp(bin2dec(transitionCode));
-    positions(i) = positions(i-1) + transitions(i);
+    positions(i) = currentPos;
     
     
 end
 toc
 %%
 
-close all; figure; plot(allTimes, positions); pimpFig
+close all; figure; plot(allTimes(2:end), positions); pimpFig
 
 
 
