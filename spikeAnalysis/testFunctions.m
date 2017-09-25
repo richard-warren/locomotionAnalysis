@@ -6,12 +6,12 @@ load(file);
 
 %% test rotary decoder
 
-[wheelPositions, positionTimes] = rotaryDecoder(encoderA.times, encoderA.level, encoderB.times, encoderB.level);
+[wheelPositions, wheelPositionTimes] = rotaryDecoder(encoderA.times, encoderA.level, encoderB.times, encoderB.level);
 
 
 close all;
 figure;
-plot(positionTimes, wheelPositions, 'linewidth', 3);
+plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
@@ -29,3 +29,16 @@ plot(step.times, motorPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
+
+%% test positional tracking
+
+posNorm = positionRewardNormalize(wheelPositions, wheelPositionTimes, reward.times);
+
+close all;
+figure;
+plot(wheelPositionTimes, posNorm, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+
+
