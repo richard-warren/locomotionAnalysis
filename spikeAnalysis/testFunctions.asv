@@ -45,16 +45,13 @@ pimpFig;
 
 % offset motor position to match wheel position
 obsTimes = obsOn.times;
-obsTimes = obsTimes(logical(obsOn.level)); % only save inds where the obs is turning from off to on
 motorPosNorm = motorPositions;
 
-for i=1:length(obsTimes)
+for i=1:length(obsOn)
     
-    inds = step.times>obsTimes(i);
-    wheelPos = posNorm(find(wheelPositionTimes>obsTimes(i), 1, 'first'));
-    motorPos = motorPosNorm(find(step.times>obsTimes(i), 1, 'first'));
-    motorPosNorm(inds) = motorPosNorm(inds) - motorPos + wheelPos;
-   
+    inds = 
+    obsPos = 
+    
     
 end
 
@@ -62,7 +59,7 @@ end
 close all;
 figure;
 plot(wheelPositionTimes, posNorm, 'linewidth', 3); hold on
-scatter(step.times, motorPosNorm, 5);
+plot(step.times, motorPositions);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;

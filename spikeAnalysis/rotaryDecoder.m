@@ -7,10 +7,8 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
     % output       positions:        position of wheel in meters
     %              times:            times of all position values
     
-    % to do:
-    % - reset position at each reward location???
 
-
+    tic
     % wheel, encoder settings
     encoderSteps = 2880; % 720cpr * 4
     wheelRad = 95.25; % mm
@@ -61,7 +59,7 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
     % lookup table method described here: http://makeatronics.blogspot.com/2013/02/efficiently-reading-quadrature-with.html
     
     positions = nan(1, length(times));
-    lookUp = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0] * -1; % multiply by -1 to make positions positive rather than negative
+    lookUp = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0]; % multiply by -1 to make positions positive rather than negative
 
     % compute first position
     % (the computation for the first position is a little different because baseline state of encoder pins must be inferred from level at first state shift)
@@ -69,7 +67,7 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
                       num2str(~bStates(1))... % the initial state is always the opposite of the state detected at the first event
                       num2str(allStates(1,1))...
                       num2str(allStates(2,1))];
-    positions(1) = lookUp(bin2dec(transitionCode)); 
+    positions(1) = lookUp(bin2dec(transitionCode) + 1); % add 1 to compensate because matlab uses 1 based indexing
 
     
     % compute remaining positions
@@ -80,15 +78,17 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
                           num2str(allStates(1,i))...
                           num2str(allStates(2,i))];
 
-        positions(i) = positions(i-1) + lookUp(bin2dec(transitionCode)); 
+        positions(i) = positions(i-1) + lookUp(bin2dec(transitionCode) + 1); % add 1 to compensate because matlab uses 1 based indexing
     end
     
+%     keyboard
 
     % convert to real-world units (m)
-    positions = positions * mmPerTic / 1000;
+    positions = positions * (mmPerTic / 1000);
     
     decodingTime = toc/60; % minutes
     fprintf('rotary decoding time: %f minutes\n', decodingTime)
+    
 end
 
 
