@@ -6,6 +6,9 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
     % 	           aStates, bStates: levels of A and B rotary encoder at times of state shifts
     % output       positions:        position of wheel in meters
     %              times:            times of all position values
+    
+    % to do:
+    % - reset position at each reward location???
 
 
     % wheel, encoder settings

@@ -6,17 +6,26 @@ load(file);
 
 %% test rotary decoder
 
-[positions, positionTimes] = rotaryDecoder(encoderA.times, encoderA.level, encoderB.times, encoderB.level);
-
+[wheelPositions, positionTimes] = rotaryDecoder(encoderA.times, encoderA.level, encoderB.times, encoderB.level);
 
 
 close all;
 figure;
-plot(positionTimes, positions, 'linewidth', 3);
+plot(positionTimes, wheelPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
 
 
 
-%%
+%% test stepper decoder
+
+motorPositions = motorDecoder(stepDir.level, stepDir.times, step.times);
+
+
+close all;
+figure;
+plot(step.times, motorPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
