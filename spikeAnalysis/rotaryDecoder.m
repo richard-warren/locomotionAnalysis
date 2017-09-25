@@ -1,9 +1,13 @@
 % things to do:
-% -convert to real world units
 % -combine both for loops into one?
 
 
 file = 'C:\Users\Rick\Google Drive\columbia\analysis\run.mat';
+
+% wheel, encoder settings
+encoderSteps = 2880; % 720cpr * 4
+wheelRad = 95.25; % mm
+mmPerTic = (2*wheelRad*pi) / encoderSteps;
 
 load(file);
 
@@ -54,20 +58,15 @@ end
 
 
 % convert state transitions into code for forward (1) or backward (-1) tics
-transitions = nan(1, length(allTimes));
 positions = nan(1, length(allTimes));
 lookUp = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0] * -1;
-
-
-
 
 % compute first transition
 transitionCode = [num2str(~aStates(1))... % the initial state is always the opposite of the state detected at the first event
                   num2str(~bStates(1))...
                   num2str(allStates(1,1))...
                   num2str(allStates(2,1))];
-transitions(1) = lookUp(bin2dec(transitionCode));
-positions(1) = transitions(1); 
+positions(1) = lookUp(bin2dec(transitionCode)); 
 
 % compute remaining transitions
 for i = 2:length(allStates)
@@ -77,12 +76,13 @@ for i = 2:length(allStates)
                       num2str(allStates(1,i))...
                       num2str(allStates(2,i))];
     
-    transitions(i) = lookUp(bin2dec(transitionCode));
-    positions(i) = positions(i-1) + transitions(i);
-    
-    
+    positions(i) = positions(i-1) + lookUp(bin2dec(transitionCode)); 
 end
 toc
+
+% convert to real-world units
+positions = positions * mmPerTic / 1000;
+
 %%
 
 close all; figure; plot(allTimes, positions); pimpFig
