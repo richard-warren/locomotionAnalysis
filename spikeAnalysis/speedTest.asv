@@ -1,0 +1,18 @@
+aTimes = whEncodA.times';
+bTimes = whEncodB.times';
+
+times = [aTimes bTimes];
+[times, timesSortedInds] = sort(times);
+
+%%
+for i = 1:(whEncodA.length*2)
+    tic
+    
+    
+    i / (whEncodA.length*2);
+    
+    
+    loopTime = toc;
+    loopTime = loopTime * 300000;
+    fprintf('total analysis time: %f\n', loopTime)
+end

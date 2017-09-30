@@ -1,12 +1,12 @@
 %% load file
 
-file = 'C:\Users\Rick\Google Drive\columbia\analysis\run.mat';
+file = 'C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\run.mat';
 load(file);
 
 
 %% test rotary decoder
 
-[wheelPositions, wheelPositionTimes] = rotaryDecoder(encoderA.times, encoderA.level, encoderB.times, encoderB.level);
+[wheelPositions, wheelPositionTimes] = rotaryDecoder(whEncodA.times, whEncodA.level, whEncodB.times, whEncodB.level);
 
 
 close all;
@@ -14,7 +14,7 @@ figure;
 plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
-pimpFig;
+pimpFig;               
 
 
 
