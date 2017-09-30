@@ -1,4 +1,4 @@
-function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
+function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, encoderSteps, wheelRad)
 
     % converts quadrature input from rotary encoder into real world positional units (m)
     % uses a lookup table method, where every encoder input is represented
@@ -9,18 +9,16 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
     %
     % input        aTimes, bTimes:   times of state shifts in the A and B channels from the rotary encoder
     % 	           aStates, bStates: levels of A and B rotary encoder at times of state shifts
+    %              encoderSteps:     number of steps per rotation in rotary encoder
+    %              wheelRad:         radus or wheel, or timing pulley, attached to encoder
+    %
     % output       positions:        position of wheel in meters
     %              times:            times of all position values
     
 
     tic
     
-    % wheel, encoder settings
-    encoderSteps = 2880; % 720cpr * 4
-    wheelRad = 95.25; % mm
-    mmPerTic = (2*wheelRad*pi) / encoderSteps;
-    
-    % convert all inputs to row vectors
+    % convert inputs to row vectors
     aTimes = aTimes(:)';
     bTimes = bTimes(:)';
     aStates = logical(aStates(:))';
@@ -51,6 +49,7 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates)
     end
 
     % convert to real-world units (m)
+    mmPerTic = (2*wheelRad*pi) / encoderSteps;
     positions = cumsum(deltas) * (mmPerTic / 1000);
     
     decodingTime = toc/60; % minutes

@@ -1,12 +1,18 @@
 %% load file
 
-file = 'C:\Users\Rick\Google Drive\columbia\analysis\run.mat';
+file = 'C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\run.mat';
 load(file);
 
+% setup parameters
+whEncoderSteps = 2880; % 720cpr * 4
+wheelRad = 95.25; % mm
+obEncoderSteps = 
 
 %% test rotary decoder
 
-[wheelPositions, wheelPositionTimes] = rotaryDecoder(encoderA.times, encoderA.level, encoderB.times, encoderB.level);
+[wheelPositions, wheelPositionTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
+                                                     whEncodB.times, whEncodB.level,...
+                                                     whEncoderSteps, wheelRad);
 
 
 close all;
@@ -14,7 +20,7 @@ figure;
 plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
-pimpFig;
+pimpFig;               
 
 
 
@@ -45,13 +51,16 @@ pimpFig;
 
 % offset motor position to match wheel position
 obsTimes = obsOn.times;
+obsTimes = obsTimes(logical(obsOn.level)); % only save inds where the obs is turning from off to on
 motorPosNorm = motorPositions;
 
-for i=1:length(obsOn)
+for i=1:length(obsTimes)
     
-    inds = 
-    obsPos = 
-    
+    inds = step.times>obsTimes(i);
+    wheelPos = posNorm(find(wheelPositionTimes>obsTimes(i), 1, 'first'));
+    motorPos = motorPosNorm(find(step.times>obsTimes(i), 1, 'first'));
+    motorPosNorm(inds) = motorPosNorm(inds) - motorPos + wheelPos;
+   
     
 end
 
@@ -59,7 +68,7 @@ end
 close all;
 figure;
 plot(wheelPositionTimes, posNorm, 'linewidth', 3); hold on
-plot(step.times, motorPositions);
+scatter(step.times, motorPosNorm, 5);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;

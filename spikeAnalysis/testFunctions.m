@@ -3,10 +3,17 @@
 file = 'C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\run.mat';
 load(file);
 
+% setup parameters
+whEncoderSteps = 2880; % 720cpr * 4
+wheelRad = 95.25; % mm
+obEncoderSteps = 1000; % 250cpr * 4
+obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
 
-%% test rotary decoder
+%% test wheel rotary decoder
 
-[wheelPositions, wheelPositionTimes] = rotaryDecoder(whEncodA.times, whEncodA.level, whEncodB.times, whEncodB.level);
+[wheelPositions, wheelPositionTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
+                                                     whEncodB.times, whEncodB.level,...
+                                                     whEncoderSteps, wheelRad);
 
 
 close all;
@@ -14,8 +21,20 @@ figure;
 plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
-pimpFig;               
+pimpFig;
 
+%% test obstacle rotary decoder
+[obsPositions, obsPositionTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
+                                                     obEncodB.times, obEncodB.level,...
+                                                     obEncoderSteps, obsRad);
+
+
+% close all;
+figure;
+plot(obsPositionTimes, obsPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
 
 
 %% test stepper decoder
@@ -23,7 +42,7 @@ pimpFig;
 motorPositions = motorDecoder(stepDir.level, stepDir.times, step.times);
 
 
-close all;
+% close all;
 figure;
 plot(step.times, motorPositions, 'linewidth', 3);
 xlabel('time (s)')
