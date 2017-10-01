@@ -1,6 +1,6 @@
 %% load file
 
-file = 'C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\run.mat';
+file = 'C:\Users\Rick\Google Drive\columbia\rick\run.mat';
 load(file);
 
 % setup parameters
@@ -9,79 +9,82 @@ wheelRad = 95.25; % mm
 obEncoderSteps = 1000; % 250cpr * 4
 obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
 
-%% test wheel rotary decoder
+%% test wheel decoder
 
-[wheelPositions, wheelPositionTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
+[wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
                                                      whEncodB.times, whEncodB.level,...
                                                      whEncoderSteps, wheelRad);
 
-
-close all;
 figure;
-plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
+plot(wheelTimes, wheelPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
 
-%% test obstacle rotary decoder
-[obsPositions, obsPositionTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
+%% test obstacle decoder (from rotary encoder)
+[obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
                                                      obEncodB.times, obEncodB.level,...
                                                      obEncoderSteps, obsRad);
 
-
-% close all;
 figure;
-plot(obsPositionTimes, obsPositions, 'linewidth', 3);
+plot(obsTimes, obsPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
 
 
-%% test stepper decoder
+%% test motor decoder (commands sent to motor)
 
-motorPositions = motorDecoder(stepDir.level, stepDir.times, step.times);
+motorTimes = step.times;
+motorPositions = motorDecoder(stepDir.level, stepDir.times, motorTimes);
 
-
-% close all;
 figure;
-plot(step.times, motorPositions, 'linewidth', 3);
+plot(motorTimes, motorPositions, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
 
-%% test position reward normalization
+%% compute normalized wheel position
 
-posNorm = positionRewardNormalize(wheelPositions, wheelPositionTimes, reward.times);
+rewardTimes = reward.times(diff(reward.values>2)==1);
 
-close all;
+wheelPosNorm = positionRewardNormalize(wheelPositions, wheelTimes, rewardTimes);
+
 figure;
-plot(wheelPositionTimes, posNorm, 'linewidth', 3);
+plot(wheelTimes, wheelPosNorm, 'linewidth', 3);
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
 
-%% plot wheel and motor position on top of one another
+%% plot wheel, motor, and obstacle positions
+    
+motorOnTimes = step.times(logical([1 ((diff(step.times')>.25)==1)])); % times at which platform movement becomes engaged (regardless of whether obstacle is also engaged)
 
-% offset motor position to match wheel position
-obsTimes = obsOn.times;
-obsTimes = obsTimes(logical(obsOn.level)); % only save inds where the obs is turning from off to on
 motorPosNorm = motorPositions;
+obsPosNorm = obsPositions;
 
-for i=1:length(obsTimes)
+% offset motor and obstacle positions to match wheel position
+for i=1:length(motorOnTimes)
     
-    inds = step.times>obsTimes(i);
-    wheelPos = posNorm(find(wheelPositionTimes>obsTimes(i), 1, 'first'));
-    motorPos = motorPosNorm(find(step.times>obsTimes(i), 1, 'first'));
-    motorPosNorm(inds) = motorPosNorm(inds) - motorPos + wheelPos;
-   
+    futureMotorInds = motorTimes >= motorOnTimes(i);
+    futureObsInds = obsTimes >= motorOnTimes(i);
     
+    wheelPos = wheelPosNorm(find(wheelTimes>motorOnTimes(i), 1, 'first'));
+    motorPos = motorPosNorm(find(motorTimes>motorOnTimes(i), 1, 'first'));
+    obsPos = obsPosNorm(find(obsTimes>motorOnTimes(i), 1, 'first'));
+    
+    motorPosNorm(futureMotorInds) = motorPosNorm(futureMotorInds) - motorPos + wheelPos;
+    obsPosNorm(futureObsInds) = obsPosNorm(futureObsInds) - obsPos + wheelPos;
+       
 end
 
-
-close all;
+% plot
 figure;
-plot(wheelPositionTimes, posNorm, 'linewidth', 3); hold on
-scatter(step.times, motorPosNorm, 5);
+
+plot(wheelTimes, wheelPosNorm, 'linewidth', 3); hold on
+scatter(motorTimes, motorPosNorm, 5, 'filled');
+scatter(obsTimes, obsPosNorm, 5, 'filled');
+
 xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
