@@ -5,15 +5,12 @@ function times = timestampDecoder(timeStamps)
     % input:     timeStamps: metadata timestamps recorded in bonsai
     % output:    times: seconds, normalized such that first time is 0
     
-    
-    
-    % extract first cycle (following 13 bits)
-    cycle1 = de2bi(bitshift(timeStamps, -25), 'left-msb');
-    cycle1 = bi2de(cycle1, 'left-msb');
-
+        
     % extract first cycle (first 7 bits)
-    cycle2 = bitand( de2bi(bitshift(timeStamps, -12), 'left-msb'),  [zeros(1,7) ones(1,13)] );
-    cycle2 = bi2de(cycle2, 'left-msb') / 8000;
+    cycle1 = bitshift(timeStamps, -25);
+
+    % extract second cycle (following 13 bits)
+    cycle2 = bitand(bitshift(timeStamps, -12), 8191) / 8000; % 8191 masks all but but last 13 bits
     
     % account for overflows in counter
     times = cycle1 + cycle2;

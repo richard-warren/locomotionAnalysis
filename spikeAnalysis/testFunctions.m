@@ -82,8 +82,8 @@ end
 figure;
 
 plot(wheelTimes, wheelPosNorm, 'linewidth', 3); hold on
-scatter(motorTimes, motorPosNorm, 5, 'filled');
-scatter(obsTimes, obsPosNorm, 5, 'filled');
+scatter(motorTimes, motorPosNorm, 50, 'filled');
+scatter(obsTimes, obsPosNorm, 50, 'filled');
 
 xlabel('time (s)')
 ylabel('position (m)')
