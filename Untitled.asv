@@ -1,0 +1,5067 @@
+%-- 2/12/2016 9:55 PM --%
+data = magic(3,10,4);
+magic
+data = magic([3,10,4]);
+magic
+data
+size(data)
+data = randn([3,10,4]);
+strcomp('a','b')
+strcmp('a','b')
+code
+length(dimInfo)
+code
+ismember('data','datais')
+ismember('dataisis','data')
+findstr('a','cat')
+findstr('b','cat')
+dataIndex
+dun
+dim
+findstr(dim,data)
+findstr(dim,'data')
+dataIndex
+%function applyFunc(func, data, dim)
+clear all
+data = randn([3,10,4]);
+dim = '1/:/medfilt1(data,5)';
+dimInfo = strsplit(dim, '/');
+indices = 'abcdefghijklmnop';
+dataIndex = '';
+code = '';
+for d = 1:length(dimInfo)
+if findstr('data',cell2mat(dimInfo(d)))>0
+dataIndex = [dataIndex ':,'];
+code = dimInfo(d);
+else
+dataIndex = [dataIndex indices(d) ','];
+end
+end
+dataIndex = dataIndex(1:end-1);
+insertIndex = findstr(dim,'data')+4;
+code = [code(1:insertIndex) dataIndex code(insertIndex:end)];
+code(1:insertIndex)
+code
+insertIndex
+code
+code(17)
+code(4)
+size(code)
+insertIndex = findstr(dim,'data')+4;
+code = [code(1:insertIndex) dataIndex code(insertIndex:end)];
+code
+size(code)
+code(14)
+code
+code(1:insertIndex)
+code
+eval(code)
+code
+eval(code)
+clear all
+code
+dataIndex
+code
+output
+data
+data==output
+data == code
+data==output
+clear all
+data = randn([10,4]);
+dim = '1/medfilt1(data,5)';
+dimInfo = strsplit(dim, '/');
+indices = 'abcdefghijklmnop';
+dataIndex = '';
+code = '';
+output = data;
+for d = 1:length(dimInfo)
+if findstr('data',cell2mat(dimInfo(d)))>0
+dataIndex = [dataIndex ':,'];
+code = cell2mat(dimInfo(d));
+else
+dataIndex = [dataIndex indices(d) ','];
+end
+end
+dataIndex = ['(' dataIndex(1:end-1) ')'];
+insertIndex = findstr(dim,'data');
+code = ['output' dataIndex '=' code(1:insertIndex-1) dataIndex code(insertIndex:end) ';'];
+for d = 1:length(dimInfo)
+if strcmp(dimInfo(d),':')
+code = ['for ' indices(d) '=1:' int2str(size(data,d)) ';' code 'end;'];
+elseif ~strcmp(dimInfo(d),'a')
+code = ['for ' indices(d) '=' cell2mat(dimInfo(d)) ';' code 'end;'];
+end
+end
+code
+clear all
+%function output = applyFunc(data, dim)
+clear all
+data = randn([10,4]);
+dim = '1/medfilt1(data,5)';
+dimInfo = strsplit(dim, '/');
+indices = 'abcdefghijklmnop';
+dataIndex = '';
+code = '';
+output = data;
+for d = 1:length(dimInfo)
+if findstr('data',cell2mat(dimInfo(d)))>0
+dataIndex = [dataIndex ':,'];
+code = cell2mat(dimInfo(d));
+else
+dataIndex = [dataIndex indices(d) ','];
+end
+end
+dataIndex = ['(' dataIndex(1:end-1) ')'];
+insertIndex = findstr(dim,'data');
+dataIndex
+code = ['output' dataIndex '=' code(1:insertIndex-1) dataIndex code(insertIndex:end) ';'];
+code
+dataIndex
+insertIndex
+dim(1:insertIndex)
+doc findstr
+clear all
+data = randn([10,4]);
+dim = '1/medfilt1(data,5)';
+dimInfo = strsplit(dim, '/');
+indices = 'abcdefghijklmnop';
+dataIndex = '';
+code = '';
+output = data;
+for d = 1:length(dimInfo)
+if strfind('data',cell2mat(dimInfo(d)))>0
+dataIndex = [dataIndex ':,'];
+code = cell2mat(dimInfo(d));
+else
+dataIndex = [dataIndex indices(d) ','];
+end
+end
+dataIndex = ['(' dataIndex(1:end-1) ')'];
+insertIndex = findstr(dim,'data');
+code = ['output' dataIndex '=' code(1:insertIndex-1) dataIndex code(insertIndex:end) ';'];
+insertIndex
+insertIndex = findstr(dim,'data')+4;
+code = ['output' dataIndex '=' code(1:insertIndex-1) dataIndex code(insertIndex:end) ';'];
+code
+dimInfo
+code
+dim
+dimInfo(2)
+strfind('data',dimInfo(2))
+strfind('data',cell2mat(dimInfo(2)))
+strfind('a',cell2mat(dimInfo(2)))
+strfind(cell2mat(dimInfo(2)),'data')
+code
+code = ['output' dataIndex '=' code(1:insertIndex-1) dataIndex code(insertIndex:end) ';'];
+code
+%function output = applyFunc(data, dim)
+clear all
+data = randn([10,4]);
+dim = '1/medfilt1(data,5)';
+dimInfo = strsplit(dim, '/');
+indices = 'abcdefghijklmnop';
+dataIndex = '';
+code = '';
+output = data;
+for d = 1:length(dimInfo)
+if strfind(cell2mat(dimInfo(d)),'data')>0
+dataIndex = [dataIndex ':,'];
+code = cell2mat(dimInfo(d));
+else
+dataIndex = [dataIndex indices(d) ','];
+end
+end
+dataIndex = ['(' dataIndex(1:end-1) ')'];
+insertIndex = strfind(dim,'data')+4;
+code = ['output' dataIndex '=' code(1:insertIndex-1) dataIndex code(insertIndex:end) ';'];
+for d = 1:length(dimInfo)
+if strcmp(dimInfo(d),':')
+code = ['for ' indices(d) '=1:' int2str(size(data,d)) ';' code 'end;'];
+elseif ~strcmp(dimInfo(d),'a')
+code = ['for ' indices(d) '=' cell2mat(dimInfo(d)) ';' code 'end;'];
+end
+end
+code
+dbcont
+code
+squeeze(zeros(1,2,3,1,1,1,5))
+a=squeeze(zeros(1,2,3,1,1,1,5))
+size(a)
+code
+insertIndex
+code(1:insertIndex)
+insertIndex = strfind(dim,'data');
+code(1:insertIndex)
+doc strfind
+insertIndex
+code
+code = ['output' dataIndex '=squeeze(' code(1:insertIndex-1) dataIndex code(insertIndex:end) ');'];
+code
+output
+data==output
+data = randn([3,70,250]);
+dim = '1/:/medfilt1(data,5)';
+dimInfo = strsplit(dim, '/');
+indices = 'abcdefghijklmnop';
+dataIndex = '';
+code = '';
+output = data;
+for d = 1:length(dimInfo)
+if strfind(cell2mat(dimInfo(d)),'data')>0
+dataIndex = [dataIndex ':,'];
+code = cell2mat(dimInfo(d));
+else
+dataIndex = [dataIndex indices(d) ','];
+end
+end
+dataIndex = ['(' dataIndex(1:end-1) ')'];
+insertIndex = strfind(code,'data')+length('data');
+code = ['output' dataIndex '=squeeze(' code(1:insertIndex-1) dataIndex code(insertIndex:end) ');'];
+for d = 1:length(dimInfo)
+if strcmp(dimInfo(d),':')
+code = ['for ' indices(d) '=1:' int2str(size(data,d)) ';' code 'end;'];
+elseif isempty(strfind(cell2mat(dimInfo(d)),'data'))
+code = ['for ' indices(d) '=' cell2mat(dimInfo(d)) ';' code 'end;'];
+end
+end
+eval(code)
+output
+plot(squeeze(output(1,1,:)))
+close all; figure; plot(squeeze(output(1,1,:))); hold all; plot(squeeze(data(1,1,:)));
+close all; figure; plot(squeeze(output(2,1,:))); hold all; plot(squeeze(data(2,1,:)));
+%-- 2/18/2016 9:18 PM --%
+pawTracking2
+plotLeverWithVelocity2
+pawTracking2
+plotLeverWithVelocity2
+pawTracking2
+plotLeverWithVelocity2
+pawTracking2
+plotLeverWithVelocity2
+pawTracking2
+dbstop if error
+pawTracking2
+load([pathLev fileLev]);
+doc load
+load([pathLev fileLev], 'lever');
+dbquit
+pawTracking2
+dbcont
+pawTracking2
+l = plot([levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 3);
+dbcotn
+dbcont
+pawTracking2
+doc linspace
+pawTracking2
+size(linspace(1,framesPerTrial,leverSmpsPerTrial))
+size([levertracking(t,1:f) nan(1,framesPerTrial-f)])
+pawTracking2
+size([levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,framesPerTrial-f*(leverSmpsPerTrial/framesPerTrial))])
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 3);
+dbquit
+pawTracking2
+pawTracking2
+dbclear if error
+dbquit
+pawTracking2
+dilation
+pawTracking2
+dbstop if error
+pawTracking2
+dilation
+load('previousSettings.mat')
+dbquit
+pawTracking2
+load('previousSettings.mat')
+pawTracking2
+%-- 2/18/2016 11:38 PM --%
+pawTracking2
+load('previousSettings.mat')
+pawTracking2
+dbstop if error
+pawTracking2
+vidFrame
+cat(2, vidFrame, plotFrame)
+plotFrame
+pawTracking2
+doc save
+save(['pawtracking\' file(1:find(file=='.')) 'mat'], 'pawtracking');
+dbcont
+plotLeverWithVelocity2
+dbquit
+plotLeverWithVelocity2
+pawTracking2
+plotLeverWithVelocity2
+successTrials
+sum(successTrials)
+doc exist
+shockOn.times
+size(shockOn.times)
+dbquit
+plotLeverWithVelocity2
+sum(shockOn.times)
+size(shockOn.times)
+size(pawtracking)
+shockOn.times
+exist('shockOn')
+if 1; disp('ya'); end
+shockOn.times = shockOn.times(shockOn.values)
+shockOn.times = shockOn.times(shockOn.value)
+shockOn.times = shockOn.times(shockOn.level)
+shockTimes = shockOn.times(shockOn.level);
+dbquit
+plotLeverWithVelocity2
+shockOn.level
+shockOn.times(shockOn.level)
+shockOn.times(logical(shockOn.level))
+shockTimes = shockOn.times(logical(shockOn.level));
+for i = 1:size(pawtracking,2)
+endSmp = find(lever.times>trialEndTimes(i),1,'first')-1;
+levertracking(i,:) = lever.values(endSmp-levSmps+1:endSmp);
+levertracking(i,:) = levertracking(i,:)-min(levertracking(i,:)); levertracking(i,:) = levertracking(i,:)/max(levertracking(i,:));
+if exist('shockOn')
+if sum(shockTimes>trialEndTimes(i)-trialLength).*(shockTimes<trialEndTimes(i))==0
+successTrials(i) = 1;
+end
+else
+successTrials(i) = 1;
+end
+end
+successTrials
+sum(successTrials)
+trialEndTimes
+plotLeverWithVelocity2
+dbcont
+plotLeverWithVelocity2
+pawTracking2
+dbquit
+dbclear if stop
+plotLeverWithVelocity2
+pawTracking2
+dbquit
+dbclear if error
+pawTracking2
+plotLeverWithVelocity2
+plot(lever.values)
+figure; plot(lever.value)
+figure; plot(lever.values)
+plotLeverWithVelocity2
+pawTracking2
+plotLeverWithVelocity2
+%-- 2/20/2016 8:22 PM --%
+plotLeverWithVelocity2
+pawTracking2
+plotLeverWithVelocity2
+pawTracking2
+%-- 2/21/2016 8:19 PM --%
+pawTracking2
+clear all
+file
+gcd
+cd
+gc
+file = file(1:5);
+dir
+dir('\pawtracking')
+dir('pawtracking')
+a=dir('pawtracking')
+a.name
+b = a.name
+b = a.name(:)
+b = cell2mat(a.name)
+a.name=='lev'
+a.name==8
+aname
+a.name
+cell2mat(a.name)
+struct2cell(a.name)
+struct2cell(a)
+a.name
+b = a.name
+size(b)
+a.name
+struct2cell(a)
+b=struct2cell(a)
+b==0
+strcomp['\pawtracking\' file int2str(i) ['.mat']])
+['\pawtracking\' file int2str(i) ['.mat']]
+['\pawtracking\' file int2str(i) '.mat']
+dbquit
+exist(['pawtracking\' file int2str(i) '.mat']
+exist(['pawtracking\' file int2str(i) '.mat'])
+['pawtracking\' file int2str(i) '.mat']
+load(['pawtracking\' file int2str(i) '.mat'])
+dbcont
+dbcontdbquit
+dbquit
+doc uigetfile
+b
+clear all
+file
+framesPerTrial = 250;
+data = nan(1, framesPerTrial); % [trial, frame]
+file(1)
+load(file(1))
+file(1)
+cell2mat(file(1)
+cell2mat(file(1))
+load(cell2mat(file(1)))
+size(data)
+size(squeeze(pawtracking(3,:,:)))
+data = [1,framesPerTrial]; % [trial, frame]
+data = [data; squeeze(pawtracking(3,:,:))];
+size(data)
+data = [1,framesPerTrial]; % [trial, frame]
+dbquit
+size(data)
+figure; colormap hot; set(gcf,'Position', [0 0 500 900])
+imagesc(1:1000, 1:size(data,1), pawtracking)
+figure; colormap hot; set(gcf,'Position', [0 0 500 900])
+imagesc(1:1000, 1:size(data,1), data)
+set(gca, 'YDir', 'normal', 'xcolor', [1 1 1], 'ycolor', [1 1 1]);
+set(gcf,'Color', [0 0 0])
+set(gca, 'YDir', 'normal', 'xcolor', [1 1 1], 'ycolor', [1 1 1], 'xtick', []);
+set(gca, 'YDir', 'normal', 'xcolor', [1 1 1], 'ycolor', [1 1 1], 'xtick', [], 'ytick', []);
+.35/250
+250*.35
+100/250
+.3*250
+find('a',files)
+find('a',file)
+find('lev5e2',file)
+find('lev5e2.mat',file)
+sessionAvgs(1,1)
+figure; plot(squeeze(mean(pawtracking(3,:,:),2)))
+sessionsAvgs(f,:) = squeeze(mean(pawtracking(3,:,:),2));
+sessionAvgs(1,1)
+sessionAvgs(1,2)
+size(squeeze(mean(pawtracking(3,:,:),2)))
+size(sessionAvgs)
+dbquit
+clear all
+line([125 125], [0 3.5])
+line([125 125], get(gca, 'ylim'))
+figure; colors = colormap(hot(3));
+3.5colors
+colors
+colors(s)
+colors
+get(get(l)
+(get(l))
+legend
+legend('poo')
+legend('poo','poop')
+int2str(1:3)
+b=int2str(1:3)
+arrayfun(int2str, 1:5)
+arrayfun(@int2str, 1:5)
+legend = repmat('day ', length(files), 1);
+legendarrayfun(@int2str, 1:5)
+legend
+legend = mat2cell(repmat('day ', length(files), 1));
+mat2cel(repmat('day ', length(files), 1));
+mat2cell(repmat('day ', length(files), 1));
+doc mat2cell
+legend = {};
+legend{1,2} = 'hi'
+legend
+cell(length(files))
+cell(length(files),1)
+legend = {'a','b'};
+legend(legend)
+legend
+doc legend
+leg = {'a','b'};
+legend(leg)
+leg
+legend('a','b')
+clear legend
+legend(leg)
+figure; waterfall(allTrials)
+figure; waterfall(allTrials(:,75:125))
+figure; meshz(allTrials(:,75:125))
+figure; surf(allTrials(:,75:125))
+figure; surf(allTrials)
+figure; surf(allTrials(:,1:125))
+get(gcf)
+doc fill_between
+figure; plot3(1:5,1:5,1:5)
+doc plot3
+size(allTrials)
+close all; figure; plot3(size(allTrials,2),size(allTrials,1),allTrials)
+close all; figure; plot3(size(allTrials,2),size(allTrials,1),allTrials')
+close all; figure; plot3(1:size(allTrials,2),1:size(allTrials,1),allTrials')
+close all; figure; plot3(1:size(allTrials,2),1:size(allTrials,1),allTrials)
+close all; figure; plot3(repmat(1:size(allTrials,2),1,size(allTrials,1)), repmat(1:size(allTrials,1),size(allTrials,2),1),allTrials)
+close all; figure; plot3(repmat(1:size(allTrials,2),1,size(allTrials,1)), repmat(1:size(allTrials,1),size(allTrials,2),1),allTrials')
+size(repmat(1:size(allTrials,2),1,size(allTrials,1)))
+size(repmat(1:size(allTrials,1),size(allTrials,2),1))
+close all; figure; plot3(repmat(1:size(allTrials,2)',1,size(allTrials,1)), repmat(1:size(allTrials,1),size(allTrials,2),1),allTrials)
+x = repmat(1:size(allTrials,2),1,size(allTrials,1));
+y = repmat(1:size(allTrials,1),size(allTrials,2),1);
+size(x)close all; figure; plot3(repmat(1:size(allTrials,2)',1,size(allTrials,1)), repmat(1:size(allTrials,1),size(allTrials,2),1),allTrials)
+size(x)
+x = repmat(1:size(allTrials,2)',1,size(allTrials,1));
+size(x)
+size(xmayt)
+size(xMat)
+x = repmat(1:size(allTrials,2), 1, size(allTrials,1));
+x
+size(x)
+x = (0:0.001:10).';
+size(x)
+size(1:size(allTrials,2))
+size(1:size(allTrials,2)')
+size(1:size(allTrials,2).')
+size(1:size(allTrials,2)')
+size(1:size(allTrials,2))
+x=size(1:size(allTrials,2))
+size(x')
+size(x)
+x=(1:size(allTrials,2))
+x'
+size(x')
+1:10'
+x = 1:size(allTrials,2);
+x = 1:size(allTrials,2)';
+x = 1:size(allTrials,2).';
+x = (1:size(allTrials,2))';
+x = repmat((1:size(allTrials,2))', 1, size(allTrials,1));
+size(x)
+y = repmat(1:size(allTrials,1), size(allTrials,2), 1);
+size(y)
+plot3(x, y, allTrials);
+get(gca)
+doc plot3
+doc scatter3
+size(allTrials,1)
+get(gcf)
+get(gca)
+pawTracking2
+%-- 2/23/2016 11:36 PM --%
+% get pawtracking data
+files = uigetfile('*\pawtracking', 'Select first of paw tracking files...', 'Multiselect', 'on');
+framesPerTrial = 250;
+allTrials = nan(1,framesPerTrial); % [trial, frame]
+sessionAvgs = nan(length(files),framesPerTrial);
+for f = 1:length(files)
+load(cell2mat(files(f)))
+% x y smooth
+pawtracking = applyFunc(pawtracking, '[1,2]/:/smooth(medfilt1(data,5),5)');
+% re-compute velocity
+for i = 1:size(pawtracking,2)
+for j = 1:framesPerTrial
+if ~(j==1)
+pawtracking(3,i,j) = norm([abs(pawtracking(1,i,j)-pawtracking(1,i,j-1)), abs(pawtracking(2,i,j)-pawtracking(2,i,j-1))]);
+end
+end
+pawtracking(3,i,1) = pawtracking(3,i,2);
+end
+% smooth and range compress velocity
+pawtracking = applyFunc(pawtracking, '3/:/smooth(medfilt1(data,5),5)');
+allTrials = [allTrials; squeeze(pawtracking(3,:,:))];
+sessionAvgs(f,:) = squeeze(mean(pawtracking(3,:,:),2))';
+end
+%function summaryPlots
+% get pawtracking data
+files = uigetfile('*\pawtracking', 'Select first of paw tracking files...', 'Multiselect', 'on');
+framesPerTrial = 250;
+allTrials = nan(1,framesPerTrial); % [trial, frame]
+sessionAvgs = nan(length(files),framesPerTrial);
+for f = 1:length(files)
+load(cell2mat(files(f)))
+% x y smooth
+pawtracking = applyFunc(pawtracking, '[1,2]/:/smooth(medfilt1(data,5),5)');
+% re-compute velocity
+for i = 1:size(pawtracking,2)
+for j = 1:framesPerTrial
+if ~(j==1)
+pawtracking(3,i,j) = norm([abs(pawtracking(1,i,j)-pawtracking(1,i,j-1)), abs(pawtracking(2,i,j)-pawtracking(2,i,j-1))]);
+end
+end
+pawtracking(3,i,1) = pawtracking(3,i,2);
+end
+% smooth and range compress velocity
+pawtracking = applyFunc(pawtracking, '3/:/smooth(medfilt1(data,5),5)');
+allTrials = [allTrials; squeeze(pawtracking(3,:,:))];
+sessionAvgs(f,:) = squeeze(mean(pawtracking(3,:,:),2))';
+end
+%function summaryPlots
+% get pawtracking data
+files = uigetfile('*\pawtracking', 'Select first of paw tracking files...', 'Multiselect', 'on');
+framesPerTrial = 250;
+allTrials = nan(1,framesPerTrial); % [trial, frame]
+sessionAvgs = nan(length(files),framesPerTrial);
+F=1
+load(cell2mat(files(f)))
+% x y smooth
+pawtracking = applyFunc(pawtracking, '[1,2]/:/smooth(medfilt1(data,5),5)');
+% re-compute velocity
+for i = 1:size(pawtracking,2)
+for j = 1:framesPerTrial
+if ~(j==1)
+pawtracking(3,i,j) = norm([abs(pawtracking(1,i,j)-pawtracking(1,i,j-1)), abs(pawtracking(2,i,j)-pawtracking(2,i,j-1))]);
+end
+end
+pawtracking(3,i,1) = pawtracking(3,i,2);
+end
+% smooth and range compress velocity
+pawtracking = applyFunc(pawtracking, '3/:/smooth(medfilt1(data,5),5)');
+%%
+% GET LEVER AND SUCCESS INFO
+temp = cell2mat(files(f)); load(['spike\' temp(1:6) 'spike.mat' ])
+successRate(f) = 1-sum(shockOn.level)/sum(lightOn.level);
+lever.values = medfilt1(smooth(lever.values, 50),50);
+levertracking = nan(size(pawtracking,1), levSmps);
+if exist('shockOn'); shockTimes = shockOn.times(logical(shockOn.level)); end
+for i = 1:size(pawtracking,2)
+endSmp = find(lever.times>trialEndTimes(i),1,'first')-1;
+levertracking(i,:) = lever.values(endSmp-levSmps+1:endSmp);
+levertracking(i,:) = levertracking(i,:)-min(levertracking(i,:)); levertracking(i,:) = levertracking(i,:)/max(levertracking(i,:));
+if exist('shockOn')
+if sum((shockTimes>trialEndTimes(i)-trialLength).*(shockTimes<trialEndTimes(i)))==0
+successTrials(i) = 1;
+end
+else
+successTrials(i) = 1;
+end
+end
+load(cell2mat(files(f)))
+% x y smooth
+pawtracking = applyFunc(pawtracking, '[1,2]/:/smooth(medfilt1(data,5),5)');
+% re-compute velocity
+for i = 1:size(pawtracking,2)
+for j = 1:framesPerTrial
+if ~(j==1)
+pawtracking(3,i,j) = norm([abs(pawtracking(1,i,j)-pawtracking(1,i,j-1)), abs(pawtracking(2,i,j)-pawtracking(2,i,j-1))]);
+end
+end
+pawtracking(3,i,1) = pawtracking(3,i,2);
+end
+% smooth and range compress velocity
+pawtracking = applyFunc(pawtracking, '3/:/smooth(medfilt1(data,5),5)');
+%%
+% GET LEVER AND SUCCESS INFO
+load(cell2mat(files(f)))
+F=1
+load(cell2mat(files(f)))
+% x y smooth
+pawtracking = applyFunc(pawtracking, '[1,2]/:/smooth(medfilt1(data,5),5)');
+% re-compute velocity
+for i = 1:size(pawtracking,2)
+for j = 1:framesPerTrial
+if ~(j==1)
+pawtracking(3,i,j) = norm([abs(pawtracking(1,i,j)-pawtracking(1,i,j-1)), abs(pawtracking(2,i,j)-pawtracking(2,i,j-1))]);
+end
+end
+pawtracking(3,i,1) = pawtracking(3,i,2);
+end
+% smooth and range compress velocity
+pawtracking = applyFunc(pawtracking, '3/:/smooth(medfilt1(data,5),5)');
+% GET LEVER AND SUCCESS INFO
+trialEndTimes = vidTTL.times(diff(vidTTL.times)>.5);
+temp = cell2mat(files(f)); load(['spike\' temp(1:6) 'spike.mat' ])
+successRate(f) = 1-sum(shockOn.level)/sum(lightOn.level);
+lever.values = medfilt1(smooth(lever.values, 50),50);
+levertracking = nan(size(pawtracking,1), levSmps);
+if exist('shockOn'); shockTimes = shockOn.times(logical(shockOn.level)); end
+for i = 1:size(pawtracking,2)
+endSmp = find(lever.times>trialEndTimes(i),1,'first')-1;
+levertracking(i,:) = lever.values(endSmp-levSmps+1:endSmp);
+levertracking(i,:) = levertracking(i,:)-min(levertracking(i,:)); levertracking(i,:) = levertracking(i,:)/max(levertracking(i,:));
+if exist('shockOn')
+if sum((shockTimes>trialEndTimes(i)-trialLength).*(shockTimes<trialEndTimes(i)))==0
+successTrials(i) = 1;
+end
+else
+successTrials(i) = 1;
+end
+end
+trialLength = 1;
+% GET LEVER AND SUCCESS INFO
+trialEndTimes = vidTTL.times(diff(vidTTL.times)>.5);
+temp = cell2mat(files(f)); load(['spike\' temp(1:6) 'spike.mat' ])
+successRate(f) = 1-sum(shockOn.level)/sum(lightOn.level);
+lever.values = medfilt1(smooth(lever.values, 50),50);
+levertracking = nan(size(pawtracking,1), levSmps);
+if exist('shockOn'); shockTimes = shockOn.times(logical(shockOn.level)); end
+for i = 1:size(pawtracking,2)
+endSmp = find(lever.times>trialEndTimes(i),1,'first')-1;
+levertracking(i,:) = lever.values(endSmp-levSmps+1:endSmp);
+levertracking(i,:) = levertracking(i,:)-min(levertracking(i,:)); levertracking(i,:) = levertracking(i,:)/max(levertracking(i,:));
+if exist('shockOn')
+if sum((shockTimes>trialEndTimes(i)-trialLength).*(shockTimes<trialEndTimes(i)))==0
+successTrials(i) = 1;
+end
+else
+successTrials(i) = 1;
+end
+end
+successTrials
+% COMPUTE POSITION AND VELOCITY
+load(cell2mat(files(f)))
+% x y smooth
+pawtracking = applyFunc(pawtracking, '[1,2]/:/smooth(medfilt1(data,5),5)');
+% re-compute velocity
+for i = 1:size(pawtracking,2)
+for j = 1:framesPerTrial
+if ~(j==1)
+pawtracking(3,i,j) = norm([abs(pawtracking(1,i,j)-pawtracking(1,i,j-1)), abs(pawtracking(2,i,j)-pawtracking(2,i,j-1))]);
+end
+end
+pawtracking(3,i,1) = pawtracking(3,i,2);
+end
+% smooth and range compress velocity
+pawtracking = applyFunc(pawtracking, '3/:/smooth(medfilt1(data,5),5)');
+% GET LEVER AND SUCCESS INFO
+trialEndTimes = vidTTL.times(diff(vidTTL.times)>.5);
+temp = cell2mat(files(f)); load(['spike\' temp(1:6) 'spike.mat' ])
+successRate(f) = 1-sum(shockOn.level)/sum(lightOn.level);
+lever.values = medfilt1(smooth(lever.values, 50),50);
+levertracking = nan(size(pawtracking,1), levSmps);
+if exist('shockOn'); shockTimes = shockOn.times(logical(shockOn.level)); end
+for i = 1:size(pawtracking,2)
+endSmp = find(lever.times>trialEndTimes(i),1,'first')-1;
+levertracking(i,:) = lever.values(endSmp-levSmps+1:endSmp);
+levertracking(i,:) = levertracking(i,:)-min(levertracking(i,:)); levertracking(i,:) = levertracking(i,:)/max(levertracking(i,:));
+if exist('shockOn')
+if sum((shockTimes>trialEndTimes(i)-trialLength).*(shockTimes<trialEndTimes(i)))==0
+successTrials(i) = 1;
+end
+else
+successTrials(i) = 1;
+end
+end
+allSuccessTrials = [allSuccessTrials successTrials];
+allTrials = [allTrials; squeeze(pawtracking(3,:,:))];
+successAvgs(f,:) = squeeze(mean(pawtracking(3,successTrials,:),2))';
+successAvgs(f,:) = squeeze(mean(pawtracking(3,logical(successTrials),:),2))';
+failAvgs(f,:) = squeeze(mean(pawtracking(3,~logical(successTrials),:),2))';
+trialEndTimes
+pawtracking(2)
+dbstop if error
+summaryPlots
+successAvgs(f,:)
+squeeze(mean(pawtracking(3,logical(successTrials),:),2))'
+size(pawtracking)
+pawtracking(3,logical(successTrials),:)
+size(successTrials)
+size(pawtracking)
+files(f)
+['spike\' temp(1:6) 'spike.mat' ]
+load(['spike\' temp(1:6) 'spike.mat' ])
+summaryPlots
+clear all
+summaryPlots
+size(pawtracking)
+size(successTrials)
+summaryPlots
+doc set
+summaryPlots
+dbquit
+summaryPlots
+close all
+pawtracking2
+pawTracking2
+summaryPlots
+successAvgs
+size(successAvgs)
+plot(linspace(1,120,length(failAvgs(s,100:130))), failAvgs(s,100:130), 'color', colors(s,:), 'linewidth', width); hold on
+linspace(1,120,length(successAvgs(s,100:130)))
+successAvgs(s,100:130)
+dbquit
+successAvgs(s,100:130)
+summaryPlots
+subplot(1,3,1)
+plot(linspace(1,120,length(successAvgs(s,100:130))), successAvgs(s,100:130), 'color', colors(s,:), 'linewidth', width); hold on
+successAvgs(s,100:130)
+summaryPlots
+successRate(s)
+summaryPlots
+%-- 2/24/2016 8:47 PM --%
+pawTracking2
+summaryPlots
+%-- 2/25/2016 8:23 PM --%
+pawTracking2
+summaryPlots
+summaryPlot
+%-- 2/26/2016 9:08 PM --%
+summaryPlot
+%-- 3/1/2016 9:32 PM --%
+pawTracking3
+summaryPlot
+summaryPlot2
+%-- 3/2/2016 10:06 PM --%
+summaryPlot2
+pawTracking3
+summaryPlot2
+%-- 3/3/2016 8:15 PM --%
+summaryPlot2
+%-- 3/4/2016 10:35 PM --%
+summaryPlot2
+%-- 3/8/2016 11:19 PM --%
+open pawTracking3
+vid = VideoReader('video\lev5e1.mp4');
+frame = read(vid,1)
+frame2 = read(vid,1000)
+frame1=frame;
+imagesc(frame)
+figure
+imagesc(frame2)
+subFrame = frame2-frame1;
+figure; imagesc(subFrame);
+clear all
+close all
+imagesc(subFrame)
+get(gcf)
+abs(f2-f1)
+max(abs(f2-f1))
+max(max(abs(f2-f1)))
+max(max(max(abs(f2-f1))))
+f1
+f2-f1
+min(f2-f1)
+int(f1)
+doc rgb2gray
+%-- 3/11/2016 11:05 PM --%
+pawTracking
+pause(.0001);
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+figure
+image(vidFrame)
+cla;
+iamge(vidFrame)
+image(vidFrame)
+imagesc(vidFrame)
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+delete(v); delete(l); delete(p);
+cla
+image(vidFrame)
+close all
+subplot(1,2,2)
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+axis([1 framesPerTrial 0 1]); set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+subplot(1,2,1)
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+line([0 0],[100 100])
+line([0 0],[100 100], 'linewidth', 5)
+line([0 0],[100 100], 'linewidth', 5, 'color', 'red')
+subplot(1,2,1)
+line([0 0],[100 100], 'linewidth', 5, 'color', 'red')
+doc viscircles
+viscircles([rightEdge, height], 10);
+hold on
+line([0 0],[100 100], 'linewidth', 5, 'color', 'red')
+line([0 100],[0 100], 'linewidth', 5, 'color', 'red')
+pawTracking
+pause(.0001);
+% plot data
+subplot(1,2,2)
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+% plot video
+subplot(1,2,1)
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+line([pawtracking(1,t,i) pawPost(1,t,i)],[pawtracking(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+line([pawtracking(1,t,i) pawPosit(1,t,i)],[pawtracking(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+pawtracking(1,t,i)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+pawtrackingOriginalRange(1,t,i)
+pawPosit(1,t,i)
+pawTracking
+pause(.0001);
+% plot data
+subplot(1,2,2)
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+% plot video
+subplot(1,2,1)
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+pawTracking
+dbstop if error
+pawTracking
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+catFrame = cat(2, vidFrame, plotFrame);
+dbquit
+pawTracking
+subplot(1,2,2)
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+pawTracking
+subplot(1,2,2)
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+p = plot(vidPlot, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+pawTracking
+p = plot(dataFig, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot(dataFig, [squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(dataFig, linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFig, vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+image(vidFig, vidFrame)
+pawTracking
+set(0,'currentfigure', dataFig);
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+set(0,'currentfigure', dataFig);
+pawTracking
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+vidAx = axis([1 framesPerTrial 0 1])
+pawTracking
+doc plot
+pawTracking
+plot(dataAx, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+set(dataAx, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+p = plot(dataFig, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+figure
+set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+p = plot(dataFig, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+pawTracking
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot([squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+pawTracking
+p = plot([squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+pawTracking
+p = plot(dataFig, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot(dataFig, [squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(dataFig, linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+axis([1 framesPerTrial 0 1]); set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+dataFig = gca;
+p = plot(dataFig, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot(dataFig, [squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(dataFig, linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+axis([1 framesPerTrial 0 1]); set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+pawTracking
+p = plot(dataAx, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot(dataAx, [squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(dataAx, linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+axis([1 framesPerTrial 0 1]); set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+axes(handles.vidAx)
+axes(vidAx)
+pawTracking
+p = plot(dataAx, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot(dataAx, [squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(dataAx, linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+axis([1 framesPerTrial 0 1]); set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+axes(vidAx)
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFig, vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+image(vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+dbquit
+pawTracking
+% plot data
+p = plot(dataAx, [squeeze(pawPosit(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 1 0], 'LineWidth', 5);
+v = plot(dataAx, [squeeze(pawtracking(3,t,1:f))' nan(1,framesPerTrial-f)], 'Color', [0 0 1], 'LineWidth', 5);
+l = plot(dataAx, linspace(1,framesPerTrial,leverSmpsPerTrial), [levertracking(t,1:f*(leverSmpsPerTrial/framesPerTrial)) nan(1,leverSmpsPerTrial-f*(leverSmpsPerTrial/framesPerTrial))], 'Color', [1 1 1], 'LineWidth', 5);
+axis([1 framesPerTrial 0 1]); set(gca, 'xtick', [], 'ytick', [], 'Color', [0 0 0])
+plotFrame = getframe(gca); plotFrame = imresize(plotFrame.cdata, [240 320]);
+axes(vidAx)
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+dbcont
+pawTracking
+dbcont
+pawTracking
+vid
+size(vid)
+vid
+pawTracking
+size(plotFrames)
+for t = 1:length(trials)
+for f = 1:framesPerTrial
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+catFrame = cat(2, vidFrame, plotFrames(:,:,:,t,i));
+writeVideo(writerobj, catFrame)
+delete(v); delete(l); delete(p);
+end
+end
+figure;
+for t = 1:length(trials)
+for f = 1:framesPerTrial
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+catFrame = cat(2, vidFrame, plotFrames(:,:,:,t,i));
+writeVideo(writerobj, catFrame)
+delete(v); delete(l); delete(p);
+end
+end
+figure;
+for t = 1:length(trials)
+for f = 1:framesPerTrial
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+l = line([pawtrackingOriginalRange(1,t,i) pawPosit(1,t,i)],[pawtrackingOriginalRange(2,t,i) pawPosit(2,t,i)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+catFrame = cat(2, vidFrame, plotFrames(:,:,:,t,i));
+writeVideo(writerobj, catFrame)
+delete(l);
+end
+end
+figure;
+for t = 1:length(trials)
+for f = 1:framesPerTrial
+vidFrame = read(vid, (trials(t)-1)*framesPerTrial+f);
+image(vidFrame)
+l = line([pawtrackingOriginalRange(1,t,f) pawPosit(1,t,f)],[pawtrackingOriginalRange(2,t,f) pawPosit(2,t,f)],'color','blue','linewidth',5);
+vidFrame = getframe(gca); vidFrame = imresize(vidFrame.cdata, [240 320]);
+catFrame = cat(2, vidFrame, plotFrames(:,:,:,t,f));
+writeVideo(writerobj, catFrame)
+delete(l);
+end
+end
+close(writerobj)
+pawTracking
+sessionPlot
+dbcont
+pawTracking
+sessionPlot
+pawTracking
+plat = line([plat(2) 320],[1 320*plat(1)+plat(2)],'color','red','linewidth',5);
+plat = line([plat(2) 320],[1 100],'color','red','linewidth',5);
+plat = line([0 320],[1 100],'color','red','linewidth',5);
+plat
+platLine = line([0 320],[1 100],'color','red','linewidth',5);
+pawTracking
+platLine = line([0 320],[1 100],'color','red','linewidth',5);
+plat
+platLine = line([0 320],[plat(2) 320*plat(1)+plat(2)],'color','red','linewidth',5);
+platLine = line([plat(2) 320*plat(1)+plat(2)],[0 320],'color','red','linewidth',5);
+pawTracking
+%-- 3/14/2016 6:59 PM --%
+pawTracking3
+summaryPlot2
+dbstop if error
+summaryPlot2
+i
+size(pawtracking)
+summaryPlot2
+pawTracking3
+dbquit
+summaryPlot2
+summaryPlot3
+Error: File: summaryPlot3.m Line: 42 Column: 55
+Unbalanced or unexpected parenthesis or bracket.
+>> summaryPlot3
+>> summaryPlot3
+summaryPlot3
+close all
+summaryPlot3
+sessionPlot
+dbquit
+sessionPlot
+summ
+summaryPlot
+dbquit
+dbclear if error
+summaryPlot
+summaryPlot3
+%-- 3/23/2016 6:27 PM --%
+summaryPlot
+%-- 3/28/2016 8:53 PM --%
+summaryPlot
+%-- 4/3/2016 8:14 PM --%
+summaryPlot
+close all
+sessionPlot
+close all
+summaryPlot
+close all; figure; plot(sessionxCorr(t,:))
+successTrials(i)
+close all; figure; plot(levertracking(t,1:shockTime))
+hold on; plot(pawResampled(t,1:shockTime))
+dbquit
+summaryPlot
+close all; figure; plot(sessionxCorr(t,:))
+successTrials(i)
+close all; figure; plot(levertracking(t,1:shockTime))
+hold on; plot(pawResampled(t,1:shockTime))
+figure; plot(sessionxCorr(t,:))
+dbquit
+summaryPlot2
+dbstop if error
+summaryPlot2
+interp2(linspace(1,1000,250)', 1:size(pawtracking,2), squeeze(pawtracking(3,:,:)), (1:1000)', 1:size(pawtracking,2))
+linspace(1,1000,250)
+1:size(pawtracking,2)
+squeeze(pawtracking(3,:,:)
+size(pawtracking)
+pawtrackingNanFail = interp2(linspace(1,1000,250)', 1:size(pawtracking,2), squeeze(pawDist(3,:,:)), (1:1000)', 1:size(pawtracking,2));
+dbquit
+summaryPlot2
+stepout
+sessionPlot
+dbquit
+summaryPlot2
+pawtrackingNanFail = interp2(linspace(1,1000,250)', 1:size(pawtracking,2), squeeze(pawDist(3,:,:)), (1:1000)', 1:size(pawtracking,2));
+pawtrackingNanFail(~successTrials, 600:1000) = nan;
+levtrackingNanFail = levertracking; levtrackingNanFail(~successTrials, 500:1000) = nan;
+levCat = reshape(levtrackingNanFail(:,1:1000)', 1, numel(levtrackingNanFail(:,1:1000)));
+pawCat = reshape(squeeze(pawtrackingNanFail(:,1:1000))', 1, numel(squeeze(pawtrackingNanFail(:,1:1000))));
+levCat = levCat(~isnan(levCat));
+pawCat = pawCat(~isnan(pawCat));
+[r, lags] = xcov(levCat, pawCat, maxLag, 'coeff'); % positive #s mean paw leads lever
+size(levCat)
+size(pawCat)
+size(levertrackingNanFail)
+size(levtrackingNanFail)
+size(pawtrackingNanFail)
+size(levCat)
+size(pawCat)
+pawtrackingNanFail = interp2(linspace(1,1000,250)', 1:size(pawtracking,2), squeeze(pawDist(3,:,:)), (1:1000)', 1:size(pawtracking,2));
+pawtrackingNanFail(~successTrials, 600:1000) = nan;
+levtrackingNanFail = levertracking; levtrackingNanFail(~successTrials, 600:1000) = nan;
+levCat = reshape(levtrackingNanFail(:,1:1000)', 1, numel(levtrackingNanFail(:,1:1000)));
+pawCat = reshape(squeeze(pawtrackingNanFail(:,1:1000))', 1, numel(squeeze(pawtrackingNanFail(:,1:1000))));
+levCat = levCat(~isnan(levCat));
+pawCat = pawCat(~isnan(pawCat));
+[r, lags] = xcov(levCat, pawCat, maxLag, 'coeff'); % positive #s mean paw leads lever
+xcorAvgs(f,:) = r;
+dbquit
+summaryPlot2
+sessionPlot
+close all
+summaryPlot
+dbquit
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+a = nan
+length(a)
+b=[];
+length(b)
+close all
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+dbquit
+dbclear if error
+close all
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+close all
+summ
+summaryPlot2
+close all
+summaryPlot2
+close all
+summaryPlot2
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\paw analysis\levshock_exp1\pawtracking\lev12e6.mat')
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\paw analysis\levshock_exp1\spike\lev12e6spike.mat')
+size(pawtracking)
+188*2
+size(pawtracking)
+188*2
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\paw analysis\levshock_exp1\spike\lev12e6spike.mat')
+close all
+summaryPlot2
+vidTTL.times
+size(trialEndTimes)
+370/2
+pawtracking = pawtracking(:,1:185,:);
+save(['pawtracking\lev12e6.mat'], 'pawtracking', 'platPoints');
+summaryPlot
+summaryPlot2
+pawtracking = pawtracking(:,1:184,:);
+save(['pawtracking\lev12e6.mat'], 'pawtracking', 'platPoints');
+summaryPlot2
+sessionPlot
+close all
+sessionPlot
+summaryPlot2
+close all
+summaryPlot2
+close all
+%-- 4/15/2016 7:39 PM --%
+summaryPlot2
+close all
+%-- 4/19/2016 10:40 PM --%
+summaryPlot2
+%-- 8/1/2016 9:33 PM --%
+figure; plot(kernel)
+max(xcov(1,1))
+figure; plot(xcorrs)
+xcorrs
+max(xcorrs)
+isnan([1 nan 2])
+figure; plot(xcorrs)
+close all
+%-- 8/11/2016 8:43 PM --%
+pawTracking
+pawTracking2
+sessionPlot
+pawTracking2
+sessionPlot
+close all
+pawTracking2
+sessionPlot
+pawTracking2
+sessionPlot
+pawTracking2
+subplot(3,1,2)
+get(gca,'ylim')
+close all
+load('opto eg.mat')
+light.times
+hist(diff(onTimes))
+find(diff(onTimes)<1)
+size(find(diff(onTimes)<1))
+size(onTimes)
+onTimes(find(diff(onTimes)<1)) == 0;
+sum(onTimes)
+onTimes(find(diff(onTimes)<1)) = 0;
+sum(onTimes)
+a = ones(1,10)
+size(diff(a))
+clear all
+onTimes
+hist(diff(onTimes))
+close all; hist(diff(onTimes))
+onTimes
+close all; hist(diff(onTimes))
+min(diff(onTimes))
+trace = electrod.values(logical(electrod.times>onTimes(1).*electrod.times<onTimes(1)+length));
+times = linspace(0:electrod.interval:length(electrod.values)-electrod.interval);
+times = 0:electrod.interval:length(electrod.values)-electrod.interval;
+times = 0:electrod.interval:length(electrod.values)*electrod.interval;
+times
+times(end)
+light.times
+onTimes
+logical(times>onTimes(1).*times<onTimes(1)+length)
+hist(logical(times>onTimes(1).*times<onTimes(1)+length))
+onTimes(1)
+onTimes(1)+length
+sum(times>onTimes(1).*times<onTimes(1)+length)
+ans/50000
+times
+onTimes(1)+length
+trace = electrod.values(logical(times>onTimes(1).*times<(onTimes(1)+length)));
+trace = electrod.values(logical((times>onTimes(1)) .* (times<(onTimes(1)+length))));
+figure; plot(trace)
+trace = electrod.values(logical((times>(onTimes(1)-buffer)) .* (times<(onTimes(1)+length+buffer))));
+figure; plot(trace)
+trace = electrod.values(logical((times>(onTimes(1)-buffer)) .* (times<(onTimes(1)+length+buffer))));
+close all; figure; plot(trace);
+buffer = .1;
+window = .1;
+load('opto eg.mat');
+onTimes = light.times(light.level==1);
+onTimes = onTimes([0; diff(onTimes)]>1);
+times = 0:electrod.interval:length(electrod.values)*electrod.interval;
+buffer = .1;
+window = .1;
+load('opto eg.mat');
+onTimes = light.times(light.level==1);
+onTimes = onTimes([0; diff(onTimes)]>1);
+clear all
+diff(onTimes)
+times = light.times(diff(light.times>.05));
+times = light.times(diff(light.times)>.05);
+load('opto eg.mat');
+times = light.times(diff(light.times)>.05);
+onTimes = times(light.level==1);
+load('opto eg.mat');
+times = light.times(diff(light.times)>.05);
+buffer = .1;
+window = .1;
+trials = 5;
+load('opto eg.mat');
+times = light.times(diff(light.times)>.05);
+buffer = .1;
+window = .1;
+trials = [1 9 14 17];
+load('opto eg.mat');
+onTimes = light.times(light.level==1);
+onTimes = onTimes([0; diff(onTimes)]>1);
+times = 0:electrod.interval:length(electrod.values)*electrod.interval;
+close all; figure;
+for i = trials
+trace = electrod.values(logical((times>(onTimes(i)-buffer)) .* (times<(onTimes(i)+window+buffer))));
+subplot(trials,1,i)
+plot(trace)
+end
+i
+trace = electrod.values(logical((times>(onTimes(i)-buffer)) .* (times<(onTimes(i)+window+buffer))));
+subplot(trials,1,i)
+plot(trace)
+subplot(trials,1,i)
+subplot(trials,1,find(i,trials))
+find(i,trials)
+find(trials,i)
+dbquit
+dbcont
+dbquit
+trace = electrod.values(logical((times>(onTimes(i)-buffer)) .* (times<(onTimes(i)+window+buffer))));
+subplot(length(trials),1,find(trials,i))
+dbquit
+subplot(length(trials),1,find(trials,i))
+length(trials)
+dbcont
+find(trials,i)
+find(i,trials)
+find(trials, 1, i)
+find(trials==i)
+dbfind(trials==i)
+dbquit
+length(onTimes)
+%-- 9/11/2016 5:52 PM --%
+load_acq
+load_acq('13.acq')
+ans
+load_acq('2014data\05.acq')
+temp = load_acq('2014data\05.acq')
+temp.data
+temp = load_acq('2014data\05.acq'); temp2 = temp.data;
+sum(diff(temp2(2,:)))/2
+diff(temp2(2,:)
+diff(temp2(2,:))
+temp2(2,:)
+size(temp2)
+diff(temp2(:,2))
+sum(diff(temp2(:,2)))
+hist(temp2(:,2))
+max(temp2(:,2))
+sum(temp2(:,2))
+diff(temp2(:,2))
+max(diff(temp2(:,2)))
+min(diff(temp2(:,2)))
+temp1 = load_acq('13.acq');
+temp2 = temp.data;
+temp2.data
+clear all
+temp2 = temp1.data;
+temp2
+diff(temp2(:,2));
+diff(temp2(:,2))>0;
+sum(diff(temp2(:,2))>0)
+totalEvents = sum(diff(temp2(:,2))>0);
+sum(temp2(:,2)>1)
+plot(temp2(:,1))
+fs = 100;
+baseline = 30; % seconds of baseline
+subs2013 = [4 15 19];
+subs2014 = [5 60 67];
+num2str(1)
+baseline = nan(length(subs2013)+length(subs2014), fs*baseline);
+length(subs2013)+length(subs2014)
+find(diff(temp2(:,2))>0)
+(diff(temp2(:,2))>0)
+max(diff(temp2(:,2))>0)
+temp2(:,2)
+max(temp2(:,2))
+dbcont
+max(temp2(:,2))
+s
+dbqui
+dbquit
+events
+dbquit
+dbstop if error
+baseline(subs2013==s,:) = rawData(events(2):events(2)+baselineDuration*fs,2);
+dbquit
+find(subs2013==s)
+baseline(find(subs2013==s),:)
+baseline(find(subs2013==s),:) = rawData(events(2):events(2)+baselineDuration*fs,2)';
+size(rawData(events(2):events(2)+baselineDuration*fs,2)')
+size(baseline)
+baseline(find(subs2013==s),:) = rawData(events(2):events(2)+baselineDuration*fs-1,2)';
+dbquit
+baseline
+plot(mean(baseline(1:3,:),1))
+plot(mean(baseline(1:3,:),2))
+plot(mean(baseline(1,:),2))
+close all; plot(mean(baseline(1,:),2))
+close all; plot(baseline(1,:))
+close all; plot(baseline(1,:)); hold on; plot(baseline(2,:));
+close all; plot(exposure(1,:));
+figure; plot(mean(exposure,1))
+dco subPlot
+doc subPlot
+ln(2)
+log(2)
+doc log
+exposureTransformed = log(exposure);
+skewness(mean(exposure,1))
+skewness(mean(exposureTransformed,1))
+ans
+type(i)
+sort([1 3 2])
+subs2013 = [1 4 6 9 12 16 18 20 24 30 32 40 45 47 50 53 56 63 66 68 72 5 7 11 13 15 17 19 22 25 27 29 31 33 36 39 41 55 59 65 69 71];
+subs2014 = [5 14 19 32 50 56 67 76 85 90 6 15 21 46 53 60 69 71 84 107];
+subs2013 = sort(subs2013)
+subs2014 = sort(subs2014)
+baseline = nan(length(subs2013)+length(subs2014), fs*baselineDuration);
+clear all
+dbstop if error
+dbcont
+baseline(find(subs2013==s),:) = rawData(events(2):events(2)+baselineDuration*fs-1,1)';
+baseline(find(subs2013==s),:)
+rawData(events(2):events(2)+baselineDuration*fs-1,1)'
+events
+dbquit
+temp = load_acq('2013data/4.acq');
+rawData = temp.data
+max(rawData(:,2))
+load_acq('2014data\05.acq')
+dbquit if error
+dbquit
+dbclear if error
+clear all
+load_acq('2014data\05.acq')
+load_acq('2014data\5.acq')
+load_acq('2014data\4.acq')
+load_acq('2013data\4.acq')
+temp.hdr.graph
+temp.hdr.graph.sample_time
+dbquit
+doc resample
+rwaData
+rawData
+dbquit
+vertcat([1;2;3],[1;2;3])
+horcat([1;2;3],[1;2;3])
+horzcat([1;2;3],[1;2;3])
+dbquit
+plot(exposure(2,:))
+dbquit
+clear all
+mean([7921 5184 8836 4761])
+range([7921 5184 8836 4761])
+(4761 - mean([7921 5184 8836 4761])) / range([7921 5184 8836 4761])
+rand(3,4)
+a = rand(3,4)
+a^2
+log(a)
+log(0.9572)
+a/4
+a+1
+A = [1 2; 3 4; 5 6];
+B = [1 2 3; 4 5 6];
+A*B
+B'*A
+A'*B
+B+A
+a(:,1)
+A = rand(10,10)
+x = rand(10,1)
+A*x
+Ax
+A.*x
+sum(A*x)
+v = rand(7,1)
+w = rand(7,1)
+w=*v
+w.*v
+w'*v
+sum(v.*w)
+v*w'
+%-- 9/12/2016 9:19 PM --%
+eye(5)
+ex1
+close all
+X
+clear all
+ex1
+square([1 2 3])
+[1 2 3].^2
+ex1
+dbstop if error
+ex1
+dbquit
+dbclear if error
+ex1
+clear all
+dbclear
+clear all
+clc
+pause
+computeCost(X, y, theta)
+X = [ones(m, 1), data(:,1)]; % Add a column of ones to x
+theta = zeros(2, 1); % initialize fitting parameters
+% Some gradient descent settings
+iterations = 1500;
+alpha = 0.01;
+% compute and display initial cost
+computeCost(X, y, theta)
+computeCost
+computeCost(X, y, theta)
+fprintf('Running Gradient Descent ...\n')
+X = [ones(m, 1), data(:,1)]; % Add a column of ones to x
+theta = zeros(2, 1); % initialize fitting parameters
+% Some gradient descent settings
+iterations = 1500;
+alpha = 0.01;
+% compute and display initial cost
+computeCost(X, y, theta)
+% run gradient descent
+theta = gradientDescent(X, y, theta, alpha, iterations);
+dTheta = X * ((1/m)*sum(X*theta-y))';
+dTheta
+theta
+dbcont
+theta = gradientDescent(X, y, theta, alpha, iterations);
+((1/m)*sum(X*theta-y))
+gradientDescent(X, y, theta, alpha, iterations);
+dTheta = X * ((1/m)*(X*theta-y))';
+((1/m)*(X*theta-y))
+size(((1/m)*(X*theta-y)))
+size(X)
+dTheta = X' * ((1/m)*(X*theta-y));
+dTheta
+dTheta = ((1/m)*(X*theta-y)) * X;
+dTheta = ((1/m)*(X*theta-y))' * X;
+dTheta
+gradientDescent(X, y, theta, alpha, iterations);
+dTheta
+dTheta0 = ((1/m)*(X*theta-y)) * X(:,1)';
+dTheta0
+(1/m)*(X*theta-y)
+dTheta0 = X(:,1) * ((1/m)*(X*theta-y));
+X(:,1)
+((1/m)*(X*theta-y))
+dTheta0 = X(:,1) * ((1/m)*(X*theta-y))';
+dTheta0
+dTheta0 = ((1/m)*(X*theta-y))' * X(:,1);
+dTheta0
+dTheta
+dTheta1 = ((1/m)*(X*theta-y))' * X(:,2);
+dTheta1
+gradientDescent(X, y, theta, alpha, iterations);
+gradientDescent(X, y, theta, alpha*.001, iterations);
+gradientDescent(X, y, theta, alpha*.00000001, iterations);
+gradientDescent(X, y, theta, alpha, iterations);
+ex1
+close all
+clear all
+length(subs2013)+length(subs2014)
+temp.hdr.graph.sample_time
+temp.hdr.graph.sample_time~=1
+dbquit
+text(0,0,'balls)
+text(0,0,'balls')
+text(10,5,'balls')
+text(1,1,'22')
+doc text
+close all
+figure('units','normalized','outerposition',[0 0 1 1])
+subplot(histRows, histColumns, i);
+plot(exposure(i,:), 'linewidth', 2);
+set(gca, 'xtick', [])
+gca(xlim)
+gca('xlim')
+get(gca,'xlim')
+text(1,2000,'22')
+text(2000,1,'22')
+text(1,1,'22')
+text(0,0,'22')
+text(0,100,'22')
+text(0,1000,'22')
+text(1000,5,'22')
+text(1000,7,'22')
+get(gca,'min')
+get(gca,'xmin')
+text(min(get(gca,'xlim')), min(get(gca,'ylim')),'22')
+text(max(get(gca,'xlim')), min(get(gca,'ylim')),'22')
+dbquit
+evnets
+events
+length(events)
+dbcont
+events
+dbquit
+rawData
+diff(rawData(:,2))
+diff(rawData(:,2))>0
+sum(diff(rawData(:,2))>0)
+plot(rawData(:,2))
+figure; plot(rawData(:,2))
+dbquit
+figure; plot(rawData(:,2))
+events
+sum(rawdata(events(1):events(1)+10000,2))
+sum(rawData(events(1):events(1)+10000,2))
+sum(rawData(events(1):events(1)+100000,2))
+sum(rawData(events(1):events(1)+1000000,2))
+sum(rawData(events(1):events(1)+100000,2))
+sum(rawData(events(1):events(1)+200000,2))
+sum(rawData(events(1):events(1)+1000,2))
+sum(rawData(events(1):events(1)+2000,2))
+sum(rawData(events(2):events(2)+2000,2))
+sum(rawData(events(3):events(3)+2000,2))
+sum(rawData(events(4):events(4)+2000,2))
+sum(rawData(events(5):events(5)+2000,2))
+dbquit
+%-- 9/15/2016 10:01 PM --%
+% plot means
+cond1mean = mean(exposureSorted(allConditionsSorted==1,:),1);
+cond2mean = mean(exposureSorted(allConditionsSorted==2,:),1);
+cond1std = std(exposureSorted(allConditionsSorted==1,:),1) / sqrt(size(exposureSorted(allConditionsSorted==1,:),1));
+cond2std = std(exposureSorted(allConditionsSorted==2,:),1) / sqrt(size(exposureSorted(allConditionsSorted==2,:),1));
+boundedline(linspace(1, 50, length(cond1mean)), cond1mean, cond1std, linspace(1,50,length(cond2mean)),...
+cond2mean,cond2std,'alpha','cmap',vertcat(cond1color, cond2color),'transparency',.1); hold all
+cond1mean = mean(exposureSorted(allConditionsSorted==1,:),1);
+cond2mean = mean(exposureSorted(allConditionsSorted==2,:),1);
+cond1std = std(exposureSorted(allConditionsSorted==1,:),1) / sqrt(size(exposureSorted(allConditionsSorted==1,:),1));
+cond2std = std(exposureSorted(allConditionsSorted==2,:),1) / sqrt(size(exposureSorted(allConditionsSorted==2,:),1));
+boundedline(linspace(1, 50, length(cond1mean)), cond1mean, cond1std, linspace(1,50,length(cond2mean)),...
+cond2mean,cond2std,'alpha','cmap',vertcat(cond1color, cond2color),'transparency',.1); hold all
+boundedline(linspace(1, 50, length(cond1mean)), cond1mean, cond1std, linspace(1,50,length(cond2mean)),...
+cond2mean,cond2std,'alpha','cmap',vertcat(cond1color, cond2color),'transparency',.1);
+figure
+boundedline(linspace(1, 50, length(cond1mean)), cond1mean, cond1std, linspace(1,50,length(cond2mean)),...
+cond2mean,cond2std,'alpha','cmap',vertcat(cond1color, cond2color),'transparency',.1);
+doc hist
+a = rand(5,5)
+reshape(a,25,1)
+figure; hist(reshape(exposureSorted, numel(exposureSorted), 1));
+figure; hist(reshape(exposureSorted, numel(log(exposureSorted)), 1));
+figure; hist(reshape(log(exposureSorted), numel(exposureSorted), 1));
+figure; hist(reshape(sqrt(exposureSorted), numel(exposureSorted), 1));
+figure; hist(reshape((exposureSorted), numel(exposureSorted), 1));
+doc hist
+get(gca,position)
+get(gca,'position')
+set(gca, 'position', 0.1300    0.1100    0.7750    0.3412)
+set(gca, 'position', [0.1300    0.1100    0.7750    0.3412])
+get(gca)
+figure('units','normalized','outerposition',[0 0 1 .5])
+subplot(2,1,1);
+subplot(2,1,1);
+(events(3)-events(2))/fs
+doc repmat
+size(repmat(mean(baseline,2),1,length(exposure(2))))
+size(mean(baseline,2))
+length(exposure(2))
+exposureNormed = exposure - repmat(mean(baseline,2), [1 size(exposure(2))]);
+size(repmat(mean(baseline,2), [1 size(exposure(2))]))
+exposureNormed = exposure - repmat(mean(baseline,2), [1 size(exposure,1)]);
+size(repmat(mean(baseline,2), [1 size(exposure,1)]))
+exposureNormed = exposure - repmat(mean(baseline,2), [1 size(exposure,2)]);
+close all
+%-- 9/18/2016 6:38 PM --%
+submit
+raw2163@columbia.edu
+sz0M0JdwS7BwUODp
+doc rand
+scatter(x,t)
+scatter(x,y)
+doc normrnd
+x
+x = vertcat(ones(100,1), rand(100,1)*100);
+x = horzcat(ones(100,1), rand(100,1)*100);
+theta = zeroes(2,1);
+theta = zeros(2,1);
+theta
+J
+theta
+X
+mean(X(:,2))
+max(X(:,2))
+X(:,2) = (X(:,2)-mean(X(:,2)) / max(X(:,2)));
+X
+(X(:,2)-mean(X(:,2)) / max(X(:,2)))
+X(:,2)-mean(X(:,2)
+X(:,2)-mean(X(:,2))
+max(X(:,2))
+(X(:,2)-mean(X(:,2)) / max(X(:,2)))
+X(:,2) = (X(:,2)-mean(X(:,2)) ./ max(X(:,2)))
+X(:,2) = (X(:,2)-mean(X(:,2))) / max(X(:,2));
+X
+theta
+figure; scatter(X(:,2), y);
+J
+cca
+close all
+theta
+disp(theta*range(X(:,2)) + mean(X(:,2)));
+theta
+disp(theta*range(X(:,2)) + mean(X(:,2)));clear all
+theta
+theta*rng + mn
+theta
+theta*rng + mn
+f = @(x1,x2) 100 + 2*x1 + 6*x2;
+% generate inputs
+X = horzcat(ones(100,1), rand(100,2)*100);
+y = arrayfun(f, X(:,2:3));
+X(:,2:3)
+arrayfun(f, X(:,2:3))
+y = arrayfun(f, X);
+%% MAKE DATA
+% function to discover with linear regression
+f = @(X) 100 + 2*x1 + 6*x2;
+% generate inputs
+X = horzcat(ones(100,1), rand(100,2)*100);
+y = arrayfun(f, X);
+f = @(X) X*[100 2 6];
+get(gca)
+get(gca,'size')
+get(gca)
+get(gcf)
+get(gcf,'position')
+X
+X(:,2) = X(:,2) - mean(X(:,2)) / range(X(:,2));
+X
+X(:,2) = X(:,2) - 50 / 1000;
+doc gridI
+doc griddata
+griddata(X(:,2),X(:,3),y, 0:.5:100, 0:.5:100)
+t = griddata(X(:,2),X(:,3),y, 0:.5:100, 0:.5:100)'
+t = griddata(X(:,2),X(:,3),y, 0:.5:100, 0:.5:100);
+close all
+set(gca)
+get(gca,'position')
+set(subplot)
+doc subplot
+set('position')
+set(gca,'position')
+get(gca,'position')
+set(gca,'position', [0.1300    0.1100    0.7750    0.1412])
+close lal
+close all
+di
+xi
+%-- 9/21/2016 10:11 AM --%
+log(22)
+log(e)
+log(3.17)
+subplot(2,1,1)
+set(gca,'ylim', [1.45 2.5])
+set(gca,'ylim', [1.45 2.0])
+close all
+clear all
+%-- 9/21/2016 11:31 AM --%
+doc skewedness
+doc skewness
+skewness(exposure)
+doc numel
+doc reshape
+reshape(exposure, numel(exposure), 1))
+hist(reshape(exposure, numel(exposure), 1))
+figure; hist(reshape(exposure, numel(exposure), 1))
+figure; hist(reshape(exposure, numel(exposure), 1), 20)
+%-- 9/24/2016 11:57 PM --%
+allSubsSorted
+1:10:50
+0:10:50
+1:10*fs:50*fs
+50000/5
+[1 10*fs:10*fs:50*fs]
+means = nan(size(exposureSorted,1), 5);
+magic(10,10)
+magic(10)
+t = num2cell(magic(10))
+cellfun(@mean,t)
+t = num2cell(magic(10),1)
+temp
+means
+size(means)
+get(gcf,'position'))
+get(gcf,'position')
+scatter(5:5:45, mean(means,2))
+scatter(5:5:45, mean(means,1))
+mean(means,1)
+scatter(5:10:45, mean(means,1))
+get(gcf,'position')
+means
+doc errorbar
+std(means(allConditionsSorted==1),:)
+stdev(means(allConditionsSorted==1),:)
+sdev(means(allConditionsSorted==1),:)
+doc sde
+std(means(allConditionsSorted==1),:)
+std
+std([22 23])
+std(means(allConditionsSorted==1),:))
+std(means(allConditionsSorted==1),:)
+std(means(allConditionsSorted==1,:)
+std(means(allConditionsSorted==1,:))
+std(means(allConditionsSorted==1),:),1)
+doc std
+close all
+clear all
+X
+plotData(X, y);
+X
+y
+scatter(X(y==0,1),X(y==0,2));
+scatter(X(y==0,1),X(y==0,2));
+scatter(X(y==1,1),X(y==0,2));
+figure; hold on;
+% ====================== YOUR CODE HERE ======================
+% Instructions: Plot the positive and negative examples on a
+%               2D plot, using the option 'k+' for the positive
+%               examples and 'ko' for the negative examples.
+%
+scatter(X(y==0,1),X(y==0,2));
+scatter(X(y==1,1),X(y==1,2));
+% Create New Figure
+figure; hold on;
+% ====================== YOUR CODE HERE ======================
+% Instructions: Plot the positive and negative examples on a
+%               2D plot, using the option 'k+' for the positive
+%               examples and 'ko' for the negative examples.
+%
+scatter(X(y==0,1),X(y==0,2));
+scatter(X(y==1,1),X(y==1,2), 'y+');
+scatter(X(y==1,1),X(y==1,2), 'y+', 'color', 'red');
+scatter(X(y==1,1),X(y==1,2), 'y+',  'red');
+figure; hold on;
+% ====================== YOUR CODE HERE ======================
+% Instructions: Plot the positive and negative examples on a
+%               2D plot, using the option 'k+' for the positive
+%               examples and 'ko' for the negative examples.
+%
+scatter(X(y==0,1),X(y==0,2));
+scatter(X(y==1,1),X(y==1,2), 'y+',  'red');
+doc scatter
+% Create New Figure
+figure; hold on;
+% ====================== YOUR CODE HERE ======================
+% Instructions: Plot the positive and negative examples on a
+%               2D plot, using the option 'k+' for the positive
+%               examples and 'ko' for the negative examples.
+%
+scatter(X(y==0,1),X(y==0,2), 10, 'blue', 'ko');
+scatter(X(y==1,1),X(y==1,2), 10, 'red', 'k+');
+% Create New Figure
+figure; hold on;
+% ====================== YOUR CODE HERE ======================
+% Instructions: Plot the positive and negative examples on a
+%               2D plot, using the option 'k+' for the positive
+%               examples and 'ko' for the negative examples.
+%
+scatter(X(y==0,1),X(y==0,2), 20, 'blue', 'ko');
+scatter(X(y==1,1),X(y==1,2), 20, 'red', 'k+');
+close all
+sigmoid(1)
+sigmoid(1000)
+sigmoid(10000000)
+sigmoid(-1)
+sigmoid(-4)
+sigmoid(-4000)
+sigmoid([1 2 3])
+sigmoid([1 2 3; 2 3 4])
+submit
+raw2163@columbia.edu
+fqyPMHX3bR24NYyh
+submit
+Y
+theta
+60*.2+60*.2
+submit
+Y
+submit
+y
+mapFeature([1 2 3], [4 5 6])
+mapFeature([1 2 3 4 5 6 7 8], [1 2 3 4 5 6 7 8])
+X
+dbstop if error
+X*theta
+X = mapFeature(X(:,1), X(:,2));
+initial_theta = zeros(size(X, 2), 1);
+lambda = 1;
+[cost, grad] = costFunctionReg(initial_theta, X, y, lambda);
+cost
+[cost, grad] = costFunctionReg(initial_theta, X, y, lambda);
+cost
+submit
+y
+submit
+y
+submit
+y
+submit
+y
+dbquit
+%-- 9/25/2016 8:02 PM --%
+theta
+dbstop if error
+dbquit
+close all
+submit
+y
+close all
+X1 = [1 2 3 4 5 6]
+X1 = X1'
+X2 = [1 2 3 4 5 6]'
+out = ones(size(X1(:,1)));
+out
+for i = 1:degree
+for j = 0:i
+out(:, end+1) = (X1.^(i-j)).*(X2.^j);
+end
+end
+degree = 2
+for i = 1:degree
+for j = 0:i
+out(:, end+1) = (X1.^(i-j)).*(X2.^j);
+end
+end
+out
+X1
+%-- 10/30/2016 11:51 AM --%
+a=2
+%-- 10/30/2016 11:55 AM --%
+dbcont
+reducedcolor = [.2 0 0];
+notreducedcolor = [.6 0 0];
+reducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)>0));
+notreducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)<=0));
+figure('units','normalized','outerposition', [0.2193    0.2509    0.7073    0.5815])
+reducedmean = mean(exposure(reducedInd,:),1);
+notreducedmean = mean(exposure(notreducedInd,:),1);
+reducedstd = std(exposure(reducedInd,:),1) / sqrt(sum(reducedInd,1));
+notreducedstd = std(exposure(notreducedInd,:),1) / sqrt(sum(notreducedInd,1));
+boundedline(linspace(0, 50, length(reducedmean)), reducedmean, reducedstd, linspace(0,50,length(notreducedmean)),...
+notreducedmean,notreducedstd,'alpha','cmap',vertcat(reducedcolor, notreducedcolor),'transparency',.1); hold on;
+%-- 10/30/2016 11:57 AM --%
+dbcont
+reducedcolor = [.2 0 0];
+notreducedcolor = [.6 0 0];
+reducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)>0));
+notreducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)<=0));
+% plot mean scls
+figure('units','normalized','outerposition', [0.2193    0.2509    0.7073    0.5815])
+reducedmean = mean(exposure(reducedInd,:),1);
+notreducedmean = mean(exposure(notreducedInd,:),1);
+reducedstd = std(exposure(reducedInd,:),1) / sqrt(sum(reducedInd,1));
+notreducedstd = std(exposure(notreducedInd,:),1) / sqrt(sum(notreducedInd,1));
+reducedmean
+reducedInd
+condition
+double(allsubs(:,2)==condition)
+dbquit
+getTrialsFromVideo
+load('previousSettings.mat')
+getTrialsFromVideo
+lightTimes
+sum(lightTimes)
+find(lightTimes)
+% write video to file
+for t = find(lightTimes)
+if t>timePre*fs && t<vid.NumberOfFrames-timePost*fs
+for f = round(t-timePre*fs):round(t+timePost*fs)
+frame = read(vid,f);
+writeVideo(writerobj, frame)
+end
+end
+end
+close(writerobj)
+getTrialsFromVideo
+% write video to file
+for t = find(lightTimes)
+if t>timePre*fs && t<vid.NumberOfFrames-timePost*fs
+for f = round(t-timePre*fs):round(t+timePost*fs)
+frame = read(vid,f);
+writeVideo(writerobj, frame)
+end
+end
+end
+close(writerobj)
+getTrialsFromVideo
+dbcont
+find(1, [2 3 1 4 5])
+find(1==[2 3 1 4 5])
+getTrialsFromVideo
+w = waitbar(0, 'writing video...');
+% write video to file
+for t = find(lightTimes)
+if t>timePre*fs && t<vid.NumberOfFrames-timePost*fs
+for f = round(t-timePre*fs):round(t+timePost*fs)
+frame = read(vid,f);
+writeVideo(writerobj, frame)
+end
+end
+waitbar(find(t==find(lightTimes))/length(find(lightTimes)))
+end
+close(w)
+close(writerobj)
+getTrialsFromVideo
+dbcont
+reducedcolor = [.2 0 0];
+notreducedcolor = [.6 0 0];
+reducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)>0));
+notreducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)<=0));
+% plot mean scls
+figure('units','normalized','outerposition', [0.2193    0.2509    0.7073    0.5815])
+reducedmean = mean(exposure(reducedInd,:),1);
+notreducedmean = mean(exposure(notreducedInd,:),1);
+reducedstd = std(exposure(reducedInd,:),1) / sqrt(sum(reducedInd,1));
+notreducedstd = std(exposure(notreducedInd,:),1) / sqrt(sum(notreducedInd,1));
+reducedstd
+reducedInd
+sum(reducedInd)
+sum(notreducedInd)
+condition
+double(allsubs(:,3)>0)
+double(allsubs(:,3)>0)'
+dbquit
+close allsubs
+clear all
+%-- 10/30/2016 3:19 PM --%
+dbcont
+reducedcolor = [.2 0 0];
+notreducedcolor = [.6 0 0];
+reducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)>0));
+notreducedInd = logical(double(allsubs(:,2)==condition) .* double(allsubs(:,3)<=0));
+% plot mean scls
+figure('units','normalized','outerposition', [0.2193    0.2509    0.7073    0.5815])
+reducedmean = mean(exposure(reducedInd,:),1);
+notreducedmean = mean(exposure(notreducedInd,:),1);
+reducedstd = std(exposure(reducedInd,:),1) / sqrt(sum(reducedInd,1));
+notreducedstd = std(exposure(notreducedInd,:),1) / sqrt(sum(notreducedInd,1));
+reducedmean
+notreducedmean
+boundedline(linspace(0, 50, length(reducedmean)), reducedmean, reducedstd, linspace(0,50,length(notreducedmean)),...
+notreducedmean,notreducedstd,'alpha','cmap',vertcat(reducedcolor, notreducedcolor),'transparency',.1); hold on;
+% plot 10 second average means
+errorbar(5:10:45, mean(means(reducedInd,:),1), std(means(reducedInd,:))/sqrt(sum(reducedInd)), 's', 'color', reducedcolor, 'markerfacecolor', reducedcolor, 'markersize', 10, 'linewidth', 1.5); hold on;
+errorbar(5:10:45, mean(means(notreducedInd,:),1), std(means(notreducedInd,:))/sqrt(sum(notreducedInd)), 's', 'color', notreducedcolor, 'markerfacecolor', notreducedcolor, 'markersize', 10, 'linewidth', 1.5);
+dbcont
+close all
+%-- 11/6/2016 6:39 PM --%
+plotData(X, y)
+close all
+plotData(X, y)
+model
+x1plot = linspace(min(X(:,1)), max(X(:,1)), 100)';
+x2plot = linspace(min(X(:,2)), max(X(:,2)), 100)';
+[X1, X2] = meshgrid(x1plot, x2plot);
+X1
+vals = zeros(size(X1));
+for i = 1:size(X1, 2)
+this_X = [X1(:, i), X2(:, i)];
+vals(:, i) = svmPredict(model, this_X);
+end
+hold on
+contour(X1, X2, vals, [0 0], 'Color', 'b');
+figure
+contour(X1, X2, vals, [0 0], 'Color', 'b');
+vals
+open contour
+hold alll
+hold all
+contour(X1, X2, vals, [0 0], 'Color', 'b');
+contour3(X1, X2, vals, [0 0], 'Color', 'b');
+close all; figure; contour3(X1, X2, vals, [0 0], 'Color', 'b');
+doc contour
+contour(vals)
+contour(X1, X2, vals, 'Color', 'b');
+contour(X1, X2, vals, [0 0], 'Color', 'b');
+open contdbcont
+dbcont
+model
+load('ex6data3.mat');
+[C, sigma] = dataset3Params(X, y, Xval, yval);
+C
+sigma
+accuracies
+heat(accuracies)
+heatmap(accuracies)
+HeatMap(accuracies)
+figure; imshow(accuracies)
+max(accuracies)
+accuracies(:)
+max(accuracies)
+max(accuracies(:))
+find(max(accuracies(:)))
+accuracies
+accuracies(:)
+find(max(accuracies(:)))
+find(accuracies == max(accuracies(:)))
+accuracies == max(accuracies)
+accuracies == max(accuracies(:))
+find(accuracies == max(accuracies(:)))
+open find
+[C, sigma] = find(accuracies == max(accuracies(:)))
+imagesc(accuracies)
+accuracies
+close all
+submit
+raw2163@columbia.edu
+djl8eXAhwHjCzpHo
+%-- 11/18/2016 10:40 PM --%
+schemer_import
+%-- 2/2/2017 11:37 PM --%
+bgSubtract
+open bgSubtract
+doc imadjust
+bgSubtract
+viewSplit
+bgSubtract
+colorGrabber
+colorGrabber(4)
+open colorGrabber
+colorGrabber(4)
+bgSubtract
+colorGrabber(4)
+%-- 2/10/2017 8:11 PM --%
+colorGrabber(4)
+obsVideoCuration
+%-- 2/16/2017 8:16 PM --%
+ver
+rmsObj = dsp.movingRMS('WindowLength', micFs*.05);
+doc movingrms
+%-- 2/16/2017 10:03 PM --%
+figure; plot(micTraceStitched)
+figure; plot(breathTraceStitched)
+figure; plot(rmsTraceStitched)
+% plot that shit
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+hold on; scatter(startTimes, ones(1, length(startTimes))*20)
+hold on; scatter(stopTimes, ones(1, length(startTimes))*20)
+close all; figure; plot(rmsTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i)));
+dbcont
+i
+startTimes
+startTimes(4)
+endTimes(4)
+stopTimes(4)
+dbquit
+% plot that shit
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, rmsTrace, 'linewidth', 3); hold on; plot(breathTimes, breathTrace, 'linewidth', 3);
+hold on; scatter(startTimes, ones(1, length(startTimes))*20)
+hold on; scatter(stopTimes, ones(1, length(startTimes))*20)
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, rmsTrace, 'linewidth', 3);
+rmsMax = 6*10e-7;
+rmsMax = 6e-7;
+rmsMax
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, breathTrace, 'linewidth', 3);
+rmsMax = 6e-7;
+breathMax = 60;
+dbquit
+figure; plot(breathTrace); hold on; plot(zscore(rmsTraceStitched));
+figure; plot(zscore(breathTrace)); hold on; plot(zscore(rmsTraceStitched));
+figure; plot(zscore(breathTraceStitched)); hold on; plot(zscore(rmsTraceStitched));
+close all
+doc xcov
+xcorr = xcov(breathTraceStitched, rmsTraceStitched, 'coeff');
+figure; plot(xcorr);
+[xcorr, lags] = xcov(breathTraceStitched, rmsTraceStitched, 'coeff');
+lags
+lags(1)
+lags(2)
+[xcorr, lags] = xcov(breathTraceStitched, rmsTraceStitched, maxLag*breathingRmsNewFs, 'coeff');
+lags = lags/breathingRmsNewFs;
+figure; plot(lags, xcorr);
+close all
+figure; plot(zscore(breathTraceStitched)); hold on; plot(zscore(rmsTraceStitched));
+figure; plot(breathTraceStitched)
+breathTimes
+hist(diff(breathTimes))
+startTimes(1:10)
+breathTimes(1:10)
+risingCrosses
+breathThresh = 0;
+% get all breath times
+crossedThresh = [0 diff(breathTraceStitched>breathThresh)];
+risingCrosses = find(crossedThresh==1);
+crossedThresh = [0 diff(breathTraceStitched>breathThresh)];
+breathTimes
+figure; hist(diff(breathTimes))
+figure; hist(diff(breathTimes,100))
+figure; hist(diff(breathTimes),100)
+prctile(breathTimes)
+startInds = find([0; diff(breathTraceStitched>breathThresh)]==1);
+breathTimes
+hist(diff(breathTimes))
+figure; hist(diff(breathTimes),100)
+breathLngPcts = prctile(diff(breathTimes));
+breathLngPcts = zscore(diff(breathTimes));
+figure; hist(breathLngPcts,100)
+breathTimes = breathTimes(breathDurationZscores>zLims(1) & breathDurationZscores<zLims(2))
+breathThresh = 0;
+zLims = [-.5 .5]; % only include breaths whose duration is witin this stdev range
+breathDurationZscores = zscore(diff(breathTimes));
+breathTimes = breathTimes(breathDurationZscores>zLims(1) & breathDurationZscores<zLims(2))
+figure; hist(breathTimes,100)
+figure; hist(diff(breathTimes),100)
+startInds = find([0; diff(breathTraceStitched>breathThresh)]==1);
+breathTimes = startInds/breathingRmsNewFs;
+meanDuration = mean(diff(breathTimes));
+meanDuration
+meanDuration*breathingRmsNewFs
+allBreaths = nan(length(breathTimes), round(meanDuration*breathingRmsNewFs));
+breathTraceStitched(breathTimes(i)*breathingRmsNewFs : breathTimes(i)*breathingRmsNewFs+round(meanDuration*breathingRmsNewFs));
+figure; plot(breathingRmsNewFs)
+figure; plot(breathTraceStitched(breathTimes(i)*breathingRmsNewFs : breathTimes(i)*breathingRmsNewFs+round(meanDuration*breathingRmsNewFs));)
+figure; plot(breathTraceStitched(breathTimes(i)*breathingRmsNewFs : breathTimes(i)*breathingRmsNewFs+round(meanDuration*breathingRmsNewFs)))
+breathSmps = round(meanDuration*breathingRmsNewFs);
+allBreaths = nan(length(breathTimes), breathSmps);
+size(breathTraceStitched(breathTimes(i)*breathingRmsNewFs:breathTimes(i)*breathingRmsNewFs+breathSmps-1))
+i
+breathTraceStitched(breathTimes(i)*breathingRmsNewFs)
+breathTimes(i)*breathingRmsNewFs+breathSmps
+breathTraceStitched(breathTimes(i)*breathingRmsNewFs+breathSmps)
+i
+length(breathSmps)
+length(breathTimes)
+figure; plot(mean(allBreaths,1))
+figure; plot(mean(allBreaths,1)); hold on; plot(mean(allRms,1))
+figure; plot(mean(zscore(allBreaths),1)); hold on; plot(mean(zscore(allRms),1))
+doc zscore
+figure; plot(mean(zscore(allBreaths,2),1)); hold on; plot(mean(zscore(allRms,2),1))
+figure; plot(mean(zscore(allBreaths,0,2),1)); hold on; plot(mean(zscore(allRms,0,2),1))
+figure; plot(linspace(0,meanDuration,breathSmps), mean(zscore(allBreaths,0,2),1)); hold on; plot(mean(zscore(allRms,0,2),1))
+figure; plot(xvals, mean(zscore(allBreaths,0,2),1)); hold on; plot(xvals, mean(zscore(allRms,0,2),1))
+xvals = linspace(0,meanDuration,breathSmps);
+figure; plot(xvals, mean(zscore(allBreaths,0,2),1)); hold on; plot(xvals, mean(zscore(allRms,0,2),1))
+breathSmps = round(meanDuration*breathRmsNewFs + prePad*breathRmsNewFs-1);
+breathSmps = round(meanDuration*breathRmsNewFs + pcread*breathRmsNewFs-1);
+prePad = .15;
+breathSmps = round(meanDuration*breathRmsNewFs + prePad*breathRmsNewFs-1);
+breathSmps
+breathTraceStitched(startInd:startInd+breathSmps)
+close all
+close all; figure; plot([1 2 4 6])
+close all; figure; plot([1 2 4 6], 'color', [1 1 1 .5])
+close all; figure; plot([1 2 4 6], 'color', [.5 .5 .5 .5])
+close all; figure; plot([1 2 4 6], 'color', [0 0 1 .5])
+close all; figure; plot([1 2 4 6], 'color', [0 0 1 1])
+allBreathsZ = zscores(allBreaths,0,2);
+allRmsZ = zscores(allRms,0,2);
+allBreathsZ = zscore(allBreaths,0,2);
+allRmsZ = zscore(allRms,0,2);
+xvals = linspace(-prePad,meanDuration,breathSmps);
+mean(allBreathsZ,1)
+plot(mean(allBreathsZ,1))
+hold on; plot(xvals, mean(allBreathsZ,1), 'linewidth', 2, 'color', breathColor); hold on;
+hold on; plot(xvals, mean(allBreathsZ,1), 'linewidth', 10, 'color', breathColor); hold on;
+hold on; plot(xvals, mean(allRmsZ,1), 'linewidth', 10, 'color', rmsColor)
+mean(allBreathsZ,1)
+close all
+%-- 2/23/2017 8:42 PM --%
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\dcn nrsa\single channel recordings\130217_000.mat')
+fs = channelData.ADFreq;
+rawTrace = channelData.Values;
+clear all
+makeVid
+%-- 3/29/2017 11:43 PM --%
+load('C:\Users\LindseyBuckingham\Google Drive\grants\f31\figs\analyses\eg cells\vcn licking.mat', 'extra')
+load('C:\Users\LindseyBuckingham\Google Drive\grants\f31\figs\analyses\eg cells\vcn licking.mat')
+load('C:\Users\LindseyBuckingham\Google Drive\grants\f31\figs\analyses\eg cells\vcn licking.mat', 'extra')
+plot(extra.values)
+load('C:\Users\LindseyBuckingham\Google Drive\grants\f31\figs\analyses\eg cells\vcn licking.mat', 'extra')
+get(gca)
+(1/extra.interval)
+load('C:\Users\LindseyBuckingham\Google Drive\grants\f31\figs\analyses\eg cells\vcn licking.mat', 'lick_on')
+find(lick_on.values)
+length(micropho.values)
+micropho.interval
+extra.interval
+micropho.interval
+doc scatter
+load('eg cells\lick trace.mat')
+load('eg cells\breath trace.mat')
+close all
+clear all
+load('eg cells\cwc example.mat')
+set(gca,'Visible','off')
+close all
+clear all
+miceTraceStitched
+micTraceStitched
+rmsTraceStitched
+miceTrace
+micTrace
+figure; plot(micTrace(1:1000))
+figure; plot(micTrace(1:10000))
+freqz(hpFilt)
+freqresp(hpFilt)
+freqresp(hpFilt, doc freqresp)
+doc freqresp
+freqresp(hpFilt)
+freqresp(hpFilt, 10:100:20000)
+fvtool(hpFilt)
+figure; plot(micTrace(1:10000))
+figure; plot(micTrace(100000:200000))
+rmsTrace
+micTrace = filter(hpFilt, micTrace);
+figure; plot(micTrace(100000:200000))
+rmsTrace
+micFs
+rmsTrace = rms(micTrace, .005*micFs, .001, 0);
+rmsTrace = resample(rmsTrace, breathRmsNewFs, micFs);
+figure; plot(rmsTrace)
+figure; plot(micTrace(100000:200000))
+figure; plot(micTrace)
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+if stopInds(1)<startInds(1); stopInds=stopInds(2:end); end % make sure first index is a start Ind
+if length(stopInds)<length(startInds); stopInds(end+1) = length(rmsTrace); end % make the last stop time the very last sample if necessary
+% get times of epochs where scores are valid for continuous stretches of time
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>continousStretchMin;
+startTimes = startInds(validEpochs)/breathRmsNewFs + 1;
+stopTimes = stopInds(validEpochs)/breathRmsNewFs - 1;
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+if stopInds(1)<startInds(1); stopInds=stopInds(2:end); end % make sure first index is a start Ind
+if length(stopInds)<length(startInds); stopInds(end+1) = length(rmsTrace); end % make the last stop time the very last sample if necessary
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+rmsTrace
+rmsTrace = rms(micTrace, .005*micFs, .004, 0);
+rmsTrace = resample(rmsTrace, breathRmsNewFs, micFs);
+plot(rmsTrace)
+close all; figure; plot(rmsTrace)
+rmsMax = 9e-7;
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+outlierInds
+outlierInds(1:10)
+outlierInds = rmsTrace>rmsMax;
+sum(outlierInds==0);
+sum(outlierInds==0)
+sum(outlierInds==1)
+length(rmsTrace)
+length(micTrace);
+length(micTrace)
+doc hpFilt
+filt = designfilt('bandpassiir', 'FilterOrder', 20,...
+'HalfPowerFrequency1', 1000, 'HalfPowerFrequency2', 500000,...
+'SampleRate', micFs);
+filt = designfilt('bandpassiir', 'FilterOrder', 20,...
+'HalfPowerFrequency1', 1000, 'HalfPowerFrequency2', 50000,...
+'SampleRate', micFs);
+close all ; fvtool(hpFilt);
+clear hpFilt
+close all ; fvtool(filt);
+micTrace = filter(hpFilt, micTrace);
+figure; plot(micTrace(100000:200000))
+micTrace = filter(filt, micTrace);
+figure; plot(micTrace(100000:200000))
+figure; plot(micTrace)
+rmsTrace = rms(micTrace, .005*micFs, .004, 0);
+rmsTrace = resample(rmsTrace, breathRmsNewFs, length(rmsTrace)/(length(micTrace)*(1/micFs)));
+length(rmsTrace)/(length(micTrace)*(1/micFs)
+length(rmsTrace)/(length(micTrace)*(1/micFs))
+doc interp
+figure; plot(rmsTrace)
+micFs*length(micTrace)
+((1/micFs)*length(micTrace))
+ans/60
+recordingDuration = ((1/micFs)*length(micTrace));
+temp = interp1(1:length(rmsTrace), rmsTrace, 1:(1/breathNewFs):recordingDuration);
+breathTrace = breathin.values;
+breathRmsNewFs = 1000;
+recordingDuration = ((1/micFs)*length(micTrace));
+rmsTrace = rms(micTrace, .005*micFs, .004, 0);
+temp = interp1(1:length(rmsTrace), rmsTrace, 1:(1/breathNewFs):recordingDuration);
+recordingDuration = ((1/micFs)*length(micTrace));
+temp = interp1(1:length(rmsTrace), rmsTrace, 1:(1/breathNewFs):recordingDuration);
+temp = interp1(1:length(rmsTrace), rmsTrace, 1:(1/breathRmsNewFs):recordingDuration);
+length(temp)
+length(micTrace)
+length(micTrace)/100
+rmsTrace = interp1(1:length(rmsTrace), rmsTrace, 1:(1/breathRmsNewFs):recordingDuration);
+rmsTraceRaw = rms(micTrace, .005*micFs, .004, 0);
+rmsTrace = interp1(linspace(0,recordingLng,length(rmsTrace)), rmsTraceRaw, linspace(0,recordingLng,(recordingLng*breathRmsNewFs)));
+recordingLng = ((1/micFs)*length(micTrace));
+rmsTrace = interp1(linspace(0,recordingLng,length(rmsTrace)), rmsTraceRaw, linspace(0,recordingLng,(recordingLng*breathRmsNewFs)));
+rmsTrace = interp1(linspace(0,recordingLng,length(rmsTraceRaw)), rmsTraceRaw, linspace(0,recordingLng,(recordingLng*breathRmsNewFs)));
+figure; plot(rmsTrace)
+outlierInds = rmsTrace>rmsMax;% | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+length(outlierInds)
+sum(outlierInds==1)
+sum(outlierInds==0)
+outlierInds = rmsTrace'>rmsMax;% | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+if stopInds(1)<startInds(1); stopInds=stopInds(2:end); end % make sure first index is a start Ind
+if length(stopInds)<length(startInds); stopInds(end+1) = length(rmsTrace); end % make the last stop time the very last sample if necessary
+% get times of epochs where scores are valid for continuous stretches of time
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>continousStretchMin;
+startTimes = startInds(validEpochs)/breathRmsNewFs + 1;
+stopTimes = stopInds(validEpochs)/breathRmsNewFs - 1;
+% plot
+% close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+% plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+% hold on; scatter(startTimes, ones(1, length(startTimes))*20)
+% hold on; scatter(stopTimes, ones(1, length(startTimes))*20)
+% stitch things together
+micTraceStitched = [];
+breathTraceStitched = [];
+rmsTraceStitched = [];
+for i=1:length(startTimes)
+micTraceStitched = [micTraceStitched; micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i))];
+breathTraceStitched = [breathTraceStitched; breathTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+rmsTraceStitched = [rmsTraceStitched; rmsTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+end
+startInds
+if stopInds(1)<startInds(1); stopInds=stopInds(2:end); end % make sure first index is a start Ind
+if length(stopInds)<length(startInds); stopInds(end+1) = length(rmsTrace); end % make the last stop time the very last sample if necessary
+% get times of epochs where scores are valid for continuous stretches of time
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>continousStretchMin;
+startTimes = startInds(validEpochs)/breathRmsNewFs + 1;
+stopTimes = stopInds(validEpochs)/breathRmsNewFs - 1;
+% stitch things together
+micTraceStitched = [];
+breathTraceStitched = [];
+rmsTraceStitched = [];
+for i=1:length(startTimes)
+micTraceStitched = [micTraceStitched; micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i))];
+breathTraceStitched = [breathTraceStitched; breathTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+rmsTraceStitched = [rmsTraceStitched; rmsTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+end
+for i=1:length(startTimes)
+micTraceStitched = [micTraceStitched, micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i))];
+breathTraceStitched = [breathTraceStitched, breathTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+rmsTraceStitched = [rmsTraceStitched, rmsTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+end
+micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i))
+size(micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i))
+size(micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i)))
+1;2
+[1;2]
+size(rmsTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i)))
+rmsTrace = interp1(linspace(0,recordingLng,length(rmsTraceRaw)), rmsTraceRaw, linspace(0,recordingLng,(recordingLng*breathRmsNewFs)))';
+get(gca)
+get(gca,'ylim')
+get(gca)
+set(gca,'TickDir','out','ytick',[5000 10000 15000 20000])
+close all
+log(10)
+ln(10)
+doc log
+allRmsSPL = 94+20*log(allRms/.002)-100;
+figure; plot(mean(allRmsSPL,1))
+close all; allRmsSPL = 94+20*log10(allRms/.002)-100; plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002)-100; plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*(log10(allRms./.002)-100); plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002); plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002)+10; plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002); plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002)+100; plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002)+10; plot(mean(allRmsSPL,1));
+close all; allRmsSPL = 94+20*log10(allRms./.002)+100; plot(mean(allRmsSPL,1));
+clear all
+load('eg cells\long recording.mat')
+figure; plot(long_recording_Ch15.values(1,:))
+times(1)
+long_recording_Ch15.times(1)
+long_recording_Ch15.times(end)
+long_recording_Ch15.times(end)/60
+long_recording_Ch15.values;.resolution
+1/long_recording_Ch15.resolution
+1/long_recording_Ch15.resolution/1000
+(1/long_recording_Ch15.resolution)/1000
+(1/long_recording_Ch15.interval)/1000
+figure; plot(mean(spikes,1))
+timeBins = 0:5:55;
+timeBins
+i=1
+subplot(binNum,1,i)
+inds = spikeTimes>timeBins(i) && spikeTimes<timeBins(i);
+timeBins = 0:5:55;
+binNum = length(timeBins-1);
+inds = spikeTimes>timeBins(i) && spikeTimes<timeBins(i);
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i);
+inds
+figure; plot(inds)
+max(inds)
+timeBins(1)
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+sum(inds)
+sum(inds)/length(spikeTimes)
+timeBins(i+1)
+spikeTimes
+timeBins = (0:5:55) *60;
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+sum(inds)/length(spikeTimes)
+timeBins
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+inds
+figure; plot(inds)
+binNum
+load('eg cells\long recording.mat')
+spikes = long_recording_Ch15.values;
+spikeTimes = long_recording_Ch15.times;
+fs = 1/long_recording_Ch15.values.interval;
+binNum = 10;
+timeBins = (0:binNum:55) *60;
+load('eg cells\long recording.mat')
+spikes = long_recording_Ch15.values;
+spikeTimes = long_recording_Ch15.times;
+fs = 1/long_recording_Ch15.values.interval;
+spikeTimes = long_recording_Ch15.times;
+fs = 1/long_recording_Ch15.values.interval;
+fs = 1/long_recording_Ch15.interval;
+for i=1:binNum
+subplot(binNum,1,i)
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+plot(mean(spikes(inds,:),1));
+end
+i
+range(1:10)
+range(spikes(1,:))
+range(spikes)
+range(spikes,2)
+mean(range(spikes,2))
+i
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+timeBins(i+1)
+length(timBins)
+length(timeBins)
+timeBins = (0:binNum:55) *60;
+length(timeBins)
+timeBins = linspace(0,55,binNum) *60;
+rgb2hsl([0 0 255])
+rgb2hsv([0 0 255])
+rgb2hsv([0 0 1])
+rgb2hl([0 0 1])
+timeBins = linspace(0,55,binNum+1) *60;
+doc colormap
+binNum = 10;
+timeBins = linspace(0,55,binNum+1) *60;
+close all; figure('color', 'white');
+separation = .5 * mean(range(spikes,2));
+colors = colormap(winter(binNum);
+colors = colormap(winter(binNum));
+spikeAmps = max(spikes,2);
+spikeAmps
+doc max
+spikeAmps = max(spikes,2);
+spikeAmps = max(spikes,[],2);
+for i=1:binNum
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+means = mean(spikeAmps(inds));
+errs = std(spikeAmps(inds));
+end
+binNum = 20;
+timeBins = linspace(0,55,binNum+1) *60;
+spikeAmps = max(spikes,[],2);
+close all; figure('color', 'white');
+traceColors = colormap(winter(binNum));
+means = nan(timeBins,1);
+errs = nan(timeBins,1);
+length(timeBins(1:end-1))
+length(means)
+spikes.^2
+spikeAmps = sum(spikes.^2,2);
+clear all
+spikes = long_recording_Ch15.values;
+spikeTimes = long_recording_Ch15.times;
+fs = 1/long_recording_Ch15.interval;
+spikes = long_recording_Ch15.values;
+spikes = long_recording_Ch7.values;
+spikeTimes = long_recording_Ch7.times;
+fs = 1/long_recording_Ch7.interval;
+spikes = long_recording_Ch7.values;
+fs = 1/long_recording_Ch7.interval;
+spikeTimes = linspace(0,length(voltage)/fs,length(voltage));
+voltage = long_recording_Ch7.values;
+fs = 1/long_recording_Ch7.interval;
+spikeTimes = linspace(0,length(voltage)/fs,length(voltage));
+spikesTimes(end)
+spikeTimes(end)
+spikeTimes(end)/60
+clear all
+rgb2hsv([0 0 1])
+darkness = .5;
+values = linspace(darkness,1,length(traceTimes));
+blue = rgb2hsv([0 0 1]);
+doc repmat
+traceColors = repmat(blue,length(traceTimes,1);
+traceColors = repmat(blue,length(traceTimes,1));
+traceColors = repmat(blue,length(traceTimes,1),1);
+traceColors = repmat(blue,length(traceTimes),1);
+traceColors
+traceColors(:,3) = values;
+load('eg cells\long recording.mat')
+spikes = long_recording_Ch15.values;
+spikeTimes = long_recording_Ch15.times;
+fs = 1/long_recording_Ch15.interval;
+binNum = 15;
+timeBins = linspace(0,55,binNum+1) *60;
+close all; figure('color', 'white');
+separation = .4 * mean(range(spikes,2));
+darkness = .5;
+darkValues = linspace(darkness,1,length(traceTimes));
+traceColors = repmat(rgb2hsv([0 0 1]),length(traceTimes),1);
+traceColors(:,3) = darkValues;
+traceColors = hsv2rgb(traceColors);
+for i=1:binNum
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+hold on;
+plot(mean(spikes(inds,:),1)+ (i-1)*separation, 'color', traceColors(i,:), 'linewidth', 2);
+end
+i
+inds = spikeTimes>timeBins(i) & spikeTimes<timeBins(i+1);
+inds
+mean(spikes(inds,:),1)
+(i-1)*separation
+traceColors
+clear all
+rms
+prePad = .15;
+breathSmps = round(meanDuration*breathRmsNewFs + prePad*breathRmsNewFs);
+allBreaths = nan(length(breathTimes), breathSmps);
+allRms = nan(length(breathTimes), breathSmps);
+allBreaths = nan(length(breathTimes), breathSmps);
+length(breathTimes)
+figure; plot(rmsTrace)
+startInds
+length(micTraceStitched)
+startTimes
+validEpochs
+clear all
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+length(rmsTrace)
+length(breathTrace)
+rmsTrace = interp1(linspace(0,recordingLng,length(rmsTraceRaw)), rmsTraceRaw, linspace(0,length(breathTrace),(recordingLng*breathRmsNewFs)))';
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+length(breathTrace)
+length(rmsTrace)
+rmsTrace = interp1(linspace(0,length(breathTrace),length(rmsTraceRaw)), rmsTraceRaw, linspace(0,length(breathTrace),(recordingLng*breathRmsNewFs)))';
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+length(rmsTrace)
+length(breathTrace)
+outlierInds = rmsTrace>rmsMax;
+rmsTrace = interp1(linspace(0,length(breathTrace),length(rmsTraceRaw)), rmsTraceRaw, linspace(0,length(breathTrace), length(breathTrace))';
+rmsTrace = interp1(linspace(0,length(breathTrace),length(rmsTraceRaw)), rmsTraceRaw, linspace(0,length(breathTrace), length(breathTrace)))';
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+length(rmsTrace)
+figure; plot(rmsTrace);
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+outlierInds
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+startInds
+length(startInds)
+length(stopInds)
+if stopInds(1)<startInds(1); stopInds=stopInds(2:end); end % make sure first index is a start Ind
+if length(stopInds)<length(startInds); stopInds(end+1) = length(rmsTrace); end % make the last stop time the very last sample if necessary
+length(startInds)
+length(stopInds)
+% get times of epochs where scores are valid for continuous stretches of time
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>continousStretchMin;
+startTimes = startInds(validEpochs)/breathRmsNewFs + 1;
+stopTimes = stopInds(validEpochs)/breathRmsNewFs - 1;
+validEpochs
+sum(validEpochs)
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>0;
+sum(validEpochs)
+breathRmsNewFs
+continousStretchMin=10
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>continousStretchMin;
+sum(validEpochs)
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>1; sum(validEpochs)
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>0; sum(validEpochs)
+continousStretchMin = 30;
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+hold on; scatter(startTimes, ones(1, length(startTimes))*20)
+hold on; scatter(stopTimes, ones(1, length(startTimes))*20)
+rmsTraceRaw = rms(micTrace, .005*micFs, .004*micFs, 0);
+rmsTraceRaw = rms(micTrace, .005*micFs, .001*micFs, 0);
+rmsTrace = interp1(linspace(0,length(breathTrace),length(rmsTraceRaw)),...
+rmsTraceRaw,...
+linspace(0,length(breathTrace), length(breathTrace)))';
+rmsTrace
+figure; plot(rmsTrace);
+rmsMax = 6e-6;
+prePad = .15;
+breathSmps = round(meanDuration*breathRmsNewFs + prePad*breathRmsNewFs);
+allBreaths = nan(length(breathTimes), breathSmps);
+allRms = nan(length(breathTimes), breathSmps);
+length(breathTimes)
+i
+startInd = breathTimes(i)*breathRmsNewFs - prePad*breathRmsNewFs;
+allBreaths(i,:) = breathTraceStitched(startInd:startInd+breathSmps-1);
+startInd
+breathTimes(1)
+breathRmsNewFs
+breathTimes(2)
+hold on; scatter(startTimes, ones(1, length(startTimes))*20, 'red')
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+hold on; scatter(startTimes, ones(1, length(startTimes))*20, 'red')
+hold on; scatter(stopTimes, ones(1, length(startTimes))*20, 'blue')
+plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+clear all
+startInds
+breathTimes
+breathTimes(1)
+breathTimes(2)
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+hold on; scatter(startTimes, ones(1, length(startTimes))*20, 'red')
+hold on; scatter(stopTimes, ones(1, length(startTimes))*20, 'blue')
+plot(allBreathsZ(1,:))
+allBreathsZ(1,:)
+clear all
+breathTimes
+size(breathTimes)
+figure; plot(zscore(breathTraceStitched)); hold on; plot(zscore(rmsTraceStitched));
+figure; plot(breathTimes, breathTraceStitchedZ)
+figure; plot(breathTimes, zscore(breathTraceStitched))
+figure; plot(zscore(breathTraceStitched))
+figure; plot(zscore(breathTraceStitched)); hold on; scatter(breathTimes*breathRmsNewFs, zeros(1,length(breathTimes)))
+length(breathTimes)
+figure; plot(zscore(breathTraceStitched)); hold on; scatter(breathTimes*breathRmsNewFs, zeros(1,length(breathTimes)))
+% get breath-triggered averages
+breathThresh = 0;
+zLims = [-1 1]; % only include breaths whose duration is witin this stdev range
+% get all breath times
+startInds = find([0; diff(breathTraceStitched>breathThresh)]==1);
+breathTimes = startInds/breathRmsNewFs;
+breathDurationZscores = zscore(diff(breathTimes));
+meanDuration = mean(diff(breathTimes));
+breathTimes = breathTimes(breathDurationZscores>zLims(1) & breathDurationZscores<zLims(2));
+% collect all trials
+prePad = .15;
+breathSmpNum = round(meanDuration*breathRmsNewFs + prePad*breathRmsNewFs);
+breathTimes = breathTimes(2:end);
+allBreaths = nan(length(breathTimes), breathSmpNum);
+allRms = nan(length(breathTimes), breathSmpNum);
+for i=1:length(breathTimes)
+startInd = breathTimes(i)*breathRmsNewFs - prePad*breathRmsNewFs;
+allBreaths(i,:) = breathTraceStitched(startInd:startInd+breathSmpNum-1);
+allRms(i,:) = rmsTraceStitched(startInd:startInd+breathSmpNum-1);
+end
+% plot breathing/RMS means
+rmsColor = [54 140 80]/256;
+breathColor = [66 179 244]/256;
+transparency = 0.1;
+allBreathsZ = zscore(allBreaths,0,2);
+allRmsZ = zscore(allRms,0,2);
+% get dbSPL
+allRmsSPL = 94+20*log10(allRms./.002)-40;
+allRmsSPL = allRmsSPL - mean(allRmsSPL(:));
+close all; figure;
+xvals = linspace(-prePad,meanDuration,breathSmpNum);
+% plot single trials
+% for i=1:length(breathTimes)
+%     hold on; plot(xvals, allBreathsZ(i,:), 'color', [breathColor transparency]);
+%     hold on; plot(xvals, allRmsZ(i,:), 'color', [rmsColor transparency]);
+% end
+% plot means
+hold on; plot(xvals, mean(allBreathsZ,1), 'linewidth', 3, 'color', breathColor);
+hold on; plot(xvals, mean(allRmsSPL,1), 'linewidth', 3, 'color', rmsColor);
+% plot stds
+% hold on; plot(xvals, mean(allBreathsZ,1) + std(allBreathsZ,1)/sqrt(size(allBreathsZ,1)), 'linewidth', 1, 'color', breathColor);
+% hold on; plot(xvals, mean(allBreathsZ,1) - std(allBreathsZ,1)/sqrt(size(allBreathsZ,1)), 'linewidth', 1, 'color', breathColor);
+% hold on; plot(xvals, mean(allRmsZ,1) + std(allRmsZ,1)/sqrt(size(allRmsZ,1)), 'linewidth', 1, 'color', rmsColor);
+% hold on; plot(xvals, mean(allRmsZ,1) - std(allRmsZ,1)/sqrt(size(allRmsZ,1)), 'linewidth', 1, 'color', rmsColor);
+% plot sems
+hold on; plot(xvals, mean(allBreathsZ,1) + std(allBreathsZ,1), 'linewidth', 1, 'color', breathColor);
+hold on; plot(xvals, mean(allBreathsZ,1) - std(allBreathsZ,1), 'linewidth', 1, 'color', breathColor);
+hold on; plot(xvals, mean(allRmsSPL,1) + std(allRmsZ,1), 'linewidth', 1, 'color', rmsColor);
+hold on; plot(xvals, mean(allRmsSPL,1) - std(allRmsZ,1), 'linewidth', 1, 'color', rmsColor);
+timeScale = .1;
+set(gca, 'xlim', [-.1 .4])
+set(gca,'Visible','off')
+line([0 timeScale], [min(get(gca,'ylim')) min(get(gca,'ylim'))])
+yScale = 2;
+line([0 0], [min(get(gca,'ylim')) min(get(gca,'ylim')) + yScale]);
+length(breathTimes)
+figure; plot(zscore(breathTraceStitched)); hold on; scatter(breathTimes*breathRmsNewFs, zeros(1,length(breathTimes)))
+%-- 4/6/2017 11:50 AM --%
+% user settings
+file = 'mic recordings\080217_011.mat';
+breathRmsNewFs = 1000;
+rmsMax = 6e-5;
+breathMax = 50;
+continousStretchMin = 30;
+% load and resample breathing trace
+load(file, 'breathin')
+% user settings
+file = 'mic recordings\080217_011.mat';
+breathRmsNewFs = 1000;
+rmsMax = 6e-5;
+breathMax = 50;
+continousStretchMin = 30;
+load(file, 'breathin')
+breathingOriginalFs = round(1/breathin.interval);
+breathTrace = breathin.values;
+breathTrace = resample(breathTrace, breathRmsNewFs, breathingOriginalFs);
+clear breathin
+breathingOriginalFs
+1/breathin.interval
+load(file, 'breathin')
+1/breathin.interval
+clear breathin
+load(file, 'mic')
+1/mic.interval
+micFs = round(1/mic.interval);
+micFs
+micTrace = mic.values;
+clear mic
+maxTime = length(micTrace)/micFs;
+maxTime
+maxTime/60
+micTimes = linspace(0,maxTime,length(micTrace));
+breathTimes = linspace(0,maxTime,length(breathTrace));
+micTimes(end)
+breathTimes(end)
+filt = designfilt('bandpassiir', 'FilterOrder', 20,...
+'HalfPowerFrequency1', 1000, 'HalfPowerFrequency2', 45000,...
+'SampleRate', micFs);
+fvtool(filt);
+filt = designfilt('bandpassiir', 'FilterOrder', 2,...
+'HalfPowerFrequency1', 1000, 'HalfPowerFrequency2', 45000,...
+'SampleRate', micFs);
+close all ; fvtool(filt);
+filt = designfilt('bandpassiir', 'FilterOrder', 10,...
+'HalfPowerFrequency1', 1000, 'HalfPowerFrequency2', 45000,...
+'SampleRate', micFs);
+close all ; fvtool(filt);
+micTrace = filter(filt, micTrace);
+length(micTrace)
+rmsTraceRaw = rms(micTrace, .005*micFs, .001*micFs, 0);
+length(rmsTrace)
+length(rmsTraceRaw)
+length(micTrace)
+open rms
+rms(1:100, 5, 1, 0)
+ans(1)
+sqrt(1:5.^2)
+sqrt(sum(1:5.^2))
+sqrt(sum(1:5.^2)/5)
+length(micTrace)
+length(rms(1:100, 5, 1, 0))
+length(rms(1:100, 5, 1, 1))
+rms(1:5)
+rms(end)
+rmsTraceRaw = rms(micTrace, .005*micFs, .001*micFs, 0);
+rmsTraceRaw = rmsSliding(micTrace, .005*micFs, .001*micFs, 0);
+windowlength
+delta = windowlength - overlap;
+delta
+seropad
+zeropad
+zeropad=1
+indices = 1:delta:length(signal);
+indices
+indices(1)
+length(signal) - indices(end) + 1 < windowlength
+windowlength
+if zeropad
+signal = [zeros(1,round(windowlength/2)) signal zeros(1,round(windowlength/2))];
+end
+signal = [zeros(round(windowlength/2),1); signal; zeros(round(windowlength/2),1)];
+signal(1:1000)
+figure; plot(signal(1:1000))
+indices = 1:delta:length(signal);
+indices
+length(indices
+length(indices)
+y = zeros(1, length(indices));
+signal = signal.^2;
+index = 0;
+for i = indices
+disp(find(indices==i,1,'first')/length(indices));
+index = index+1;
+% Average and take the square root of each window
+y(index) = sqrt(mean(signal(i:i+windowlength-1)));
+end
+indices = indices(1:find(indices+windowlength-1 <= length(signal), 1, 'last'));
+index = 0;
+for i = indices
+disp(find(indices==i,1,'first')/length(indices));
+index = index+1;
+% Average and take the square root of each window
+y(index) = sqrt(mean(signal(i:i+windowlength-1)));
+end
+figure; plot(y(1:1000))
+y(1)
+y(2)
+signal(1:10)
+signal(501)
+signal(502)
+signal(1000)
+length(y)
+rmsTraceRaw = rmsSliding(micTrace, .005*micFs, .001*micFs, 0);
+length(signal)
+dbquit
+rmsTraceRaw = rmsSliding(micTrace, .005*micFs, .001*micFs, 0);
+figure; plot(rmsTraceRaw)
+length(rmsTraceRaw)
+rmsTrace = interp1(linspace(1,length(breathTrace),length(rmsTraceRaw)),...
+rmsTraceRaw,...
+1:length(breathTrace))';
+length(rmsTrace)
+length(micTrace))
+length((micTrace))
+length((breathTrace))
+% find where samples fall in and out of acceptable std range
+outlierInds = rmsTrace>rmsMax | abs(zscore(breathTrace))>breathMax;
+startInds =  find([0; diff(outlierInds)]==-1);
+stopInds =  find([0; diff(outlierInds)]==1);
+if stopInds(1)<startInds(1); stopInds=stopInds(2:end); end % make sure first index is a start Ind
+if length(stopInds)<length(startInds); stopInds(end+1) = length(rmsTrace); end % make the last stop time the very last sample if necessary
+% get times of epochs where scores are valid for continuous stretches of time
+validEpochs = ((stopInds-startInds)/breathRmsNewFs)>continousStretchMin; sum(validEpochs)
+startTimes = startInds(validEpochs)/breathRmsNewFs + 1;
+stopTimes = stopInds(validEpochs)/breathRmsNewFs - 1;
+close all; figure('units', 'normalized', 'position', [0 0 .9 .9]);
+plot(breathTimes, zscore(rmsTrace), 'linewidth', 3); hold on; plot(breathTimes, zscore(breathTrace), 'linewidth', 3);
+hold on; scatter(startTimes, ones(1, length(startTimes))*20, 'red')
+hold on; scatter(stopTimes, ones(1, length(startTimes))*20, 'blue')
+% stitch things together
+micTraceStitched = [];
+breathTraceStitched = [];
+rmsTraceStitched = [];
+for i=1:length(startTimes)
+micTraceStitched = [micTraceStitched; micTrace(micTimes>startTimes(i) & micTimes<stopTimes(i))];
+breathTraceStitched = [breathTraceStitched; breathTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+rmsTraceStitched = [rmsTraceStitched; rmsTrace(breathTimes>startTimes(i) & breathTimes<stopTimes(i))];
+end
+figure; plot(zscore(breathTraceStitched)); hold on; plot(zscore(rmsTraceStitched));
+figure
+plot((rmsTraceStitched))
+breathThresh = 0;
+zLims = [-1 1]; % only include breaths whose duration is witin this stdev range
+% get all breath times
+startInds = find([0; diff(breathTraceStitched>breathThresh)]==1);
+breathTimes = startInds/breathRmsNewFs;
+breathDurationZscores = zscore(diff(breathTimes));
+meanDuration = mean(diff(breathTimes));
+breathTimes = breathTimes(breathDurationZscores>zLims(1) & breathDurationZscores<zLims(2));
+prePad = .15;
+breathSmpNum = round(meanDuration*breathRmsNewFs + prePad*breathRmsNewFs);
+breathTimes = breathTimes(2:end);
+allBreaths = nan(length(breathTimes), breathSmpNum);
+allRms = nan(length(breathTimes), breathSmpNum);
+for i=1:length(breathTimes)
+startInd = breathTimes(i)*breathRmsNewFs - prePad*breathRmsNewFs;
+allBreaths(i,:) = breathTraceStitched(startInd:startInd+breathSmpNum-1);
+allRms(i,:) = rmsTraceStitched(startInd:startInd+breathSmpNum-1);
+end
+% plot breathing/RMS means
+rmsColor = [54 140 80]/256;
+breathColor = [66 179 244]/256;
+transparency = 0.1;
+allBreathsZ = zscore(allBreaths,0,2);
+allRmsZ = zscore(allRms,0,2);
+% get dbSPL
+allRmsSPL = 94+20*log10(allRms./.002)-40;
+allRmsSPL = allRmsSPL - mean(allRmsSPL(:));
+close all; figure;
+xvals = linspace(-prePad,meanDuration,breathSmpNum);
+% plot means
+hold on; plot(xvals, mean(allBreathsZ,1), 'linewidth', 3, 'color', breathColor);
+hold on; plot(xvals, mean(allRmsSPL,1), 'linewidth', 3, 'color', rmsColor);
+% plot stds
+% hold on; plot(xvals, mean(allBreathsZ,1) + std(allBreathsZ,1)/sqrt(size(allBreathsZ,1)), 'linewidth', 1, 'color', breathColor);
+% hold on; plot(xvals, mean(allBreathsZ,1) - std(allBreathsZ,1)/sqrt(size(allBreathsZ,1)), 'linewidth', 1, 'color', breathColor);
+% hold on; plot(xvals, mean(allRmsZ,1) + std(allRmsZ,1)/sqrt(size(allRmsZ,1)), 'linewidth', 1, 'color', rmsColor);
+% hold on; plot(xvals, mean(allRmsZ,1) - std(allRmsZ,1)/sqrt(size(allRmsZ,1)), 'linewidth', 1, 'color', rmsColor);
+% plot sems
+hold on; plot(xvals, mean(allBreathsZ,1) + std(allBreathsZ,1), 'linewidth', 1, 'color', breathColor);
+hold on; plot(xvals, mean(allBreathsZ,1) - std(allBreathsZ,1), 'linewidth', 1, 'color', breathColor);
+hold on; plot(xvals, mean(allRmsSPL,1) + std(allRmsZ,1), 'linewidth', 1, 'color', rmsColor);
+hold on; plot(xvals, mean(allRmsSPL,1) - std(allRmsZ,1), 'linewidth', 1, 'color', rmsColor);
+timeScale = .1;
+set(gca, 'xlim', [-.1 .4])
+set(gca,'Visible','off')
+line([0 timeScale], [min(get(gca,'ylim')) min(get(gca,'ylim'))])
+yScale = 2;
+line([0 0], [min(get(gca,'ylim')) min(get(gca,'ylim')) + yScale]);
+figure; plot(zscore(breathTraceStitched)); hold on; scatter(breathTimes*breathRmsNewFs, zeros(1,length(breathTimes)))
+% user settings
+window = .005;
+overlap = .001;
+freqsToCompute = 1000:100:20000;
+% initialize storage variable
+smpTrace = micTraceStitched((breathTimes(1)-prePad)*micFs:(breathTimes(1)+meanDuration)*micFs);
+[smpSpect, freqs, times] = spectrogram(smpTrace, window*micFs, overlap*micFs, freqsToCompute, micFs);
+allSpects = nan(length(breathTimes), size(smpSpect,1), size(smpSpect,2));
+for i=1:length(breathTimes)
+disp(i/length(breathTimes))
+trace = micTraceStitched((breathTimes(i)-prePad)*micFs:(breathTimes(i)+meanDuration)*micFs);
+allSpects(i,:,:) = spectrogram(trace, window*micFs, overlap*micFs, freqsToCompute, micFs);
+end
+avgSpect = squeeze(mean(abs(allSpects),1));
+figure; imagesc(times, flipud(freqs), flipud(avgSpect)); set(gca,'YDir','normal');
+set(gca,'TickDir','out','ytick',[1000 5000 10000 15000 20000])
+doc spectrogram
+close all
+spectNew = 20*log10(avgSpect);
+% plot spectrogram
+avgSpect = 20*log(squeeze(mean(abs(allSpects),1)));
+figure; imagesc(times, flipud(freqs), flipud(avgSpect)); set(gca,'YDir','normal');
+set(gca,'TickDir','out','ytick',[1000 5000 10000 15000 20000])
+doc spectrogram
+close all
+colorbar
+spectrogram(trace, window*micFs, overlap*micFs, freqsToCompute, micFs, 'yaxis')
+colorbar
+set(gca,'TickDir','out','ytick',[1000 5000 10000 15000 20000 30000])
+mean(spkRates(:))
+sum(kernel)
+figure; plot(kernel)
+kernel = arrayfun(@(x) exp(-x/20)-exp(-x/5), 0:1/fs:1);
+figure; plot(kernel)
+kernel = arrayfun(@(x) exp(-x/20)-exp(-x/5), 0:1000/fs:1000);
+mean(spkRates(:))
+mean(1/spkRates(:))
+spikesVec
+max(spikesVec)
+spikesVec(spikesVec>1)=1*80;
+max(spikesVec)
+spikesVec = hist(spikes.times, times+(1/fs)/2);
+spikesVec
+hist(spikesVec)
+figure; hist(spikesVec)
+max(spikesVec)
+spikeRate
+spikeRate = conv(kernel, spikesVec*80);
+spikeRate = conv(kernel, spikesVec*1000);
+spikeRate = spikeRate(1:length(spikesVec));
+spikeRate
+mean(spikeRate)
+figure; plot(spikeTrain)
+figure; plot(spikeRate)
+kernel
+figure; plot(kernel)
+figure; plot(gausswin(600,2))
+spikeRate = conv(spikesVec, kernel);
+figure; plot(spikeRate)
+mean(spkRate)
+mean(spkRates)
+mean(spkRates(:))
+1/mean(spkRates(:))
+1:5^(-1)
+1:5.^(-1)
+1:5
+1/(1:5)
+1./(1:5)
+figure; plot(spikeRate)
+times = linspace(0,length(Voltage.values)/fs,length(Voltage.values));
+figure; plot(spikeRate)
+times(end)
+kernel = arrayfun(@(x) exp(-x/.02)-exp(-x/.005), 0:1/fs:1);
+max(spikesVec)
+figure; plot(spikeRate)
+figure; plot(kernel)
+kernel = arrayfun(@(x) exp(-x/(.02*fs))-exp(-x/(.005*fs)), 0:1*fs);
+figure; plot(kernel)
+%-- 4/9/2017 5:12 PM --%
+load('scatterData.mat')
+load('scatterData2.mat')
+save('scatterData2.mat', 'scatterData')
+load('scatterData2.mat')
+load('scatterData.mat')
+load('scatterData2.mat')
+figWidth = 8.5;
+figHeight = 4;
+vbfcolor = cond2color;
+vbscolor = cond1color;
+cvecolor = [0.851 0.3255 0.098];
+get(gca,'ylims')
+get(gca,'ylim')
+.5:1:2
+-.5:.5:2
+set(gca, 'units', 'inches', 'position', [1 1 figHeight figHeight], 'box', 'off', ...
+'ytick', -.5:.5:2)
+close all
+%-- 4/13/2017 8:11 PM --%
+i=1
+load(['trace' num2str(i) '.mat'])
+figure('units', 'normalized', 'color', 'white', 'position', [0 0 1 1])
+figure; plot(Voltage.values)
+set(gca, 'box', 'off', 'xtic', {}, 'ytick', {})
+set(gca, 'box', 'off', 'xtick', {}, 'ytick', {})
+plot(Voltage.values);
+set(gca, 'box', 'off', 'xtick', {}, 'ytick', {})
+plot(zscore(Voltage.values));
+plot(zscore(breaths.values));
+plot(zscore(raw_nasa.values));
+plot(zscore(Voltage.values));
+hold on; plot(zscore(raw_nasa.values));
+lngth = length(Voltage.values)*Voltage.interval;
+subaxis(length(traces),1,i, 'margin', .01, 'spacing', .01)
+set(gca, 'box', 'off', 'xtick', {}, 'ytick', {})
+plot(linspace(0,lngth,length(Voltage.values)), zscore(Voltage.values));
+hold on; plot(linspace(0,lngth,length(raw_nasa.values)), zscore(raw_nasa.values));
+subaxis(length(traces),1,i, 'margin', .01, 'spacing', .01)
+set(gca, 'box', 'off', 'xtick', {}, 'ytick', {})
+plot(linspace(0,lngth,length(Voltage.values)), zscore(Voltage.values));
+hold on; plot(linspace(0,lngth,length(raw_nasa.values*2)), zscore(raw_nasa.values));
+set(gca, 'axis', 'off')
+axis off
+close all
+raw_nasa.interval
+close all
+%-- 5/11/2017 7:49 PM --%
+figure; plot(breathin.values)
+subaxis(3,1,1, 'margin', 0.1, 'spacing', 0.1);
+breathin.interval
+subaxis(3,1,1, 'margin', 0.01, 'spacing', 0.01);
+plot(breathin.values(1:duration*(1/breathin.interval)));
+1/breathin.interval
+length(brathin.values)
+length(breathin.values)
+1:3
+subaxis(3,1,1, 'margin', 0.01, 'spacing', 0.01);
+plot(linspace(0,duration,duration*(1/breathin.interval)),...
+breathin.values(1:duration*(1/breathin.interval)));
+doc line
+line([0 scaleBar], [0 0], 'linewidth', 3);
+line([0 scaleBar*(1/Voltage.interval)], [0 0], 'linewidth', 3);
+line([0 scaleBar], [0 0], 'linewidth', 3);
+subaxis(3,1,3);
+plot(linspace(0,duration,duration*(1/Voltage.interval)),...
+Voltage.values(1:duration*(1/Voltage.interval)));
+set(gca, 'visible', 'off')
+% add scale bar
+line([0 scaleBar], [0 0], 'linewidth', 3);
+ypos = min(get(gca, 'ylim'));
+line([0 scaleBar], [0 0], 'linewidth', 3, 'color', [0 0 0]);
+clear all
+length(breath.values) * breathin.interval
+length(breathin.values) * breathin.interval
+duration/rows
+breathin.interval
+clear all
+load('am mod long eg.mat')
+sprkPair.interval
+spkrPair.interval
+breathin.values = zscores(breathin.values);
+Undefined function or variable 'zscores'.
+breathin.values = zscore(breathin.values);
+gca(xlim)
+get(gca,'ylim')
+max(breathin.values)
+clear all
+load('190417_001.mat')
+clear all
+load([file '.mat'], 'Ch10');
+load('170509_002.mat')
+load([file '.mat'], 'Ch10');
+load('170509_002.mat')
+allSpks
+clear all
+spontRate = mean(silenceRates);
+% HEAT MAP
+% set interpolation values
+totalFreqs = 100;
+totalLevels = 100;
+freqsQ = linspace(min(freqs(freqs>0)), max(freqs), totalFreqs);
+levelsQ = linspace(min(levels), max(levels), totalLevels);
+avgRates = nan(length(levels), length(freqs));
+for l = 1:length(levels)
+for f = 1:length(freqs)
+inds = [resps.freq]==freqs(f) & [resps.level]==levels(l);
+avgRates(l,f) = mean(resps(inds).nspikes) / resps(find(inds,1,'first')).duration;
+end
+end
+avgRatesInterp = interp2(freqs(freqs>0), levels', avgRates(:,2:end), freqsQ, levelsQ');
+% HEAT MAP
+% set interpolation values
+totalFreqs = 100;
+totalLevels = 100;
+freqsQ = linspace(min(freqs(freqs>0)), max(freqs), totalFreqs);
+levelsQ = linspace(min(levels), max(levels), totalLevels);
+avgRates = nan(length(levels), length(freqs));
+for l = 1:length(levels)
+for f = 1:length(freqs)
+inds = [resps.freq]==freqs(f) & [resps.level]==levels(l);
+avgRates(l,f) = mean(resps(inds).nspikes) / resps(find(inds,1,'first')).duration;
+end
+end
+% HEAT MAP
+% set interpolation values
+totalFreqs = 100;
+totalLevels = 100;
+freqsQ = linspace(min(freqs(freqs>0)), max(freqs), totalFreqs);
+levelsQ = linspace(min(levels), max(levels), totalLevels);
+avgRates = nan(length(levels), length(freqs));
+resps(inds).nspikes
+{resps(inds).nspikes}
+resps(inds).nspikes
+resps{inds}.nspikes
+[resps(inds).nspikes]
+avgRates = nan(length(levels), length(freqs));
+for l = 1:length(levels)
+for f = 1:length(freqs)
+inds = [resps.freq]==freqs(f) & [resps.level]==levels(l);
+avgRates(l,f) = mean([resps(inds).nspikes]) / resps(find(inds,1,'first')).duration;
+end
+end
+avgRatesInterp = interp2(freqs(freqs>0), levels', avgRates(:,2:end), freqsQ, levelsQ');
+mean([resps(inds).nspikes])
+[resps(inds).nspikes]
+inds
+[resps.freq]==freqs(f) & [resps.level]==levels(l)
+resps.freq
+resps.level
+inds
+sum(inds)
+respons.freq
+resps.freq
+resps.level
+l
+f
+levels(l)
+freqs(f)
+l
+f
+levels
+sum([resps.freq]==freqs(f))
+sum([resps.level]==levels(l))
+sum([resps.freq]==freqs(f) & [resps.level]==levels(l))
+freq(1)
+freqs(f)
+resps(find(inds,1,'first')).duration
+inds
+sum(inds)
+isempty(inds)
+resps.level
+[resps.level]
+[resps.level]==0
+sum([resps.level]==0)
+freqs
+% USER PARAMETERS
+file = '170509_002';
+close all
+% kernel settings
+fs = 10000;
+kernelRise = .001;
+kernelFall = .01;
+kernelSig = .002;
+% inst. rate plots
+pre = .05;
+post = .25;
+ylims = [0 500];
+% load file
+load([file '.mat'], 'spikes');
+allSpks = spikes.times;
+load([file '_responsedata.mat']);
+% get freqs and levels used in map
+freqs =  unique([resps.freq]);   % -1 is noise, 0 is silence (for spontaneous rate calculation) !!! must fix this, as I will use 0db in real life
+% freqs = freqs(freqs~=0);
+levels = unique([resps.level]);
+maxTime = 5*resps(1).duration;
+silenceRates = [];
+% get spontaneous rates
+for i=1:length(resps)
+if resps(i).freq == 0
+silenceRates(end+1) = resps(i).nspikes / resps(i).duration;
+end
+end
+spontRate = mean(silenceRates);
+% HEAT MAP
+% set interpolation values
+totalFreqs = 100;
+totalLevels = 100;
+freqsQ = linspace(min(freqs(freqs>0)), max(freqs), totalFreqs);
+levelsQ = linspace(min(levels), max(levels), totalLevels);
+avgRates = nan(length(levels), length(freqs));
+for l = 1:length(levels)
+for f = 1:length(freqs)
+inds = [resps.freq]==freqs(f) & [resps.level]==levels(l);
+if sum(inds)~=0
+avgRates(l,f) = mean([resps(inds).nspikes]) / resps(find(inds,1,'first')).duration;
+end
+end
+end
+avgRatesInterp = interp2(freqs(freqs>0), levels', avgRates(:,2:end), freqsQ, levelsQ');
+% HEAT MAP
+% set interpolation values
+totalFreqs = 100;
+totalLevels = 100;
+freqsQ = linspace(min(freqs(freqs>0)), max(freqs), totalFreqs);
+levelsQ = linspace(min(levels), max(levels), totalLevels);
+avgRates = nan(length(levels), length(freqs));
+for l = 1:length(levels)
+for f = 1:length(freqs)
+inds = [resps.freq]==freqs(f) & [resps.level]==levels(l);
+if sum(inds)~=0
+avgRates(l,f) = mean([resps(inds).nspikes]) / resps(find(inds,1,'first')).duration;
+end
+end
+end
+avgRatesInterp = interp2(freqs(freqs>0), levels', avgRates(:,2:end), freqsQ, levelsQ');
+freqs
+% load file
+load([file '.mat'], 'spikes');
+allSpks = spikes.times;
+load([file '_responsedata.mat']);
+allSpks
+clear all
+close all
+resps.freq
+[resps.freq]
+[resps.level]
+sum([resps.level]==12.5)
+sum([resps.level]==0)
+sum([resps.level]==-.25)
+sum([resps.level]==-2.5)
+sum([resps.level]==5)
+sum([resps.level]==0)
+[resps.freq]([resps.level]==0)
+temp = [resps.freq]
+temp(([resps.level]==0))
+load([file '_responsedata.mat']);
+temp = [resps.freq]; temp(([resps.level]==0))
+load('170509_002_responsedata.mat')
+[resps.level]
+sum([resps.level] == 0)
+close all
+breathin.values
+close all
+breathin.values
+figure; plot(amMod)
+amMod
+length(amMod)
+length(breathin.values)*breatin.interval
+length(breathin.values)*breathin.interval
+1000/60
+length(amMod)
+amMod
+clear all
+duration = 20;
+fs = 44100;
+amMod = zscore(breathin.values(1:length*(1/breathin.interval)));
+duration = 20;
+fs = 44100;
+length(amMod)
+length(amMod) / 44100
+rand(1,10)
+doc rand
+figure; plot(noise)
+audiowrite('am noise.mp4', noise, fs)
+range(noies)
+range(noise)
+min(noise)
+max(noise)
+load('am mod signal.mat')
+clear all
+load('am mod signal.mat')
+amMod = ampMod.values(1:duration*(1/ampMod.interval));
+min(ampMod)
+ampMod = ampMod.values(1:duration*(1/ampMod.interval));
+min(ampMod)
+max(ampMod)
+plot(noise);
+set(gca, 'visible', 'off')
+%-- 5/12/2017 5:13 PM --%
+cells(1).name = '170505_000'
+cells(1).pre = [210 380]
+cells(2).name = '170505_001'
+cells(2).pre = [0 4252];
+cells(2).pre = [];
+cells(2).pair = [0,4252];
+cells(3).post = [];
+cells(3).name = '170505_002';
+cells(3).pair = [0 2612];
+save('cell info.mat', 'cells')
+load('recordings/170505_000.mat')
+load('recordings/170505_002.mat')
+load('processed data/170505_000.mat')
+clear all
+load('cell info.mat')
+load('processed data/170505_000.mat')
+ampModTemp = ampdMod;
+spikesTemp = spikes;
+ampModTemp = ampdMod;
+ampModTemp = ampMod;
+load('processed data/170505_001.mat')
+ampModTemp = [ampModTemp.values ampMod.values];
+ampModTemp = [ampModTemp.values; ampMod.values];
+load('processed data/170505_000.mat')
+ampModTemp = ampMod;
+spikesTemp = spikes;
+load('processed data/170505_001.mat')
+ampModTemp = [ampModTemp.values; ampMod.values];
+length(ampModTemp.values)*ampModTemp.interval
+length(ampModTemp.values)=
+length(ampModTemp.values)
+ampModTemp.interval
+length(ampModTemp.values)
+length(ampModTemp.values)*ampModTemp.interval
+figure; plot(ampMod.values)
+cells(4).name = '170505_all';
+cells(2).pair = [4,4252];
+load('processed data/170505_001.mat')
+load('processed data/170505_000.mat')
+[4,4252] + llength(ampModTemp.values)*ampModTemp.interval]
+[4,4252] + length(ampModTemp.values)*ampModTemp.interval
+length(ampModTemp.values)*ampModTemp.interval]
+[4,4252] + length(ampModTemp.values)*ampModTemp.interval
+cells(2).pair = ans;
+4 + length(ampModTemp.values)*ampModTemp.interval
+[ans length(ampMod)*ampMod.interval]
+[4 + length(ampModTemp.values)*ampModTemp.interval length(ampMod.values)*ampMod.interval]
+load('processed data/170505_000.mat')
+[4+length(ampModTemp.values)*ampModTemp.interval length(ampModTemp.values)*ampModTemp.interval]
+[4+length(ampMod.values)*ampMod.interval length(ampModTemp.values)*ampModTemp.interval]
+cells(4).pair = ans;
+figure; plot(ampMod.values)
+diff(ampMod.values>brtThresh)==1
+sum(diff(ampMod.values>brtThresh)==1)
+find(diff(ampMod.values>brtThresh)==1)
+breathInds = find(diff(ampMod.values>brtThresh)==1);
+figure; plot(ampMod.values)l; hold on; scatter(breathInds, ones(1,length(find(diff(ampMod.values>brtThresh)==1))))
+doc gausConv
+figure; plot(instRate(1:5000))
+allBreaths = nan(length(breathInds), (post+pre)/ampMod.interval);
+allResponses = nan(length(breathInds), (post+pre)/ampMod.interval);
+length(breathInds(i)-pre/ampMod.interval : breathInds(i)+post/ampMod.interval
+length(breathInds(i)-pre/ampMod.interval : breathInds(i)+post/ampMod.interval)
+i
+figure; plot(mean(allBreaths,1))
+load('cell info.mat')
+cells(2).pair = [4,4252];
+save('cell info.mat', 'cells')
+load('processed data/170505_000.mat')
+load('cell info.mat')
+cells(5) = [];
+cells(4) = [];
+clear all
+load('processed data/170505_000.mat')
+4+length(ampMod.values)*ampMod.interval
+load('cell info.mat')
+cells(5) = [];
+save('cell info.mat', 'cells')
+{cells.name}
+[cells.name]
+{cells.name}
+strfind({cells.name}, 'ya')
+strfind({cells.name}, file)
+file = '170505_all.mat';
+strfind({cells.name}, file)
+find(strfind({cells.name}, file))
+strfind({cells.name}, file)
+strfind({cells.name}, file) == 1
+strfind({cells.name}, file)
+cellfun(@(s) ~isempty(strfind(s), file), {cells.name}))
+cellfun(@(s) ~isempty(strfind(s), file), {cells.name})
+cellfun(@(s) ~isempty(strfind(s, file), {cells.name}))
+{cells.name}
+cellfun(@(s) ~isempty(strfind(s, file), {cells.name}))
+doc cellfun
+cellfun(@(s) ~isempty(strfind(s, file), cells.name))
+cells.name
+cellfun(@(s) ~isempty(strfind(s, file), cells.name))
+{cells.name}
+cellfun(@(s) ~isempty(strfind(s, file), {cells.name}))
+cellfun(@(s) ~isempty(strfind(s, file)), {cells.name})
+find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}))
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+fildInd
+fileInd
+cells(fileInd).pre
+cells(fileInd).pre(1)
+conditions(cells(fileInd).pre(1)/ampMod.interval:cells(fileInd).pre(2)/ampMod.interval) = 1;
+conditions
+figure; plot(conditions)
+figure; plot(conditions);
+figure; plot(mean(allBreaths,1))
+figure; plot(mean(allResponses,1))
+close all
+conditions
+figure; plot(conditions)
+figure; plot(conditionsTemp)
+close all
+breaths
+conditions
+conditions==1
+sum(conditions==1)
+clear all
+close all
+dbquit
+dbcont
+dbquit
+linspace(1,100,5)
+i=2
+breaths = allBreaths(conditions==i,:);
+responses = allResponses(conditions==i,:);
+inds = linspace(1, size(breaths,1), traceNumbers(i));
+% plot histo
+subaxis(3,3,i);
+% plot responses
+subaxis(3,3,i+3);
+plot(mean(responses,1))
+% plot breaths
+subaxis(3,3,i+6);
+plot(mean(breaths,1))
+traceNumbers = [1,10,1]; % [pre, pairing, post]... number of lines in time series per condition
+breaths = allBreaths(conditions==i,:);
+responses = allResponses(conditions==i,:);
+inds = linspace(1, size(breaths,1), traceNumbers(i));
+% plot histo
+subaxis(3,3,i);
+% plot responses
+subaxis(3,3,i+3);
+plot(mean(responses,1))
+% plot breaths
+subaxis(3,3,i+6);
+plot(mean(breaths,1))
+inds
+inds = linspace(1, size(breaths,1), traceNumbers(i)+1);
+colormap('autumn', 5)
+cmap
+cmap = colormap(copper(inds-1));
+cmap
+inds
+cmap
+cmap(j)
+mean(allResponses,1)
+mean(allResponses(:))
+std(allResponses(:))
+ylims
+ylims = [0 mean(allResponses(:)+std(allResponses(:)*2))];
+ylims = [0 mean(allResponses(:)+std(allResponses(:)*2))]
+ylims = [0 mean(allResponses(:)+std(allResponses(:)*1.5))]
+figure; plot(1:5, 1:5)
+doc stem
+stem(mean(breaths,1))
+figure; stem(1:5, 1:5)
+allBreaths
+breathInds
+size(breathInds)
+size(conditions==1)
+sum(conditions==1)
+conditionBreathInds = breathInds(conditions==i,:);
+conditionBreathInds
+conditionBreathInds = breathInds(conditions==1);
+conditionBreathInds
+length(breathInds)
+length(conditions)
+startTime = conditionBreathInds(j)*ampMod.interval;
+j=1
+startTime = conditionBreathInds(j)*ampMod.interval;
+i
+i=2
+j=1
+startTime = conditionBreathInds(j)*ampMod.interval;
+startTime
+conditionBreathInds = breathInds(conditions==1);
+startTime = conditionBreathInds(j)*ampMod.interval;
+conditionBreathInds
+startTime = conditionBreathInds(j)*ampMod.interval;
+startTime
+conditionBreathInds = breathInds(conditions==i);
+startTime = conditionBreathInds(j)*ampMod.interval;
+startTime
+trialSpikes = subSpikes(subSpikes>-pre subSpikes<post);
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+subSpikes = spikes.times - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+trialSpikes
+length(trialSpikes)
+doc scatter
+scatter(trialSpikes, ones(length(trialSpikes),1)*j,...
+'.'); hold on
+sum(conditions==1)
+figure; scatter(1:5,1:5,1,'.')
+figure; scatter(1:5,1:5,.001,'.')
+open subaxis
+get(gca)
+get(gca, 'position')
+get(gca, 'units')
+set(gca, 'position', [.36 .68 .26 .11])
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.')
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.', 'markersize', 4)
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.', 'markersize', 1)
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.', 'markersize', 10)
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.', 'markersize', 1)
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.', 'markersize', .01)
+plot(trialSpikes, ones(length(trialSpikes),1)*j, '.', 'markersize', .0001)
+dbcont
+dbquit
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'marker', '.', 'markersize', .1, 'color', cmap(j,:)); hold on
+hold off
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'marker', 'o', 'markersize', .1, 'color', cmap(j,:));
+hold off
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'markersize', .1, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'.', 'markersize', .1, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'marker', 'o', 'markersize', 4, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'marker', '1', 'markersize', 4, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'marker', '.', 'markersize', 4, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'.', 'markersize', 4, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'.', 'markersize', 100, 'color', cmap(j,:));
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'.', 'markersize', 1, 'color', cmap(j,:));
+histoTrials = 500;
+linspace(1,size(breaths,1),histoTrials)
+j
+histoTrials
+j
+size(breaths,1)
+round(linspace(1,size(breaths,1),histoTrials))
+i
+startTime = conditionBreathInds(j)*ampMod.interval;
+subSpikes = spikes.times - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+plot(trialSpikes, ones(length(trialSpikes),1)*j,...
+'.', 'markersize', 1, 'color', cmap(j,:));
+j
+histoTrials
+histoTrials(2)
+j
+startTime = conditionBreathInds(histoTrials(j))*ampMod.interval;
+histoTrials(j)
+conditionBreathInds(histoTrials(j))*ampMod.interval
+conditionBreathInds(histoTrials(j))
+histohistoTrials(j)
+histoTrials(j)
+conditionBreathInds
+i
+startTime = conditionBreathInds(histoTrials(j))*ampMod.interval;
+conditionBreathInds
+dbquit
+% get time block indices and colors
+inds = linspace(1, size(breaths,1), traceNumbers(i)+1);
+cmap = colormap(copper(length(inds)-1));
+% plot spike responses
+subaxis(4,3,i+3);
+for j=1:length(inds)-1
+plot(linspace(-pre,post,size(responses,2)),...
+mean(responses(round(inds(j):inds(j+1)),:),1),...
+'color', cmap(j,:), 'linewidth', 2); hold on
+set(gca, 'box', 'off', 'ylim', ylims, 'xlim', [-pre post])
+end
+% plot histo
+subaxis(4,3,[i i+3]);
+histoTrials = round(linspace(1,size(breaths,1),histoTrialNum));
+firstTrialTime = conditionBreathInds(1)*ampMod.interval;
+for j=1:histoTrialNum
+startTime = conditionBreathInds(histoTrials(j))*ampMod.interval;
+subSpikes = spikes.times - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+plot(trialSpikes, ones(length(trialSpikes),1)*(startTime-firstTrialTime),...
+'.', 'markersize', 1, 'color', cmap(1,:)); hold on
+end
+set(gca, 'box', 'off', 'xlim', [-pre post], 'ylim', [0 (startTime-firstTrialTime)])
+pos = get(gca, 'position');
+set(gca, 'position', [pos(1) .5 pos(3) .45])
+% get time block indices and colors
+inds = linspace(1, size(breaths,1), traceNumbers(i)+1);
+cmap = colormap(copper(length(inds)-1));
+% plot spike responses
+subaxis(4,3,i+6);
+for j=1:length(inds)-1
+plot(linspace(-pre,post,size(responses,2)),...
+mean(responses(round(inds(j):inds(j+1)),:),1),...
+'color', cmap(j,:), 'linewidth', 2); hold on
+set(gca, 'box', 'off', 'ylim', ylims, 'xlim', [-pre post])
+end
+% plot breaths
+subaxis(4,3,i+9);
+for j=1:length(inds)-1
+plot(linspace(-pre,post,size(responses,2)),...
+mean(breaths(round(inds(j):inds(j+1)),:),1),...
+'color', cmap(j,:), 'linewidth', 2); hold on
+set(gca, 'box', 'off', 'ylim', [0 5], 'xlim', [-pre post])
+end
+dbquit
+load('cell info.mat')
+cells(5).name = '';
+cells(5).name = '170505_004';
+cells(5).pre = [1 2946];
+cells(5).pre = [2542,2946];
+cells(5).pair = 2947;
+cells(5).pair = [2947 3000];
+cells(5).pair = [2947,4252];
+cells(6).name = '170505_005';
+cells(6).pair = [0 2306];
+cells(6).post = [3020 3045];
+save('cell info.mat', 'cells')
+clear all
+cells(7).name = '170505_all';
+cells(7).pre = ampModTemp.pre;
+cells(7).pre = cells(5).pre;
+cells(4).name = '170505_all1.mat';
+cells(7).name = '170505_all2';
+cells(7).post = cells(5).post + length(ampModTemp.values)*ampModTemp.interval;
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\dcn\breathing, am pairing\processed data\170505_all2.mat')
+clear all
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\dcn\breathing, am pairing\processed data\170505_all2.mat')
+figure; plot(ampMod.values)
+spikes.times
+length(spikes.times)
+breathInds
+allBreaths
+figure; plot(mean(allBreaths,1))
+% plot everything
+close all;
+figure('color', 'white', 'units', 'normalized', 'position', [.1 .1 .6 .8])
+subaxis(4,3,1,'margin',.05,'spacing',.05);
+ylims = [0 mean(allResponses(:)+std(allResponses(:)*1.25))];
+% iterate through conditions
+for i=1:3
+% collect all trials in condition
+conditionBreathInds = breathInds(conditions==i);
+breaths = allBreaths(conditions==i,:);
+responses = allResponses(conditions==i,:);
+if ~isempty(conditionBreathInds)
+% plot histo
+subaxis(4,3,[i i+3]);
+histoTrials = round(linspace(1,size(breaths,1),histoTrialNum));
+firstTrialTime = conditionBreathInds(1)*ampMod.interval;
+for j=1:histoTrialNum
+startTime = conditionBreathInds(histoTrials(j))*ampMod.interval;
+subSpikes = spikes.times - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+plot(trialSpikes, ones(length(trialSpikes),1)*(startTime-firstTrialTime),...
+'.', 'markersize', 1, 'color', [0 0 0]); hold on
+end
+set(gca, 'box', 'off', 'xlim', [-pre post], 'ylim', [0 (startTime-firstTrialTime)])
+pos = get(gca, 'position');
+set(gca, 'position', [pos(1) .5 pos(3) .45])
+% get time block indices and colors
+inds = linspace(1, size(breaths,1), traceNumbers(i)+1);
+cmap = colormap(copper(length(inds)-1));
+% plot spike responses
+subaxis(4,3,i+6);
+for j=1:length(inds)-1
+plot(linspace(-pre,post,size(responses,2)),...
+mean(responses(round(inds(j):inds(j+1)),:),1),...
+'color', cmap(j,:), 'linewidth', 2); hold on
+set(gca, 'box', 'off', 'ylim', ylims, 'xlim', [-pre post])
+end
+% plot breaths
+subaxis(4,3,i+9);
+for j=1:length(inds)-1
+plot(linspace(-pre,post,size(responses,2)),...
+mean(breaths(round(inds(j):inds(j+1)),:),1),...
+'color', cmap(j,:), 'linewidth', 2); hold on
+set(gca, 'box', 'off', 'ylim', [0 5], 'xlim', [-pre post])
+end
+end
+end
+conditionBreathInds
+breathInds
+conditions
+conditionsTemp(cells(fileInd).pre(1)/ampMod.interval:cells(fileInd).pre(2)/ampMod.interval) = 1;
+fileInd
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+cells(7).name = '170505_all2';
+save('cell info.mat', 'cells')
+file
+fileInd
+{cells.name}
+i
+conditions
+figure; plot(conditions)
+length(ampModTemp.values)*ampModTemp.interval
+clear all
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\dcn\breathing, am pairing\processed data\170505_all2.mat')
+max(spikes.times)
+load('processed data/170505_005.mat')
+clear all
+load('processed data/170505_005.mat')
+load('processed data/170505_004.mat')
+ampModTemp = ampMod;
+spikesTemp = spikes;
+max(spikes.times)
+4252+2306
+fileInd
+cells(7).name = '170505_all2';
+save('cell info.mat', 'cells')
+sum(conditions==3)
+cells(7).pre = [2700,2850];
+save('cell info.mat', 'cells')
+ampMod.interval
+file = '170505_all2';
+brtThresh = 2;
+pre = .05;
+post = .4;
+kernelSig = .002;
+traceNumbers = [1,5,1]; % [pre, pairing, post]... number of lines in time series per condition
+histoTrialNum = 500;
+% load file
+load(['processed data\' file])
+load('cell info.mat')
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+% find breaths
+breathInds = find(diff(ampMod.values>brtThresh)==1);
+breathInds = breathInds(1:end-1); % remove final breath, which may be truncated
+figure; plot(breathin.values)
+breathin.values = zscore(breathin.values);
+figure; plot(breathin.values)
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(find(diff(breathin.values>brtThresh)==1)))); % plot breath inds
+breathInds
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds));
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))); % plot breath inds
+brtThresh = 0;
+% find breaths
+breathin.values = zscore(breathin.values);
+breathInds = find(diff(breathin.values>brtThresh)==1);
+breathInds = breathInds(1:end-1); % remove final breath, which may be truncated
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))); % plot breath inds
+figure; plot(breathin.values); hold on; scatter(breathInds, zeros(1,length(breathInds))); % plot breath inds
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))*brtThresh); % plot breath inds
+close all
+cells(7).name = '170505_all2';
+save('cell info.mat', 'cells')
+load('cell info.mat')
+i
+conditions
+figure; plot(conditions)
+try conditionsTemp(cells(fileInd).post(1)/breathin.interval:cells(fileInd).post(2)/breathin.interval) = 3; catch; disp('no post condition'); end
+max(conditionsTemp)
+sum(conditionsTemp==3)
+sum(conditionsTemp==3)/1000
+sum(conditions==3)
+sum(conditions==2)
+sum(conditions==1)
+conditionsTemp = zeros(length(breathin.values),1);
+try conditionsTemp(cells(fileInd).pre(1)/breathin.interval:cells(fileInd).pre(2)/breathin.interval) = 1; catch; disp('no pre condition'); end
+try conditionsTemp(cells(fileInd).pair(1)/breathin.interval:cells(fileInd).pair(2)/breathin.interval) = 2; catch; disp('no pair condition'); end
+try conditionsTemp(cells(fileInd).post(1)/breathin.interval:cells(fileInd).post(2)/breathin.interval) = 3; catch; disp('no post condition'); end
+figure; plot(breathin.values); hold on; plot(conditionsTemp)
+length(breathin.values)
+length(conditionsTemp)
+length(breathin.values)
+length(conditionsTemp)
+length(breathin.values)*breathin.interval
+file = '170505_all2';
+load('cell info.mat')
+load(['processed data\' file])
+length(breathin.values)*breathin.interval
+cells(7).pre = [2700,2946];
+cells(5).pre = [2700,2850];
+save('cell info.mat', 'cells')
+for j=1:length(inds)-1
+plot(linspace(-pre,post,size(responses,2)),...
+mean(breaths(round(inds(j):inds(j+1)),:),1),...
+'color', cmap(j,:), 'linewidth', 2); hold on
+set(gca, 'box', 'off', 'ylim', [-2 4], 'xlim', [-pre post])
+end
+(round(inds(j):inds(j+1)),:),1)
+round(inds(j):inds(j+1))
+dbcont
+cells(4).name = '170505_all1.mat';
+clear all
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))*brtThresh); % plot breath inds
+close all
+doc savefig
+cells(8).pre = [0 165];
+cells(8).name = '170509_001';
+cells(8).pair = [2190];
+cells(8).pair = [301 2190];
+cells(8).pair = [301,2190; 1, 2634];
+cells(8).pair = [301,2190;1,3604];
+cells(8).pair = [301,2190;2230,3604];
+cells(9).name = '170509_002';
+cells(9).pair = [0,1576];
+cells(9).post = [1578,1620];
+save('cell info.mat', 'cells')
+clear all
+cells(10).name = '170509_all';
+breathinTemp = breathin;
+spikesTemp = spikes;
+cells(9).pair(2)
+cells(9).post
+cells(9).pair(2) + length(breathinTemp.values)*breathinTemp.interval
+cells(9).post + length(breathinTemp.values)*breathinTemp.interval
+figure; plot(breath.values)
+figure; plot(breathin.values)
+size(cells(fileInd).pair,1)
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+% user settings
+file = '170509_all1';
+brtThresh = 0;
+pre = .15;
+post = .4;
+kernelSig = .002;
+traceNumbers = [1,5,1]; % [pre, pairing, post]... number of lines in time series per condition
+histoTrialNum = 500;
+% load file
+load(['processed data\' file])
+load('cell info.mat')
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+% find breaths
+breathin.values = zscore(breathin.values);
+breathInds = find(diff(breathin.values>brtThresh)==1);
+breathInds = breathInds(2:end-1); % remove first and last breath, which may be truncated
+% figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))*brtThresh); % plot breath inds
+% get inst spike rates
+instRate = gausConv(spikes.times, 1/breathin.interval, kernelSig);
+% get conditions for all indices (0:none, 1:pre, 2:pair, 3:post)
+conditionsTemp = zeros(length(breathin.values),1);
+file = '170509_all';
+brtThresh = 0;
+pre = .15;
+post = .4;
+kernelSig = .002;
+traceNumbers = [1,5,1]; % [pre, pairing, post]... number of lines in time series per condition
+histoTrialNum = 500;
+% load file
+load(['processed data\' file])
+load('cell info.mat')
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+% find breaths
+breathin.values = zscore(breathin.values);
+breathInds = find(diff(breathin.values>brtThresh)==1);
+breathInds = breathInds(2:end-1); % remove first and last breath, which may be truncated
+% figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))*brtThresh); % plot breath inds
+% get inst spike rates
+instRate = gausConv(spikes.times, 1/breathin.interval, kernelSig);
+% get conditions for all indices (0:none, 1:pre, 2:pair, 3:post)
+conditionsTemp = zeros(length(breathin.values),1);
+% user settings
+file = '170509_all';
+brtThresh = 0;
+pre = .15;
+post = .4;
+kernelSig = .002;
+traceNumbers = [1,5,1]; % [pre, pairing, post]... number of lines in time series per condition
+histoTrialNum = 500;
+% load file
+load(['processed data\' file])
+load('cell info.mat')
+fileInd = find(cellfun(@(s) ~isempty(strfind(s, file)), {cells.name}));
+% find breaths
+breathin.values = zscore(breathin.values);
+breathInds = find(diff(breathin.values>brtThresh)==1);
+breathInds = breathInds(2:end-1); % remove first and last breath, which may be truncated
+% figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))*brtThresh); % plot breath inds
+% get inst spike rates
+instRate = gausConv(spikes.times, 1/breathin.interval, kernelSig);
+% get conditions for all indices (0:none, 1:pre, 2:pair, 3:post)
+conditionsTemp = zeros(length(breathin.values),1);
+% pre
+try
+conditionsTemp(cells(fileInd).pre(1)/breathin.interval:cells(fileInd).pre(2)/breathin.interval) = 1;
+catch; disp('no pre condition'); end
+size(cells(fileInd).pair,1)
+% pre
+try
+conditionsTemp(cells(fileInd).pre(1)/breathin.interval:cells(fileInd).pre(2)/breathin.interval) = 1;
+catch; disp('no pre condition'); end
+% pair
+try
+for i=1:size(cells(fileInd).pair,1)
+conditionsTemp(cells(fileInd).pair(i,1)/breathin.interval:cells(fileInd).pair(i,2)/breathin.interval) = 2;
+end
+catch; disp('no pair condition'); end
+% post
+try
+conditionsTemp(cells(fileInd).post(1)/breathin.interval:cells(fileInd).post(2)/breathin.interval) = 3;
+catch; disp('no post condition'); end
+% figure; plot(conditions);
+% collect all breathing trials
+allBreaths = nan(length(breathInds), (post+pre)/breathin.interval);
+allResponses = nan(length(breathInds), (post+pre)/breathin.interval);
+conditions = zeros(length(allBreaths),1);
+for i=1:length(breathInds)
+allBreaths(i,:) = breathin.values(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponses(i,:) = instRate(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+conditions(i) = conditionsTemp(breathInds(i));
+end
+figure; plot(conditions);
+allBreaths
+% collect all breathing trials
+allBreaths = nan(length(breathInds), (post+pre)/breathin.interval);
+allResponses = nan(length(breathInds), (post+pre)/breathin.interval);
+conditions = zeros(length(allBreaths),1);
+for i=1:length(breathInds)
+allBreaths(i,:) = breathin.values(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponses(i,:) = instRate(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+conditions(i) = conditionsTemp(breathInds(i));
+end
+allBreaths(i,:) = breathin.values(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+i
+length(breathInds)
+breathInds = breathInds(3:end-2); % remove first and last breath, which may be truncated
+% collect all breathing trials
+allBreaths = nan(length(breathInds), (post+pre)/breathin.interval);
+allResponses = nan(length(breathInds), (post+pre)/breathin.interval);
+conditions = zeros(length(allBreaths),1);
+for i=1:length(breathInds)
+allBreaths(i,:) = breathin.values(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponses(i,:) = instRate(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+conditions(i) = conditionsTemp(breathInds(i));
+end
+cells(fileInd).pre(1)
+cells(fileInd).pre(1)/breathin.interval
+cells(fileInd).pre(2)/breathin.interval
+cells(9).pair = [1,1576];
+save('cell info.mat', 'cells')
+cells(9).pair = [0,1576];
+cells(8).pre = [1,165];
+save('cell info.mat', 'cells')
+hist(diff(breathInds*breathin.interval))
+figure; hist(diff(breathInds*breathin.interval), 20)
+diff(breathInds*breathin.interval)<breathMin
+diff(breathInds*breathin.interval)<breathin
+breathMin = .2; % all breaths shorter than this duration will be removed
+diff(breathInds*breathin.interval)<breathMin
+sum(diff(breathInds*breathin.interval)<breathMin)
+length(breathInds)
+find(diff(breathInds*breathin.interval)<breathMin)
+hist(diff(breathInds*breathin.interval))
+figure; hist(diff(breathInds*breathin.interval), 20)
+figure; hist(diff(breathInds*breathin.interval), 100)
+set(gca)
+set(gca,'xtick',[])
+set(gca,'xticklabelmode', 'manual', 'xtick',[])
+axis off
+set(gca,'xticklabel')
+set(gca,'xticklabel', '')
+axis on
+set(gca,'xticklabel', '')
+set(gca,'xtick',[1 2 3 4 5], 'xticklabel',{})
+get(gca,'xticklabel')
+set(gca, 'ytick', [])
+xlabel('time (ms)', 'fontweight', 'bold')
+title('ya')
+conditionTitles{1}
+subaxis(4,3,[i i+3]); hold on
+dbquit
+axes(handles.histAxis);
+dbquit
+for j=1:length(inds)-1
+line([post post]*1000, [inds(j) inds(j+1)], 'color', cmap(j,:));
+end
+line([pre pre]*1000, [inds(j) inds(j+1)], 'color', cmap(j,:));
+line([-pre -pre]*1000, [inds(j) inds(j+1)], 'color', cmap(j,:));
+line([-pre -pre]*1000, [inds(j) inds(j+1)], 'color', cmap(j,:), 'linewidth', 5);
+dbquit
+inds(1)
+histoTrials(1)
+set(gca, 'visible', 'off')
+set(gca, 'visible', 'on')
+set(gca, 'xcolor', [1 1 1])
+get(gca)
+set(gca, 'ycolor', [0 0 0])
+doc linspace
+colorpicker
+uisetcolor
+color = [34 110 67] / 256;
+figure; plot(1,1, 'color', color)
+clr = [34 110 67] / 256;
+clear color
+clr = [34 110 67] / 256;
+figure; plot(1,1, 'color', color)
+figure; plot(1,1, 'color', clr)
+figure; plot(1,1, 'color', [1 1 1])
+figure; plot(1,1, 'color', [0 0 0])
+figure; plot(1,1, 'color', [0 0 0], 'linewidth', 100)
+figure; scatter(1,1, 'color', [0 0 0], 'linewidth', 100)
+figure; plot(1:2,1:2, 'color', [0 0 0], 'linewidth', 100)
+figure; plot(1:2,1:2, 'color', clr, 'linewidth', 100)
+figure; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [50,50], 'color', clr*.1, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [10,10], 'color', clr*.1, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [3,3], 'color', clr*.1, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*.1, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*.5, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*.1.5, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*.1.2, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*1.2, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*1.5, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*2, 'linewidth', 50)
+close all; plot([1,2], [1,1], 'color', clr, 'linewidth', 50); hold on; plot([1,2], [2,2], 'color', clr*.5, 'linewidth', 50)
+linspace(clr, clr*.5, length(inds)-1);
+colormapeditor
+cmap
+figure; plot(1:5)
+get(gca)
+close all
+%-- 5/14/2017 10:13 PM --%
+pptfigure
+pptfigure add
+pptfigure('add')
+pptfigure add
+pptfigure delete
+pptfigure add
+clear all
+pptfigure add
+pptfigure all
+pptfigure on
+pptfigure off
+pptfigure on
+doc print
+print('-clipboard', '-dmeta')
+pptfigure off
+%-- 5/14/2017 11:03 PM --%
+pptfigure(fig)
+exportToPPTX
+figure; plot(mean(allBreaths,1))
+print('-painters', '-clipboard', '-dmeta')
+print('-painters', '-clipboard', '-dsvg')
+print('-painters', '-clipboard', '-dmeta')
+print('-painters', '-dsvg')
+print('-painters', '-clipboard', '-dmeta')
+%-- 5/15/2017 7:27 PM --%
+doc videofilewriter
+linspace(1,0,10)
+audioTrace = noiseTrace(prePostSmps : prePostSmps + fs/frameRate);
+i==length(frameInds)
+audioTrace = audioTrace .* linspace(1,0,length(audioTrace))
+audioTrace = audioTrace .* linspace(1,0,length(audioTrace))'
+audioTrace = noiseTrace(prePostSmps : prePostSmps + fs/frameRate);
+audioTrace = audioTrace .* linspace(1,0,length(audioTrace))'
+noise(startInd:startInd + ramp*fs) = noise(startInd:startInd + ramp*fs) * linspace(0,1,length(noise(startInd:startInd + ramp*fs)));
+startInd = frameInds(i)-prePostSmps+1;
+load('am mod long eg.mat')
+duration = 20;
+windowSize = 10;
+fs = 44100;
+signalLims = [-1 2];
+frameRate = 30;
+ylims = [-1 .6];
+startTime = 30;
+ramp = 5;
+% create AM signal from raw breathing trace
+amMod = breathin.values(startTime/breathin.interval : startTime/breathin.interval + duration/breathin.interval); % grab raw values
+amMod = zscore(amMod);
+amMod(amMod<signalLims(1)) = signalLims(1); % set lower limit
+amMod(amMod>signalLims(2)) = signalLims(2); % set upper limit
+amMod = (amMod-signalLims(1)) / diff(signalLims); % rescale from 0->1
+amMod  = resample(amMod, fs, 1/breathin.interval); % upsample to audio frequency
+% make noise
+noise = rand(length(amMod),1)*2-1;
+noise = noise.*amMod;
+% make video
+vidWriter = vision.VideoFileWriter('amPairVid.avi', 'FrameRate', 30, 'AudioInputPort', true);
+close all
+figure('color', 'white', 'units', 'inches', 'position', [.5 2 13.33 1]);
+prePostSmps = .5*windowSize*fs;
+frameInds = prePostSmps : (1/frameRate)*fs : length(amMod)-prePostSmps;
+% initialize plot
+breathTrace = amMod(frameInds(1)-prePostSmps+1 : frameInds(1)+prePostSmps);
+breathPlot = plot(breathTrace, 'color', [100 100 100]/256, 'linewidth', 5); hold on
+breathPlot.YDataSource = 'breathTrace';
+noiseTrace = noise(frameInds(1)-prePostSmps+1 : frameInds(1)+prePostSmps);
+noisePlot = plot(noiseTrace, 'color', [193 0 0]/256);
+noisePlot.YDataSource = 'noiseTrace';
+% add line in the middle
+line([prePostSmps prePostSmps], ylims, 'color', [0 0 0], 'linewidth', 5)
+set(gca, 'ylim', ylims, 'visible', 'off', 'xlim', [0 windowSize*fs],...
+'units', 'normalized', 'position', [0 0 1 1]);
+startInd = frameInds(i)-prePostSmps+1;
+noise(startInd:startInd + ramp*fs) = noise(startInd:startInd + ramp*fs) * linspace(0,1,length(noise(startInd:startInd + ramp*fs)));
+startInd = frameInds(i)-prePostSmps+1;
+startInd = frameInds(1)-prePostSmps+1;
+noise(startInd:startInd + ramp*fs) = noise(startInd:startInd + ramp*fs) * linspace(0,1,length(noise(startInd:startInd + ramp*fs)));
+noise(startInd:startInd + ramp*fs) = noise(startInd:startInd + ramp*fs) .* linspace(0,1,length(noise(startInd:startInd + ramp*fs)))';
+frameInds(end)
+endInd = frameInds(end)+1+fs/frameRate;
+endInd
+%-- 5/17/2017 9:27 PM --%
+clear all
+load('conditionTextSample.mat')
+Text.text
+load('170417_000_responsedata.mat')
+clear all
+load('170417_000_responsedata.mat')
+respons
+resps
+resps.level
+load('conditionTextSample.mat')
+Text.char
+Text.text
+[resps.freq] == 0
+find([resps.freq] == 0)
+resps.level(find([resps.freq] == 0))
+[resps.level](find([resps.freq] == 0))
+resps.level
+[resps.level]
+[resps.level](find([resps.freq] == 0))
+levs = [resps.level]
+levs(find([resps.freq] == 0))
+levels = unique([resps([resps.freq]>0).level]);
+doc interp1
+egregiousness = 100;
+bfRespInterp = interp1(levels, bfResp, linspace(min(levels),max(levels),egregiousness));
+noiseRespInterp = interp1(levels, noiseResp, linspace(min(levels),max(levels),egregiousness));
+clear all
+ISIs = diff(spikes.times);
+hist(ISIs, 100);
+i
+ssps(i:find(ISIs(i:end)>intervalTwo, 'first', 1)-1) = nan;
+find(ISIs(i:end)>intervalTwo, 'first', 1)
+i
+ssps(i:find(ISIs(i:end)>intervalTwo, 1, 'first')-1) = nan;
+complex(end+1) = ssps(i);
+(ISIs(i)<intervalOne && ISIs(i+1)<intervalTwo) || ISIs(i+1)<intervalTwo
+ssps = ssps(~isnan(ssps));
+sum(isnan(ssps))
+i
+find(ISIs(i:end)>intervalTwo, 1, 'first')
+i
+find(ISIs(i:end)>intervalTwo, 1, 'first')+i
+dbquit
+sum(isnan(ssps))
+dbquit
+sum(isnan(ssps))
+ssps = ssps(~isnan(ssps));
+dotHgt = .3;
+doc scatter
+close all
+plot(linspace(0,length(Voltage.values)/fs,length(Voltage.values)), Voltage.values,...
+'color', 'green', 'linewidth', 1.5); hold on
+dbquit
+ssps
+ssps(end)
+i
+length(ssps)
+ssps = ssps([0 diff(ssps(1:end-1))>minISI]);
+size([0 diff(ssps(1:end-1))>minISI])
+(diff(ssps(1:end-1))>minISI)
+0
+ssps = ssps([false (diff(ssps(1:end-1))>minISI)]);
+ssps = ssps([false (diff(ssps(1:end-1))>minISI)']);
+ssps = ssps([false; (diff(ssps(1:end-1))>minISI)]);
+set(gca, 'xlim', [length(Voltage.values)/fs-2 length(Voltage.values)/fs])
+set(gca, 'xlim', [length(Voltage.values)/fs-1 length(Voltage.values)/fs])
+dbquit
+Voltage.std
+std(Voltage.values)
+.05/std(Voltage.values)
+std(Voltage.values)*2.5
+.15/std(Voltage.values)
+startTimes = linspace(startPlotTime, startPlotTime+window*plotRows, plotRows);
+startTimes
+startTimes = linspace(startPlotTime, startPlotTime+window*plotRows-1, plotRows)
+startTimes = linspace(startPlotTime, startPlotTime+window*(plotRows-1), plotRows)
+inds
+inds(1)
+complex
+ssps
+ssps(ende)
+ssps(end)
+complex(end)
+length(voltage.interval)/fs
+length(Voltage.interval)/fs
+length(Voltage.values)/fs
+allSpks(end)
+allSpks = find(diff(Voltage.values<thresh)==1)/fs;
+allSpks
+allSpks(end)
+allSpks = allSpks([true; (diff(ssps(1:end-1))>minISI)]);
+allSpks(end)
+startTime = 3000;
+% visualize results
+close all; figure('units', 'normalized', 'position', [.1 .1  .8 .8], 'color', [1 1 1]);
+subaxis(plotRows,1,1,'margin',.01, 'spacing', .01);
+startTimes = linspace(startPlotTime, startPlotTime+window*(plotRows-1), plotRows);
+for i=1:plotRows
+subaxis(plotRows,1,i);
+inds = round(startTimes(i)*fs:startTimes(i)*fs+window*fs)+1;
+trace = Voltage.values(inds);
+scatter(ssps-startTimes(i), ones(length(ssps),1)*dotHgt, dotSize, sspCol, 'filled'); hold on;
+scatter(complex-startTimes(i), ones(length(complex),1)*dotHgt, dotSize, 'red', 'filled');
+scatter(allSpks-startTimes(i), ones(length(allSpks),1)*-dotHgt, dotSize/2, 'black', 'filled', '^');
+plot(linspace(0,window,length(trace)), trace, 'color', sspCol, 'linewidth', 1.5); hold on;
+set(gca, 'xlim', [0 window], 'ylim', [-dotHgt-.05 dotHgt+.05], 'visible', 'off');
+end
+startTime = 3000;
+save(['processed data\' file 'sorted'], ssps, complex)
+save(['processed data\' file 'sorted'], 'ssps', 'complex')
+clear all
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\dcn\complex spike sorting\processed data\170508_002sorted.mat')
+clear all
+k = waitforbuttonpress
+doc randint
+randi(1,100)
+randi(10)
+randi(100)
+(length(Voltage.values/fs) - window*plotRows*1.5
+(length(Voltage.values/fs) - window*plotRows*1.5)
+dbquit
+temp
+load('cell info.mat')
+clear all
+load('cell info.mat')
+cells(11).name = '170510_001';
+cells(11).name = '170508_002';
+cells(12).name = '170508_003';
+cells(4).name = '170505_all1';
+cells(12).name = '170508_003sorted';
+cells(11).name = '170508_002sorted';
+cells(14).name = '170510_001sorted';
+save('cell info.mat', 'cells')
+cells(11).pre = [1 330];
+cells(11).pair = [345 3230];
+cells(12).pair = [1 3508];
+save('cell info.mat', 'cells')
+cells(13).pre = [60 220];
+cells(13).pair = [223 3060];
+cells(13).pair = [223,3063];
+save('cell info.mat', 'cells')
+cells(14).pair = [0 1017];
+cells(14).post = [1018 2474];
+save('cell info.mat', 'cells')
+load('cell info.mat')
+load('processed data/170510_000sorted.mat')
+load('processed data/170510_000breathing.mat')
+cells(15).name = '170510_all';
+cells(15).pre = cells(13).pre;
+cells(15).pair = [cells(13).pair; cells(14).pair + length(breathinTemp.values*breathinTemp.interval;]
+cells(15).pair = [cells(13).pair; cells(14).pair + length(breathinTemp.values*breathinTemp.interval];
+cells(15).pair = [cells(13).pair; cells(14).pair + length(breathinTemp.values)*breathinTemp.interval];
+adf
+save('cell info.mat', 'cells')
+load('processed data/170510_001sorted.mat')
+load('processed data/170510_001breathing.mat')
+sspsTemp = [sspsTemp; (ssps+lng)];
+complexTemp = [complexTemp; (complex+lng)];
+sspsTemp = [sspsTemp; (ssps+lng)];
+breathinTemp.values = [breathinTemp.values; breathin.values];
+clear all
+load('cell info.mat')
+cells(13).name = [];
+[cells(13:14).name] = deal([]); [cells(13:14).pre] = deal([]); [cells(13:14).pair] = deal([]); [cells(13:14).post] = deal([]);
+cells(13:14) = [];
+load('cell info.mat')
+load('processed data/170508_002sorted.mat')
+load('processed data/170510_002breathing.mat')
+load('processed data/170508_002sorted.mat')
+load('processed data/170508_002breathing.mat')
+lng = length(breathinTemp.values)*breathinTemp.interval;
+lng = length(breathin.values)*breathin.interval;
+breathinTemp = breathin;
+sspsTemp = ssps;
+complexTemp = complex;
+cells(16).name = '170508_all';
+breathinTemp = breathin;
+sspsTemp = ssps;
+complexTemp = complex;
+cells(16).name = '170508_all';
+cells(16).pre = cells(11).pre;
+cells(16).pair = [cells(11).pair; cells(12).pair + lng];
+load('processed data/170508_003sorted.mat')
+load('processed data/170508_003breathing.mat')
+sspsTemp = [sspsTemp; (ssps+lng)];
+complexTemp = [complexTemp, (complex+lng)];
+breathinTemp.values = [breathinTemp.values; breathin.values];
+ssps = sspsTemp;
+complex = complexTemp;
+breathin = breathinTemp;
+save('processed data/170508_all.mat', 'ssps', 'complex', 'breathinTemp')
+save('cell info.mat', 'cells')
+clear all
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\dcn\breathing, am pairing\processed data\170510_all.mat')
+clear all
+figure; plot(breathin.values); hold on; scatter(breathInds, ones(1,length(breathInds))*brtThresh); % plot breath inds
+instRateSmp = gausConv(ssps, 1/breathin.interval, kernelSig);
+instRateCmp = gausConv(compled, 1/breathin.interval, kernelSig);
+instRateCmp = gausConv(complex, 1/breathin.interval, kernelSig);figure;
+instRateSmp = gausConv(ssps, 1/breathin.interval, kernelSig);
+instRateCmp = gausConv(compled, 1/breathin.interval, kernelSig);
+instRateSmp = gausConv(ssps, 1/breathin.interval, kernelSig);
+instRateCmp = gausConv(complex, 1/breathin.interval, kernelSig);
+figure; plot(conditions);
+figure; plot(conditionsTemp);
+allBreaths = nan(length(breathInds), (post+pre)/breathin.interval);
+allResponsesSmp = nan(length(breathInds), (post+pre)/breathin.interval);
+allResponsesCmp = nan(length(breathInds), (post+pre)/breathin.interval);
+conditions = zeros(length(allBreaths),1);
+i
+for i=1:length(breathInds)
+allBreaths(i,:) = breathin.values(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponsesSmp(i,:) = instRateSmp(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponsesCmp(i,:) = instRateCmp(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+conditions(i) = conditionsTemp(breathInds(i));
+end
+length(breathInds)
+i
+allBreaths(i,:) = breathin.values(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponsesSmp(i,:) = instRateSmp(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+allResponsesCmp(i,:) = instRateCmp(breathInds(i)-pre/breathin.interval+1 : breathInds(i)+post/breathin.interval);
+length(instRateSmp)
+length(instRateCmp)
+figure; plot(instRateCmp(end-1000:end))
+figure; plot(instRateCmp(end-5000:end))
+figure; plot(instRateCmp)
+figure; plot(instRateSmp)
+figure; plot(instRate)
+figure; plot(instRateSmp)
+figure; plot(instRateSmp(1:1000))
+figure; plot(instRateCmp(1:1000))
+clear all
+size(breaths)
+histoTrials
+size(histoTrials)
+histoTrials(end)
+dbcont
+breaths
+size(breaths)
+size(breaths)
+size(histoTrials)
+size(psth)
+j
+dbquit
+dbcont
+dbquit
+clear all
+histoTrials(1)
+histoTrials(2)
+histoTrials(3)
+histoTrials
+size(histoTrials)
+conditionBreathInds
+doc imagesc
+figure; imagesc(histoTrials)
+figure; imagesc(psth)
+size(pstf)
+size(psth)
+figure; imagesc(psth)
+dbquit
+mean(diff(ssps))
+1/mean(diff(ssps))
+dbcont
+ylims = [0 mean(allResponsesSmp(:))+std(allResponsesSmp(:))];
+figure; imagesc(psth)
+hold on; scatter(1:10,1::10)
+hold on; scatter(1:10,1:10)
+allResponsesCmp
+allResponsesCmp(1,:)
+repmat(5,1,3)
+imagesc(linspace(-pre, post, size(psth,2))*1000, histoTrials, psth, [0 1]);
+colormap gray
+set(gca, 'box', 'off', 'xlim', [-pre post]*1000, 'xtick', [],...
+'ylim', [histoTrials(1) histoTrials(end)], 'xcolor', [1 1 1], 'ydir', 'normal', 'ticklength', [0 0])
+dbquit
+imagesc(linspace(-pre, post, size(psth,2))*1000, histoTrials, psth, [0 1]);
+colormap gray
+set(gca, 'box', 'off', 'xlim', [-pre post]*1000, 'xtick', [],...
+'ylim', [histoTrials(1) histoTrials(end)], 'xcolor', [1 1 1], 'ydir', 'normal', 'ticklength', [0 0])
+scatter(histoCmpInds, histoCmpSpks)
+dbquit
+imagesc(linspace(-pre, post, size(psth,2))*1000, histoTrials, psth, [0 1]);
+colormap gray
+set(gca, 'box', 'off', 'xlim', [-pre post]*1000, 'xtick', [],...
+'ylim', [histoTrials(1) histoTrials(end)], 'xcolor', [1 1 1], 'ydir', 'normal', 'ticklength', [0 0])
+% add complex spikes
+hold on; scatter(histoCmpInds, histoCmpSpks, 1)
+hold on; scatter(histoCmpSpks, histoCmpInds, 1)
+histoTrials(end)
+% plot histo
+histAxis = subaxis(5,3,[i i+3]);
+histoTrials = round(linspace(1,size(breaths,1),min(histoTrialNum, size(breaths,1))));
+psth = ones(length(histoTrials), (pre+post)*(1/breathin.interval));
+histoCmpSpks = [];
+histoCmpInds = [];
+for j=1:length(histoTrials)
+startTime = conditionBreathInds(histoTrials(j))*breathin.interval;
+subSpikes = ssps - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+psth(j, round((trialSpikes+pre)*(1/breathin.interval))+1) = 0;
+histoCmpSpks = [histoCmpSpks complex-startTime];
+histoCmpInds = [histoCmpInds repmat(histoTrials(j),1,length(subComplexSpikes))];
+end
+imagesc(linspace(-pre, post, size(psth,2))*1000, histoTrials, psth, [0 1]);
+colormap gray
+set(gca, 'box', 'off', 'xlim', [-pre post]*1000, 'xtick', [],...
+'ylim', [histoTrials(1) histoTrials(end)], 'xcolor', [1 1 1], 'ydir', 'normal', 'ticklength', [0 0])
+% add complex spikes
+hold on; scatter(histoCmpSpks, histoCmpInds, 1)
+dbquit
+hold on; scatter(histoCmpSpks, histoCmpInds, 1)
+histoCmpSpks = [];
+histoCmpInds = [];
+for j=1:length(histoTrials)
+startTime = conditionBreathInds(histoTrials(j))*breathin.interval;
+subSpikes = ssps - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+psth(j, round((trialSpikes+pre)*(1/breathin.interval))+1) = 0;
+subCmps = complex-startTime;
+subCmps = subCmps(subCmps>-pre & subCmps<post);
+histoCmpSpks = [histoCmpSpks subCmps];
+histoCmpInds = [histoCmpInds repmat(histoTrials(j),1,length(subComplexSpikes))];
+end
+hold on; scatter(histoCmpSpks, histoCmpInds, 1)
+length(histoCmpSpks)
+length(histoCmpInds)
+length(subCmps)
+histoCmpSpks = [];
+histoCmpInds = [];
+for j=1:length(histoTrials)
+startTime = conditionBreathInds(histoTrials(j))*breathin.interval;
+subSpikes = ssps - startTime;
+trialSpikes = subSpikes(subSpikes>-pre & subSpikes<post);
+psth(j, round((trialSpikes+pre)*(1/breathin.interval))+1) = 0;
+subCmps = complex-startTime;
+subCmps = subCmps(subCmps>-pre & subCmps<post);
+histoCmpSpks = [histoCmpSpks subCmps];
+histoCmpInds = [histoCmpInds repmat(histoTrials(j),1,length(subCmps))];
+end
+hold on; scatter(histoCmpSpks, histoCmpInds, 1)
+hist(histoCmpSpks(:), 1000)
+figure; hist(histoCmpSpks(:), 1000)
+imagesc(linspace(-pre, post, size(psth,2))*1000, histoTrials, psth, [0 1]);
+colormap gray
+set(gca, 'box', 'off', 'xlim', [-pre post]*1000, 'xtick', [],...
+'ylim', [histoTrials(1) histoTrials(end)], 'xcolor', [1 1 1], 'ydir', 'normal', 'ticklength', [0 0])
+get(gca,'xlim')
+get(gca,'lim')
+get(gca,'ylim')
+size(psth)
+imagesc(linspace(-pre, post, size(psth,2))*1000, histoTrials, psth, [0 1]);
+hold on; scatter(histoCmpSpks*1000, histoCmpInds, 1)
+hold on; scatter(histoCmpSpks*1000, histoCmpInds, 10, 'filled')
+hold on; scatter(histoCmpSpks*1000, histoCmpInds, 10, 'filled', 'color', clr)
+hold on; scatter(histoCmpSpks*1000, histoCmpInds, 10, 'filled', clr)
+hold on; scatter(histoCmpSpks*1000, histoCmpInds, 10, clr, 'filled')
+dbquit
+%-- 5/30/2017 10:31 PM --%
+clear all
+viewSplitter2
+linePosits
+sort(linePosits(2:6))
+ys = sort(linePosits(2:6));
+xs = sort(linePosits(1:2));
+ys = vid.Height - sort(linePosits(2:6));
+ys
+step out
+set(slider1)
+set(sliderh1)
+sliderh1
+dbquit
+viewSplitter2
+set(sliderh1)
+set(sliderh1, 'SliderStep'))
+set(sliderh1, 'SliderStep')
+sliderh4 = uicontrol('Style', 'slider',...
+'Position', [0 100 200 20],...
+'Min', 1, 'Max', size(frame,1),...
+'Value', h4.YData(1),...
+'Callback', @h4Update,...
+'SliderStep', {1});
+sliderh4 = uicontrol('Style', 'slider',...
+'Position', [0 100 200 20],...
+'Min', 1, 'Max', size(frame,1),...
+'Value', h4.YData(1),...
+'Callback', @h4Update,...
+'SliderStep', 1);
+dbquit
+viewSplitter2
+dbcont
+dbquit
+viewSplitter2
+ys = vid.Height - sort(linePosits(2:6));
+xs = sort(linePosits(1:2));
+ys
+max(ys, 1)
+xs
+close all
+viewSplitter2
+ys
+viewSplitter2
+linePosits
+ys
+ys = max(vid.Height - sort(linePosits(3:6)), 1);
+xs = max(sort(linePosits(1:2)), 1);
+disp('crop settings for ffmpeg:')
+disp('top: ')
+disp([diff(xs) diff(ys(4:3)) xs(1) ys(3)]);
+disp('bot: ')
+disp([diff(xs) diff(ys(2:1)) xs(1) ys(1)]);
+[diff(xs)
+]
+diff(ys(4:3))
+ys = max(vid.Height - sort(linePosits(3:6)), 1);
+xs = max(sort(linePosits(1:2)), 1);
+disp('crop settings for ffmpeg:')
+disp('top: ')
+disp([diff(xs) ys(4)-ys(3) xs(1) ys(3)]);
+disp('bot: ')
+disp([diff(xs) ys(2)-ys(1) xs(1) ys(1)]);
+yys
+ys
+ys = max(sort(vid.Height - linePosits(3:6)), 1);
+xs = max(sort(linePosits(1:2)), 1);
+disp('crop settings for ffmpeg:')
+disp('top: ')
+disp([diff(xs) ys(4)-ys(3) xs(1) ys(3)]);
+disp('bot: ')
+disp([diff(xs) ys(2)-ys(1) xs(1) ys(1)]);
+viewSplitter2
+vid.Height
+linePosits(3:6)
+vid.Height - linePosits(3:6)
+dbquit
+viewSplitter2
+dbcont
+viewSplitter2
+dbcont
+viewSplitter2
+dbquit
+viewSplitter2
+fprintf('%d:%d:%d:%d', diff(xs), ys(2)-ys(1), xs(1), ys(1))
+dbcont
+viewSplitter2
+cropFinder
+bgSubtract
+close all
+bgSubtract
+image(frace)
+image(frame)
+doc image
+clear all
+bgSubtract
+clear all
+close all
+%-- 6/8/2017 9:02 AM --%
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\paw tracking\tracked paws\croppedTop.mat')
+figure; plot(pawsTop.positions(1,:))
+figure; plot(pawsTop(1).positions(1,:))
+figure; plot(pawsTop(1).positions(:,1))
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\paw tracking\tracked paws\run3t3Top.mat')
+close all; load('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\paw tracking\tracked paws\run3t3Top.mat')
+close all; figure; plot(pawsTop(1).positions(:,1))
+close all; figure; plot(pawsTop(1).positions(:,2))
+close all; figure; plot(pawsTop(2).positions(:,2))
+close all; figure; plot(pawsTop(3).positions(:,2))
+close all; figure; plot(pawsTop(4).positions(:,2))
+close all; figure; plot(pawsTop(4).positions(:,2)); pimpMyFig
+pimpMyFig
+dbquit
+close all
+close all; figure; plot(pawsTop(4).positions(:,2)); pimpMyFig
+get(gca, 'position')
+set(gca, 'box', 'off', 'position', [.05 .05 .9 .9]);
+close all
+close all; figure; plot(pawsTop(4).positions(:,2)); pimpFig
+close all; figure; plot(pawsTop(4).positions(:,2)); pimpMyFig
+close all
+doc scatter
+close all
+%-- 6/15/2017 9:43 PM --%
+set(gca, 'box', 'off')
+close(vidWriter);
+%-- 6/24/2017 6:25 PM --%
+makeVid('run3t3', 1, 60*60)
+makeVid3('run3t3', 1, 60*60)
+%-- 6/25/2017 9:05 PM --%
+sdf
+topPawTracker4('run3t3')
+tic
+topPawTracker4('run3t3')
+areas
+centroids
+dbquit
+topPawTracker4('run3t3')
+botPawTracker('run3t3')
+botPawTracker8('run3t3')
+open fillShortMissing
+botPawTracker8('run3t3')
+topPawTracker4('run3t3')
+dbcont
+topPawTracker4('run3t3')
+dbstop if error
+topPawTracker4('run3t3')
+botPawTracker8('run3t3')
+makeVid3('run3t3', 1, 60*60, true)
+%-- 7/11/2017 7:49 PM --%
+convertPlexonToBinary('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\spikeSorting\testSorting\katTest.pl2', 40000, 32, [180 222])
+dbstop if error\
+dbstop if error
+convertPlexonToBinary('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\spikeSorting\testSorting\katTest.pl2', 40000, 32, [180 222])
+file
+output
+fopen(output, 'w')
+output
+fclose('all')
+file = fopen(output, 'w');
+fwrite(file, allData, 'double');
+fclose('all'
+fclose('all')
+file = fopen(output, 'w')
+output
+file = fopen(output, 'w');
+fwrite(file, allData, 'double');
+fclose('all');
+figure; hist(allData(:), 10000); pimpFig
+max(allData(:))
+min(allData(:))
+maxVoltage = max(abs([max(allData(:)) min(allData(:))]))
+allData = allData .* 32766;
+allData = int16(allData);
+figure; hist(allData(:), 10000); pimpFig
+dbquit
+allData(:);
+figure; hist(allData(:), 1000); pimpFig
+figure; hist(double(allData(:)), 1000); pimpFig
+dbquit
+figure; hist(double(allData(:)), 1000); pimpFig
+[max(allData(:)) min(allData(:))]
+allData = allData .* (32766 / maxVoltage);
+allData = int16(allData);
+[max(allData(:)) min(allData(:))]
+(32766 / maxVoltage)
+dbquit
+convertPlexonToBinary('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\spikeSorting\testSorting\katTest.pl2', 40000, 32, [180 222])
+close all
+convertPlexonToBinary('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\spikeSorting\testSorting\katTest.pl2', 40000, 32, [180 222])
+[max(allData(:)) min(allData(:))]
+convertPlexonToBinary('C:\Users\LindseyBuckingham\Google Drive\columbia\analysis\spikeSorting\testSorting\katTest.pl2', 40000, 32, [180 222])
+[max(allData(:)) min(allData(:))]
+dbcont
+%-- 7/16/2017 8:33 PM --%
+getTrialsFromVideo2
+topPawTracker4('run3ap1')
+botPawTracker8('run3ap3')
+botPawTracker8('run3ap1')
+%-- 7/22/2017 7:21 PM --%
+(25*pi)
+1000 / (25*pi)
+1000 / (50*pi)
+%-- 9/30/2017 5:41 PM --%
+open testFunctions
+open rotaryDecoder
+wait = waitbar(0, 'rotary decoding: preparation');
+counter = 0;
+totalNans = sum(isnan(allStates(:)));
+for i = 1:2
+for j = find(isnan(allStates(i,:)))
+% find next non-NaN value and store the opposite of that value in current index
+nextValInd = find(~isnan(allStates(i,j:end)), 1, 'first');
+nextVal = allStates(i, j+nextValInd-1);
+if ~isempty(nextVal)
+allStates(i,j) = ~nextVal;
+else
+% fill in missing NaN values at the very end
+allStates(i,j:end) = allStates(i,j-1);
+end
+% update waitbar display
+counter = counter + 1;
+waitbar(counter / totalNans);
+end
+end
+close(wait)
+dbcont
+whEncodA
+whEncodA.length
+factorial(whEncodA.length)
+close all
+(whEncodA.length*2)
+times
+max(times)
+max(times)
+max(times)/60
+find([1 2; 3 4]==2)
+find([1 2; 3 4]==4)
+find([1 2; 3 4]==3)
+find([1 2; 3 4]==1)
+dbcont
+close all
+identities
+identities(1:100)
+identities(1:10)
+bitshift(dec2bin(10))
+dec2bin(16)
+bitshift(16, 2)
+length(times)
+length(times)/1000000
+length(times)/100000
+length(times)/10000
+length(times)/1000
+clear all
+prevState
+times(i)
+length(times)/1000
+i
+stateInd
+i
+stateInd
+length(times)
+code
+num2str(code)
+bin2dec(num2str(code))
+tic; bin2dec(num2str(code)); toc
+deltas(1:100)
+size(deltas
+size(deltas)
+deltas(1:100)
+cumsum(deltas)
+figure; plot(cumsum(deltas(1:find(isnan(deltas),1,'first'))))
+i
+figure; plot(cumsum(deltas(1:find(isnan(deltas),1,'first'))))
+figure; plot(cumsum(deltas))
+deltas
+sum(deltas==1)
+close all; figure; plot(cumsum(deltas(1:find(isnan(deltas),1,'first')))); pimpFig
+lookUp = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0];
+deltas = nan(size(times));
+prevState = [~aStates(1) ~bStates(1)];
+prevState
+identities(1)
+i=1
+stateInd = identities(i)+1;
+stateInd
+currentState = prevState;
+prevState
+currentState
+currentState(identities(i+1)) = ~identities(i+1);
+currentState
+lookupInd = [prevState currentState];
+lookupInd
+num2str(lookupInd))+1
+num2str(lookupInd)
+bin2dec(num2str(lookupInd))
+bin2dec(num2str(lookupInd))+1
+lookUp(bin2dec(num2str(lookupInd))+1)
+i
+currentState = prevState;
+currentState(identities(i+1)) = ~identities(i+1);
+lookupInd = [prevState currentState];
+deltas(i) = lookUp(bin2dec(num2str(lookupInd))+1);
+prevState = currentState;
+currentState = prevState;
+currentState(identities(i+1)) = ~identities(i+1);
+identities(i+1)
+close all; figure; plot(times, cumsum(deltas(1:find(isnan(deltas),1,'first')))); pimpFig
+clear all
+obEncoderSteps = 1000;
+obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
+figure;
+plot(obsPositionTimes, obsPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+% close all;
+figure;
+plot(obsPositionTimes, obsPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+figure;
+plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+step.times
+max(step.times)
+max(step.times)/60
+open motorDecoder
+length(step.times)
+max(step.times)
+% close all;
+figure;
+plot(step.times, motorPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+figure;
+plot(step.times, motorPositions, 'linewidth', 3);
+length(step.times)
+length(motorPositions)
+motorPositions(end)
+min(motorPositions)
+close all
+close all; figure; plot(motorPositions)
+close all
+figure;
+plot(obsPositionTimes, obsPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+hold on; plot(step.times, motorPositions, 'linewidth', 3);
+doc scatter
+scatter(obsPositionTimes, obsPositions, 5, 'filled');
+scatter(obsPositionTimes, obsPositions, 'black', 5, 'filled');
+scatter(obsPositionTimes, obsPositions, 5, 'black', 'filled');
+posNorm = positionRewardNormalize(wheelPositions, wheelPositionTimes, reward.times);
+figure; plot(reward.values)
+rewardInds = find(diff(reward.values>2)==1);
+rewardsInds
+rewardInds
+figure; plot(rewardInds)
+figure; hist(rewardInds)
+close all
+rewardTimes = reward.times(rewardInds);
+obsPosNorm
+obsdPosNorm
+i
+inds = obsPositionTimes>obsTimes(i);
+inds
+wheelPos = posNorm(find(wheelPositionTimes>obsTimes(i), 1, 'first'));
+motorPos = obsdPosNorm(find(step.times>obsTimes(i), 1, 'first'));
+i
+obsTimes
+obsOn.values
+figure; plot(obsOn.values)
+hist(obsPositionTimes)
+close all; figure; hist(diff(obsPositionTimes))
+max(diff(obsPositionTimes))
+median(diff(obsPositionTimes))
+mean(diff(obsPositionTimes))
+scatter(obsPositionTimes, obsPositions, 5, 'black', 'filled');
+% hold on; scatter(step.times, motorPositions, 5, [.5 .5 .5], 'filled');
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+motorOnInds
+length(motorOnInds)
+i
+obsTimes = obsOn.times(motorOnInds);
+obsi
+i
+inds = obsPositionTimes>motorOnTimes(i);
+i
+motorOnTimes(i)
+motorOnInds = find(diff(obsPositionTimes)>1)+1;
+motorOnTimes = obsOn.times(motorOnInds);
+motorOnTimes = obsOn.times(motorOnInds);
+figure;
+plot(wheelPositionTimes, wheelPositions, 'linewidth', 3);
+xlabel('time (s)')
+ylabel('position (m)')
+pimpFig;
+motorOnInds = [1 find(diff(step.times)>.5)+1];
+motorOnTimes = step.times(motorOnInds);
+motorTimes = step.times;
+motorOnInds = [1 find(diff(motorTimes)>.5)+1];
+motorOnTimes = motorTimes(motorOnInds);
+motorTimes = step.times';
+motorOnInds = [1 find(diff(motorTimes)>.5)+1];
+motorOnTimes = motorTimes(motorOnInds);
+obsPosNorm = obsPositions;
+scatter(motorTimes, motorPosNorm, 5);
+96 / (2*pi)
+stepDirections(end)
+figure; plot(stepDirections)
+positions = cumsum(stepDirections) * mmPerStep / 1000;
+positions(end)
+dbquit
+%-- 10/2/2017 9:20 PM --%
+doc detect
+timeStamps
+timestamps
+figure; plot(timeStamps)
+timeStamps(1)
+dec2bin(timeStamps(1))
+length(dec2bin(timeStamps(1)))
+length(dec2bin(timeStamps(100000)))
+dec2bin(12)
+bin2dec('1001')
+timeStampsTruc = bitshift(timeStamps, 12);
+timeStamps(1)
+timeStampsTrunc(1)
+timeStampsTruc(1)
+bin2dec(timeStampsTruc(1))
+dec2bin(timeStampsTruc(1))
+length(dec2bin(timeStampsTruc(1)))
+1 & 16
+bitand(1,16)
+bitand([1 2 3], [1 0 0])
+dec2bin(22)
+dec2bin(timeStamps)
+bitand(dec2bin(16), dec2bin(12))
+bitshift([1 0 0 0 1], 2)
+[0 0 0 1] & [1 0 0 1]
+bin2dec('1001')
+size(de2bi(bitshift(timeStamps, -12)))
+size(de2bi(hex2dec('1FFF')))
+[0 0 0 1] & [1 0 0 0]
+[0 0 0 1] & [1 0 0]
+a
+size(de2bi(hex2dec('0001FFF')))
+bin2dec(cycle1,2)
+bin2dec(cycle1)
+bi2de(cycle1)
+close all; figure; plot(cycle1);
+de2bi(bitshift(timeStamps, -25))
+size(de2bi(bitshift(timeStamps, -25)))
+2^13
+timeStamps(1)
+dec2bind( timeStamps(1) )
+dec2bin( timeStamps(1) )
+dec2bin( bitshift(timeStamps(1), -12) )
+bitand( de2bi(bitshift(timeStamps(1), -12)),  [zeros(1,7) ones(1,13)] )
+bitand( de2bi(bitshift(timeStamps(1)', -12)),  [zeros(1,7) ones(1,13)] )
+bitand( de2bi(bitshift(timeStamps(1), -12)),  [zeros(1,7) ones(1,13)]' )
+de2bi(bitshift(timeStamps(1), -12))
+de2bi(bitshift(timeStamps(1000), -12))
+bitand( de2bi(bitshift(timeStamps(1000), -12)),  [zeros(1,7) ones(1,13)]' )
+bitand( de2bi(bitshift(timeStamps(1000), -12)),  [zeros(1,7) ones(1,13)] )
+de2bi(timeStamps(1000))
+bitshift(timeStamps, -12)
+bitshift(timeStamps(1), -12)
+de2bi(bitshift(timeStamps, -12))
+de2bi(bitshift(timeStamps(1), -12))
+de2bi(bitshift(timeStamps(1), 0))
+doc bitshfit
+max(cycle1)
+max(cycle2)
+de2bi(bitshift(timeStamps, -12, 'uint32'))
+cmap = autumn(6)
+bits
+size(allBits)
+doc de2bi
+timeStamps = timeStamps(:)';
+timeStamps = timeStamps(:);
