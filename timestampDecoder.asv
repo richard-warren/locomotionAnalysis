@@ -1,0 +1,19 @@
+% function times = timestampDecoder(timeStamps)
+
+    % converts metadata timestamps recorded in bonsai from point grey camera into seconds
+    %
+    % input:     timeStamps: metadata timestamps recorded in bonsai
+    % output:    times: seconds, normalized such that first time is 0
+    
+    % extract first cycle (first 7 bits)
+    
+    timeStamps = csvread('C:\Users\LindseyBuckingham\Google Drive\columbia\rick\timestampTest.csv');
+    
+    cycle1 = bitand( de2bi(bitshift(timeStamps, -12), 'left-msb'),  [zeros(1,7) ones(1,13)] );
+    cycle1 = bi2de(cycle1, 'left-msb') / 8000;
+    
+    cycle2 = de2bi(bitshift(timeStamps, -25), 'left-msb');
+    cycle2 = bi2de()
+
+
+% end
