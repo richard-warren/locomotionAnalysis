@@ -89,7 +89,14 @@ xlabel('time (s)')
 ylabel('position (m)')
 pimpFig;
 
+%% test timestamp decoder
 
+timeStamps = csvread('C:\Users\Rick\Google Drive\columbia\rick\timestampTest.csv');
+times = timestampDecoder(timeStamps);
+
+figure;
+plot(times);
+pimpFig;
 
 
 
