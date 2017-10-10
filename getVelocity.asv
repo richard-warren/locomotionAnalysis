@@ -1,0 +1,19 @@
+function velocity = getVelocity(data, windowSize)
+
+    % gets velocity by computing a 'running differce'
+    % for every value the velocity is computed by subtracting values to the right and left in a window of size windowSize
+    %
+    % input         data: position data from 
+
+
+    % settings
+    windowSize = .2; % s
+
+    % compute window size in samples
+    windowSmps = round(windowSize*targetFs);
+
+    % compute velocity
+    kernel = [1 zeros(1,windowSmps-2) -1];
+    velocity = conv(wheelPositions, kernel, 'same') / (windowSmps/targetFs);
+
+end

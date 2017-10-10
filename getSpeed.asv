@@ -1,0 +1,32 @@
+% function getSpeed()
+
+
+% settings
+polyDegree = 2;
+windowSize = 1; % s
+
+
+% compute window size in samples
+windowSmps = round(windowSize*targetFs);
+% if mod(windowSmps,2)==0; windowSmps = windowSmps+1; end % ensure windowSmps is odd
+
+
+% compute velocity
+% kernel = [1 zeros(1,windowSmps-2) -1];
+% kernel = linspace(1,-1,windowSmps);
+% vel = conv(wheelPositions, kernel, 'same');
+wheelPositions = smooth(wheelPositions, windowSmps);
+vel = [0 diff(wheelPositions)];
+
+% plot
+close all; figure;
+
+yyaxis left;
+plot(wheelTimes, wheelPositionsNorm)
+hold on;
+
+yyaxis right;
+plot(wheelTimes, vel);
+
+set(gca, 'xlim', [60 180])
+pimpFig

@@ -1,4 +1,4 @@
-function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, encoderSteps, wheelRad)
+function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, encoderSteps, wheelRad, targetFs)
 
     % converts quadrature input from rotary encoder into real world positional units (m)
     % uses a lookup table method, where every encoder input is represented
@@ -11,6 +11,7 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, en
     % 	           aStates, bStates: levels of A and B rotary encoder at times of state shifts
     %              encoderSteps:     number of steps per rotation in rotary encoder
     %              wheelRad:         radus or wheel, or timing pulley, attached to encoder
+    %              targetFs:         sampling frequency with which data are interpolated (see interData)
     %
     % output       positions:        position of wheel in meters
     %              times:            times of all position values
@@ -54,6 +55,9 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, en
     
     decodingTime = toc/60; % minutes
     fprintf('rotary decoding time: %f minutes\n', decodingTime)
+    
+    % interpolate
+    [times, positions] = interpData(times, positions, targetFs);
     
 end
 
