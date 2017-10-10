@@ -53,11 +53,12 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, en
     mmPerTic = (2*wheelRad*pi) / encoderSteps;
     positions = cumsum(deltas) * (mmPerTic / 1000);
     
+    % interpolate
+    [positions, times] = interpData(times, positions, targetFs);
+    
+    % report analysis time
     decodingTime = toc/60; % minutes
     fprintf('rotary decoding time: %f minutes\n', decodingTime)
-    
-    % interpolate
-    [times, positions] = interpData(times, positions, targetFs);
     
 end
 

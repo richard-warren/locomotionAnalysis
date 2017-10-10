@@ -1,4 +1,4 @@
-function [times, positions] = motorDecoder(directions, directionTimes, stepTimes, targetFs)
+function [positions, times] = motorDecoder(directions, directionTimes, stepTimes, targetFs)
 
     % converts step and direction signals to stepper motor into real world positional units (m)
     % input     directions:      vector of step directions at times when the direction changes
@@ -8,7 +8,8 @@ function [times, positions] = motorDecoder(directions, directionTimes, stepTimes
     %
     % output    positions:       position of motor (m) at all stepTimes
 
-
+    tic
+    
     % stepper motor characteristics
     microStepping = 16;
     motorSteps = 200;
@@ -49,7 +50,11 @@ function [times, positions] = motorDecoder(directions, directionTimes, stepTimes
     positions = cumsum(stepDirections) * mmPerStep / 1000;
     
     % interpolate
-    [times, positions] = interpData(stepTimes, positions, targetFs);
+    [positions, times] = interpData(stepTimes, positions, targetFs);
+    
+    % report analysis time
+    decodingTime = toc/60; % minutes
+    fprintf('motor commands decoding time: %f minutes\n', decodingTime)
     
 end
 
