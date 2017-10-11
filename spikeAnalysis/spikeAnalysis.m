@@ -47,12 +47,22 @@ for i = 1:length(dataFolders)
         rewardTimes = rewardTimes(logical([diff(rewardTimes)>22; 1])); % remove reward times occuring within 1 second of eachother
         
         % decode stepper motor
-        [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
+        if ~isempty(stepDir.times)
+            [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
+        else
+            motorPositions = [];
+            motorTimes = [];
+        end
         
         % decode obstacle position (from rotary encoder on stepper motor track)
-        [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
-                                                     obEncodB.times, obEncodB.level,...
-                                                     obEncoderSteps, obsRad, targetFs);
+        if ~isempty(obEncodA.times)
+            [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
+                                                         obEncodB.times, obEncodB.level,...
+                                                         obEncoderSteps, obsRad, targetFs);
+        else
+            obsPositions = [];
+            obsTimes = [];
+        end
         
         % decode wheel position
         [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
