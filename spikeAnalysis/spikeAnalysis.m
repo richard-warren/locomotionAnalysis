@@ -44,9 +44,10 @@ function spikeAnalysis(dataDir)
             load([sessionDir '\run.mat']);
 
             % find reward times
-            rewardInds = find(diff(reward.values>3)==1);
+            minRewardInteveral = 1;
+            rewardInds = find(diff(reward.values>2)==1);
             rewardTimes = reward.times(rewardInds);
-            rewardTimes = rewardTimes(logical([diff(rewardTimes)>22; 1])); % remove reward times occuring within 1 second of eachother
+            rewardTimes = rewardTimes(logical([diff(rewardTimes) > minRewardInteveral; 1])); % remove reward times occuring within minRewardInteveral seconds of eachother
 
             % decode stepper motor
             if ~isempty(stepDir.times)
