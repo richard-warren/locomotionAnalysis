@@ -2,6 +2,7 @@ function splitTrials = splitByRewards(data, dataTimes, rewardTimes, normalize)
     
     % splits continuosly recorded data (e.g. wheel position, velocity) into a cell array where each entry contains only the data recorded before a given reward
     % the number of entires will equal the number of rewards
+    % important: this code skips the first trial
     %
     % input        data:          continuosly recorded data
     %              dataTimes:     timestamps for data
@@ -13,7 +14,6 @@ function splitTrials = splitByRewards(data, dataTimes, rewardTimes, normalize)
 
     % initializations
     splitTrials = cell(size(rewardTimes));
-    rewardTimes = [0; rewardTimes];
 
     
     % iterate through all rewards

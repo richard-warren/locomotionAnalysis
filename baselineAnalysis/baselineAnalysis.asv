@@ -1,26 +1,47 @@
 
-% plot baseline data
+% PLOT BASELINE DATA
+
+
+% to do:
+% - only take middle portions of data
+
 
 % user settings
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\';
 mouse = 'run5';
+trialRange = [.2 .8]; % only include trials in the middle between these two limits
 rewardRotations = 8;
 wheelDiam = 0.1905; % m
 
 
+
 % initializations
 load([dataDir 'sessionInfo.mat'], 'sessionInfo')
+
 maxPosit = pi * wheelDiam * rewardRotations;
 positsInterp = 0 : (1/targetFs) : maxPosit;
-sessionInds = contains({sessionInfo.mouse}, 'run5') & [sessionInfo.includeInAnalysis];
-sessions = {sessionInfo(sessionInds).session};
-camp = 
 
+sessionInds = strcmp({sessionInfo.mouse}, 'run5') &...
+              strcmp({sessionInfo.experiment}, 'baseline') &...
+              [sessionInfo.includeInAnalysis];
+sessions = {sessionInfo(sessionInds).session};
+
+cmap = copper(length(sessions));
+close all; figure;
+
+
+% plot sessions means
 for i = 1:length(sessions)
     
     % load session data
-    load([dataDir 'sessions\' sessions{1} '\runAnalyzed.mat'],...
+    load([dataDir 'sessions\' sessions{i} '\runAnalyzed.mat'],...
         'wheelPositions', 'wheelTimes', 'rewardTimes', 'targetFs')
+    
+    
+    % trim first and last rewards
+    lims = round(trialRange * length(rewardTimes));
+    rewardTimes = rewardTimes(lims(1):lims(2));
+    
 
     % compute velocity
     vel = getVelocity(wheelPositions, .5, targetFs);
@@ -43,7 +64,11 @@ for i = 1:length(sessions)
 
     end
 
-    % compute average
+    % compute and plot session average
     sessionMean = nanmean(velInterp, 1);
+    plot(positsInterp, sessionMean, 'color', cmap(i,:), 'linewidth', 2)
+    hold on
 end
+
+pimpFig
 
