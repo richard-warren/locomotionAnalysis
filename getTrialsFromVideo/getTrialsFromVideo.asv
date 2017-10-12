@@ -1,9 +1,9 @@
 function getTrialsFromVideo
     
     % user settings
-    timePre = 0;
-    timePost = .7;
-    fs = 250;
+    timePre = .5;
+    timePost = .1;
+    fs = 150;
     outputSpeed = .1;
     trialBuffer = 3; % disallow trials this many seconds within one another
     zScoreThresh = 6;
