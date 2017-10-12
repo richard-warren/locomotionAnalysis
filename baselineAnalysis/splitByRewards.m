@@ -13,7 +13,7 @@ function splitTrials = splitByRewards(data, dataTimes, rewardTimes, normalize)
 
 
     % initializations
-    splitTrials = cell(size(rewardTimes));
+    splitTrials = cell(length(rewardTimes)-1, 1);
 
     
     % iterate through all rewards

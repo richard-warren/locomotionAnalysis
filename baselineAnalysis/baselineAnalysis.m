@@ -4,35 +4,37 @@
 
 
 % user settings
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\';
-mouse = 'run5';
+dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
+mouse = 'run4';
 trialRange = [.2 .8]; % only include trials in the middle between these two limits
 rewardRotations = 8;
 wheelDiam = 0.1905; % m
+ylims = [0 .5];
 
 
 
 % initializations
-load([dataDir 'sessionInfo.mat'], 'sessionInfo')
+sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
 
 maxPosit = pi * wheelDiam * rewardRotations;
-positsInterp = 0 : (1/targetFs) : maxPosit;
-
-sessionInds = strcmp({sessionInfo.mouse}, 'run5') &...
-              strcmp({sessionInfo.experiment}, 'baseline') &...
-              [sessionInfo.includeInAnalysis];
-sessions = {sessionInfo(sessionInds).session};
+sessionInds = strcmp(sessionInfo.mouse, mouse) &...
+              strcmp(sessionInfo.experiment, 'baseline') &...
+              sessionInfo.include;
+sessions = sessionInfo.session(sessionInds);
 
 cmap = copper(length(sessions));
-close all; figure;
+figure;
+
 
 
 % plot sessions means
 for i = 1:length(sessions)
     
     % load session data
-    load([dataDir 'sessions\' sessions{i} '\runAnalyzed.mat'],...
+    load([dataDir sessions{i} '\runAnalyzed.mat'],...
         'wheelPositions', 'wheelTimes', 'rewardTimes', 'targetFs')
+    
+    positsInterp = 0 : (1/targetFs) : maxPosit;
     
     
     % trim first and last rewards
@@ -52,7 +54,7 @@ for i = 1:length(sessions)
     % interpolate velocities over evenly spaced positional values
     velInterp = nan(length(rewardTimes), length(positsInterp));
 
-    for j = 1:length(rewardTimes)
+    for j = 1:length(posits)
 
         % remove duplicate positional values
         [posits{j}, uniqueInds] = unique(posits{j}, 'stable');
@@ -70,5 +72,6 @@ for i = 1:length(sessions)
     hold on
 end
 
-pimpFig
+pimpFig;
+set(gca, 'ylim', ylims)
 
