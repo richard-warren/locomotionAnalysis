@@ -18,32 +18,31 @@ positsInterp = 0 : (1/targetFs) : maxPosit;
 %!!! iterate over sessions
 
 % compute velocity
-vel = getVelocity(wheelPositions, .5, targetFs);
+vel = getVelocity(wheelPositions, .2, targetFs);
 
 % get per trial velocity and positions (cell arrays with one trial per entry)
 vel = splitByRewards(vel, wheelTimes, rewardTimes, false);
 posits = splitByRewards(wheelPositions, wheelTimes, rewardTimes, true);
 
-% interpolate velocities over evenly spaced positional values
+%% interpolate velocities over evenly spaced positional values
 velInterp = nan(length(rewardTimes), length(positsInterp));
 
 close all; figure;
-cmap = copper(length(rewardTimes));
+cmap = 
 
 for j = 1:length(rewardTimes)
     
     % remove duplicate positional values
-    [posits{j}, uniqueInds] = unique(posits{j}, 'stable');
-    vel{j} = vel{j}(uniqueInds);
+%     [posits{j}, uniqueInds] = unique(posits{j});
+%     posits{j} = posits{j}(uniqueInds);
+%     vel{j} = vel{j}(uniqueInds);
     
     velInterp(j,:) = interp1(posits{j}, vel{j}, positsInterp, 'linear');
-    plot(positsInterp, velInterp(j,:), 'color', cmap(j,:)); hold on
     
 end
 
 % compute average
-sessionMean = nanmean(velInterp, 1);
-plot(positsInterp, sessionMean, 'linewidth', 5, 'color', [0 0 0])
+sessionMean = mean(velInterp, 1);
 
 pimpFig;
 % velInterp = 

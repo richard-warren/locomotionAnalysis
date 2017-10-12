@@ -7,7 +7,7 @@ function velocity = getVelocity(data, windowSize, fs)
     %               fs: frequency at which data are sampled
     %
     % output        velocity: computed velocity
-
+    
 
     % compute window size in samples
     windowSmps = round(windowSize*fs);
@@ -20,7 +20,7 @@ function velocity = getVelocity(data, windowSize, fs)
     % interpolate velocity s.t. values correspond to original times of data
     inds = 1:length(data);
     indsVel = inds(1:end-1) + .5; % values of velocity actually represent velocity in between samples
-    velocity = interp1(indsVel, velocity, inds);
+    velocity = interp1(indsVel, velocity, inds, 'linear', 'extrap');
     
 
 end
