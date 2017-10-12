@@ -1,5 +1,10 @@
 
-% plot baseline data
+% PLOT BASELINE DATA
+
+
+% to do:
+% - only take middle portions of data
+
 
 % user settings
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\';
@@ -8,44 +13,53 @@ rewardRotations = 8;
 wheelDiam = 0.1905; % m
 
 
+
 % initializations
-load([dataDir 'sessions\171010_000\runAnalyzed.mat'], 'wheelPositions', 'wheelTimes', 'rewardTimes', 'targetFs')
+load([dataDir 'sessionInfo.mat'], 'sessionInfo')
+
 maxPosit = pi * wheelDiam * rewardRotations;
 positsInterp = 0 : (1/targetFs) : maxPosit;
 
+sessionInds = contains({sessionInfo.mouse}, 'run5') & [sessionInfo.includeInAnalysis];
+sessions = {sessionInfo(sessionInds).session};
 
-
-%!!! iterate over sessions
-
-% compute velocity
-vel = getVelocity(wheelPositions, .5, targetFs);
-
-% get per trial velocity and positions (cell arrays with one trial per entry)
-vel = splitByRewards(vel, wheelTimes, rewardTimes, false);
-posits = splitByRewards(wheelPositions, wheelTimes, rewardTimes, true);
-
-% interpolate velocities over evenly spaced positional values
-velInterp = nan(length(rewardTimes), length(positsInterp));
-
+cmap = copper(length(sessions));
 close all; figure;
-cmap = copper(length(rewardTimes));
 
-for j = 1:length(rewardTimes)
+
+% plot sessions means
+for i = 1:length(sessions)
     
-    % remove duplicate positional values
-    [posits{j}, uniqueInds] = unique(posits{j}, 'stable');
-    vel{j} = vel{j}(uniqueInds);
-    
-    velInterp(j,:) = interp1(posits{j}, vel{j}, positsInterp, 'linear');
-    plot(positsInterp, velInterp(j,:), 'color', cmap(j,:)); hold on
-    
+    % load session data
+    load([dataDir 'sessions\' sessions{i} '\runAnalyzed.mat'],...
+        'wheelPositions', 'wheelTimes', 'rewardTimes', 'targetFs')
+
+    % compute velocity
+    vel = getVelocity(wheelPositions, .5, targetFs);
+
+    % get per trial velocity and positions (cell arrays with one trial per entry)
+    vel = splitByRewards(vel, wheelTimes, rewardTimes, false);
+    posits = splitByRewards(wheelPositions, wheelTimes, rewardTimes, true);
+
+    % interpolate velocities over evenly spaced positional values
+    velInterp = nan(length(rewardTimes), length(positsInterp));
+
+    for j = 1:length(rewardTimes)
+
+        % remove duplicate positional values
+        [posits{j}, uniqueInds] = unique(posits{j}, 'stable');
+        vel{j} = vel{j}(uniqueInds);
+
+        % interpolate
+        velInterp(j,:) = interp1(posits{j}, vel{j}, positsInterp, 'linear');
+
+    end
+
+    % compute and plot session average
+    sessionMean = nanmean(velInterp, 1);
+    plot(positsInterp, sessionMean, 'color', cmap(i,:), 'linewidth', 2)
+    hold on
 end
 
-% compute average
-sessionMean = nanmean(velInterp, 1);
-plot(positsInterp, sessionMean, 'linewidth', 5, 'color', [0 0 0])
-
-pimpFig;
-% velInterp = 
-
+pimpFig
 
