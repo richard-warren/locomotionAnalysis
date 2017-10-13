@@ -126,8 +126,6 @@ for i = 1:length(velPlots)
     
 end
 
-% add titles
-subplot
 
 % pimp out bar graph
 subplot(2,2,2)
