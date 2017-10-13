@@ -34,14 +34,14 @@ function spikeAnalysis(dataDir)
         sessionFiles = dir(sessionDir);
 
         % determine whether runAnalyzed.mat was already created
-        previouslyAnalyzed = sum( cellfun(@(s) ~isempty(strfind(s, 'Analyzed.mat')), {sessionFiles.name})) > 0;
+        previouslyAnalyzed = sum( cellfun(@(s) ~isempty(strcmp(s, 'Analyzed.mat')), {sessionFiles.name})) > 0;
 
         if ~previouslyAnalyzed
 
             fprintf('\nanalyzing %s...\n', dataFolders(i).name);
 
             % load data
-            load([sessionDir '\run.mat']);
+            load([sessionDir '\run.mat'], '');
 
             % find reward times
             minRewardInteveral = 1;
@@ -78,6 +78,30 @@ function spikeAnalysis(dataDir)
                                                   'obsPositions', 'obsTimes',...
                                                   'wheelPositions', 'wheelTimes',...
                                                   'targetFs');
+        end
+
+                                              
+                                              
+        % compute frame timeStamps if video was collected and not already analyzed
+        
+        if exist([sessionDir '\run.csv'], 'file') & 
+
+            % get camera metadata and spike timestamps
+            metadata = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+            frameCounts = metadata(:,2);
+            timeStampsFlir = flirTimeStampDecoderFLIR(metadata(:,3));
+
+            if length(exposure.times) >= length(frameCounts)
+                timeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts);
+                save([sessionDir '\frameTimeStamps.mat'], 'timeStamps')
+            else
+                disp(['session' dataFolders(i).name 'has more frames than exposure TTLs... failed to get frame timeStamps'])
+            end
+
+        end
+            
+            
+            
         end    
     end
 end

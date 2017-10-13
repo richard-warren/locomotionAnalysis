@@ -1,4 +1,4 @@
-function times = timestampDecoder(timeStamps)
+function times = flirTimeStampDecoderFLIR(timeStamps)
 
     % converts metadata timestamps recorded in bonsai from point grey camera into seconds
     %
