@@ -1,16 +1,22 @@
 
-% PLOT BASELINE DATA
+% BASELINE ANALYSIS
+
+% iterates over all sessions of given mouse with experiment name 'baseline'
+% plots mean speed as a function of position with respect to reward
+% also plots bar graph of average median speed per session to determine whether they are running well enough to include in subsequent experiments
+% trial median speeds are computed in space between vertical lines on the plot (positRange)
+% only middle trials are included, defined by trialRange
 
 
 
 % user settings
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 mouse = 'run5';
-trialRange = [.2 .8]; % only include trials in the middle between these two limits
+trialRange = [.05 .8]; % only include trials in the middle between these two limits
 rewardRotations = 8;
 positRange = [1 7]; % units: wheel rotations // only compute trial median velocity within these wheel positions on a per-trial basis 
 wheelDiam = 0.1905; % m
-ylims = [0 .5];
+ylims = [0 .7];
 
 
 
@@ -24,7 +30,7 @@ sessionInds = strcmp(sessionInfo.mouse, mouse) &...
               sessionInfo.include;
 sessions = sessionInfo.session(sessionInds);
 
-cmap = copper(length(sessions));
+cmap = winter(length(sessions));
 figure;
 subplot(1,2,2); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
 
@@ -39,9 +45,10 @@ for i = 1:length(sessions)
     positsInterp = 0 : (1/targetFs) : maxPosit;
     
     
-    % trim first and last rewards
-    lims = round(trialRange * length(rewardTimes));
-    rewardTimes = rewardTimes(lims(1):lims(2));
+    % limit to middle trials only
+    trialLims = round(trialRange * length(rewardTimes));
+    trialLims = max(trialLims, 1); % ensure no 0 indices
+    rewardTimes = rewardTimes(trialLims(1):trialLims(2));
     
 
     % compute velocity
@@ -78,7 +85,7 @@ for i = 1:length(sessions)
     subplot(1,2,2)
     middlePositInds = (positsInterp > positRangeMeters(1)) & (positsInterp < positRangeMeters(2));
     trialMedians = nanmedian(velInterp(:, middlePositInds), 2);
-    sessionMed = nanmean(trialMedians);
+    sessionMed = nanmedian(trialMedians);
     bar(i, sessionMed, 'facecolor', cmap(i,:)); hold on
 end
 
@@ -91,11 +98,13 @@ subplot(1,2,1); set(gca, 'ylim', ylims, 'xlim', [0 maxPosit])
 for i=1:2
     line([positRangeMeters(i) positRangeMeters(i)], ylims, 'color', [.2 .2 .2]);
 end
-xlabel('distance travelled (m)')
-ylabel('velocity (m/s)')
+xlabel('distance travelled (m)', 'fontweight', 'bold')
+ylabel('velocity (m/s)', 'fontweight', 'bold')
 
-subplot(1,2,2); set(gca, 'ylim', ylims)
-xlabel('session #')
+subplot(1,2,2);
+set(gca, 'ylim', ylims, 'xlim', [.25 length(sessions)+.75])
+xlabel('session #', 'fontweight', 'bold')
+ylabel('velocity (m/s)', 'fontweight', 'bold')
 
 
 

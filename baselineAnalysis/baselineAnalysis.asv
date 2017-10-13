@@ -1,5 +1,9 @@
 
-% PLOT BASELINE DATA
+
+% iterates over all sessions of given mouse with experiment name 'baseline'
+% plots mean speed as a function of position with respect to reward
+% also plots bar graph of average median speed per session to determine whether they are running well enough to include in subsequent experiments
+% trial median speeds are computed in space between vertical lines on the plot (positRange)
 
 
 
@@ -26,6 +30,7 @@ sessions = sessionInfo.session(sessionInds);
 
 cmap = copper(length(sessions));
 figure;
+subplot(1,2,2); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
 
 
 % plot sessions means
@@ -77,16 +82,28 @@ for i = 1:length(sessions)
     subplot(1,2,2)
     middlePositInds = (positsInterp > positRangeMeters(1)) & (positsInterp < positRangeMeters(2));
     trialMedians = nanmedian(velInterp(:, middlePositInds), 2);
-    sessionMean = nanmean(trialMedians);
-    bar(i, sessionMean, 'facecolor', cmap(i,:)); hold on
+    sessionMed = nanmean(trialMedians);
+    bar(i, sessionMed, 'facecolor', cmap(i,:)); hold on
 end
 
+
+
 % pimp figure
-pimpFig; set(gcf, 'menubar', 'none', 'position', [.25 .25 .6 .4])
-subplot(1,2,1); set(gca, 'ylim', ylims)
+pimpFig; set(gcf, 'menubar', 'none', 'position', [.2 .4 .6 .4])
+
+subplot(1,2,1); set(gca, 'ylim', ylims, 'xlim', [0 maxPosit])
 for i=1:2
-    line([positRangeMeters(i) positRangeMeters(i)], ylims, 'linecolor', [0 0 0]);
+    line([positRangeMeters(i) positRangeMeters(i)], ylims, 'color', [.2 .2 .2]);
 end
 xlabel('distance travelled (m)')
 ylabel('velocity (m/s)')
+
+subplot(1,2,2); set(gca, 'ylim', ylims)
+xlabel('session #')
+
+
+
+% save figure
+savefig(['baselineAnalysis\figs\' mouse '.fig'])
+
 
