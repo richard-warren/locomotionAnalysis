@@ -1,10 +1,11 @@
+function obsAvoidance(mouse)
+
 % OBSTACLE AVOIDANCE ANALYSIS
 
 % note: if i ever add obstacle on-position jitter this code won't work // i will have to incorporate the wheel rotary encoder, or track backwords from the position at which the obs turn OFF, which remains constant
 
 % user settings
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
-mouse = 'run3';
 
 obsPrePost = [.1 .5]; % meters // plot this much before and after the obstacle turns on
 obsOnPos = 0.4236; % meters // distance for which obstacle is lit up // this was hack-ily determined emperically in matlab... knowing this value ahead of time makes the coding much simpler though...
