@@ -43,11 +43,9 @@ for i = 1:length(obsOnTimes)
     for f = frameInds'
         
         % put together top and bot frames
-        frameTop = read(vidTop, f);
-        frameBot = read(vidBot, f);
-        frame = cat(1, frameTop, frameBot);
-        frame = squeeze(frame(:,:,1));
-        frame = imadjust(frame);   
+        frameTop = rgb2gray(read(vidTop, f));
+        frameBot = rgb2gray(read(vidBot, f));
+        frame = imadjust([frameTop; frameBot]);
         
         % add trial info text
         frame = insertText(frame, [0 0], ['trial: ' num2str(i)]);

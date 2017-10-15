@@ -25,6 +25,7 @@ sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
 
 maxPosit = pi * wheelDiam * rewardRotations;
 positRangeMeters = pi * wheelDiam * positRange;
+sessionInfo.include(isnan(sessionInfo.include)) = 0;
 sessionInds = strcmp(sessionInfo.mouse, mouse) &...
               strcmp(sessionInfo.experiment, 'baseline') &...
               sessionInfo.include;

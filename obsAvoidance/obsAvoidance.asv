@@ -11,7 +11,7 @@ obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches th
 posRes = .001; % resolution of x axis, in meters
 ylims = [.1 .6]; % m/s
 trialRange = [0 .8]; % only include trials #s between these limits, so performance metrices are not dragged down when the animal is warming up or sated near the end
-obsPos = .38; % m, position at which obstacle is in the middle of the frame // not sure if this is totally accurate at the moment...
+obsPos = .38; % m
 
 
 % initializations
@@ -86,8 +86,9 @@ for i = 1:length(sessions)
 %         keyboard
 
         % locate trial
-        obsOnPos = obsPositions( find(obsTimes >= obsOnTimes(j), 1, 'first') );
-        obsTime  = obsTimes(find( obsTimes >= obsOnTimes(j) & obsPositions > obsPos, 1, 'first')); % time at which obstacle reaches obsPos
+        obsOnInd = find( obsTimes >= obsOnTimes(j) & obsPositions > obsPos, 1, 'first');
+        obsOnPos = obsPositions(obsOnInd);
+        obsTime  = obsTimes(obsOnInd); % time at which obstacle reaches obsPos
         obsWheelPos = wheelPositions(find(wheelTimes>=obsTime, 1, 'first')); % position of wheel at moment obstacle reaches obsPos
 
         % get trial positions and velocities
@@ -113,12 +114,9 @@ for i = 1:length(sessions)
         obsOnPositions(j) = obsPos - obsOnPos;
     end
     
-    obsOnMean = mean(obsOnPositions);
-    
     % plot session mean velocity
     subplot(2,2,1)
     plot(posInterp, nanmean(sessionVels,1), 'color', cmap(i,:), 'linewidth', 2); hold on
-    line(-[obsOnMean obsOnMean], ylims, 'color', cmap(1,:));
     
     % plot session success rate
     subplot(2,2,2)
@@ -127,12 +125,15 @@ for i = 1:length(sessions)
     % plot successful trial velocity means
     subplot(2,2,3)
     plot(posInterp, nanmean(sessionVels(logical(obsAvoided),:),1), 'color', cmap(i,:), 'linewidth', 2); hold on
-    line(-[obsOnMean obsOnMean], ylims, 'color', cmap(1,:));
     
     % plot unsuccessful trial velocity means
     subplot(2,2,4)
     plot(posInterp, nanmean(sessionVels(~logical(obsAvoided),:),1), 'color', cmap(i,:), 'linewidth', 2); hold on
-    line(-[obsOnMean obsOnMean], ylims, 'color', cmap(1,:));
+    
+    % plot average obsOn position
+    obsOnMean = mean(obsOnPositions);
+    line([obsOnMean obsOnMean], ylims);
+    
 end
 
 
@@ -153,7 +154,7 @@ for i = 1:length(velPlots)
     xlabel('position (m)', 'fontweight', 'bold')
     ylabel('velocity (m/s)', 'fontweight', 'bold')
     
-    line([0 0], ylims, 'color', cmap(1,:))
+    line([0 0], ylims, 'color', [0 0 0])
     
 end
 
