@@ -13,7 +13,7 @@ function baselineAnalysis(mouse)
 % user settings
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 trialRange = [.05 .8]; % only include trials in the middle between these two limits
-rewardRotations = 8;
+rewardRotations = 9.1;
 positRange = [1 7]; % units: wheel rotations // only compute trial median velocity within these wheel positions on a per-trial basis 
 wheelDiam = 0.1905; % m
 ylims = [0 .7];

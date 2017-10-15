@@ -40,7 +40,7 @@ function spikeAnalysis(dataDir)
 
         if ~previouslyAnalyzed
 
-            fprintf('\nanalyzing %s...\n', dataFolders(i).name);
+            fprintf('\nANALYZING %s............\n', dataFolders(i).name);
 
             % load data
             load([sessionDir '\run.mat']);

@@ -51,19 +51,10 @@ for i = 1:round(length(identities))
 
 end
 
-
-
-% convert to real-world units (m)
-mmPerTic = (2*wheelRad*pi) / encoderSteps;
-positions = cumsum(deltas) * (mmPerTic / 1000);
-
-
-
 % report whether events are recorded out of order
 faultyEventCount = sum(diff(aTimes)<=0) + sum(diff(bTimes)<=0);
 
 if faultyEventCount>0
-    
     fprintf('WARNING: detected %i events simultaneously or out of order!\n', faultyEventCount)
     
     % remove duplicate times (necessary for interpolation)
@@ -72,8 +63,11 @@ if faultyEventCount>0
     
 end
 
+% convert to real-world units (m)
+mmPerTic = (2*wheelRad*pi) / encoderSteps;
+positions = cumsum(deltas) * (mmPerTic / 1000);
 
-
+keyboard
 % interpolate
 [positions, times] = interpData(times, positions, targetFs);
 
