@@ -40,7 +40,7 @@ function spikeAnalysis(dataDir)
 
         if ~previouslyAnalyzed
 
-            fprintf('\nANALYZING %s............\n', dataFolders(i).name);
+            fprintf('\nANALYZING %s\n\n', dataFolders(i).name);
 
             % load data
             load([sessionDir '\run.mat']);
@@ -52,6 +52,7 @@ function spikeAnalysis(dataDir)
             rewardTimes = rewardTimes(logical([diff(rewardTimes) > minRewardInteveral; 1])); % remove reward times occuring within minRewardInteveral seconds of eachother
 
             % decode stepper motor
+            fprintf('  decoding stepper motor commands...\n')
             if ~isempty(stepDir.times)
                 [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
             else
@@ -60,6 +61,7 @@ function spikeAnalysis(dataDir)
             end
 
             % decode obstacle position (from rotary encoder on stepper motor track)
+            fprintf('  decoding obstacle position...\n')
             if ~isempty(obEncodA.times)
                 [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
                                                              obEncodB.times, obEncodB.level,...
@@ -70,6 +72,7 @@ function spikeAnalysis(dataDir)
             end
 
             % decode wheel position
+            fprintf('  decoding wheel position...\n')
             [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
                                                          whEncodB.times, whEncodB.level,...
                                                          whEncoderSteps, wheelRad, targetFs);
@@ -99,10 +102,11 @@ function spikeAnalysis(dataDir)
 
             if length(exposure.times) >= length(frameCounts)
                 timeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts);
-                save([sessionDir '\frameTimeStamps.mat'], 'timeStamps')
             else
-                disp(['session ' dataFolders(i).name ' has more frames than exposure TTLs... failed to get frame timeStamps'])
+                disp([  'session ' dataFolders(i).name ' has more frames than exposure TTLs... saving empty frameTimeStamps.mat'])
+                timeStamps = [];
             end
+            save([sessionDir '\frameTimeStamps.mat'], 'timeStamps')
         end
     end
 end

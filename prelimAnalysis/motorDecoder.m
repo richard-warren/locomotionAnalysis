@@ -54,7 +54,7 @@ function [positions, times] = motorDecoder(directions, directionTimes, stepTimes
     
     % report analysis time
     decodingTime = toc/60; % minutes
-    fprintf('motor commands decoding time: %f minutes\n', decodingTime)
+    fprintf('  motor commands decoding time: %f minutes\n\n', decodingTime)
     
 end
 

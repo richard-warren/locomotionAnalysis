@@ -40,22 +40,26 @@ for i = 1:length(obsOnTimes)
         frameInds(2) = frameInds(1) + maxFrames;
     end
     
-    for f = frameInds'
-        
-        % put together top and bot frames
-        frameTop = rgb2gray(read(vidTop, f));
-        frameBot = rgb2gray(read(vidBot, f));
-        frame = imadjust([frameTop; frameBot]);
-        
-        % add trial info text
-        frame = insertText(frame, [0 0], ['trial: ' num2str(i)]);
-        
-        % write frame to video
-        writeVideo(vidWriter, frame);
+    if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
+        fprintf('skipping trial %i due to unresolved timeStamps', i)
+    else
+        for f = frameInds'
+
+            % put together top and bot frames
+            frameTop = rgb2gray(read(vidTop, f));
+            frameBot = rgb2gray(read(vidBot, f));
+            frame = imadjust([frameTop; frameBot]);
+
+            % add trial info text
+            frame = insertText(frame, [0 0], ['trial: ' num2str(i)]);
+
+            % write frame to video
+            writeVideo(vidWriter, frame);
+        end
+
+        % add blank frame between trials
+        writeVideo(vidWriter, zeros(size(frame)))
     end
-    
-    % add blank frame between trials
-    writeVideo(vidWriter, zeros(size(frame)))
     
     % update waitbar
     waitbar(i/length(obsOnTimes))

@@ -64,7 +64,7 @@ faultyEventCount = sum(diff(aTimes)<=0) + sum(diff(bTimes)<=0);
 
 if faultyEventCount>0
     
-    fprintf('WARNING: detected %i events simultaneously or out of order!\n', faultyEventCount)
+    fprintf('  WARNING: detected %i events simultaneously or out of order!\n', faultyEventCount)
     
     % remove duplicate times (necessary for interpolation)
     [times, uniqueInds] = unique(times);
@@ -79,7 +79,7 @@ end
 
 % report analysis time
 decodingTime = toc/60; % minutes
-fprintf('rotary decoding time: %f minutes\n', decodingTime)
+fprintf('  rotary decoding time: %f minutes\n\n', decodingTime)
 
 
 

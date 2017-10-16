@@ -20,7 +20,7 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts)
 
 
     % ensure the correct number of trials were detected
-    if length(frameTrialStarts) ~= length(ttlTrialStarts); disp('same number of rewards not detected! problem!!!'); end
+    if length(frameTrialStarts) ~= length(ttlTrialStarts); disp('  same number of rewards not detected! problem!!!'); end
 
 
     for i = 1:(length(ttlTrialStarts)-1)
@@ -37,7 +37,7 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts)
 
         % if all frames aren't accounted for, set all times to zero (these values will subsequently be changed to nan)
         if (ttlsInTrial - framesInTrial - missedInTrial) ~= 0
-            fprintf('cannot resolve timeStamps for trial: %i\n', i);
+            fprintf('  cannot resolve timeStamps for trial: %i\n', i);
             frameTimes(ttlTrialStarts(i):ttlTrialStarts(i+1)-1) = 0;
 
         % otherwise set all missing frame timestamps to nan (these values will subsequently be removed)
@@ -59,7 +59,7 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts)
     frameTimes(frameTimes==0) = nan;
     
     % display number of missed frames
-    fprintf('total missed frames: %i\n', length(missedFrameInds));
+    fprintf('  total missed frames: %i\n', length(missedFrameInds));
 
     % verify with plot
 
