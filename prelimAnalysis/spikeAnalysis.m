@@ -36,11 +36,15 @@ function spikeAnalysis(dataDir)
         
         % determine whether runAnalyzed.mat was already created
         
-        previouslyAnalyzed = any(cellfun(@(s) strcmp(s, 'runAnalyzed.mat'), {sessionFiles.name}));
+        analyzeSpike = ~any(cellfun(@(s) strcmp(s, 'runAnalyzed.mat'), {sessionFiles.name}));
+        analyzeVid = ~any(cellfun(@(s) strcmp(s, 'frameTimeStamps.mat'), {sessionFiles.name})) &&...
+                                exist([sessionDir '\run.csv'], 'file');
 
-        if ~previouslyAnalyzed
-
+        if analyzeSpike || analyzeVid
             fprintf('\nANALYZING %s\n\n', dataFolders(i).name);
+        end
+        
+        if analyzeSpike
 
             % load data
             load([sessionDir '\run.mat']);
@@ -88,9 +92,8 @@ function spikeAnalysis(dataDir)
                                               
                                               
         % compute frame timeStamps if video was collected and not already analyzed
-        previouslyAnalyzed = any(cellfun(@(s) strcmp(s, 'frameTimeStamps.mat'), {sessionFiles.name}));
         
-        if exist([sessionDir '\run.csv'], 'file') && ~previouslyAnalyzed
+        if analyzeVid
             
             % load data
             load([sessionDir '\run.mat'], 'exposure')

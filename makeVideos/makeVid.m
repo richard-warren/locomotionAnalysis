@@ -1,9 +1,9 @@
 function makeVid(session)
 
 % user settings
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
+dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
 % obsPosRange = [.31 .45]; % each trial will capture frames in which the obstacle was between these positions on the track // meters
-obsPosRange = [.31 .45];
+obsPosRange = [.31 .445];
 maxTrialTime = 1; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 playbackSpeed = .1;
 
@@ -29,11 +29,11 @@ obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct fo
 % edit video
 w = waitbar(0, 'editing video...');
 
-for i = 1:6%length(obsOnTimes)
+for i = 1:length(obsOnTimes)
     
     % find trial indices
     startInd = find(obsTimes>obsOnTimes(i) & obsPositions>obsPosRange(1), 1, 'first');
-    endInd =   find(obsTimes>obsOnTimes(i) & obsPositions>obsPosRange(2), 1, 'first');
+    endInd   = find(obsTimes>obsOnTimes(i) & obsPositions>obsPosRange(2), 1, 'first');
     
     % get frame indices
     frameInds = find(timeStamps>obsTimes(startInd) & timeStamps<obsTimes(endInd));
@@ -44,6 +44,7 @@ for i = 1:6%length(obsOnTimes)
     if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
         fprintf('skipping trial %i due to unresolved timeStamps\n', i)
     else
+        
         for f = frameInds'
 
             % put together top and bot frames
