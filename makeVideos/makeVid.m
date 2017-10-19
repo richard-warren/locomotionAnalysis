@@ -18,8 +18,7 @@ open(vidWriter)
 load([dataDir session '\run.mat'], 'touch');
 load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes',...
                                            'wheelPositions', 'wheelTimes',...
-                                           'obsOnTimes', 'obsOffTimes',...
-                                           'targetFs');
+                                           'obsOnTimes', 'obsOffTimes');
 load([dataDir session '\frameTimeStamps.mat'], 'timeStamps')
 maxFrames = vidTop.FrameRate * maxTrialTime;
 

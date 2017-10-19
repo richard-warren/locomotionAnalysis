@@ -1,4 +1,4 @@
-function spikeAnalysis(dataDir, overWrite)
+function spikeAnalysis(dataDir)
 
 
 % performs low-level analysis on raw spike files:
@@ -41,11 +41,8 @@ for i = 1:length(dataFolders)
     analyzeSpike = ~any(cellfun(@(s) strcmp(s, 'runAnalyzed.mat'), {sessionFiles.name}));
     analyzeVid = ~any(cellfun(@(s) strcmp(s, 'frameTimeStamps.mat'), {sessionFiles.name})) &&...
                             exist([sessionDir '\run.csv'], 'file');
+%     analyzeVid = exist([sessionDir '\run.csv'], 'file'); % uncomment this line to overwrite video analyses
     
-    if overWrite
-        analyzeSpike = true;
-    end
-
     if analyzeSpike || analyzeVid
         fprintf('\nANALYZING %s\n\n', dataFolders(i).name);
     end
@@ -55,7 +52,7 @@ for i = 1:length(dataFolders)
 
         % load data
         load([sessionDir '\run.mat']);
-
+        
         % find reward times
         minRewardInteveral = 1;
         rewardInds = find(diff(reward.values>2)==1);
@@ -90,6 +87,7 @@ for i = 1:length(dataFolders)
         
         % get obstacle on and off times
         % (ensuring that first event is obs turning ON and last is obs turning OFF)
+        
         firstOnInd = find(obsOn.level, 1, 'first');
         lastOffInd = find(~obsOn.level, 1, 'last');
         obsOn.level = obsOn.level(firstOnInd:lastOffInd);

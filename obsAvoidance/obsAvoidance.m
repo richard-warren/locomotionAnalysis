@@ -11,7 +11,7 @@ obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches th
 posRes = .001; % resolution of x axis, in meters
 ylims = [.1 .6]; % m/s
 trialRange = [0 .8]; % only include trials #s between these limits, so performance metrices are not dragged down when the animal is warming up or sated near the end
-obsPos = .38; % m, position at which obstacle is in the middle of the frame // not sure if this is totally accurate at the moment...
+obsPos = .382; % m, position at which obstacle is in the middle of the frame // use getFrameTimes function to determine this value
 
 
 % initializations
