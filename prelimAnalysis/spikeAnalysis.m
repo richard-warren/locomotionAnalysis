@@ -1,4 +1,4 @@
-function spikeAnalysis(dataDir)
+function spikeAnalysis(dataDir, overWrite)
 
 
 % performs low-level analysis on raw spike files:
@@ -8,7 +8,8 @@ function spikeAnalysis(dataDir)
 % it also converts the reward channel from analog to digital (this digital input was recorded on an analog channel because I ran out of spike digital inputs)
 % it then saves these data to runAnalyzed.mat in each folder, along with the other non-processed spike channels ()
 %
-% input      dataDir: directory containing all of the data folders // must ONLY contain data session folders
+% input      dataDir:    directory containing all of the data folders // must ONLY contain data session folders
+%            overWrite:  if TRUE, overwrites analyzes all files, overwriting previously analyzed data
 
 
 % settings
@@ -30,7 +31,7 @@ dataFolders = dataFolders([dataFolders.isdir]); % keep only folders
 
 % iterate over data folders and analyze those that have not been analyzed
 for i = 1:length(dataFolders)
-
+ 
     sessionDir = [dataDir '\' dataFolders(i).name];
     sessionFiles = dir(sessionDir);
 
@@ -40,11 +41,16 @@ for i = 1:length(dataFolders)
     analyzeSpike = ~any(cellfun(@(s) strcmp(s, 'runAnalyzed.mat'), {sessionFiles.name}));
     analyzeVid = ~any(cellfun(@(s) strcmp(s, 'frameTimeStamps.mat'), {sessionFiles.name})) &&...
                             exist([sessionDir '\run.csv'], 'file');
+    
+    if overWrite
+        analyzeSpike = true;
+    end
 
     if analyzeSpike || analyzeVid
         fprintf('\nANALYZING %s\n\n', dataFolders(i).name);
     end
-
+    
+    
     if analyzeSpike
 
         % load data
@@ -81,12 +87,22 @@ for i = 1:length(dataFolders)
         [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
                                                      whEncodB.times, whEncodB.level,...
                                                      whEncoderSteps, wheelRad, targetFs);
+        
+        % get obstacle on and off times
+        % (ensuring that first event is obs turning ON and last is obs turning OFF)
+        firstOnInd = find(obsOn.level, 1, 'first');
+        lastOffInd = find(~obsOn.level, 1, 'last');
+        obsOn.level = obsOn.level(firstOnInd:lastOffInd);
+        obsOn.times = obsOn.times(firstOnInd:lastOffInd);
+        obsOnTimes =  obsOn.times(logical(obsOn.level)); % important: assumes first event is HIGH... not sure how this will behave otherwise...
+        obsOffTimes = obsOn.times(logical(~obsOn.level));
 
         % save data
         save([sessionDir '\runAnalyzed.mat'], 'rewardTimes',...
                                               'motorPositions', 'motorTimes',...
                                               'obsPositions', 'obsTimes',...
                                               'wheelPositions', 'wheelTimes',...
+                                              'obsOnTimes', 'obsOffTimes',...
                                               'targetFs');
     end
 

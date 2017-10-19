@@ -30,43 +30,24 @@ subplot(2,2,2); bar(nan(1,length(sessions))); hold on % ghost bar plot to get ou
 
 
 
-% determine range of obstacle track based on first session
-% load([dataDir sessions{1} '\run.mat'], 'ObsLight', 'touch');
-% load([dataDir sessions{1} '\runAnalyzed.mat'], 'obsPositions', 'obsTimes');
-% obsOnTimes = ObsLight.times(logical(ObsLight.level)); % important: assumes first event is HIGH... not sure how this will behave otherwise...
-% obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
-% obsRange = range(obsPositions);
-
-
-
-
-
 % iterate over sessions
 for i = 1:length(sessions)
 
     % load session data
-    load([dataDir sessions{i} '\run.mat'], 'ObsLight', 'touch');
+    load([dataDir sessions{i} '\run.mat'], 'touch');
     load([dataDir sessions{i} '\runAnalyzed.mat'],...
             'wheelPositions', 'wheelTimes',...
             'obsPositions', 'obsTimes',...
+            'obsOnTimes', 'obsOffTimes',...
             'rewardTimes', 'targetFs');
     
-%     if i==2; keyboard; end
-    
-    % ensure first obsOn event is HIGH and the last is LOW
-    firstInd = find(ObsLight.level, 1, 'first');
-    lastInd = find(~ObsLight.level, 1, 'last');
-    ObsLight.level = ObsLight.level(firstInd:lastInd);
-    ObsLight.times = ObsLight.times(firstInd:lastInd);
-    
-    obsOnTimes =  ObsLight.times(logical(ObsLight.level)); % important: assumes first event is HIGH... not sure how this will behave otherwise...
-    obsOffTimes = ObsLight.times(logical(~ObsLight.level));
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
     
     % limit to middle trials only
     trialLims = round(trialRange * length(obsOnTimes));
     trialLims = max(trialLims, 1); % ensure no 0 indices
     obsOnTimes = obsOnTimes(trialLims(1):trialLims(2));
+    obsOffTimes = obsOffTimes(trialLims(1):trialLims(2));
     
     % get touch times // !!! i should really debounce these signals so the duration of touch is interpretable... currently duration is not interpretable
     touchTimes = touch.times(logical([0; diff(touch.values>3)==1]));

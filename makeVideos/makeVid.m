@@ -1,8 +1,7 @@
 function makeVid(session)
 
 % user settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
-% obsPosRange = [.31 .45]; % each trial will capture frames in which the obstacle was between these positions on the track // meters
+dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 obsPosRange = [.31 .445];
 maxTrialTime = 1; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 playbackSpeed = .1;
@@ -16,12 +15,14 @@ vidWriter = VideoWriter([dataDir session '\edited.mp4'], 'MPEG-4');
 set(vidWriter, 'FrameRate', round(vidTop.FrameRate * playbackSpeed))
 open(vidWriter)
 
-load([dataDir session '\run.mat'], 'ObsLight', 'touch');
-load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'wheelPositions', 'wheelTimes', 'targetFs');
+load([dataDir session '\run.mat'], 'touch');
+load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes',...
+                                           'wheelPositions', 'wheelTimes',...
+                                           'obsOnTimes', 'obsOffTimes',...
+                                           'targetFs');
 load([dataDir session '\frameTimeStamps.mat'], 'timeStamps')
 maxFrames = vidTop.FrameRate * maxTrialTime;
 
-obsOnTimes = ObsLight.times(logical(ObsLight.level));
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
 
 
