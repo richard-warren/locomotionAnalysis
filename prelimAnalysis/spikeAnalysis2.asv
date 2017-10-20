@@ -17,11 +17,10 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
     % the necessary files exist in the directory to compute it
     %
     % input:     dataDir           directory containing session folders
-    %            varsToOverwrite   cell array of of variables that should be re-computed
-    %
-    % to do:     should add a way of ensuring that correct variables exist in run.csv before attempting to load them!
-    %            should have an option to only sweep through a subset of folders in dataDir, e.g. UI select folder thing
+    %            varsToOverwrite   cell ar
 
+    % if 
+    % !!! should add a way of ensuring that correct variables exist in run.csv before attempting to load them!
 
 
     % settings
