@@ -193,7 +193,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
                 % load data
                 camMetadata = dlmread([sessionDir '\run.csv']);
                 camSysClock = camMetadata(:,1) / 1000;
-                camSpikeClock = frameTimeStamps;
+                camSpikeClock = varStruct.frameTimeStamps;
                 webCamSysClock = dlmread([sessionDir '\webCam.csv']) / 1000; % convert from ms to s
 
                 % remove discontinuities
@@ -212,7 +212,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
                 webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
 
                 % save
-                varStruct.webCamTimeStamps = webCamSpikeCount;
+                varStruct.webCamTimeStamps = webCamSpikeClock;
             end
         end
         
@@ -236,15 +236,6 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
         analyze = ~any(strcmp(varNames, var)) || strcmp(varsToOverWrite, var);
         
     end
-
-    
-    
-    
-    
-    
-    
-    
-    
 end
 
 

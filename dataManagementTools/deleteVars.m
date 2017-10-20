@@ -1,6 +1,9 @@
-function deleteVars(varsToDelete)
+function deleteVars(varsToDelete, matFile)
 
-% deletes variable(s) contained in all run.mat files
+% goes through all folders in dataDir, and deletes the variables listed in cell array varsToDelete contained within matFile
+%
+% input      varsToDelete:  cell array of variable names to be deleted from mat file
+%            matFile:       name of a .mat file from which variables will be deleted (e.g. 'run.mat')
 
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 
@@ -12,7 +15,7 @@ dataFolders = dataFolders([dataFolders.isdir]); % keep only folders
 for i = 1:length(dataFolders)
     
     % load data
-    file = [dataDir dataFolders(i).name '\run.mat'];
+    file = [dataDir dataFolders(i).name '\' matFile];
     data = load(file);
     deleted = false;
     
