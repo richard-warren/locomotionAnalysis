@@ -79,7 +79,7 @@ end
 
 % report analysis time
 decodingTime = toc/60; % minutes
-fprintf('  rotary decoding time: %f minutes\n\n', decodingTime)
+fprintf('  rotary decoding time: %f minutes\n', decodingTime)
 
 
 

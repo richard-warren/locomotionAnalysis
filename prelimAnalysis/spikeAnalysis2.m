@@ -81,6 +81,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             % save values
             varStruct.motorPositions = motorPositions;
             varStruct.motorTimes = motorTimes;
+            varStruct.targetFs = targetFs;
         end
         
         
@@ -105,6 +106,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             % save values
             varStruct.obsPositions = obsPositions;
             varStruct.obsTimes = obsTimes;
+            varStruct.targetFs = targetFs;
         end
         
         
@@ -123,6 +125,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             % save values
             varStruct.wheelPositions = wheelPositions;
             varStruct.wheelTimes = wheelTimes;
+            varStruct.targetFs = targetFs;
         end
         
         
@@ -233,7 +236,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
     
     function analyze = analyzeVar(var, varNames, varsToOverWrite)
 
-        analyze = ~any(strcmp(varNames, var)) || strcmp(varsToOverWrite, var);
+        analyze = ~any(strcmp(varNames, var)) || any(strcmp(varsToOverWrite, var));
         
     end
 end
