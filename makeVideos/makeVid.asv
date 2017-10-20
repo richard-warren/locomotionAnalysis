@@ -47,25 +47,18 @@ for i = 1:length(obsOnTimes)
     if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
         fprintf('skipping trial %i\n', i)
     else
-        
-%         webIndLast = 0;
-        
+
         for f = frameInds'
             
-            webInd = find(webCamTimeStamps>(timeStamps(f)+4), 1, 'first');
+            keyboard
+            webInd = find(webCamTimeStamps>obsTimes(startInd), 1, 'first');
 
             % put together top and bot frames
             frameTop = rgb2gray(read(vidTop, f));
             frameBot = rgb2gray(read(vidBot, f));
-%             
-%             if webInd>webIndLast
-%                 frameWeb = rgb2gray(read(vidWeb, webInd));
-%                 frameWeb = imresize(frameWeb, (size(frameTop,2)/size(frameWeb,2)));
-%                 webIndLast = webInd;
-%             end
-            
+            frameWeb = rgb2gray(read(vidWeb, webInd));
+            frameWeb = imresize(frameWeb, (size(frameTop,2)/size(frameWeb,2)));
             frame = imadjust([frameTop; frameBot]);
-%             frame = [frame; frameWeb];
 
             % add trial info text
             frame = insertText(frame, [0 0], ['trial: ' num2str(i)]);

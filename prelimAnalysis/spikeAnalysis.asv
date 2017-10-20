@@ -130,6 +130,7 @@ for i = 1:length(dataFolders)
         
         % get webCam timeStamps if webCam data exist
         if exist([sessionDir '\webCam.csv'])
+            keyboard
             
             % load data
             camSpikeClock = timeStamps;
