@@ -1,6 +1,7 @@
 function spikeAnalysis2(dataDir, varsToOverWrite)
 
     % performs preliminary analysis on spike data and save in runAnalyzed.mat
+    % !!! need to add a way of ensuring that correct variables exist in run.csv before attempting to load them!
 
 
     % settings
@@ -56,7 +57,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             rewardTimes = rewardTimes(logical([diff(rewardTimes) > minRewardInteveral; 1]));
 
             % save values
-            varStruc.rewardTimes = rewardTimes;
+            varStruct.rewardTimes = rewardTimes;
         end
         
         
@@ -78,8 +79,8 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             end
             
             % save values
-            varStruc.motorPositions = motorPositions;
-            varStruc.motorTimes = motorTimes;
+            varStruct.motorPositions = motorPositions;
+            varStruct.motorTimes = motorTimes;
         end
         
         
@@ -102,8 +103,8 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             end
             
             % save values
-            varStruc.obsPositions = obsPositions;
-            varStruc.obsTimes = obsTimes;
+            varStruct.obsPositions = obsPositions;
+            varStruct.obsTimes = obsTimes;
         end
         
         
@@ -120,8 +121,8 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
                                                          whEncodB.times, whEncodB.level,...
                                                          whEncoderSteps, wheelRad, targetFs);
             % save values
-            varStruc.wheelPositions = wheelPositions;
-            varStruc.wheelTimes = wheelTimes;
+            varStruct.wheelPositions = wheelPositions;
+            varStruct.wheelTimes = wheelTimes;
         end
         
         
@@ -145,9 +146,74 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             obsOffTimes = obsOn.times(logical(~obsOn.level));
             
             % save values
-            varStruc.obsOnTimes = obsOnTimes;
-            varStruc.obsOffTimes = obsOffTimes;
+            varStruct.obsOnTimes = obsOnTimes;
+            varStruct.obsOffTimes = obsOffTimes; 
+        end
+        
+        
+        
+        
+        % get frame timeStamps
+        if analyzeVar('frameTimeStamps', varNames, varsToOverWrite)
             
+            if exist([sessionDir 'run.csv'], 'file')
+                
+                fprintf('%s: getting frame time stamps\n', dataFolders(i).name)
+                load([sessionDir '\run.mat'], 'exposure')
+
+                % get camera metadata and spike timestamps
+                camMetadata = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+                frameCounts = camMetadata(:,2);
+                timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
+
+                if length(exposure.times) >= length(frameCounts)
+                    frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts);
+                else
+                    disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
+                    frameTimeStamps = [];
+                end
+                
+                % save values
+                varStruct.frameTimeStamps = frameTimeStamps;
+            end
+        end
+        
+        
+        
+        
+        % get webCam timeStamps if webCam data exist
+        if analyzeVar('webCamTimeStamps', varNames, varsToOverWrite)
+            
+            if exist([sessionDir 'webCam.csv'], 'file') &&...
+               exist([sessionDir 'run.csv'], 'file') &&...
+               any(strcmp(varNames, 'frameTimeStamps'))
+                
+                fprintf('%s: getting webcam time stamps\n', dataFolders(i).name)
+                
+                % load data
+                camMetadata = dlmread([sessionDir '\run.csv']);
+                camSysClock = camMetadata(:,1) / 1000;
+                camSpikeClock = frameTimeStamps;
+                webCamSysClock = dlmread([sessionDir '\webCam.csv']) / 1000; % convert from ms to s
+
+                % remove discontinuities
+                webCamTimeSteps = cumsum([0; diff(webCamSysClock)<0]);
+                webCamSysClock = webCamSysClock + webCamTimeSteps;
+                webCamSysClock = webCamSysClock - webCamSysClock(1); % set first time to zero
+
+                camTimeSteps = cumsum([0; diff(camSysClock)<0]);
+                camSysClock = camSysClock + camTimeSteps;
+                camSysClock = camSysClock - camSysClock(1); % set first time to zero
+
+
+                % determine spike clock times from system clock times
+                validInds = ~isnan(camSpikeClock);
+                sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
+                webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
+
+                % save
+                varStruct.webCamTimeStamps = webCamSpikeCount;
+            end
         end
         
         

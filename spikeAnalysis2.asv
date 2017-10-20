@@ -1,6 +1,7 @@
 function spikeAnalysis2(dataDir, varsToOverWrite)
 
     % performs preliminary analysis on spike data and save in runAnalyzed.mat
+    % !!! need to add a way of ensuring that correct variables exist in run.csv before attempting to load them!
 
 
     % settings
@@ -29,10 +30,10 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
     % iterate over data folders and analyze those that have not been analyzed
     for i = 1:length(dataFolders)
 
-        sessionDir = [dataDir '\' dataFolders(i).name '\'];
-        runDataLoaded = false;
-
+        
         % load or initialize data structure
+        sessionDir = [dataDir '\' dataFolders(i).name '\'];
+        
         if exist([sessionDir 'runAnalyzed.mat'])
             varStruct = load([sessionDir 'runAnalyzed.mat']);
         else
@@ -45,8 +46,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
         % analyze reward times
         if analyzeVar('rewardTimes', varNames, varsToOverWrite)
             
-            fprintf(['%s: reward times'], dataFolders{i}.name)
-            
+            fprintf('%s: getting reward times\n', dataFolders(i).name)
             load([sessionDir 'run.mat'], 'reward')
                         
             % find reward times
@@ -62,8 +62,163 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
         
         
         
+        
+        % decode stepper motor commands
+        if analyzeVar('motorPositions', varNames, varsToOverWrite) ||...
+           analyzeVar('motorTimes', varNames, varsToOverWrite)
+            
+            load([sessionDir 'run.mat'], 'step', 'stepDir')
+            
+            % decode stepper motor
+            if ~isempty(stepDir.times)
+                fprintf('%s: decoding stepper motor commands\n', dataFolders(i).name)
+                [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
+            else
+                motorPositions = [];
+                motorTimes = [];
+            end
+            
+            % save values
+            varStruc.motorPositions = motorPositions;
+            varStruc.motorTimes = motorTimes;
+        end
+        
+        
+        
+        
+        % decode obstacle position (based on obstacle track rotary encoder)
+        if analyzeVar('obsPositions', varNames, varsToOverWrite) ||...
+           analyzeVar('obsTimes', varNames, varsToOverWrite)
+            
+            load([sessionDir 'run.mat'], 'obEncodA', 'obEncodB')
+            
+            if ~isempty(obEncodA.times)
+                fprintf('%s: decoding obstacle position\n', dataFolders(i).name)
+                [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
+                                                             obEncodB.times, obEncodB.level,...
+                                                             obEncoderSteps, obsRad, targetFs);
+            else
+                obsPositions = [];
+                obsTimes = [];
+            end
+            
+            % save values
+            varStruc.obsPositions = obsPositions;
+            varStruc.obsTimes = obsTimes;
+        end
+        
+        
+        
+        
+        % decode wheel position
+        if analyzeVar('wheelPositions', varNames, varsToOverWrite) ||...
+           analyzeVar('wheelTimes', varNames, varsToOverWrite)
+            
+            fprintf('%s: decoding wheel position\n', dataFolders(i).name)
+            load([sessionDir 'run.mat'], 'whEncodA', 'whEncodB')
+            
+            [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
+                                                         whEncodB.times, whEncodB.level,...
+                                                         whEncoderSteps, wheelRad, targetFs);
+            % save values
+            varStruc.wheelPositions = wheelPositions;
+            varStruc.wheelTimes = wheelTimes;
+        end
+        
+        
+        
+        
+        % get obstacle on and off times
+        % (ensuring that first event is obs turning ON and last is obs turning OFF)
+        if analyzeVar('obsOnTimes', varNames, varsToOverWrite) ||...
+           analyzeVar('obsOffTimes', varNames, varsToOverWrite)
+       
+            fprintf('%s: getting obstacle on and off times\n', dataFolders(i).name)
+            load([sessionDir 'run.mat'], 'obsOn')
+       
+            firstOnInd  = find(obsOn.level, 1, 'first');
+            lastOffInd  = find(~obsOn.level, 1, 'last');
+            
+            obsOn.level = obsOn.level(firstOnInd:lastOffInd);
+            obsOn.times = obsOn.times(firstOnInd:lastOffInd);
+            
+            obsOnTimes  =  obsOn.times(logical(obsOn.level));
+            obsOffTimes = obsOn.times(logical(~obsOn.level));
+            
+            % save values
+            varStruc.obsOnTimes = obsOnTimes;
+            varStruc.obsOffTimes = obsOffTimes; 
+        end
+        
+        
+        
+        
+        % get frame timeStamps
+        if analyzeVar('frameTimeStamps', varNames, varsToOverWrite)
+            
+            if exist([sessionDir 'run.csv'], 'file')
+                
+                fprintf('%s: getting frame timeStamps\n', dataFolders(i).name)
+                load([sessionDir '\run.mat'], 'exposure')
+
+                % get camera metadata and spike timestamps
+                camMetadata = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+                frameCounts = camMetadata(:,2);
+                timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
+
+                if length(exposure.times) >= length(frameCounts)
+                    frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts);
+                else
+                    disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
+                    frameTimeStamps = [];
+                end
+                
+                % save values
+                varStruc.frameTimeStamps = frameTimeStamps;
+            end
+        end
+        
+        
+        
+        
+        % get webCam timeStamps if webCam data exist
+        if analyzeVar('webCamTimeStamps', varNames, varsToOverWrite)
+            
+            if exist([sessionDir 'webCam.csv'], 'file') &&...
+               exist([sessionDir 'run.csv'], 'file') &&...
+               any(strcmp(varNames, 'frameTimeStamps'))
+                
+                % load data
+                camSpikeClock = frameTimeStamps;
+                camSysClock = metadata(:,1) / 1000;
+                webCamSysClock = dlmread([sessionDir '\webCam.csv']) / 1000; % convert from ms to s
+
+                % remove discontinuities
+                timeSteps = cumsum([0; diff(webCamSysClock)<0]);
+                webCamSysClock = webCamSysClock + timeSteps;
+                webCamSysClock = webCamSysClock - webCamSysClock(1);
+
+                timeSteps = cumsum([0; diff(camSysClock)<0]);
+                camSysClock = camSysClock + timeSteps;
+                camSysClock = camSysClock - camSysClock(1);
+
+
+                % determine spike clock times from system clock times
+                validInds = ~isnan(camSpikeClock);
+                sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
+                webCamTimeStamps = webCamSysClock * sysToSpike(1) + sysToSpike(2);
+
+                % save
+                save([sessionDir '\webCamTimeStamps.mat'], 'webCamTimeStamps')
+            end
+        end
+        
+        
+        
+        
         % save results
         save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct')
+        fprintf('----------\n')
     end
     
     
