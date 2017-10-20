@@ -1,7 +1,7 @@
 function spikeAnalysis2(dataDir, varsToOverWrite)
 
     % performs preliminary analysis on spike data and save in runAnalyzed.mat
-    % !!! need to add a way of ensuring that correct variables exist in run.csv before attempting to load them!
+    % !!! should add a way of ensuring that correct variables exist in run.csv before attempting to load them!
 
 
     % settings
@@ -34,7 +34,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
         % load or initialize data structure
         sessionDir = [dataDir '\' dataFolders(i).name '\'];
         
-        if exist([sessionDir 'runAnalyzed.mat'])
+        if exist([sessionDir 'runAnalyzed.mat'], 'file')
             varStruct = load([sessionDir 'runAnalyzed.mat']);
         else
             varStruct = struc();
@@ -50,7 +50,7 @@ function spikeAnalysis2(dataDir, varsToOverWrite)
             load([sessionDir 'run.mat'], 'reward')
                         
             % find reward times
-            rewardInds = find(diff(reward.values>2)==1);
+            rewardInds = logical([0; find(diff(reward.values>2)==1)]);
             rewardTimes = reward.times(rewardInds);
 
             % remove reward times occuring within minRewardInteveral seconds of eachother
