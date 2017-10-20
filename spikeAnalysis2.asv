@@ -1,0 +1,92 @@
+function spikeAnalysis2(dataDir, varsToOverWrite)
+
+    % performs preliminary analysis on spike data and save in runAnalyzed.mat
+
+
+    % settings
+    targetFs = 1000; % frequency that positional data will be resampled to
+    minRewardInteveral = 1;
+
+    % rig characteristics
+    whEncoderSteps = 2880; % 720cpr * 4
+    wheelRad = 95.25; % mm
+    obEncoderSteps = 1000; % 250cpr * 4
+    obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
+
+    % if no variables to overwrite are specified, set to default
+    if nargin==1
+        varsToOverWrite = {' '};
+    end
+
+    % find all data folders in dataDir
+    dataFolders = dir(dataDir);
+    dataFolders = dataFolders(3:end); % remove current and parent directory entries
+    dataFolders = dataFolders([dataFolders.isdir]); % keep only folders
+
+
+
+
+    % iterate over data folders and analyze those that have not been analyzed
+    for i = 1:length(dataFolders)
+
+        sessionDir = [dataDir '\' dataFolders(i).name '\'];
+        runDataLoaded = false;
+
+        % load or initialize data structure
+        if exist([sessionDir 'runAnalyzed.mat'])
+            varStruct = load([sessionDir 'runAnalyzed.mat']);
+        else
+            varStruct = struc();
+        end
+        varNames = fieldnames(varStruct);
+        
+
+
+        % analyze reward times
+        if analyzeVar('rewardTimes', varNames, varsToOverWrite)
+            
+            fprintf(['%s: reward times'], dataFolders{i}.name)
+            
+            load([sessionDir 'run.mat'], 'reward')
+                        
+            % find reward times
+            rewardInds = find(diff(reward.values>2)==1);
+            rewardTimes = reward.times(rewardInds);
+
+            % remove reward times occuring within minRewardInteveral seconds of eachother
+            rewardTimes = rewardTimes(logical([diff(rewardTimes) > minRewardInteveral; 1]));
+
+            % save values
+            varStruc.rewardTimes = rewardTimes;
+        end
+        
+        
+        
+        % save results
+        save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct')
+    end
+    
+    
+    
+    
+    % ---------
+    % FUNCTIONS
+    % ---------
+    
+    function analyze = analyzeVar(var, varNames, varsToOverWrite)
+
+        analyze = ~any(strcmp(varNames, var)) || strcmp(varsToOverWrite, var);
+        
+    end
+
+    
+    
+    
+    
+    
+    
+    
+    
+end
+
+

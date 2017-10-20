@@ -9,9 +9,10 @@ playbackSpeed = .1;
 
 
 % initializations
+webCamExists = exist([dataDir session '\webCam.csv'], 'file');
 vidTop = VideoReader([dataDir session '\runTop.mp4']);
 vidBot = VideoReader([dataDir session '\runBot.mp4']);
-vidWeb = VideoReader([dataDir session '\webCam.avi']);
+if webCamExists; vidWeb = VideoReader([dataDir session '\webCam.avi']); end
 
 vidWriter = VideoWriter([dataDir session '\edited.mp4'], 'MPEG-4');
 set(vidWriter, 'FrameRate', round(vidTop.FrameRate * playbackSpeed))
@@ -42,22 +43,24 @@ for i = 1:length(obsOnTimes)
     endTime = min(obsTimes(startInd)+maxTrialTime, obsTimes(endInd));
     frameInds = find(timeStamps>obsTimes(startInd) & timeStamps<endTime);
     
-    % get webCame frame indices
-    webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
-    webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
-    webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
-    
-    % increase framerate using interpolation    
-    webFrames = double(webFrames);
-    webFramesInterp = nan(size(webFrames,1), size(webFrames,2), length(frameInds));
-    
-    for j = 1:size(webFrames,1)
-        for k = 1:size(webFrames,2)
-            
-            webFramesInterp(j,k,:) = interp1(webCamTimeStamps(webFrameInds),...
-                                             squeeze(webFrames(j,k,:)),...
-                                             timeStamps(frameInds),...
-                                             'linear', 'extrap');        
+    if webCamExists
+        % get webCame frame indices
+        webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
+        webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
+        webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
+
+        % increase framerate using interpolation    
+        webFrames = double(webFrames);
+        webFramesInterp = nan(size(webFrames,1), size(webFrames,2), length(frameInds));
+
+        for j = 1:size(webFrames,1)
+            for k = 1:size(webFrames,2)
+
+                webFramesInterp(j,k,:) = interp1(webCamTimeStamps(webFrameInds),...
+                                                 squeeze(webFrames(j,k,:)),...
+                                                 timeStamps(frameInds),...
+                                                 'linear', 'extrap');        
+            end
         end
     end
     
@@ -73,9 +76,11 @@ for i = 1:length(obsOnTimes)
             frame = imadjust([frameTop; frameBot]);
             
             % add webCam view
-            frameWeb = webFramesInterp(:,:,j);
-            frameWeb = imresize(frameWeb, (size(frame,2)/size(frameWeb,2)));
-            frame = [frame; frameWeb];
+            if webCamExists
+                frameWeb = webFramesInterp(:,:,j);
+                frameWeb = imresize(frameWeb, (size(frame,2)/size(frameWeb,2)));
+                frame = [frame; frameWeb];
+            end
 
             % add trial info text
             frame = insertText(frame, [0 0], ['trial: ' num2str(i)]);
