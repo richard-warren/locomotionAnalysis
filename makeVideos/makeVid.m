@@ -1,7 +1,7 @@
 function makeVid(session)
 
 % user settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
+dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 obsPosRange = [.31 .445];
 maxTrialTime = 1; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 playbackSpeed = .1;
@@ -39,33 +39,43 @@ for i = 1:length(obsOnTimes)
     endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
     
     % get frame indices
-    frameInds = find(timeStamps>obsTimes(startInd) & timeStamps<obsTimes(endInd));
-    if length(frameInds) > maxFrames
-        frameInds = frameInds(1:maxFrames);
+    endTime = min(obsTimes(startInd)+maxTrialTime, obsTimes(endInd));
+    frameInds = find(timeStamps>obsTimes(startInd) & timeStamps<endTime);
+    
+    % get webCame frame indices
+    webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
+    webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
+    webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
+    
+    % increase framerate using interpolation    
+    webFrames = double(webFrames);
+    webFramesInterp = nan(size(webFrames,1), size(webFrames,2), length(frameInds));
+    
+    for j = 1:size(webFrames,1)
+        for k = 1:size(webFrames,2)
+            
+            webFramesInterp(j,k,:) = interp1(webCamTimeStamps(webFrameInds),...
+                                             squeeze(webFrames(j,k,:)),...
+                                             timeStamps(frameInds),...
+                                             'linear', 'extrap');        
+        end
     end
     
     if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
         fprintf('skipping trial %i\n', i)
     else
         
-%         webIndLast = 0;
-        
-        for f = frameInds'
+        for j = 1:length(frameInds)
             
-            webInd = find(webCamTimeStamps>(timeStamps(f)+4), 1, 'first');
-
             % put together top and bot frames
-            frameTop = rgb2gray(read(vidTop, f));
-            frameBot = rgb2gray(read(vidBot, f));
-%             
-%             if webInd>webIndLast
-%                 frameWeb = rgb2gray(read(vidWeb, webInd));
-%                 frameWeb = imresize(frameWeb, (size(frameTop,2)/size(frameWeb,2)));
-%                 webIndLast = webInd;
-%             end
-            
+            frameTop = rgb2gray(read(vidTop, frameInds(j)));
+            frameBot = rgb2gray(read(vidBot, frameInds(j)));
             frame = imadjust([frameTop; frameBot]);
-%             frame = [frame; frameWeb];
+            
+            % add webCam view
+            frameWeb = webFramesInterp(:,:,j);
+            frameWeb = imresize(frameWeb, (size(frame,2)/size(frameWeb,2)));
+            frame = [frame; frameWeb];
 
             % add trial info text
             frame = insertText(frame, [0 0], ['trial: ' num2str(i)]);

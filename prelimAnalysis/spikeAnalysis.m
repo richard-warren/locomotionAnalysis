@@ -42,7 +42,7 @@ for i = 1:length(dataFolders)
     analyzeSpike = ~exist([sessionDir '\runAnalyzed.mat'], 'file');
     analyzeVid =   ~exist([sessionDir '\frameTimeStamps.mat'], 'file') &&...
                     exist([sessionDir '\run.csv'], 'file');
-    analyzeVid =    exist([sessionDir '\run.csv'], 'file'); % uncomment this line to overwrite video analyses
+%     analyzeVid =    exist([sessionDir '\run.csv'], 'file'); % uncomment this line to overwrite video analyses
     
     if analyzeSpike || analyzeVid
         fprintf('\nANALYZING %s\n\n', dataFolders(i).name);
@@ -139,9 +139,12 @@ for i = 1:length(dataFolders)
             % remove discontinuities
             timeSteps = cumsum([0; diff(webCamSysClock)<0]);
             webCamSysClock = webCamSysClock + timeSteps;
+            webCamSysClock = webCamSysClock - webCamSysClock(1);
 
             timeSteps = cumsum([0; diff(camSysClock)<0]);
             camSysClock = camSysClock + timeSteps;
+            camSysClock = camSysClock - camSysClock(1);
+            
             
             % determine spike clock times from system clock times
             validInds = ~isnan(camSpikeClock);
