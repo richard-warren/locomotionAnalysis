@@ -1,6 +1,8 @@
-function obsAvoidance(mouse, expName)
+function obsAvoidance(mouse, )
 
 % OBSTACLE AVOIDANCE ANALYSIS
+
+% note: if i ever add obstacle on-position jitter this code won't work // i will have to incorporate the wheel rotary encoder, or track backwords from the position at which the obs turn OFF, which remains constant
 
 % user settings
 dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
@@ -16,7 +18,7 @@ obsPos = .382; % m, position at which obstacle is in the middle of the frame // 
 sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
 
 sessionInds = strcmp(sessionInfo.mouse, mouse) &...
-              strcmp(sessionInfo.experiment, expName) &...
+              strcmp(sessionInfo.experiment, 'obsTest') &...
               sessionInfo.include;
 sessions = sessionInfo.session(sessionInds);
 
@@ -62,6 +64,7 @@ for i = 1:length(sessions)
     obsOnPositions = nan(1,length(obsOnTimes)); % positions at which obstacle turns on (this may be jittered in he future)
 
     for j = 1:length(obsOnTimes)
+%         keyboard
 
         % locate trial
         obsOnPos = obsPositions( find(obsTimes >= obsOnTimes(j), 1, 'first') );

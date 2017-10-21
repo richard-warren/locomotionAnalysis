@@ -1,14 +1,12 @@
 function makeVid(session)
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
-% kept and everything else is edited out. obsPosRange is in m and defines
-% the start and end position of the obstacle along the track that each
-% trial should include.
+% kept and everything else is edited out. obsPosRange
 
 
 % user settings
 dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
-obsPosRange = [.1 .5]; %[.31 .445]; (m)
+obsPosRange = [.1 .5]; %[.31 .445];
 maxTrialTime = 2; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 playBackSpeed = .5;
 
@@ -24,11 +22,11 @@ fps = round(vidTop.FrameRate * playBackSpeed);
 maxFps = 150; % fps > 150 can be accomplished using 'Motion JPEG AVI' as second argument to VideoWriter, but quality of video is worse
 if fps>maxFps
     playBackSpeed = maxFps/vidTop.FrameRate;
-    fprintf('WARNING: requested playback speed not possible. speed set to %.2f', playBackSpeed);
+    fprintf('WARNING: requested playback speed not possible. speed set to %.2f', maxFps/vidTop.FrameRate);
     fps = maxFps;
 end
 
-vidWriter = VideoWriter(sprintf('%s%s\\%sspeed%.2f', dataDir, session, session, playBackSpeed), 'MPEG-4');
+vidWriter = VideoWriter([dataDir session '\' session 'edited'], 'MPEG-4');
 set(vidWriter, 'FrameRate', fps, 'Quality', 50)
 open(vidWriter)
 
@@ -84,7 +82,7 @@ for i = 1:length(obsOnTimes)
             end
 
             % add trial info text
-            frame = insertText(frame, [0 0], sprintf('Ob%i', i), 'BoxColor', 'yellow');
+            frame = insertText(frame, [0 0], sprintf('Ob%i, Sp%.1f', i, playBackSpeed), 'BoxColor', 'yellow');
 
             % write frame to video
             writeVideo(vidWriter, frame);
