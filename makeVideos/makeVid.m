@@ -8,9 +8,10 @@ function makeVid(session)
 
 % user settings
 dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
-obsPosRange = [.1 .5]; %[.31 .445]; (m)
+% obsPosRange = [.1 .5]; %[.31 .445]; % (m)
+obsPosRange = [.25 .445]; % (m)
 maxTrialTime = 2; % trials exceeding maxTrialTime will be trimmed to this duration (s)
-playBackSpeed = .5;
+playBackSpeed = .1;
 
 
 
@@ -84,7 +85,7 @@ for i = 1:length(obsOnTimes)
             end
 
             % add trial info text
-            frame = insertText(frame, [0 0], sprintf('Ob%i', i), 'BoxColor', 'yellow');
+            frame = insertText(frame, [0 0], num2str(i), 'BoxColor', 'yellow');
 
             % write frame to video
             writeVideo(vidWriter, frame);
