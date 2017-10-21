@@ -3,7 +3,8 @@ function obsAvoidance(mouse, expName)
 % OBSTACLE AVOIDANCE ANALYSIS
 
 % user settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
+% dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
+dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters

@@ -1,10 +1,6 @@
 % function checkObsMovement
 
-% a principled way to do this: if the obs light is on, check pos tracking only while it is ACTUALLY on...
-% if light is not on, only check pos tracking within some positional range around the wheel (because he cant touch it elsewhere and it more or less doesnt matter)
-% also, only check up to moment of wheel break... its to be expected that the tracking will fail at these times
-
-load('C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\171019_002\runAnalyzed.mat')
+load('C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\171020_001\runAnalyzed.mat')
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
 
 velTime = .1;
@@ -44,18 +40,18 @@ for i = 1:length(obsOnTimes)
     times = linspace(0, obsOffTimes(i)-obsOnTimes(i), trialLength);
     
     % plot trial
-    subplot(2,1,1)
-    plot(times, trialPosDiff, 'color', cmap(i,:)); hold on
+    subplot(1,2,1)
+    plot(times, trialVelDiff, 'color', cmap(i,:)); hold on
     
-    subplot(2,1,2)
+    subplot(1,2,1)
     plot(times, trialVelDiff, 'color', cmap(i,:)); hold on
 
 end
 
 
 % set(gca, 'xlim', [0 median(obsOffTimes - obsOnTimes)])
-for i=1:2
-    subplot(2,1,i)
-    set(gca, 'xlim', [0 median(obsOffTimes - obsOnTimes)])
-end
+% for i=1:2
+%     subplot(2,1,i)
+%     set(gca, 'xlim', [0 median(obsOffTimes - obsOnTimes)])
+% end
 pimpFig

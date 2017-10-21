@@ -7,7 +7,8 @@ function makeVid(session)
 
 
 % user settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
+% dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
+dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 % obsPosRange = [.1 .5]; %[.31 .445]; % (m)
 obsPosRange = [.25 .445]; % (m)
 maxTrialTime = 2; % trials exceeding maxTrialTime will be trimmed to this duration (s)
