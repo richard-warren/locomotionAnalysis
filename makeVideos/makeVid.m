@@ -14,7 +14,7 @@ editedDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\editedVid\';
 obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
 % obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
 playBackSpeed = .1;
-maxTrialTime = 2; % trials exceeding maxTrialTime will be trimmed to this duration (s)
+maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 
 
 
