@@ -184,7 +184,6 @@ function spikeAnalysis(dataDir, varsToOverWrite)
         
         
         
-        
         % get frame timeStamps
         if analyzeVar('frameTimeStamps', varNames, varsToOverWrite)
             

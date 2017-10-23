@@ -1,4 +1,4 @@
-function getObsLocation(session, obsPos)
+function avgFrame = getAvgFrameAtObsLocation(session, obsPos)
 
 % displays all frames in a given session at which the obstacle is at position obsPos
 % obstacle positions are based on the rotary encoder attached to the stepper motor track, and are corrected for drift using fixObsPositions
@@ -8,13 +8,14 @@ function getObsLocation(session, obsPos)
 %
 % inputs     session:  name of session folder to be analyzed
 %            obsPos:   obstacle position (m) relative to the very start of the obstacle track
+%
+% approximate coordinates: wheel center, .382 // right edge of frame, .336 // left edge of frame, .444
 
 % load data
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 vid = VideoReader([dataDir session '\runTop.mp4']);
 
-load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes');
-load([dataDir session '\frameTimeStamps.mat'], 'timeStamps');
+load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
 
 % user settings
@@ -29,7 +30,7 @@ for i = 1:length(obsOnTimes)
 %     keyboard
     
     trialTime = obsTimes(find(obsTimes>obsOnTimes(i) & obsPositions >=obsPos, 1, 'first'));
-    frameNum = find(timeStamps>=trialTime, 1, 'first');
+    frameNum = find(frameTimeStamps>=trialTime, 1, 'first');
     
     if length(frameNum)==1
         frame = rgb2gray(read(vid, frameNum));
@@ -39,18 +40,22 @@ end
 
 
 % plot all frames
-groupInds = floor(linspace(1,length(obsOnTimes)+1, windows+1));
+% groupInds = floor(linspace(1,length(obsOnTimes)+1, windows+1));
+% 
+% for i=1:windows
+%     
+%     figure;
+%     inds = groupInds(i):groupInds(i+1)-1;
+%     montage(allFrames(:,:,:,inds))
+%     pimpFig;
+%     
+% end
 
-for i=1:windows
-    
-    figure;
-    inds = groupInds(i):groupInds(i+1)-1;
-    montage(allFrames(:,:,:,inds))
-    pimpFig;
-    
-end
-
+% compute average frame
+avgFrame = nanmean(allFrames,4);
 
 % plot average frame
-figure; imshow(nanmean(allFrames,4)); pimpFig
+% figure; imshow(nanmean(allFrames,4)); pimpFig
+
+
 
