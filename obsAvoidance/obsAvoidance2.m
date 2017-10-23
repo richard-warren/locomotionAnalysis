@@ -17,6 +17,7 @@ trialRange = [0 .8]; % only include trials #s between these limits, so performan
 obsPos = .382; % m, position at which obstacle is in the middle of the frame // use getFrameTimes function to determine this value
 frameEdges = [.336 .444]; % (m)
 sig = .0025; % sigma for gaussian kernal
+probYlims = [0 .008];
 
 
 % initializations
@@ -43,14 +44,21 @@ subplot(2,2,4); bar(nan(1,length(sessions))); hold on % ghost bar plot to get ou
 for i = 1:length(sessions)
 
     % load session data
-    load([dataDir sessions{i} '\run.mat'], 'touch');
     load([dataDir sessions{i} '\runAnalyzed.mat'],...
             'wheelPositions', 'wheelTimes',...
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...
+            'touchOnTimes',...
             'rewardTimes', 'targetFs');
     
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
+    
+    % get touch positions and ensure all touches fall within frame
+    touchPositions = interp1(obsTimes, obsPositions, touchOnTimes, 'linear');
+    validInds = touchPositions>frameEdges(1) & touchPositions<frameEdges(2);
+    touchOnTimes = touchOnTimes(validInds);
+    touchPositions = touchPositions(validInds);
+    
     
     % limit to middle trials only
     trialLims = round(trialRange * length(obsOnTimes));
@@ -58,19 +66,14 @@ for i = 1:length(sessions)
     obsOnTimes = obsOnTimes(trialLims(1):trialLims(2));
     obsOffTimes = obsOffTimes(trialLims(1):trialLims(2));
     
-    % get touch times
-    touchTimes = touch.times(logical([0; diff(touch.values>3)==1]));
 
     % compute velocity
     vel = getVelocity(wheelPositions, .5, targetFs);
-
     
     
     % iterate over all trials
     sessionVels = nan(length(obsOnTimes), length(posInterp));
     obsAvoided = nan(1,length(obsOnTimes));
-    touchPositions = [];
-    firstTouchTimes = [];
     
     obsOnPositions = nan(1,length(obsOnTimes)); % record positions at which obstacle turns on (this may be jittered)
 
@@ -97,14 +100,8 @@ for i = 1:length(sessions)
         % store results
         sessionVels(j,:) = trialVelInterp;
         
-        % find whether and where obstacle was touched
-        touchInd = find(touchTimes>obsOnTimes(j) & touchTimes<obsOffTimes(j), 1, 'first');
-        obsAvoided(j) = ~any(touchInd);
-        touchPos = obsPositions(find(obsTimes>=touchTimes(touchInd), 1, 'first'));
-        if ~isempty(touchPos)
-            touchPositions(end+1) = touchPos;
-            firstTouchTimes(end+1) = touchTimes(touchInd);
-        end
+        % find whether obstacle was avoided
+        obsAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
         
         % record position at which obstacle turned on
         obsOnPositions(j) = obsPos - obsOnPos;
@@ -118,7 +115,7 @@ for i = 1:length(sessions)
     
     % compute avg frame at moment of all first touches (only for most recent session)
     if i==length(sessions)
-        avgTouchFrame = getAvgFrameAtTimes(sessions{i}, 'Bot', firstTouchTimes);
+        avgTouchFrame = getAvgFrameAtTimes(sessions{i}, 'Bot', touchOnTimes);
     end
     
     % plot touch probability
@@ -148,12 +145,13 @@ end
 pimpFig;
 set(gcf, 'menubar', 'none',...
          'units', 'inches',...
-         'position', [4 1.5 10.5 7])
+         'position', [4 1.5 10 6.5])
 
 
 % pimp out touch probability
 subplot(2,2,1)
-set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)] - obsPos);
+set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)] - obsPos, 'ylim', probYlims);
+title('touch probability')
 xlabel('\itposition (m)')
 ylabel('\ittouch probability')
 

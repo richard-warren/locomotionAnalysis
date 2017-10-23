@@ -1,6 +1,9 @@
 function obsAvoidance2(mouse, expName)
 
 % OBSTACLE AVOIDANCE ANALYSIS
+%
+% input         mouse:      name of mouse to analyze
+%               expName:    string or cell array of experiments to include in analysis
 
 % user settings
 % dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
@@ -19,10 +22,8 @@ sig = .0025; % sigma for gaussian kernal
 % initializations
 sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
 
-cellfcn( @strcmp, sessionInfo.experiment  )
-
 sessionInds = strcmp(sessionInfo.mouse, mouse) &...
-              strcmp(sessionInfo.experiment, expName) &...
+              cellfun(@(x) any(strcmp(x, expName)), sessionInfo.experiment) &...
               sessionInfo.include;
 sessions = sessionInfo.session(sessionInds);
 
@@ -42,11 +43,11 @@ subplot(2,2,4); bar(nan(1,length(sessions))); hold on % ghost bar plot to get ou
 for i = 1:length(sessions)
 
     % load session data
-    load([dataDir sessions{i} '\run.mat'], 'touch');
     load([dataDir sessions{i} '\runAnalyzed.mat'],...
             'wheelPositions', 'wheelTimes',...
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...
+            'touchOnTimes',...
             'rewardTimes', 'targetFs');
     
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
@@ -57,8 +58,6 @@ for i = 1:length(sessions)
     obsOnTimes = obsOnTimes(trialLims(1):trialLims(2));
     obsOffTimes = obsOffTimes(trialLims(1):trialLims(2));
     
-    % get touch times
-    touchTimes = touch.times(logical([0; diff(touch.values>3)==1]));
 
     % compute velocity
     vel = getVelocity(wheelPositions, .5, targetFs);
@@ -96,14 +95,8 @@ for i = 1:length(sessions)
         % store results
         sessionVels(j,:) = trialVelInterp;
         
-        % find whether and where obstacle was touched
-        touchInd = find(touchTimes>obsOnTimes(j) & touchTimes<obsOffTimes(j), 1, 'first');
-        obsAvoided(j) = ~any(touchInd);
-        touchPos = obsPositions(find(obsTimes>=touchTimes(touchInd), 1, 'first'));
-        if ~isempty(touchPos)
-            touchPositions(end+1) = touchPos;
-            firstTouchTimes(end+1) = touchTimes(touchInd);
-        end
+        % find whether obstacle was avoided
+        obsAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
         
         % record position at which obstacle turned on
         obsOnPositions(j) = obsPos - obsOnPos;
@@ -111,6 +104,8 @@ for i = 1:length(sessions)
     
     
     % compute touch probability
+    keyboard
+    touchPositions = interp1();
     touchCounts = histcounts(touchPositions, touchPosInterp);
     touchCounts = touchCounts / length(obsOnTimes);
     touchProb = conv(touchCounts, gausKernel, 'same');
@@ -188,4 +183,4 @@ ylabel('\itfraction avoided')
 
 
 % save fig
-savefig(['obsAvoidance\figs\' mouse 'plot2.fig'])
+savefig(['obsAvoidance\figs\' mouse '.fig'])

@@ -19,6 +19,8 @@ function spikeAnalysis(dataDir, varsToOverWrite)
     %
     % input:     dataDir           directory containing session folders
     %            varsToOverwrite   cell array of of variables that should be re-computed
+    %
+    % to do:     should add a way of ensuring that correct variables exist in run.csv before attempting to load them!
 
 
 
@@ -89,7 +91,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
             load([sessionDir 'run.mat'], 'step', 'stepDir')
             
             % decode stepper motor
-            if exist('stepDir', 'var') && ~isempty(stepDir.times)
+            if ~isempty(stepDir.times)
                 fprintf('%s: decoding stepper motor commands\n', dataFolders{i}(nameStartInd:end))
                 [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
             else
@@ -113,7 +115,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
             
             load([sessionDir 'run.mat'], 'obEncodA', 'obEncodB')
             
-            if exist('obEncodA', 'var') && ~isempty(obEncodA.times)
+            if ~isempty(obEncodA.times)
                 fprintf('%s: decoding obstacle position\n', dataFolders{i}(nameStartInd:end))
                 [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
                                                              obEncodB.times, obEncodB.level,...
@@ -161,48 +163,18 @@ function spikeAnalysis(dataDir, varsToOverWrite)
             fprintf('%s: getting obstacle on and off times\n', dataFolders{i}(nameStartInd:end))
             load([sessionDir 'run.mat'], 'obsOn')
        
-            if exist('obsOn', 'var')
-                firstOnInd  = find(obsOn.level, 1, 'first');
-                lastOffInd  = find(~obsOn.level, 1, 'last');
-
-                obsOn.level = obsOn.level(firstOnInd:lastOffInd);
-                obsOn.times = obsOn.times(firstOnInd:lastOffInd);
-
-                obsOnTimes  =  obsOn.times(logical(obsOn.level));
-                obsOffTimes = obsOn.times(logical(~obsOn.level));
-            else
-                obsOnTimes = [];
-                obsOffTimes = [];
-            end
+            firstOnInd  = find(obsOn.level, 1, 'first');
+            lastOffInd  = find(~obsOn.level, 1, 'last');
+            
+            obsOn.level = obsOn.level(firstOnInd:lastOffInd);
+            obsOn.times = obsOn.times(firstOnInd:lastOffInd);
+            
+            obsOnTimes  =  obsOn.times(logical(obsOn.level));
+            obsOffTimes = obsOn.times(logical(~obsOn.level));
             
             % save values
             varStruct.obsOnTimes = obsOnTimes;
             varStruct.obsOffTimes = obsOffTimes; 
-            anythingAnalyzed = true;
-        end
-        
-        
-        
-        
-        % debounce touch signal and get touch on/off times
-        if analyzeVar('touchSig', varNames, varsToOverWrite) ||...
-           analyzeVar('touchOnTimes', varNames, varsToOverWrite) ||...
-           analyzeVar('touchOffTimes', varNames, varsToOverWrite)
-            
-            fprintf('%s: debouncing touch signal\n', dataFolders{i}(nameStartInd:end))
-            load([sessionDir 'run.mat'], 'touch', 'breaks')
-                        
-            % decode stepper motor
-            if exist('breaks', 'var')
-                [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
-            else
-                [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes);
-            end
-            
-            % save values
-            varStruct.touchSig = touchSig;
-            varStruct.touchOnTimes = touchOnTimes;
-            varStruct.touchOffTimes = touchOffTimes;
             anythingAnalyzed = true;
         end
         
@@ -243,7 +215,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
             
             if exist([sessionDir 'webCam.csv'], 'file') &&...
                exist([sessionDir 'run.csv'], 'file') &&...
-               any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
+               (any(strcmp(varNames, 'frameTimeStamps')) || exist('frameTimeStamps', 'var'))
                 
                 fprintf('%s: getting webcam time stamps\n', dataFolders{i}(nameStartInd:end))
                 
@@ -261,6 +233,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
                 camTimeSteps = cumsum([0; diff(camSysClock)<0]);
                 camSysClock = camSysClock + camTimeSteps;
                 camSysClock = camSysClock - camSysClock(1); % set first time to zero
+
 
                 % determine spike clock times from system clock times
                 validInds = ~isnan(camSpikeClock);
@@ -291,7 +264,9 @@ function spikeAnalysis(dataDir, varsToOverWrite)
     % ---------
     
     function analyze = analyzeVar(var, varNames, varsToOverWrite)
+
         analyze = ~any(strcmp(varNames, var)) || any(strcmp(varsToOverWrite, var));
+        
     end
 end
 
