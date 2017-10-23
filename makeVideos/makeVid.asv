@@ -9,11 +9,10 @@ function makeVid(session)
 % user settings
 % dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
-% obsPosRange = [.1 .5]; %[.31 .445]; % (m) // shows only when obs is in frame
-% obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
-obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
-playBackSpeed = 1;
+% obsPosRange = [.1 .5]; %[.31 .445]; % (m)
+obsPosRange = [.25 .445]; % (m)
 maxTrialTime = 2; % trials exceeding maxTrialTime will be trimmed to this duration (s)
+playBackSpeed = .1;
 
 
 
@@ -26,15 +25,13 @@ vidSetting = 'MPEG-4';
 
 fps = round(vidTop.FrameRate * playBackSpeed);
 maxFps = 150; % fps > 150 can be accomplished using 'Motion JPEG AVI' as second argument to VideoWriter, but quality of video is worse
-
 if fps>maxFps
-    fprintf('WARNING: changing video mode to ''Motion JPEG AVI'' to acheive requested playback speed\.');
-    vidSetting = 'Motion JPEG AVI';
+    fprintf('WARNING: changing video mode to \'Motion JPEG AVI' ', playBackSpeed);
+    fps = maxFps;
 end
 
 vidWriter = VideoWriter(sprintf('%s%s\\%sspeed%.2f', dataDir, session, session, playBackSpeed), vidSetting);
-set(vidWriter, 'FrameRate', fps)
-if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
+set(vidWriter, 'FrameRate', fps, 'Quality', 50)
 open(vidWriter)
 
 load([dataDir session '\run.mat'], 'touch');

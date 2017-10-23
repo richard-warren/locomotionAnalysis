@@ -13,11 +13,13 @@ ylims = [.1 .6]; % m/s
 trialRange = [0 .8]; % only include trials #s between these limits, so performance metrices are not dragged down when the animal is warming up or sated near the end
 obsPos = .382; % m, position at which obstacle is in the middle of the frame // use getFrameTimes function to determine this value
 frameEdges = [.336 .444]; % (m)
-sig = .005; % sigma for gaussian kernal
+sig = .0025; % sigma for gaussian kernal
 
 
 % initializations
 sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
+
+cellfcn( @strcmp, sessionInfo.experiment  )
 
 sessionInds = strcmp(sessionInfo.mouse, mouse) &...
               strcmp(sessionInfo.experiment, expName) &...
@@ -32,7 +34,7 @@ gausKernel = gausKernel/sum(gausKernel);
 
 cmap = winter(length(sessions));
 figure;
-% subplot(2,2,2); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
+subplot(2,2,4); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
 
 
 
@@ -72,8 +74,6 @@ for i = 1:length(sessions)
     obsOnPositions = nan(1,length(obsOnTimes)); % record positions at which obstacle turns on (this may be jittered)
 
     for j = 1:length(obsOnTimes)
-
-        % VELOCITY VS POSITION
         
         % locate trial
         obsOnPos = obsPositions( find(obsTimes >= obsOnTimes(j), 1, 'first') );
@@ -115,80 +115,77 @@ for i = 1:length(sessions)
     touchCounts = touchCounts / length(obsOnTimes);
     touchProb = conv(touchCounts, gausKernel, 'same');
     
-    % compute avg frame at moment of all first touches
-    avgTouchFrame = getAvgFrameAtTimes(sessions{i}, 'Bot', firstTouchTimes);
+    % compute avg frame at moment of all first touches (only for most recent session)
+    if i==length(sessions)
+        avgTouchFrame = getAvgFrameAtTimes(sessions{i}, 'Bot', firstTouchTimes);
+    end
     
     % plot touch probability
-    subplot(2,1,1)
+    subplot(2,2,1)
     touchPosCenters = touchPosInterp(1:end-1) - .5*touchPosRes;
-    plot(touchPosCenters, touchProb, 'color', cmap(i,:), 'linewidth', 2); hold on;
+    plot(touchPosCenters - obsPos, touchProb, 'color', cmap(i,:), 'linewidth', 2); hold on;
     
 
+    % get mean obstacle start position
+    obsOnMean = mean(obsOnPositions);
     
-%     obsOnMean = mean(obsOnPositions);
+    % plot session mean velocity
+    subplot(2,2,2)
+    plot(posInterp, nanmean(sessionVels,1), 'color', cmap(i,:), 'linewidth', 2); hold on
+    line(-[obsOnMean obsOnMean], ylims, 'color', cmap(i,:), 'linewidth', 2);
     
-%     % plot session mean velocity
-%     subplot(2,2,1)
-%     plot(posInterp, nanmean(sessionVels,1), 'color', cmap(i,:), 'linewidth', 2); hold on
-%     line(-[obsOnMean obsOnMean], ylims, 'color', cmap(1,:));
-%     
-%     % plot session success rate
-%     subplot(2,2,2)
-%     bar(i, mean(obsAvoided), 'facecolor', cmap(i,:)); hold on
-%     
-%     % plot successful trial velocity means
-%     subplot(2,2,3)
-%     plot(posInterp, nanmean(sessionVels(logical(obsAvoided),:),1), 'color', cmap(i,:), 'linewidth', 2); hold on
-%     line(-[obsOnMean obsOnMean], ylims, 'color', cmap(1,:));
-%     
-%     % plot unsuccessful trial velocity means
-%     subplot(2,2,4)
-%     plot(posInterp, nanmean(sessionVels(~logical(obsAvoided),:),1), 'color', cmap(i,:), 'linewidth', 2); hold on
-%     line(-[obsOnMean obsOnMean], ylims, 'color', cmap(1,:));
+    % plot session success rate
+    subplot(2,2,4)
+    bar(i, mean(obsAvoided), 'facecolor', cmap(i,:)); hold on
+
 end
 
-% pimp out touch probability
-subplot(2,1,1)
-set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)]);
 
-% show average touch frame
-keyboard
-subplot(2,1,2)
-yHeight = max(get(gca, 'ylim'));
+
+
+% pimp out figure
+pimpFig;
+set(gcf, 'menubar', 'none',...
+         'units', 'inches',...
+         'position', [4 1.5 10.5 7])
+
+
+% pimp out touch probability
+subplot(2,2,1)
+set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)] - obsPos);
+xlabel('\itposition (m)')
+ylabel('\ittouch probability')
+
+
+% plot average touch frame
+subplot(2,2,3)
 frame = getAvgFrameAtObsLocation('171020_002', obsPos);
 scaling = diff(frameEdges) / size(frame,2);
 imagesc(frameEdges, [0 size(frame,1)*scaling], fliplr(imadjust(avgTouchFrame)));
 set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)],...
-    'xtick', [], 'xticklabel', )
+    'xtick', [], 'ytick', [])
 
-% pimp out figure
-pimpFig; set(gcf, 'menubar', 'none', 'position', [.2 .1 .6 .8])
-% 
-% % pimp out all velocity figures
-% titles = {'all trials', 'successful trials', 'unsuccessful trials'}; % the empty slot is sort of a hack
-% velPlots = [1,3,4];
-% 
-% for i = 1:length(velPlots)
-%     
-%     subplot(2,2,velPlots(i))
-%     set(gca, 'xlim', [-obsPrePost(1) obsPrePost(2)], 'ylim', ylims)
-%     
-%     title(titles(i));
-%     xlabel('position (m)', 'fontweight', 'bold')
-%     ylabel('velocity (m/s)', 'fontweight', 'bold')
-%     
-%     line([0 0], ylims, 'color', cmap(1,:))
-%     
-% end
-% 
-% % pimp out bar graph
-% subplot(2,2,2)
-% set(gca, 'ylim', [0 1], 'xlim', [.25 length(sessions)+.75])
-% title('success rate')
-% xlabel('session #', 'fontweight', 'bold')
-% ylabel('fraction avoided', 'fontweight', 'bold')
-% 
+ 
+% pimp out velocity figure
+subplot(2,2,2)
+set(gca, 'xlim', [-obsPrePost(1) obsPrePost(2)], 'ylim', ylims)
+
+title('velocity');
+xlabel('\itposition (m)')
+ylabel('\itvelocity (m/s)')
+y1 = frameEdges(1)-obsPos;
+y2 = frameEdges(2)-obsPos;
+line([y1 y1], ylims, 'color', cmap(1,:), 'linewidth', 2)
+line([y2 y2], ylims, 'color', cmap(1,:), 'linewidth', 2)
+    
+
+% pimp out bar graph
+subplot(2,2,4)
+set(gca, 'ylim', [0 1], 'xlim', [.25 length(sessions)+.75])
+title('success rate')
+xlabel('\itsession #')
+ylabel('\itfraction avoided')
 
 
 % save fig
-savefig(['obsAvoidance\figs\' mouse '.fig'])
+savefig(['obsAvoidance\figs\' mouse 'plot2.fig'])
