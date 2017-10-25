@@ -12,7 +12,7 @@ obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
 % settings
 frameEdges = [.336 .444];
 statFrames = 100;
-minObsPos = 70; % pixels... tracking is unreliable to the left because of wheel corner... this is temporary hack bro!
+minObsPos = 80; % pixels... tracking is unreliable to the left because of wheel corner... this is temporary hack bro!
 
 
 %% !!! statistically determine pixel threshold
@@ -27,6 +27,7 @@ for i = 1:statFrames
     % select random trial and obs position
     trial = round(rand(1) * (length(obsOnTimes)-1))+1;
     framePosit = rand(1) * diff(frameEdges) + min(frameEdges);
+    
     
     % find frame index
     isInTrial = obsTimes>obsOnTimes(trial) & obsTimes<obsOffTimes(trial);              % binary vector of obsTimes that are in trial
@@ -50,9 +51,10 @@ pixThresh = mean(colSumsStats(guesses==2));
 % eliminate non-adjacent colums
 % get mean of remaining columns
 
-close all; pimpFig
-im = imshow(rgb2gray(read(vid,1)));
-obsLine = line([0 0], [1 size(frame,1)], 'Visible', 'off', 'lineWidth', 5, 'color', 'red');
+close all; figure;
+im = imshow(rgb2gray(read(vid,1))); pimpFig
+obsLine = line([0 0], [1 size(frame,1)], 'Visible', 'off', 'lineWidth', 15, 'color', 'red');
+delay = .001;
 
 % colSums = nan(vid.NumberOfFrames, vid.Width);
 obsPosits = nan(1,length(frameTimeStamps));
@@ -80,11 +82,13 @@ for i = 1:length(obsOnTimes)
         % update lines
         if ~isnan(pos)
             set(obsLine, 'XData', [pos pos], 'Visible', 'on');
+            delay = .05;
         else
             set(obsLine, 'Visible', 'off');
+            delay = .001;
         end
         
-        pause(.01);
+        pause(delay);
         
     end
     disp(i);
