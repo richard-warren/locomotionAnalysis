@@ -1,30 +1,36 @@
-function markerTracking
+function markerTracking(session)
 
     % load file
-    file = 'C:\Users\Rick\Google Drive\columbia\rick\markerTest\runBot.mp4';
-    vid = VideoReader(file);
+    dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
+    vid = VideoReader([dataDir session '\runBot.mp4']);
 
+    % settngs
+    avgBgFrames = 1000;
+    startTime = 120;
+    
     % initializations
-    thresh = 254;
-    frame = rgb2gray(readFrame(vid, 'native'));
-    circRoiPts = [15 190; 227 122; 404 162];
-    wheelMask = getWheelMask(circRoiPts);
-    bg = rgb2gray(getBgImage(vid, 2000, false));
+    thresh = 40;
+    currentFrame = startTime * vid.FrameRate;
+    frame = rgb2gray(read(vid, currentFrame));
+%     circRoiPts = [15 190; 227 122; 404 162];
+%     wheelMask = getWheelMask(circRoiPts);
+    bg = getBgImage(vid, avgBgFrames, true);
 
 
     % prepare figure
-    close all; figure; pimpFig;
+    figure; pimpFig;
     rawAx = subaxis(2,1,1, 'spacing', 0.01, 'margin', .01);
     rawIm = imshow(frame);
     threshAx = subaxis(2,1,2, 'spacing', 0.01, 'margin', .01);
     threshIm = imshow(frame>thresh);
-    sliderThresh = uicontrol('Style', 'slider', 'Position', [0 0 100 25], 'Min', 0, 'Max', 255, 'Value', thresh, 'Callback', @threshUpdate);
+    sliderThresh = uicontrol('Style', 'slider', 'Position', [0 0 100 25],...
+                             'Min', 0, 'Max', 255, 'Value', thresh, 'Callback', @threshUpdate);
     
     % main loop
     while true
         
         % acquire and process frame
-        frame = rgb2gray(readFrame(vid, 'native'));% .* wheelMask;
+        frame = rgb2gray(read(vid, currentFrame));% .* wheelMask;
         frame = frame - bg;
         frame = medfilt2(frame, [10 5]); % [h w]
         
@@ -32,6 +38,7 @@ function markerTracking
         set(rawIm, 'CData', frame);
         set(threshIm, 'CData', frame>thresh);
         pause(.01)
+        currentFrame = currentFrame + 1;
         
     end
     

@@ -12,12 +12,13 @@ dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters
 touchPosRes = .0001;
-ylims = [.1 .6]; % m/s
+ylims = [.1 .7]; % m/s
 trialRange = [0 .8]; % only include trials #s between these limits, so performance metrices are not dragged down when the animal is warming up or sated near the end
 obsPos = .382; % m, position at which obstacle is in the middle of the frame // use getFrameTimes function to determine this value
 frameEdges = [.336 .444]; % (m)
 sig = .0025; % sigma for gaussian kernal
 probYlims = [0 .008];
+minTouchTime = .05; % only touches count that are >= minTouchTime
 
 
 % initializations
@@ -48,16 +49,24 @@ for i = 1:length(sessions)
             'wheelPositions', 'wheelTimes',...
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...
-            'touchOnTimes',...
+            'touchOnTimes', 'touchOffTimes',...
             'rewardTimes', 'targetFs');
     
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
     
+    
+    % remove brief touches
+    validLengthInds = (touchOffTimes - touchOnTimes) >= minTouchTime;
+    touchOnTimes = touchOnTimes(validLengthInds);
+    touchOffTimes = touchOffTimes(validLengthInds);
+    
+    
     % get touch positions and ensure all touches fall within frame
     touchPositions = interp1(obsTimes, obsPositions, touchOnTimes, 'linear');
-    validInds = touchPositions>frameEdges(1) & touchPositions<frameEdges(2);
-    touchOnTimes = touchOnTimes(validInds);
-    touchPositions = touchPositions(validInds);
+    validPosInds = touchPositions>frameEdges(1) & touchPositions<frameEdges(2);
+    touchOnTimes = touchOnTimes(validPosInds);
+    touchOffTimes = touchOffTimes(validPosInds);
+    touchPositions = touchPositions(validPosInds);
     
     
     % limit to middle trials only
@@ -66,7 +75,7 @@ for i = 1:length(sessions)
     obsOnTimes = obsOnTimes(trialLims(1):trialLims(2));
     obsOffTimes = obsOffTimes(trialLims(1):trialLims(2));
     
-
+    
     % compute velocity
     vel = getVelocity(wheelPositions, .5, targetFs);
     

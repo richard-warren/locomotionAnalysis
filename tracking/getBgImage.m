@@ -4,23 +4,35 @@ function bgImage = getBgImage(vid, meanFrameNum, showImage)
 
     
     % user settings
-    medFiltKernel = [10 10];
-    contrast = [.05 .5; 0 1]; % [low in, high in; low out, high out]
+    skipTime = 60; % time to skip at the beginning of the sesion, to account for periods where the mouse is being put on the wheel (s)
+%     medFiltKernel = [10 5];
+%     contrast = [.05 .5; 0 1]; % [low in, high in; low out, high out]
     maxTimeToSkip = 0; % skip this much time after a frame to avoid grabbing only successive frames
     diffThresh = 2*10e-4;
     
-    % get mean background frame
-    frameLast = readFrame(vid);
+    
+    % initializations
+    currentFrame = round(skipTime * vid.FrameRate);
+    frameLast = rgb2gray(read(vid, currentFrame-1));
     meanFrame = zeros(size(frameLast)); % re-computes mean every time it grabs a new frame to avoid having to store many frames in memory simultaneously
     meanFrameCount = 0;
     
     w = waitbar(0, 'computing background frame...');   
     
-    while meanFrameCount<meanFrameNum && hasFrame(vid)
-        frame = readFrame(vid);
+    
+    
+    
+    
+    % get mean background frame
+    while meanFrameCount<meanFrameNum && currentFrame < vid.NumberOfFrames
+        
+        frame = rgb2gray(read(vid, currentFrame));
         frameDiff = abs(frame-frameLast);
         
         if mean(frameDiff(:))>diffThresh
+            
+%             frame = medfilt2(frame, medFiltKernel);
+            
             meanFrameCount = meanFrameCount+1;
             meanFrame = ((meanFrame*(meanFrameCount-1)) + double(frame)) / meanFrameCount;
             
@@ -34,11 +46,12 @@ function bgImage = getBgImage(vid, meanFrameNum, showImage)
         end
 
         frameLast = frame;
+        currentFrame = currentFrame + 1;
     end
     close(w)
     bgImage = uint8(meanFrame);
     
-    if showImage; figure('color', [0 0 0]); imagesc(uint8(meanFrame)); set(gca, 'visible', 'off'); end
+    if showImage; figure('color', [0 0 0]); imshow(uint8(meanFrame)); set(gca, 'visible', 'off'); end
     if meanFrameCount<meanFrameNum; disp('COULD NOT FIND REQUESTED # OF FRAMES FOR BACKGROUND FRAME COMPUTATION!!!'); end        
 end
 

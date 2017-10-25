@@ -9,4 +9,4 @@ obsAvoidance2('run4', 'obsTest')
 obsAvoidance2('run5', 'obsTest')
 
 % make videos
-makeVid('171023_002');
+makeVid('171024_000');
