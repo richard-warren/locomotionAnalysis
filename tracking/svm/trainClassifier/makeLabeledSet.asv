@@ -12,7 +12,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
     % user settings
     file = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171025_002\runBot.mp4';
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
-    subHgtWid = [35 35];
+    subHgtWid = [30 30];
 %     startPosits = [40 70; 40 215; 140 70; 140 215];
     startPosits = [40 70; 40 100; 50 70; 50 100];
     negativeEgsPerEg = 10;
@@ -24,7 +24,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
     
     % load video and sample frame
     vid = VideoReader(file);
-    frame = rgb2gray(read(vid,1));
+    frame = read(vid,1);
    
 
     % prepare figure
@@ -45,10 +45,10 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
     end
     
     % make training set!
-    while imNumberInd<=length(imNumbers)
-        
+    while imNumberInd<length(imNumbers)
+        keyboard
         % get random frame and allow user to move rectangles around
-        frame = rgb2gray(read(vid,randi(vid.numberofframes)));
+        frame = read(vid,randi(vid.numberofframes));
         set(rawPreview, 'CData', frame);
         updateSubPreviews();
         
@@ -86,7 +86,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
                     imNumberInd = imNumberInd+1;
                     
                     % create/save negative examples for every positive example
-                    for k=1:negativeEgsPerEg
+                    for j=1:negativeEgsPerEg
                         % find a frame that doesn't overlap with positive examples
                         acceptableImage = false;
                         while ~acceptableImage 
@@ -100,7 +100,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
                         end
 
                         % save that shit
-                        save([dataDir className '\negative\img' num2str(negImNumbers(negImNumberInd)) '.mat'], 'imgTemp');
+                        save(['trainClassifier\trainingImages\' className '\negative\img' num2str(negImNumbers(negImNumberInd)) '.mat'], 'imgTemp');
                         negImNumberInd = negImNumberInd+1;
                         negEgPos(end+1,:) = fliplr(pos+.5*fliplr(subHgtWid));
                     end
@@ -111,9 +111,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
         end
     end
 
-
     function updateSubPreviews(~,~)
-        
         for j=1:egsPerFrame
             pos = round(getPosition(subFrames(j).rect));
             subFrames(j).img = frame(pos(2):pos(2)+pos(4), pos(1):pos(1)+pos(3),:);

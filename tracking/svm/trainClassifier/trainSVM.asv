@@ -35,10 +35,11 @@ function trainSVM(className)
     end
 
 
+    keyboard
     % TRAIN CLASSIFIER
     model = svmtrain(labels, features, '-t 0');
     model.w = model.sv_coef' * model.SVs;
     subHgt = size(imgTemp,1);
     subWid = size(imgTemp,2);
-    uisave ({'model', 'subHgt', 'subWid'}, [dataDir 'classifier_' className '_' date '.mat']);
+    uisave ({'classifier', 'subHgt', 'subWid'}, [dataDir 'classifier_' className '_' date '.mat']);
 end

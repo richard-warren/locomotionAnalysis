@@ -1,31 +1,31 @@
 
 % USER SETTINGS
-% sliding window resolution
-xRes = 10;
-yRes = 10;
 
-% probability cloud thresholding settings
-% thresh = -.1; % can go up to zero for more conservative detection
-% erosion = 5; % pixel radius of erosion kernel shape
-% erosionKernel = strel('diamond', erosion); % erosion kernel
+% settings
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171025_002\runBot.mp4';
+classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\classifier_pawBot_26-Oct-2017';
+xRes = 10; % sliding window resolution
+yRes = 10; % sliding window resolution
+startFrame = 6000;
 
 % load sample frame and sample sub-frame
-vid = VideoReader('video\topTest.mp4');
-sampleFrame = read(vid,1);
+vid = VideoReader(vidFile);
+sampleFrame = read(vid,startFrame-1);
 frmHgt = size(sampleFrame,1);
 frmWid = size(sampleFrame,2);
 
 % load classifier
-load('trainClassifier\classifiers\topPaws.mat')
+load(classifier)
 
 % prepare figure
 figure('units', 'normalized', 'position', [0 0 1 1]);
 rawPlot = subaxis(2,1,1, 'spacing', 0.01, 'margin', .01);
 predictPlot = subaxis(2,1,2);
 %
-for i = 1:vid.numberofframes
+for i = startFrame:vid.numberofframes
     % get frame and sub-frames
-    frame = read(vid,i);
+    frame = rgb2gray(read(vid,i));
+    tic
     [frameFeatures xVals yVals] = parseFrameToFeatures(frame, xRes, yRes, subHgt, subWid);
     
     % get predicted labels and reshape
@@ -41,6 +41,7 @@ for i = 1:vid.numberofframes
     predictions = interp2(X, Y, predictions, Xq, Yq)-1;
     predictions(isnan(predictions)) = 0;
     predictions = logical(round(predictions));
+    toc
     
     % keep only the four largest blobs
     blobInfo = regionprops(predictions);
