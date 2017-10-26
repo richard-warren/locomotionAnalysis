@@ -10,7 +10,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
     % - add box position constraint function
     
     % user settings
-    file = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171025_002\runBot.mp4';
+    file = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
     subHgtWid = [35 35];
 %     startPosits = [40 70; 40 215; 140 70; 140 215];

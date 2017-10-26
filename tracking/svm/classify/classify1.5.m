@@ -2,13 +2,14 @@
 % USER SETTINGS
 
 % settings
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171025_002\runBot.mp4';
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
 classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\classifier_pawBot_26-Oct-2017';
-startFrame = 6000;
+startFrame = 1;
+thresh = 1;
 
 % load sample frame and sample sub-frame
 vid = VideoReader(vidFile);
-sampleFrame = read(vid,startFrame-1);
+sampleFrame = read(vid,startFrame);
 frmHgt = size(sampleFrame,1);
 frmWid = size(sampleFrame,2);
 
@@ -27,9 +28,8 @@ for i = startFrame:vid.numberofframes
     frame = rgb2gray(read(vid,i));
     
     % filter with svm
-    tic
-    frameFiltered = conv2(frame, reshape(model.w, 36, 36)', 'same') - model.rho;
-    toc
+    frameFiltered = - (conv2(frame, reshape(model.w, 36, 36), 'same') - model.rho);
+    frameFiltered = frameFiltered > thresh;
     
     % update figure
     imshow(getFeatures(frame), 'parent', rawPlot);
