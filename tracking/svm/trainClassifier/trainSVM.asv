@@ -1,45 +1,50 @@
 function trainSVM(className)
     
-    % user settings
-    dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
+% user settings
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
+categories = {'negative', 'positive'};
+boxSize = [36 36];
 
-    % compile examples and labels
-    categories = {'negative', 'positive'};
-    labels = [];
-    
-    for i = 1:length(categories)
-        % load category data
-        cat = cell2mat(categories(i));
-        temp = dir([dataDir className '\' cat]); files = {temp.name}; files = files(3:end);
-        load([dataDir className '\' cat '\' files{1}], 'imgTemp');
+% initializations
+labels = [];
 
-        % initialize storage variable on the first go-around
-        if i==1; examples = nan(0, size(imgTemp,1), size(imgTemp,2), size(imgTemp,3)); end
 
-        % get training examples
-        for j = 1:length(files)
-            load([dataDir className '\' cat '\' files{j}])
-            examples(end+1,:,:,:) = imgTemp;
+% iterate through image categories
+for i = 1:length(categories)
+
+    % get list of files in category folder
+    category = cell2mat(categories(i));
+    files = dir([dataDir 'trainingImages\' className '\' category]);
+    files = {files.name};
+    files = files(3:end);
+
+    % get training examples
+    for j = 1:length(files)
+
+        load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'imgTemp')
+
+        % initialize storage variable on first pass
+        if ~exist('features', 'var')
+            features = nan(0, numel(imgTemp));
         end
+        
+        % extract and save features
+        img = getFeatures(imgTemp);
+        features(end+1,:) = img(:);
 
-        labels = vertcat(labels, ones(length(files),1)*i);
     end
-
-   
-    % get features from subFrames
-    [~, tempVector] = getFeatures(squeeze(examples(1,:,:,:)));
-    features = nan(size(examples,1), length(tempVector));
     
-    for i=1:size(examples,1)
-        [~, features(i,:)] = getFeatures(squeeze(examples(i,:,:,:)));
-    end
-
-
-    keyboard
-    % TRAIN CLASSIFIER
-    model = svmtrain(labels, features, '-t 0');
-    model.w = model.sv_coef' * model.SVs;
-    subHgt = size(imgTemp,1);
-    subWid = size(imgTemp,2);
-    uisave ({'classifier', 'subHgt', 'subWid'}, [dataDir 'classifier_' className '_' date '.mat']);
+    % stor category labels
+    labels = vertcat(labels, ones(length(files),1)*i);
 end
+
+
+% train classifer
+model = svmtrain(labels, features, '-t 0');
+model.w = model.sv_coef' * model.SVs;
+subHgt = size(imgTemp,1);
+subWid = size(imgTemp,2);
+uisave ({'model', 'subHgt', 'subWid'}, [dataDir 'classifiers\' className '.mat']);
+
+
+
