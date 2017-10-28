@@ -12,7 +12,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
     % user settings
     file = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
-    subHgtWid = [35 35];
+    subHgtWid = [36 36];
 %     startPosits = [40 70; 40 215; 140 70; 140 215];
     startPosits = [40 70; 40 100; 50 70; 50 100];
     negativeEgsPerEg = 10;
@@ -49,7 +49,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
         
         % get random frame and allow user to move rectangles around
         frame = rgb2gray(read(vid,randi(vid.numberofframes)));
-        set(rawPreview, 'CData', frame);
+        set(rawPreview, 'CData', getFeatures(frame));
         updateSubPreviews();
         
         % wait for user to press enter
@@ -117,7 +117,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame)
         for j=1:egsPerFrame
             pos = round(getPosition(subFrames(j).rect));
             subFrames(j).img = frame(pos(2):pos(2)+pos(4), pos(1):pos(1)+pos(3),:);
-            set(subFrames(j).preview, 'CData', subFrames(j).img);
+            set(subFrames(j).preview, 'CData', getFeatures(subFrames(j).img));
         end
     end
 end

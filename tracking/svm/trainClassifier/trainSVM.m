@@ -3,7 +3,6 @@ function trainSVM(className)
 % user settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
 categories = {'negative', 'positive'};
-boxSize = [36 36];
 
 % initializations
 labels = [];
