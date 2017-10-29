@@ -2,10 +2,10 @@
 load('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trackedData\tracked.mat', 'locations')
 
 % user settings
-occludedCost = .01;
+occludedCost = 0;
 occludedStates = 1;
 maxVelocity = 15;
-velocityWeight = 1;
+velocityWeight = 0;
 
 % initializations
 frameHeight = 242; % !!! hacky temp

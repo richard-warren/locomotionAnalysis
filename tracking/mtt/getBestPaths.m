@@ -10,8 +10,6 @@ backPointers = cell(1, length(unary)-1);
 
 % initializations
 % (pick most probable label based solely on unary potentials)
-% [~, labels(1,:)] = max(unary{1}, [], 2);
-% backPointers{1} = labels(1,:)';
 nodeScores{1} = unary{1};
 
 
@@ -25,8 +23,8 @@ for i = 2:length(unary)
         previousScores = nodeScores{i-1}(j,:);
         currentUnary   = unary{i}(j,:)';
         
-        allTransitionScores = repmat(previousScores, length(currentUnary), 1) .* ...
-                              pairwise{i-1} + ...
+        allTransitionScores = repmat(previousScores, length(currentUnary), 1) + ...
+                              pairwise{i-1}*0 + ...
                               repmat(currentUnary, 1, length(previousScores));
         
         [nodeScores{i}(j,:), backPointers{i-1}(j,:)] = max(allTransitionScores, [], 2);
@@ -41,10 +39,55 @@ end
 
 for i = fliplr(1:length(unary)-1)
     
-    labels(i,:) = backPointers{i-1}(labels(i+1,:));
+    labels(i,:) = backPointers{i}(labels(i+1,:));
     
     
 end
+
+%% visualize tracking
+
+
+
+% USER SETTINGS
+
+% settings
+vidFile = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
+load('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trackedData\tracked.mat', 'locations')
+paw = 1;
+
+% initializations
+startFrame = 1;
+vid = VideoReader(vidFile);
+sampleFrame = rgb2gray(read(vid,startFrame));
+totalFrames = vid.NumberOfFrames;
+cmap = winter(4);
+
+% prepare figure
+close all; figure('position', [680 144 698 400]); colormap gray
+
+
+rawIm = image(sampleFrame, 'CDataMapping', 'scaled');
+rawAxis = gca;
+hold on; scatterPts = scatter(rawAxis, 0, 0, 200, 'filled');
+
+
+for i = startFrame:totalFrames
+    
+    % get frame and sub-frames
+    frame = rgb2gray(read(vid,i));
+    frame = getFeatures(frame);
+    
+    % update figure
+    set(rawIm, 'CData', frame);
+    set(scatterPts, 'XData', locations(i).x(labels(i,paw)), 'YData', locations(i).y(labels(i,paw)));
+    
+    % pause to reflcet on the little things...
+    pause(.001);
+end
+
+
+
+
 
 
 

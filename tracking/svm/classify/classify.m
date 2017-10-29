@@ -56,7 +56,8 @@ for i = startFrame:totalFrames
     
     % compute proximity to corner
     
-    set(scatterPts, 'XData', x(labels(i,:)), 'YData', y(labels(i,:)));
+%     set(scatterPts, 'XData', x(labels(i,:)), 'YData', y(labels(i,:)));
+    set(scatterPts, 'XData', x, 'YData', y);
 
     % store data
     locations(i).x = x;
@@ -66,7 +67,7 @@ for i = startFrame:totalFrames
     pause(.001);
 end
 
-% save([dataDir 'tracked.mat'], 'locations');
+save([dataDir 'tracked.mat'], 'locations');
 
 
 
