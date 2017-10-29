@@ -1,0 +1,24 @@
+function pairwisePotentials = getPairwisePotentials(xy, xyLast)
+
+
+if any(~(size(xy) == size(xyLast))); keyboard; end
+
+xyReshaped = repelem(xy, size(xyLast,1), 1)
+xyLastReshaped = repmat(xyLast, size(xy,1), 1)
+
+diff = sqrt(sum((xyReshaped - xyLastReshaped).^2, 2));
+dist = reshape(diff, size(xy,1), size(xyLast,1))
+
+
+
+% pairwisePotentials = nan(size(xy,1), size(xyLast,1));
+% for i = 1:size(xy,1)
+%     for j=1:size(xyLast,1)
+%         
+%         dist = norm(xy(i,:) - xyLast(j,:));
+%         pairwisePotentials(i,j) = dist;
+%         
+%     end
+% end
+
+pairwisePotentials = [];

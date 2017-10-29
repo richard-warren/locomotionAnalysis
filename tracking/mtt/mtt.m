@@ -1,6 +1,10 @@
 % load tracking data
 load('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trackedData\tracked.mat', 'locations')
 
+% user settings
+maxVelocity = 15;
+velocityWeight = 1;
+
 % initializations
 frameHeight = 242; % !!! hacky temp
 frameWidth = 398;
@@ -8,7 +12,6 @@ frameWidth = 398;
 
 
 % compute unary potentials
-
 unaries = cell(1,length(locations));
 
 for i = 1:length(locations)
@@ -26,5 +29,12 @@ end
 
 
 
-% compute pairwise potentials
+%% compute pairwise potentials
+pairwise = cell(1,length(locations)-1);
 
+for i = 1:length(locations)-1
+    
+    framePairwise = getPairwisePotentials([locations(i).x, locations(i).y], [locations(i+1).x, locations(i+1).y], maxVelocity, velocityWeight);
+    pairwise{i} = framePairwise;
+    
+end
