@@ -12,7 +12,6 @@ frameHeight = 242; % !!! hacky temp
 frameWidth = 398;
 
 
-
 % compute unary potentials
 unary = cell(1,length(locations));
 

@@ -17,6 +17,7 @@ sampleFrame = rgb2gray(read(vid,startFrame));
 xMin = 20; % x and yMin are a temporary hack until i crop the videso properly
 yMin = 15;
 totalFrames = vid.NumberOfFrames;
+cmap = winter(4);
 
 % load classifier
 load(classifier, 'model', 'subHgt', 'subWid')
@@ -55,7 +56,7 @@ for i = startFrame:totalFrames
     
     % compute proximity to corner
     
-    set(scatterPts, 'XData', x, 'YData', y);
+    set(scatterPts, 'XData', x(labels(i,:)), 'YData', y(labels(i,:)));
 
     % store data
     locations(i).x = x;
@@ -65,7 +66,7 @@ for i = startFrame:totalFrames
     pause(.001);
 end
 
-save([dataDir 'tracked.mat'], 'locations');
+% save([dataDir 'tracked.mat'], 'locations');
 
 
 
