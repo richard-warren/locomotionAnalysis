@@ -2,10 +2,11 @@
 % USER SETTINGS
 
 % settings
-% vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
-% classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\topTest.mp4';
-classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
+classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
+% vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\topTest.mp4';
+% classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
+% boxSize = [20 30];
 
 startFrame = 1;
 overlapThresh = .5;
