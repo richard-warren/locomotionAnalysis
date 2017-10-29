@@ -2,9 +2,9 @@
 % USER SETTINGS
 
 % settings
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
-classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\topTest.mp4';
+classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
 
 startFrame = 1;
 overlapThresh = .5;
@@ -32,7 +32,7 @@ predictAxis = subaxis(2,1,2, 'spacing', 0.01, 'margin', .01);
 predictIm = image(sampleFrame, 'parent', predictAxis, 'CDataMapping', 'scaled');
 
 
-locations = cell(1, totalFrames);
+locations = cell(length());
 
 for i = startFrame:totalFrames
     
@@ -53,15 +53,9 @@ for i = startFrame:totalFrames
     set(predictIm, 'CData', frameFiltered)
     set(scatterPts, 'XData', trackedPts(2,:), 'YData', trackedPts(1,:));
 
-    % store data
-    locations = trackedPts;
-    
     % pause to reflcet on the little things...
     pause(.001);
 end
-
-save([dataDir 'tracked.mat'], 'locations');
-close all;
 
 
 

@@ -1,5 +1,5 @@
 
-% crops file from startTime to endTime
+% crop file from startTime to endTime
 
 
 % user settings
