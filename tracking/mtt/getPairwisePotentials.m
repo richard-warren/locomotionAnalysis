@@ -1,0 +1,7 @@
+function pairwisePotentials = getPairwisePotentials()
+
+
+
+
+
+pairwisePotentials = [];

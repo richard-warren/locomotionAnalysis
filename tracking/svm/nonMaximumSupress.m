@@ -1,4 +1,4 @@
-function [detectionCoordinates, scores] = nonMaximumSupress(scoresRaw, boxSize, thresh)
+function [x, y, scores] = nonMaximumSupress(scoresRaw, boxSize, thresh)
 
 % temp
 % scores = frameFiltered;
@@ -7,16 +7,16 @@ function [detectionCoordinates, scores] = nonMaximumSupress(scoresRaw, boxSize, 
 
 % convert scores to 2D coordinates and sort
 detected = find(scoresRaw(:) > 0);
-[x, y] = ind2sub(size(scoresRaw), detected);
+[y, x] = ind2sub(size(scoresRaw), detected);
 [scores, sortInds] = sort(scoresRaw(detected), 'descend');
-x = x(sortInds);
 y = y(sortInds);
+x = x(sortInds);
 
 % find box limits
-x1 = x - .5 * boxSize(2);
-x2 = x + .5 * boxSize(2);
-y1 = y - .5 * boxSize(1);
-y2 = y + .5 * boxSize(1);
+x1 = y - .5 * boxSize(2);
+x2 = y + .5 * boxSize(2);
+y1 = x - .5 * boxSize(1);
+y2 = x + .5 * boxSize(1);
 
 
 
@@ -44,4 +44,5 @@ for i = 1:nPoints
 end
 
 scores = scores(keepers);
-detectionCoordinates = [x(keepers)'; y(keepers)'];
+y = y(keepers);
+x = x(keepers);
