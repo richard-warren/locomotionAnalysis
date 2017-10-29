@@ -8,7 +8,7 @@ dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\tra
 
 startFrame = 1;
 overlapThresh = .5;
-scoreThresh = .75;
+scoreThresh = .5;
 simpleThresh = 150;
 
 % initializations
@@ -26,7 +26,7 @@ close all; figure('position', [680 144 698 834]); colormap gray
 
 rawAxis = subaxis(2,1,1, 'spacing', 0.01, 'margin', .01);
 rawIm = image(sampleFrame, 'parent', rawAxis, 'CDataMapping', 'scaled');
-hold on; scatterPts = scatter(rawAxis, 0, 0, 200, 'filled', 'sizedata', 1);
+hold on; scatterPts = scatter(rawAxis, 0, 0, 200, 'filled');
 
 predictAxis = subaxis(2,1,2, 'spacing', 0.01, 'margin', .01);
 predictIm = image(sampleFrame, 'parent', predictAxis, 'CDataMapping', 'scaled');
@@ -55,9 +55,7 @@ for i = startFrame:totalFrames
     
     % compute proximity to corner
     
-    sizes = getUnaryPotentials(x, y, size(frame,2), size(frame,1), 0, 1);
-    sizes = max(1, sizes*500);
-    set(scatterPts, 'XData', x, 'YData', y, 'sizedata', sizes);
+    set(scatterPts, 'XData', x, 'YData', y);
 
     % store data
     locations(i).x = x;
