@@ -16,7 +16,7 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts)
 % initializations
 
 ttlTrialStartInds = [1; find(diff(ttlTimes)>.4)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
-frameTrialStartInds = [1; find(diff(frameTimesRaw)>.4) + 1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
+frameTrialStartInds = [1; find(diff(frameTimesRaw)>.45) + 1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
 
 frameCountDiffs = diff(frameCounts); % why is there a 1 here?
 missedFrameInds = find(frameCountDiffs>1);
@@ -26,8 +26,9 @@ frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed
 % ensure the correct number of trials were detected
 if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
     disp('  same number of rewards not detected! WTF!!! STOPPING ANALYSIS!!!')
-    return
 %     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
+    return
+    
 end
 
 

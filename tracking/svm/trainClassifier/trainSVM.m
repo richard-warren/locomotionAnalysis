@@ -20,15 +20,15 @@ for i = 1:length(categories)
     % get training examples
     for j = 1:length(files)
 
-        load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'imgTemp')
+        load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'img')
 
         % initialize storage variable on first pass
         if ~exist('features', 'var')
-            features = nan(0, numel(imgTemp));
+            features = nan(0, numel(img));
         end
         
         % extract and save features
-        img = getFeatures(imgTemp);
+        img = getFeatures(img);
         features(end+1,:) = img(:);
 
     end
@@ -41,8 +41,8 @@ end
 % train classifer
 model = svmtrain(labels, features, '-t 0');
 model.w = model.sv_coef' * model.SVs;
-subHgt = size(imgTemp,1);
-subWid = size(imgTemp,2);
+subHgt = size(img,1);
+subWid = size(img,2);
 uisave ({'model', 'subHgt', 'subWid'}, [dataDir 'classifiers\' className '.mat']);
 
 
