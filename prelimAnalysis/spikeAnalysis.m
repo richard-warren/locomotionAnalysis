@@ -187,6 +187,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
         % debounce touch signal and get touch on/off times
         if analyzeVar('touchSig', varNames, varsToOverWrite) ||...
            analyzeVar('touchOnTimes', varNames, varsToOverWrite) ||...
+           analyzeVar('touchSigTimes', varNames, varsToOverWrite) ||...
            analyzeVar('touchOffTimes', varNames, varsToOverWrite)
             
             fprintf('%s: debouncing touch signal\n', dataFolders{i}(nameStartInd:end))
@@ -201,6 +202,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
             
             % save values
             varStruct.touchSig = touchSig;
+            varStruct.touchSigTimes = touch.times;
             varStruct.touchOnTimes = touchOnTimes;
             varStruct.touchOffTimes = touchOffTimes;
             anythingAnalyzed = true;

@@ -93,8 +93,8 @@ for i = 1:length(obsOnTimes)
             frame = insertText(frame, [0 0], num2str(i), 'BoxColor', 'yellow');
             
             % change color of frame if touching
-            currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
-            if currentTouch
+            if
+                
                 frame(:,:,3) = frame(:,:,1)*.2;
             end
 
