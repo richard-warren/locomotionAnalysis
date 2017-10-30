@@ -1,7 +1,6 @@
 function pairwisePotentials = getPairwisePotentials(xy, xyLast, maxVelocity, velocityWeight, occludedCost)
 
 % !!! need to document
-% !!! currently only uses a single occluded state
 
 % restructure matricies to allow direct subtration
 xyLastReshaped = repelem(xyLast, size(xy,1), 1);

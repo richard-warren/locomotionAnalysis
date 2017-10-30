@@ -2,14 +2,13 @@
 % USER SETTINGS
 
 % settings
-vidFile = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
-classifier = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trackedData\';
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
+classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 
 startFrame = 1;
 overlapThresh = .5;
-scoreThresh = .5;
-simpleThresh = 150;
+scoreThresh = 0;
 
 % initializations
 vid = VideoReader(vidFile);
@@ -68,7 +67,7 @@ for i = startFrame:totalFrames
 end
 
 save([dataDir 'tracked.mat'], 'locations');
-
+close all
 
 
 

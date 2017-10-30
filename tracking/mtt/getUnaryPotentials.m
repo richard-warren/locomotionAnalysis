@@ -5,6 +5,7 @@ function unaryPotentials = getUnaryPotentials(x, y, frameWidth, frameHeight, anc
 dx = (x / frameWidth) - anchorPointX;
 dy = (y / frameHeight) - anchorPointY;
 unaryPotentials = 1 - sqrt(dx.^2 + dy.^2);
+% unaryPotentials(unaryPotentials>.4) = 0;
 
 % add unaries for occluded states
 % unaryPotentials = [unaryPotentials; zeros(1,size(unaryPotentials, 2))];
