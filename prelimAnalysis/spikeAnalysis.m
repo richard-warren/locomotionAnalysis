@@ -9,6 +9,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
     %         decoding obstacle position
     %         decoding wheel position
     %         getting obstacle on and off times
+    %         getting obstacle light on and off times
     %         getting frame time stamps
     %         getting webcam time stamps
     %
@@ -25,6 +26,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
     % settings
     targetFs = 1000; % frequency that positional data will be resampled to
     minRewardInteveral = 1;
+    minObsLightInterval = .1;
 
     % rig characteristics
     whEncoderSteps = 2880; % 720cpr * 4
@@ -178,6 +180,44 @@ function spikeAnalysis(dataDir, varsToOverWrite)
             % save values
             varStruct.obsOnTimes = obsOnTimes;
             varStruct.obsOffTimes = obsOffTimes; 
+            anythingAnalyzed = true;
+        end
+        
+        
+        
+        
+        % get obstacle light on and off times
+        % (ensuring that first event is obs turning ON and last is obs turning OFF)
+        if analyzeVar('obsLightOnTimes', varNames, varsToOverWrite) ||...
+           analyzeVar('obsLightOffTimes', varNames, varsToOverWrite)
+       
+            fprintf('%s: getting obstacle light on and off times\n', dataFolders{i}(nameStartInd:end))
+            load([sessionDir 'run.mat'], 'obsLight')
+       
+            if exist('obsLight', 'var')
+                
+                % find reward times
+                obsLightOnInds  = find(diff(obsLight.values>2)==1) + 1;
+                obsLightOffInds = find(diff(obsLight.values>2)==-1) + 1;
+                obsLightOnTimes = obsLight.times(obsLightOnInds);
+                obsLightOffTimes = obsLight.times(obsLightOffInds);
+
+                % remove reward times occuring within minRewardInteveral seconds of eachother
+                obsLightOnTimes  = obsLightOnTimes(logical([1; diff(obsLightOnTimes)>minObsLightInterval]));
+                obsLightOffTimes = obsLightOffTimes(logical([1; diff(obsLightOffTimes)>minObsLightInterval]));
+
+                % ensure first time is on and last time is off
+                obsLightOnTimes =  obsLightOnTimes(obsLightOnTimes < obsLightOffTimes(end));
+                obsLightOffTimes = obsLightOffTimes(obsLightOffTimes > obsLightOnTimes(1));
+                
+            else
+                obsLightOnTimes = [];
+                obsLightOffTimes = [];
+            end
+            
+            % save values
+            varStruct.obsLightOnTimes = obsLightOnTimes;
+            varStruct.obsLightOffTimes = obsLightOffTimes; 
             anythingAnalyzed = true;
         end
         

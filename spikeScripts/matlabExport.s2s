@@ -1,7 +1,7 @@
 var file$;;
-file$:="C:\\Users\\Rick\\Desktop\\run.mat";
+file$:="C:\\Users\\LindseyBuckingham\\Desktop\\run.mat";
 ExportChanList(1); 'Initialise the channel list
-ExportChanList(0,MaxTime(),1,2,3,4,5,6,7,8,9,10,31,32);
+ExportChanList(0,MaxTime(),1,2,3,4,5,6,7,8,9,10,11,31,32);
 FileSaveAs(file$,100,0,"",0,
 "UseSName=0|UseCName=1|WaveTimes=1|BinFreq=0|BinTimes=0|WaveData=2|MarkAs=1|TMarkAs=2|RMarkAs=2|RMarkData=2|WaveMarkAs=2|WaveMarkData=2|Compatability=0"); 'Export (string args)
 PrintLog("\n");
