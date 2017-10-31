@@ -1,4 +1,4 @@
-function makeVid(session)
+function makeVid(session, trialLabels, trialInds)
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
 % kept and everything else is edited out. obsPosRange is in m and defines
@@ -11,9 +11,9 @@ function makeVid(session)
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 editedDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\editedVid\';
 % obsPosRange = [.1 .5]; %[.31 .445]; % (m) // shows only when obs is in frame
-obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
-% obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
-playBackSpeed = .2;
+% obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
+obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
+playBackSpeed = .5;
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 
 
@@ -90,7 +90,21 @@ for i = 1:length(obsOnTimes)
             end
 
             % add trial info text
-            frame = insertText(frame, [0 0], num2str(i), 'BoxColor', 'yellow');
+            frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(i),...
+                               'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+            
+            % add trial condition info
+            if exist('trialLabels', 'var')
+                if trialInds(i)==1
+                    boxColor = 'yellow';
+                    textColor = 'white';
+                else
+                    boxColor = 'blue';
+                    textColor = 'black';
+                end
+                frame = insertText(frame, [size(frame,2), 0], trialLabels{trialInds(i)},...
+                                   'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
+            end
             
             % change color of frame if touching
             currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
