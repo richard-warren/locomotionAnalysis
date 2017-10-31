@@ -1,4 +1,4 @@
-function makeVid(session, trialLabels, trialInds)
+function makeVid(session, obsPosRange, playBackSpeed, trialLabels, trialInds)
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
 % kept and everything else is edited out. obsPosRange is in m and defines
@@ -12,8 +12,8 @@ dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 editedDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\editedVid\';
 % obsPosRange = [.1 .5]; %[.31 .445]; % (m) // shows only when obs is in frame
 % obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
-obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
-playBackSpeed = .5;
+% obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
+% playBackSpeed = .5;
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 
 
@@ -103,6 +103,8 @@ for i = 1:length(obsOnTimes)
                     textColor = 'black';
                 end
                 frame = insertText(frame, [size(frame,2), 0], trialLabels{trialInds(i)},...
+                                   'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
+                frame = insertText(frame, [size(frame,2), size(frameTop,1)+size(frameBot,1)], trialLabels{trialInds(i)},...
                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
             end
             

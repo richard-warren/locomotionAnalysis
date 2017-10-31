@@ -42,8 +42,8 @@ data = struct(); % stores trial data for all sessions
 dataInd = 0;
 
 cmap = winter(length(sessions)*2);
-cmaps{1} = cmap(end-length(sessions)+1:end,:);
-cmaps{2} = cmap(1:length(sessions),:);
+cmaps{1} = cmap(1:length(sessions),:);
+cmaps{2} = cmap(end-length(sessions)+1:end,:);
 
 
 
@@ -153,7 +153,7 @@ ylabel('\ittouch probability')
 
 set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)], 'ylim', probYlims, 'ytick', {});
 
-legend(conditionLabels); legend('boxoff');
+legend(conditionLabels); legend('boxoff'); keyboard
 
 
 
