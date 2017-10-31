@@ -1,7 +1,7 @@
 function pimpFig
     
     % make window big
-    gcf
+    gcf;
     set(gcf, 'units', 'normalized', 'position', [0 0 1 1], 'color', [1 1 1]) 
     
     % adjust axis settings

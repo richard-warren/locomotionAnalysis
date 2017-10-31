@@ -11,7 +11,6 @@ function obsAvoidanceLight2(mouse, expName)
 % user settings
 % dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
-conditionColors = [1 0 0; 0 1 0];
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters
 touchPosRes = .0001;
@@ -40,6 +39,10 @@ gausKernel = gausKernel/sum(gausKernel);
 
 data = struct(); % stores trial data for all sessions
 dataInd = 0;
+
+conditionColors = winter(8);
+conditionColors = conditionColors([end-1 1],:);
+
 
 
 
@@ -114,8 +117,10 @@ for i = 1:length(sessions)
         
         % compute touch probability as function of position
         touchCounts = histcounts(trialTouchPositions, touchPosInterp);
-        touchCounts = touchCounts / length(trialTouchInds);
-        data(dataInd).touchProbability = conv(touchCounts, gausKernel, 'same');
+        touchCounts = touchCounts / length(trialTouchPositions);
+        trialTouchProb = conv(touchCounts, gausKernel, 'same');
+        trialTouchProb(isnan(trialTouchProb)) = 0;
+        data(dataInd).touchProbability = trialTouchProb;
         
         % find whether light was on
         data(dataInd).obsLightOn = min(abs(obsOnTimes(j) - obsLightOnTimes)) < .5;
@@ -125,22 +130,15 @@ for i = 1:length(sessions)
     end
 end
 
-keyboard
 
 
 
-
-% PLOT EVERYTHING
+%% PLOT EVERYTHING
 
 % prepare figure
-figure('name', mouse); pimpFig;
-labels = {' (light on)', ' (light off)'};
-set(gcf, 'menubar', 'none',...
-         'units', 'inches',...
-         'position', [4 1.5 11 6.5]);
+figure('name', mouse);
 
 
-    
 % plot touch probability
 subplot(1,3,1)
 allTouchProbs = reshape([data(:).touchProbability], length(data(1).touchProbability), length(data))';
@@ -170,10 +168,10 @@ ylabel('\itvelocity (m/s)')
 set(gca, 'xlim', [-obsPrePost(1) obsPrePost(2)], 'ylim', ylims)
 x1 = frameEdges(1)-obsPos;
 x2 = frameEdges(2)-obsPos;
-line([x1 x1], ylims, 'color', [0 0 0], 'linewidth', 2)
-line([x2 x2], ylims, 'color', [0 0 0], 'linewidth', 2)
-% obsOnPos = obsPos - mean([data.obsOnPositions]);
-% line([obsOnPos obsOnPos], ylims, 'color', [0 0 0], 'linewidth', 2)
+line([x1 x1], ylims, 'color', [0 0 0], 'linewidth', 1.5)
+line([x2 x2], ylims, 'color', [0 0 0], 'linewidth', 1.5)
+obsOnPos = -mean([data.obsOnPositions]);
+line([obsOnPos obsOnPos], ylims, 'color', [0 0 0], 'linewidth', 1.5)
 
 
 % plot obstacle avoidance
@@ -184,21 +182,30 @@ lightOnAvoidance  = nan(1,length(sessions));
 lightOffAvoidance = nan(1,length(sessions));
 
 for i = 1:length(sessions)
+        
+    trialOn = [data.sessionNum]==i & [data.obsLightOn];
+    trialOff = [data.sessionNum]==i & ~[data.obsLightOn];
     
-    trials = sum([data.sessionNum] == i);
-    
-    trialOnInds = [data.sessionNum]==i & [data.obsLightOn];
-    trialOffInds = [data.sessionNum]==i & ~[data.obsLightOn];
-    
-    lightOnAvoidance(i)  = sum([data(trialOnInds).avoided]) / trials;
-    lightOffAvoidance(i) = sum([data(trialOffInds).avoided]) / trials;    
+    lightOnAvoidance(i)  = sum([data(trialOn).avoided]) / sum(trialOn);
+    lightOffAvoidance(i) = sum([data(trialOff).avoided]) / sum(trialOff);
 end
 
+scatter(ones(1,length(sessions))*1.5, lightOnAvoidance, 75, conditionColors(1,:), 'filled', 'jitter', 'on'); hold on
+scatter(ones(1,length(sessions))*3.5, lightOffAvoidance, 75, conditionColors(2,:), 'filled', 'jitter', 'on');
+line([1 2], repmat(mean(lightOnAvoidance),1,2), 'color', 'black', 'linewidth', 2);
+line([3 4], repmat(mean(lightOffAvoidance),1,2), 'color', 'black', 'linewidth', 2);
+set(gca, 'ylim', [0 1], 'xlim', [.5 4.5], 'xtick', [1.5 3.5], 'xticklabel', {'light', 'no light'});
 
 title('success rate')
 xlabel('\itcondition')
 ylabel('\itfraction avoided')
-keyboard
 
-% save fig
+pimpFig;
+set(gcf, 'menubar', 'none',...
+         'units', 'inches',...
+         'position', [4 4 12 3.5]);
+
+
+
+%% save fig
 savefig(['obsAvoidance\figs\' mouse 'lights.fig'])
