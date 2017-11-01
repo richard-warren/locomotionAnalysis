@@ -1,8 +1,11 @@
 function pairwisePotentials = getPairwisePotentials(xy, xyLast, maxVelocity, velocityWeight, occludedCost)
 
-% !!! need to document
+% given track locations in two adjacent frames, computes a matrix representing the likelihood of transitioning
+% from every location in previous frame (xyLast) to every location in current frame (xy)
+% this likelihood is based on the distance between track (ie the velocity necessary to move from one to
+% another track
 
-% restructure matricies to allow direct subtration
+% restructure matrices to allow direct subtration
 xyLastReshaped = repelem(xyLast, size(xy,1), 1);
 xyReshaped = repmat(xy, size(xyLast,1), 1);
 
@@ -10,10 +13,10 @@ xyReshaped = repmat(xy, size(xyLast,1), 1);
 distances = sqrt(sum((xyReshaped - xyLastReshaped).^2, 2));
 distances = reshape(distances, size(xy,1), size(xyLast,1));
 
-% set normalize range and set invalid transitions to 0
+% normalize range and set invalid transitions to 0
 pairwisePotentials = maxVelocity - distances;
 pairwisePotentials = pairwisePotentials / maxVelocity;
-pairwisePotentials(pairwisePotentials<0) = 0;
+pairwisePotentials(pairwisePotentials < 0) = 0;
 
 % weight distances by velocityWeight
 pairwisePotentials = pairwisePotentials * velocityWeight;

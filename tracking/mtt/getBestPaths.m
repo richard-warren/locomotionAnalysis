@@ -3,18 +3,23 @@
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\tracked.mat', 'locations')
 
 % user settings
-occludedCost = .1;
-occludedStates = 1;
-maxVelocity = 15;
-velocityWeight = 0;
-anchorWeight = 1;
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
-paws = 1:4;
-delay = .05;
+
+unaryWeight = 1;
+pairwiseWeight = 0;
+occludedWeight = 0;
+occlusionGridSpacing = 15;
+
+maxVelocity = 20;
+pawsToShow = 1;
+vidDelay = .05;
 
 % initializations
 frameHeight = 242; % !!! hacky temp
 frameWidth = 398;
+gridX = 1 : occlusionGridSpacing : frameWidth;
+gridY = 1 : occlusionGridSpacing : frameHeight;
+numOccluded = length(gridX) * length(gridY);
 
 
 % compute unary potentials
@@ -22,36 +27,33 @@ unary = cell(1,length(locations));
 
 for i = 1:length(locations)
     
-    frameUnaries = nan(4, length(locations(i).x) + occludedStates);
+    frameUnaries = nan(4, length(locations(i).x) + numOccluded);
     
-    frameUnaries(1,1:end-occludedStates) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 0); % LH
-    frameUnaries(2,1:end-occludedStates) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 1); % LF
-    frameUnaries(3,1:end-occludedStates) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 0); % RH
-    frameUnaries(4,1:end-occludedStates) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 1); % RF
+    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 0, numOccluded, unaryWeight); % LH
+    frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeight); % LF
+    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 0, numOccluded, unaryWeight); % RH
+    frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeight); % RF
     
-    frameUnaries(:,end-occludedStates+1:end) = 0;%occludedCost;
     
-    unary{i} = frameUnaries * anchorWeight; % documentation on match2nd appears to be incorrect... this matrix should be flipped i think...
+    unary{i} = frameUnaries;
     
 end
 
 
 
-% compute pairwise potentials
+%% compute pairwise potentials
 pairwise = cell(1,length(locations)-1);
 
 for i = 1:length(locations)-1
     
-    pairwise{i} = getPairwisePotentials([locations(i+1).x, locations(i+1).y], [locations(i).x, locations(i).y], maxVelocity, velocityWeight, occludedCost);
+    pairwise{i} = getPairwisePotentials([locations(i+1).x, locations(i+1).y], [locations(i).x, locations(i).y], maxVelocity, pairwiseWeight, occludedWeight);
     
 end
 
 
 
-% function getBestPaths(unary, pairwise)
 
-% CURRENTLY HAS ONLY ONE OCCLUDED STATE, AND NO EXCLUSION CONSTRAINTS!!!
-
+%% find most probable paths!
 
 objectNum = size(unary{1}, 1);
 labels = nan(length(unary), objectNum);
@@ -109,16 +111,17 @@ startFrame = 1;
 vid = VideoReader(vidFile);
 sampleFrame = rgb2gray(read(vid,startFrame));
 totalFrames = vid.NumberOfFrames;
-cmap = winter(length(paws));
+cmap = winter(length(pawsToShow));
 
 % prepare figure
-close all; figure('position', [680 144 698 400]); colormap gray
+close all; figure('position', [567 383 698 400], 'color', 'black'); colormap gray
 
 
 rawIm = image(sampleFrame, 'CDataMapping', 'scaled');
 rawAxis = gca;
+set(rawAxis, 'visible', 'off')
 hold on;
-scatterPts =    scatter(rawAxis, zeros(1,length(paws)), zeros(1,length(paws)), 200, cmap, 'filled'); hold on
+scatterPts =    scatter(rawAxis, zeros(1,length(pawsToShow)), zeros(1,length(pawsToShow)), 200, cmap, 'filled'); hold on
 scatterPtsAll = scatter(rawAxis, 0, 0, 200, [1 1 1]);
 
 
@@ -130,16 +133,16 @@ for i = startFrame:totalFrames
     
     % update figure
     set(rawIm, 'CData', frame);
-    ind = backPointers{i+1}(paws,1);
+    ind = backPointers{i+1}(pawsToShow,1);
     
     xs = [locations(i).x; 0]; % add zero for occluded state
     ys = [locations(i).y; 0]; % add zero for occluded state
     
-%     set(scatterPts, 'XData', xs(backPointers{i+1}(paws,1)), 'YData', ys(backPointers{i+1}(paws,1)));
+    set(scatterPts, 'XData', xs(backPointers{i+1}(pawsToShow,1)), 'YData', ys(backPointers{i+1}(pawsToShow,1)));
     set(scatterPtsAll, 'XData', locations(i).x, 'YData', locations(i).y);
     
     % pause to reflcet on the little things...
-    pause(delay);
+    pause(vidDelay);
 end
 
 

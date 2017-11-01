@@ -1,14 +1,23 @@
-function unaryPotentials = getUnaryPotentials(x, y, frameWidth, frameHeight, anchorPointX, anchorPointY)
+function unaryPotentials = getUnaryPotentials(x, y, frameWidth, frameHeight, anchorPointX, anchorPointY, numOccluded, unaryWeight)
 
-% !!! need to document
+% computes the prior likelihood that a paw exists in a given location
+% simply computse distance of the paw to the anchorPoint (x,y)
+% the likelihood is the inverse of the distance to the anchor point
+% width and height are normalized from 0 to 1
+%
+% inputs        x:             vector of x locations of tracks
+%               y:             vector of x locations of tracks
+%               frameHeight:   height of frame (used to normalize y from 0 to 1)
+%               frameWidth:    width of frame (used to normalize x from 0 to 1)
+%               anchorPointX:  most likely x position of paw, expressed from 0 to 1
+%               anchorPointY:  most likely y position of paw, expressed from 0 to 1
+%               numOccluded:   number of occluded states (zeros will be added for the unary potentials of all occluded states)
 
+
+% compute distant of points to anchorPoint
 dx = (x / frameWidth) - anchorPointX;
 dy = (y / frameHeight) - anchorPointY;
-unaryPotentials = 1 - sqrt(dx.^2 + dy.^2);
-% unaryPotentials(unaryPotentials>.4) = 0;
+unaryPotentials = sqrt(2) - sqrt(dx.^2 + dy.^2); % sqrt(2) is the maximum possible distance, eg the distance from one corner to the opposite corner
 
-% add unaries for occluded states
-% unaryPotentials = [unaryPotentials; zeros(1,size(unaryPotentials, 2))];
-% unaryPotentials = [unaryPotentials, zeros(size(unaryPotentials,1), 1)];
-% 
-% 
+% add zeros for occluded points
+unaryPotentials = [unaryPotentials; zeros(numOccluded, 1)] * unaryWeight;
