@@ -16,8 +16,8 @@ rawIm = image(sampleFrame, 'CDataMapping', 'scaled');
 rawAxis = gca;
 set(rawAxis, 'visible', 'off')
 hold on;
-scatterPts =    scatter(rawAxis, zeros(1,length(paws)), zeros(1,length(paws)), 200, cmap, 'filled'); hold on
-scatterPtsAll = scatter(rawAxis, 0, 0, 200, 'green', 'linewidth', 2);
+% scatterPtsAll = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
+scatterPts =    scatter(rawAxis, zeros(1,length(paws)), zeros(1,length(paws)), linspace(50,500,4), cmap, 'linewidth', 3); hold on
 
 playing = true;
 paused = false;
@@ -37,15 +37,18 @@ function changeFrames(~,~)
     if ~isempty(key) && isnumeric(key)
         
         if key==28                      % LEFT: move frame backward
+            pause(.001);
             paused = true;
             updateFrame(-1);
         
         elseif key==29                  % RIGHT: move frame forward
+            pause(.001);
             paused = true;
             updateFrame(1);
         
         elseif key==27                  % ESCAPE: close window
             playing = false;
+            paused = false;
             close(fig)
         else                            % OTHERWISE: close window
             paused = ~paused;

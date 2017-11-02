@@ -46,21 +46,25 @@ occlusionCosts(inds) = occludedCost;
 
 
 % COST OF RESURFACING FROM OCCLUSION
+keyboard
 nearestResurfaceInds = knnsearch(gridPts, xy);
 resurfaceCosts = zeros(numCurrent, numOccluded);
 inds = sub2ind(size(resurfaceCosts), (1:numCurrent)', nearestResurfaceInds);
 resurfaceCosts(inds) = occludedCost;
 
+for i=1:numCurrent
+    
+    distances = sqrt(sum((gridPts - repmat(xy(1,:),numOccluded,1)).^2, 2));
+    distances = (max(distances) - distances) * ( occludedCost/ max(distances));
+    
+end
 
-% resurfaceCosts = nan(numCurrent, numOccluded);
+% nearestResurfaceInds = knnsearch(gridPts, xy, 'k', 9);
+% resurfaceCosts = zeros(numCurrent, numOccluded);
+% inds = sub2ind(size(resurfaceCosts), repelem((1:numCurrent)', 9), reshape(nearestResurfaceInds,numel(nearestResurfaceInds),1));
+% resurfaceCosts(inds) = occludedCost;
 
-% for i=1:numCurrent
-%     distances = sqrt(sum((gridPts - repmat(xy(i,:),numOccluded,1)).^2, 2));
-%     distances(distances > maxVelocity) = nan;
-%     resurfaceCosts(i,:) = (max(distances) - distances) * ( occludedCost / max(distances));
-%     resurfaceCosts(isnan(resurfaceCosts)) = 0;
-% end
-% 
+
 
 
 % COST OF REMAINING OCCLUDED

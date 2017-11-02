@@ -7,9 +7,9 @@ load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\tracked.m
 % user settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
 
-unaryWeight = 1;
+unaryWeight = 2;
 pairwiseWeight = .1;
-occludedWeight = .01;
+occludedWeight = .001;
 occlusionGridSpacing = 30;
 
 maxVelocity = 30;
@@ -78,43 +78,61 @@ objectNum = size(unary{1}, 1);
 labels = nan(length(unary), objectNum);
 nodeScores = cell(1, length(unary));
 backPointers = cell(1, length(unary)-1);
-
+pathScores = nan(1,4);
 % initializations
 
 nodeScores{1} = unary{1};
 
 
-% forward
-for i = 2:length(unary)
+for i = 1:objectNum
     
-    nodeScores{i}   = nan(objectNum, size(pairwise{i-1},1));
-    backPointers{i-1} = nan(objectNum, size(pairwise{i-1},1));
-    
-    for j = 1:objectNum
+    for j = 2:length(unary)
         
-        previousScores = nodeScores{i-1}(j,:);
-        currentUnary   = unary{i}(j,:)';
+        % forward
+        
+        % initialize containers for first object only
+        if i==1
+            nodeScores{j}   = nan(objectNum, size(pairwise{j-1},1));
+            backPointers{j-1} = nan(objectNum, size(pairwise{j-1},1));
+        end
+        
+        previousScores = nodeScores{j-1}(i,:);
+        currentUnary   = unary{j}(i,:)';
         
         allTransitionScores = repmat(previousScores, length(currentUnary), 1) + ...
                               repmat(currentUnary, 1, length(previousScores)) + ...
-                              pairwise{i-1};
-                              
-        invalidInds = (pairwise{i-1}==0) | (repmat(previousScores, length(currentUnary), 1)==0);
-        allTransitionScores(invalidInds) = 0; % make invalid transitions impossible
+                              pairwise{j-1};
         
-        [nodeScores{i}(j,:), backPointers{i-1}(j,:)] = max(allTransitionScores, [], 2);
-        backPointers{i-1}(j,:) = backPointers{i-1}(j,:);% .* double(nodeScores{i}(j,:)>0);
+        % make invalid transitions impossible                      
+        invalidInds = (pairwise{j-1}==0) |...
+                      (repmat(previousScores, length(currentUnary), 1)==0);          
+        allTransitionScores(invalidInds) = 0;
+        
+        % make transitions to previously occupied state impossible
+        if i>1
+            labelInds = labels(j-1,1:i-1);
+            labelInds = labelInds( labelInds <= length(locations(j-1).x) ); % occluded locations can be multiply occupied
+%             allTransitionScores(1:length(locations(j).x), labelInds) = 0;
+            allTransitionScores(:, labelInds) = 0;
+        end
+        
+        [nodeScores{j}(i,:), backPointers{j-1}(i,:)] = max(allTransitionScores, [], 2);
+        backPointers{j-1}(i,:) = backPointers{j-1}(i,:) .* double(nodeScores{j}(i,:)>0);
     end
+    
+    % backward
+    [pathScores(i), labels(end,i)] = max(nodeScores{end}(i,:));
+    
+    for j = fliplr(1:length(unary)-1)
+        
+        labels(j,i) = backPointers{j}(i, labels(j+1,i));
+        
+    end
+    
 end
 
 
-% backward
 
-[pathScores(j), labels(end,j)] = max(nodeScores{end}(j,:));
-
-for i = fliplr(1:length(unary)-1)
-    labels(i,j) = backPointers{i}(j, labels(i+1,j));
-end
 
 
 
