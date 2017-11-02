@@ -46,7 +46,7 @@ for i = startFrame:totalFrames
     frameFiltered(frameFiltered < scoreThresh) = 0;
     frameFiltered(1:yMin,:) = 0;
     frameFiltered(:,1:xMin) = 0;
-    [x, y] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);  
+    [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);  
     
     % update figure
     set(rawIm, 'CData', frame);
@@ -61,6 +61,7 @@ for i = startFrame:totalFrames
     % store data
     locations(i).x = x;
     locations(i).y = y;
+    locations(i).scores = scores;
     
     % pause to reflcet on the little things...
     pause(.001);

@@ -7,10 +7,10 @@ load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\tracked.m
 % user settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
 
-unaryWeight = 2;
+unaryWeight = 1;
 pairwiseWeight = .1;
 occludedWeight = .01;
-occlusionGridSpacing = 20;
+occlusionGridSpacing = 30;
 
 maxVelocity = 30;
 paws = 1:4;
@@ -39,12 +39,11 @@ for i = 1:length(locations)
 
     frameUnaries = nan(4, length(locations(i).x) + numOccluded);
     
-    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, .2, numOccluded, unaryWeightTemp); % RH
-    frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeightTemp); % RF
-    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, .2, numOccluded, unaryWeightTemp); % LH
-    frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeightTemp); % LF
-    
-    
+    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, .2, numOccluded, unaryWeightTemp); % RH
+    frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeightTemp); % RF
+    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, .2, numOccluded, unaryWeightTemp); % LH
+    frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeightTemp); % LF
+        
     unary{i} = frameUnaries;
     
 end
@@ -62,15 +61,18 @@ for i = 1:length(locations)-1
 end
 
 
-%% attempt at match2nd
+% %% attempt at match2nd
+% 
+% unaryFlipped = cellfun(@(x) x', unary, 'un', 0);
+% pairwiseFlipped = cellfun(@(x) x', pairwise, 'un', 0);
+% 
+% labels = match2nd(unaryFlipped, pairwise, [], numOccluded, 0);
+% showTracking(VideoReader(vidFile), locations, labels, gridPts, vidDelay, paws);
+% 
+% 
 
-unaryFlipped = cellfun();
 
-labels = match2nd(unary, pairwise, [], numOccluded, 0);
-
-
-
-%% find most probable paths!
+% find most probable paths!
 
 objectNum = size(unary{1}, 1);
 labels = nan(length(unary), objectNum);
@@ -82,6 +84,7 @@ backPointers = cell(1, length(unary)-1);
 nodeScores{1} = unary{1};
 
 
+% forward
 for i = 2:length(unary)
     
     nodeScores{i}   = nan(objectNum, size(pairwise{i-1},1));
@@ -105,16 +108,12 @@ for i = 2:length(unary)
 end
 
 
-% back trace
+% backward
 
-[pathScores, labels(end,:)] = max(nodeScores{end}, [], 2);
-%
+[pathScores(j), labels(end,j)] = max(nodeScores{end}(j,:));
+
 for i = fliplr(1:length(unary)-1)
-    for j = 1:objectNum
-        
-        labels(i,j) = backPointers{i}(j, labels(i+1,j));
-
-    end
+    labels(i,j) = backPointers{i}(j, labels(i+1,j));
 end
 
 

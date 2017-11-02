@@ -1,9 +1,8 @@
 function [x, y, scores] = nonMaximumSupress(scoresRaw, boxSize, thresh)
 
-% temp
-% scores = frameFiltered;
-% boxSize = [36 36];
-% thresh = .01;
+% !!! need to document
+
+
 
 % convert scores to 2D coordinates and sort
 detected = find(scoresRaw(:) > 0);

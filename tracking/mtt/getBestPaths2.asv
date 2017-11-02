@@ -112,11 +112,8 @@ end
 [pathScores, labels(end,:)] = max(nodeScores{end}, [], 2);
 %
 for i = fliplr(1:length(unary)-1)
-    for j = 1:objectNum
         
-        labels(i,j) = backPointers{i}(j, labels(i+1,j));
-
-    end
+    labels(i,j) = backPointers{i}(j, labels(i+1,j));
 end
 
 
