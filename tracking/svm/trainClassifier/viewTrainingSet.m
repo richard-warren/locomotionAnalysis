@@ -17,9 +17,9 @@ function viewTrainingSet(view, type)
     subaxis(rows, cols, 1, 'spacing', 0.02, 'margin', .02);
     
     for i = 1:length(files)
-        load([fullDir '\' files{i}], 'imgTemp');
+        load([fullDir '\' files{i}], 'img');
         subaxis(i)
-        imshow(getFeatures(imgTemp));
+        imshow(getFeatures(img));
         title(i, 'color', 'white')
     end
 end

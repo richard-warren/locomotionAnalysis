@@ -1,13 +1,11 @@
 #include "mex.h"
 #include <vector>
-#include <iostream>
+#include<iostream>
 #include <fstream>
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <cstring>
-#include "minmax.h"
-
 //#define INFINITY std::numeric_limits<double>::infinity()
 using namespace std;
 vector< int> locations;

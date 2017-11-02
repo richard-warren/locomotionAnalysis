@@ -3,7 +3,7 @@
 spikeAnalysis('C:\Users\Rick\Google Drive\columbia\obstacleData\sessions')
 
 
-%% generate plots
+% generate plots
 obsAvoidanceLight2('run3', 'obsTestLight')
 obsAvoidanceLight2('run4', 'obsTestLight')
 obsAvoidance2('run5', 'obsTestBr')

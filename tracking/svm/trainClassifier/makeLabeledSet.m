@@ -8,7 +8,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     
     % user settings
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
-    subHgtWid = [20 30];
+    subHgtWid = [40 40];
     startPosits = [40 70; 40 100; 50 70; 50 100];
     negativeEgsPerEg = 10;
     

@@ -52,6 +52,11 @@ resurfaceCosts = zeros(numCurrent, numOccluded);
 inds = sub2ind(size(resurfaceCosts), (1:numCurrent)', nearestResurfaceInds);
 resurfaceCosts(inds) = occludedCost;
 
+% nearestResurfaceInds = knnsearch(gridPts, xy, 'k', 9);
+% resurfaceCosts = zeros(numCurrent, numOccluded);
+% inds = sub2ind(size(resurfaceCosts), repelem((1:numCurrent)', 9), reshape(nearestResurfaceInds,numel(nearestResurfaceInds),1));
+% resurfaceCosts(inds) = occludedCost;
+
 
 
 

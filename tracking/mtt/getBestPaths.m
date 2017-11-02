@@ -1,4 +1,4 @@
-% to try: ***way of regularizing total values... // smarter reappearance function?
+% to try: make frame skipping inferface // smarter reappearance function?
 
 
 % load tracking data
@@ -7,14 +7,14 @@ load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\tracked.m
 % user settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
 
-unaryWeight = 1;
+unaryWeight = 2;
 pairwiseWeight = .1;
-occludedWeight = .1;
+occludedWeight = .01;
 occlusionGridSpacing = 20;
 
 maxVelocity = 30;
 paws = 1:4;
-vidDelay = .05;
+vidDelay = .02;
 
 % initializations
 frameHeight = 242; % !!! hacky temp
@@ -39,9 +39,9 @@ for i = 1:length(locations)
 
     frameUnaries = nan(4, length(locations(i).x) + numOccluded);
     
-    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 0, numOccluded, unaryWeightTemp); % RH
+    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, .2, numOccluded, unaryWeightTemp); % RH
     frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeightTemp); % RF
-    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 0, numOccluded, unaryWeightTemp); % LH
+    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, .2, numOccluded, unaryWeightTemp); % LH
     frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeightTemp); % LF
     
     
@@ -62,9 +62,16 @@ for i = 1:length(locations)-1
 end
 
 
+%% attempt at match2nd
+
+unaryFlipped = cellfun(@(x) x', unary, 'un', 0);
+pairwiseFlipped = cellfun(@(x) x', pairwise, 'un', 0);
+
+labels = match2nd(unaryFlipped, pairwise, [], numOccluded, 0);
+showTracking(VideoReader(vidFile), locations, labels, gridPts, vidDelay, paws);
 
 
-% find most probable paths!
+%% find most probable paths!
 
 objectNum = size(unary{1}, 1);
 labels = nan(length(unary), objectNum);
@@ -86,9 +93,12 @@ for i = 2:length(unary)
         previousScores = nodeScores{i-1}(j,:);
         currentUnary   = unary{i}(j,:)';
         
-        allTransitionScores = repmat(previousScores, length(currentUnary), 1) .* ...
-                              (pairwise{i-1} + repmat(currentUnary, 1, length(previousScores)));
-        allTransitionScores(pairwise{i-1}==0) = 0; % make invalid transitions impossible
+        allTransitionScores = repmat(previousScores, length(currentUnary), 1) + ...
+                              repmat(currentUnary, 1, length(previousScores)) + ...
+                              pairwise{i-1};
+                              
+        invalidInds = (pairwise{i-1}==0) | (repmat(previousScores, length(currentUnary), 1)==0);
+        allTransitionScores(invalidInds) = 0; % make invalid transitions impossible
         
         [nodeScores{i}(j,:), backPointers{i-1}(j,:)] = max(allTransitionScores, [], 2);
         backPointers{i-1}(j,:) = backPointers{i-1}(j,:);% .* double(nodeScores{i}(j,:)>0);
@@ -111,56 +121,8 @@ end
 
 
 
-%% VISUALIZE TRACKING
-
-
-% initializations
-startFrame = 1;
-vid = VideoReader(vidFile);
-sampleFrame = rgb2gray(read(vid,startFrame));
-totalFrames = vid.NumberOfFrames;
-cmap = winter(length(paws));
-
-% prepare figure
-close all; figure('position', [567 383 698 400], 'color', 'black'); colormap gray
-
-
-rawIm = image(sampleFrame, 'CDataMapping', 'scaled');
-rawAxis = gca;
-set(rawAxis, 'visible', 'off')
-hold on;
-scatterPts =    scatter(rawAxis, zeros(1,length(paws)), zeros(1,length(paws)), 200, cmap, 'filled'); hold on
-scatterPtsAll = scatter(rawAxis, 0, 0, 200, 'green', 'linewidth', 2);
-
-
-for i = startFrame:totalFrames
-    
-    % get frame and sub-frames
-    frame = rgb2gray(read(vid,i));
-    frame = getFeatures(frame);
-    
-    % update figure
-    set(rawIm, 'CData', frame);
-    
-    xs = [locations(i).x; gridPts(:,1)];
-    ys = [locations(i).y; gridPts(:,2)];
-    
-%     [~, maxInds] = max(nodeScores{i}(paws,:), [], 2);
-%     set(scatterPts, 'XData', xs(maxInds), 'YData', ys(maxInds));
-
-    set(scatterPts, 'XData', xs(labels(i,paws)), 'YData', ys(labels(i,paws)));
-
-    set(scatterPtsAll, 'XData', locations(i).x, 'YData', locations(i).y);
-    
-    % pause to reflcet on the little things...
-    pause(vidDelay);
-end
-
-
-
-
-
-
+% VISUALIZE TRACKING
+showTracking(VideoReader(vidFile), locations, labels, gridPts, vidDelay, paws);
 
 
 
