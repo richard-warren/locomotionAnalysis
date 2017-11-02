@@ -53,14 +53,14 @@ resurfaceCosts(inds) = occludedCost;
 
 
 % resurfaceCosts = nan(numCurrent, numOccluded);
-
+% 
 % for i=1:numCurrent
 %     distances = sqrt(sum((gridPts - repmat(xy(i,:),numOccluded,1)).^2, 2));
 %     distances(distances > maxVelocity) = nan;
 %     resurfaceCosts(i,:) = (max(distances) - distances) * ( occludedCost / max(distances));
 %     resurfaceCosts(isnan(resurfaceCosts)) = 0;
 % end
-% 
+
 
 
 % COST OF REMAINING OCCLUDED

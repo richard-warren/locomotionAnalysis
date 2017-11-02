@@ -9,7 +9,7 @@ vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTes
 
 unaryWeight = 2;
 pairwiseWeight = .1;
-occludedWeight = .001;
+occludedWeight = .01;
 occlusionGridSpacing = 30;
 
 maxVelocity = 30;
@@ -112,12 +112,11 @@ for i = 1:objectNum
         if i>1
             labelInds = labels(j-1,1:i-1);
             labelInds = labelInds( labelInds <= length(locations(j-1).x) ); % occluded locations can be multiply occupied
-%             allTransitionScores(1:length(locations(j).x), labelInds) = 0;
             allTransitionScores(:, labelInds) = 0;
         end
         
         [nodeScores{j}(i,:), backPointers{j-1}(i,:)] = max(allTransitionScores, [], 2);
-        backPointers{j-1}(i,:) = backPointers{j-1}(i,:) .* double(nodeScores{j}(i,:)>0);
+%         backPointers{j-1}(i,:) = backPointers{j-1}(i,:) .* double(nodeScores{j}(i,:)>0);
     end
     
     % backward

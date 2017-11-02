@@ -18,6 +18,7 @@ set(rawAxis, 'visible', 'off')
 hold on;
 % scatterPtsAll = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
 scatterPts =    scatter(rawAxis, zeros(1,length(paws)), zeros(1,length(paws)), linspace(50,500,4), cmap, 'linewidth', 3); hold on
+scatter(rawAxis, [1 vid.Width 1 vid.Width], [1 1 vid.Height vid.Height], linspace(50,500,4), cmap, 'linewidth', 3); hold on
 
 playing = true;
 paused = false;
