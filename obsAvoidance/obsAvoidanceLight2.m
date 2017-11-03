@@ -165,8 +165,8 @@ allVelocities = reshape([data(:).velocity], length(data(1).velocity), length(dat
 for i = 1:length(sessions)
     sessionInds = [data.sessionNum]==i;
     
-    plot(posInterp, nanmean(allVelocities([data.obsLightOn] & sessionInds,:), 1), 'color', cmaps{1}(i,:), 'linewidth', 1); hold on
-    plot(posInterp, nanmean(allVelocities(~[data.obsLightOn] & sessionInds,:), 1), 'color', cmaps{2}(i,:), 'linewidth', 1);
+%     plot(posInterp, nanmean(allVelocities([data.obsLightOn] & sessionInds,:), 1), 'color', cmaps{1}(i,:), 'linewidth', 1); hold on
+%     plot(posInterp, nanmean(allVelocities(~[data.obsLightOn] & sessionInds,:), 1), 'color', cmaps{2}(i,:), 'linewidth', 1);
 end
 
 plot(posInterp, nanmean(allVelocities([data.obsLightOn],:), 1), 'color', mean(cmaps{1},1), 'linewidth', 3); hold on

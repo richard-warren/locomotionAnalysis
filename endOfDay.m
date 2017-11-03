@@ -12,14 +12,14 @@ obsAvoidance2('run5', 'obsTestBr')
 
 %% make simple video
 
-makeVid('171029_001', [.25 .445], .1);
+makeVid('171102_002', [.25 .445], .1);
 
 
 
 %% make video with trials labelled by condition
 
 % settings
-session = '171031_000';
+session = '171102_000';
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 conditions = {'light off', 'light on'};
 

@@ -16,7 +16,7 @@ rawIm = image(sampleFrame, 'CDataMapping', 'scaled');
 rawAxis = gca;
 set(rawAxis, 'visible', 'off')
 hold on;
-% scatterPtsAll = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
+scatterPtsAll = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
 scatterPts =    scatter(rawAxis, zeros(1,length(paws)), zeros(1,length(paws)), linspace(50,500,4), cmap, 'linewidth', 3); hold on
 scatter(rawAxis, [1 vid.Width 1 vid.Width], [1 1 vid.Height vid.Height], linspace(50,500,4), cmap, 'linewidth', 3); hold on
 
@@ -77,7 +77,7 @@ function updateFrame(frameStep)
     inds = labels(currentFrame,paws);
     
     set(scatterPts, 'XData', xs(inds), 'YData', ys(inds), 'visible', 'on');
-%     set(scatterPtsAll, 'XData', locations(currentFrame).x, 'YData', locations(currentFrame).y);
+    set(scatterPtsAll, 'XData', locations(currentFrame).x, 'YData', locations(currentFrame).y);
     
     % pause to reflcet on the little things...
     pause(vidDelay);

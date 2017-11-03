@@ -9,8 +9,9 @@ vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTes
 
 unaryWeight = 2;
 pairwiseWeight = .1;
-occludedWeight = .01;
+occludedWeight = .001;
 occlusionGridSpacing = 30;
+maxDistance = 1;
 
 maxVelocity = 30;
 paws = 1:4;
@@ -36,13 +37,21 @@ for i = 1:length(locations)
     else
         unaryWeightTemp = unaryWeight;
     end
+    
+    % don't enfore maxDistance for first frame
+    if (i==1)
+        maxDistanceTemp = 1;
+    else
+        maxDistanceTemp = maxDistance;
+    end
+    
 
     frameUnaries = nan(4, length(locations(i).x) + numOccluded);
     
-    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, .2, numOccluded, unaryWeightTemp); % RH
-    frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeightTemp); % RF
-    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, .2, numOccluded, unaryWeightTemp); % LH
-    frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeightTemp); % LF
+    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, .2, numOccluded, unaryWeightTemp, maxDistanceTemp); % RH
+    frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeightTemp, maxDistanceTemp); % RF
+    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, .2, numOccluded, unaryWeightTemp, maxDistanceTemp); % LH
+    frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeightTemp, maxDistanceTemp); % LF
         
     unary{i} = frameUnaries;
     
@@ -108,12 +117,17 @@ for i = 1:objectNum
                       (repmat(previousScores, length(currentUnary), 1)==0);          
         allTransitionScores(invalidInds) = 0;
         
+        % make transitions to locations with 0 unary potential impossible
+        inds = find(currentUnary==0);
+        allTransitionScores(inds<=length(locations(j).x), 1:length(locations(j-1).x)) = 0;
+        
         % make transitions to previously occupied state impossible
         if i>1
             labelInds = labels(j-1,1:i-1);
             labelInds = labelInds( labelInds <= length(locations(j-1).x) ); % occluded locations can be multiply occupied
             allTransitionScores(:, labelInds) = 0;
         end
+        
         
         [nodeScores{j}(i,:), backPointers{j-1}(i,:)] = max(allTransitionScores, [], 2);
 %         backPointers{j-1}(i,:) = backPointers{j-1}(i,:) .* double(nodeScores{j}(i,:)>0);

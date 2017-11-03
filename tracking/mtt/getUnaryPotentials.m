@@ -1,4 +1,4 @@
-function unaryPotentials = getUnaryPotentials(x, y, xyScores, frameWidth, frameHeight, anchorPointY, anchorPointX, numOccluded, unaryWeight)
+function unaryPotentials = getUnaryPotentials(x, y, xyScores, frameWidth, frameHeight, anchorPointY, anchorPointX, numOccluded, unaryWeight, maxDistance)
 
 % computes the prior likelihood that a paw exists in a given location
 % simply computse distance of the paw to the anchorPoint (x,y)
@@ -18,7 +18,7 @@ function unaryPotentials = getUnaryPotentials(x, y, xyScores, frameWidth, frameH
 dx = (x / frameWidth) - anchorPointX;
 dy = (y / frameHeight) - anchorPointY;
 unaryPotentials = sqrt(2) - sqrt(dx.^2 + dy.^2); % sqrt(2) is the maximum possible distance, eg the distance from one corner to the opposite corner
-unaryPotentials(abs(dx) > .6) = 0;
+unaryPotentials(abs(dx) > maxDistance) = 0;
 
 % multiply by location scores
 % unaryPotentials = unaryPotentials .* xyScores;
