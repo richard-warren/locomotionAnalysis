@@ -13,8 +13,8 @@ editedDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\editedVid\';
 % obsPosRange = [.1 .5]; %[.31 .445]; % (m) // shows only when obs is in frame
 % obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
 % obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
-% playBackSpeed = .5;
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
+topObsXPos = [54 72]; % top and bot y positions of obstacle in top view
 
 
 
@@ -23,6 +23,7 @@ webCamExists = exist([dataDir session '\webCam.csv'], 'file');
 vidTop = VideoReader([dataDir session '\runTop.mp4']);
 vidBot = VideoReader([dataDir session '\runBot.mp4']);
 if webCamExists; vidWeb = VideoReader([dataDir session '\webCam.avi']); end
+load([dataDir session '\runAnalyzed.mat'], 'obsPixPositions', 'obsPositions', 'obsTimes');
 vidSetting = 'MPEG-4';
 
 fps = round(vidTop.FrameRate * playBackSpeed);
@@ -48,10 +49,11 @@ obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct fo
 
 
 
+
 % edit video
 w = waitbar(0, 'editing video...');
 
-for i = 1:length(obsOnTimes)
+for i = 1:10%length(obsOnTimes)
     
     % find trial indices
     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
@@ -112,6 +114,19 @@ for i = 1:length(obsOnTimes)
             currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
             if currentTouch
                 frame(:,:,3) = frame(:,:,1)*.2;
+            end
+                       
+            % add lines at obstacle positions
+            if ~isnan(obsPixPositions(frameInds(j)))
+                
+                % bottom view
+                yInds = size(frameTop,1)+1 : size(frameTop,1)+size(frameBot,1);
+                xInds = max(1, round((-6:6) + obsPixPositions(frameInds(j))));
+                frame(yInds, xInds, :) = 255;
+                
+                % top view
+%                 yInds = topObsXPos(1) : topObsXPos(2);
+%                 frame(yInds, xInds, :) = 255;
             end
 
             % write frame to video

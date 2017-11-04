@@ -12,6 +12,7 @@ function spikeAnalysis(dataDir, varsToOverWrite)
     %         getting obstacle light on and off times
     %         getting frame time stamps
     %         getting webcam time stamps
+    %         video tracking of obstacle in bottom view
     %
     % for each session, loads existing runAnalyzed.mat
     % if a computed variable is not already stored in runAnalyzed.mat AND the files necessary to compute it exist, it computes the variable
@@ -311,6 +312,27 @@ function spikeAnalysis(dataDir, varsToOverWrite)
 
                 % save
                 varStruct.webCamTimeStamps = webCamSpikeClock;
+                anythingAnalyzed = true;
+            end
+        end
+        
+        
+        
+        
+        % track the pixel positions of the obstacle
+        if analyzeVar('obsPixPositions', varNames, varsToOverWrite)
+            
+            if ~isempty('obsOntimes') && ...
+               any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
+                
+                fprintf('%s: tracking obstacles in bottom view\n', dataFolders{i}(nameStartInd:end))
+                
+                % track obstacle in bottom view
+                obsPixPositions = trackObstacles(dataFolders{i},...
+                    varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.frameTimeStamps, false);
+
+                % save
+                varStruct.obsPixPositions = obsPixPositions;
                 anythingAnalyzed = true;
             end
         end

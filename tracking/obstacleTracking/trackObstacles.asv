@@ -67,14 +67,14 @@ for i = 1:length(obsOnTimes)
             set(imRaw, 'CData', frame .* uint8(~threshFrame));
             set(imSum, 'CData', colFrame);
             
-            pause(.001)
+            pause(.01)
             
         end
         
     end
 end
 
-if showTracking; close(fig); end
+if showTracking; close('fig'); end
 
 
 
