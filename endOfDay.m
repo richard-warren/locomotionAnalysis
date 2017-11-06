@@ -9,12 +9,11 @@ obsAvoidance2('run4', 'obsHgtTest')
 obsAvoidance2('run5', 'obsHgtTest')
 
 
-
 % make simple video
-
 trialProportion = .1;
-makeVid('171104_000', [.25 .445], .1, trialProportion);
-makeVid('171104_002', [.25 .445], .1, trialProportion);
+makeVid('171105_000', [.25 .445], .1, trialProportion);
+makeVid('171105_001', [.25 .445], .1, trialProportion);
+makeVid('171105_002', [.25 .445], .1, trialProportion);
 
 
 

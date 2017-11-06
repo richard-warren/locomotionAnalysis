@@ -2,7 +2,7 @@
 % USER SETTINGS
 
 % settings
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\topTest.mp4';
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\botTest.mp4';
 classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 
