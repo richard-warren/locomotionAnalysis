@@ -4,24 +4,27 @@ spikeAnalysis('C:\Users\Rick\Google Drive\columbia\obstacleData\sessions')
 
 
 % generate plots
-obsAvoidanceLight2('run3', 'obsTestLight')
-obsAvoidanceLight2('run4', 'obsTestLight')
-obsAvoidance2('run5', 'obsTestBr')
+obsAvoidance2('run3', 'obsHgtTest')
+obsAvoidance2('run4', 'obsHgtTest')
+obsAvoidance2('run5', 'obsHgtTest')
 
 
 
-%% make simple video
+% make simple video
 
-makeVid('171102_002', [.25 .445], .1);
+trialProportion = .1;
+makeVid('171104_000', [.25 .445], .1, trialProportion);
+makeVid('171104_002', [.25 .445], .1, trialProportion);
 
 
 
 %% make video with trials labelled by condition
 
 % settings
-session = '171102_000';
+session = '171103_000';
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 conditions = {'light off', 'light on'};
+trialProportion = .1;
 
 % load session data
 load([dataDir session '\runAnalyzed.mat'],...
@@ -41,7 +44,7 @@ for i =1:length(obsOnTimes)
 end
 
 
-makeVid(session, [.25 .445], .1, {'OFF', 'ON'}, trialConditions);
+makeVid(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
 
 
 

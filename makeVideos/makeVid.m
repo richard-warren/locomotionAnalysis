@@ -1,4 +1,6 @@
-function makeVid(session, obsPosRange, playBackSpeed, trialLabels, trialInds)
+function makeVid(session, obsPosRange, playBackSpeed, trialProportion, trialLabels, trialInds)
+
+% !!! needs further documentation
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
 % kept and everything else is edited out. obsPosRange is in m and defines
@@ -53,7 +55,7 @@ obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct fo
 % edit video
 w = waitbar(0, 'editing video...');
 
-for i = 1:10%length(obsOnTimes)
+for i = 1 : round(1/trialProportion) : length(obsOnTimes)
     
     % find trial indices
     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');

@@ -4,7 +4,7 @@ function avgFrame = getAvgFrameAtTimes(session, view, times)
 
 % settings
 fps = 250;
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\';
 
 % initializations
 minFrameDiff = (1/fps) * 2;
