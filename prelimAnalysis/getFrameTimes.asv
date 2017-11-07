@@ -25,7 +25,7 @@ frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed
 
 % ensure the correct number of trials were detected
 if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
-    fprintf('  %s: same number of rewards not detected! WTF!!! STOPPING ANALYSIS!!!', session)
+    fprintf('  same number of rewards not detected! WTF!!! STOPPING ANALYSIS!!!')
 %     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
     return
     
@@ -47,7 +47,7 @@ for i = 1:(length(ttlTrialStartInds)-1)
     % if all frames aren't accounted for, set all times to zero (these values will subsequently be changed to nan)
     if (ttlsInTrial - framesInTrial - missedInTrial) ~= 0
         
-        fprintf('  %s: cannot resolve timeStamps for trial: %i\n', session, i);
+        fprintf('  cannot resolve timeStamps for trial: %i\n', i);
         frameTimes(ttlTrialStartInds(i):ttlTrialStartInds(i+1)-1) = 0;
         
         % trim trial so there are only as many zeros as there are frames // is there a better way to do this???
@@ -74,7 +74,7 @@ frameTimes = frameTimes(~isnan(frameTimes));
 frameTimes(frameTimes==0) = nan;
 
 % display number of missed frames
-fprintf('  %s: total missed frames: %i\n', session, length(missedFrameInds));
+fprintf('  total missed frames: %i\n', length(missedFrameInds));
 
 
 

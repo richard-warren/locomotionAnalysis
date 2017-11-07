@@ -16,7 +16,6 @@ editedDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\editedVid\';
 % obsPosRange = [.25 .445]; % (m)           // shows a couple steps before obs
 % obsPosRange = [0 .45]; % (m)                // shows entire obsOn portion
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
-topObsXPos = [54 72]; % top and bot y positions of obstacle in top view
 
 
 

@@ -8,7 +8,6 @@ function [positions, times] = motorDecoder(directions, directionTimes, stepTimes
     %
     % output    positions:       position of motor (m) at all stepTimes
 
-    tic
     
     % stepper motor characteristics
     microStepping = 16;
@@ -51,10 +50,6 @@ function [positions, times] = motorDecoder(directions, directionTimes, stepTimes
     
     % interpolate
     [positions, times] = interpData(stepTimes, positions, targetFs);
-    
-    % report analysis time
-    decodingTime = toc/60; % minutes
-    fprintf('  motor commands decoding time: %.2f minutes\n', decodingTime)
     
 end
 

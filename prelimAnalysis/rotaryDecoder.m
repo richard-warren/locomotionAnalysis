@@ -1,4 +1,4 @@
-function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, encoderSteps, wheelRad, targetFs)
+function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, encoderSteps, wheelRad, targetFs, session)
 
 % converts quadrature input from rotary encoder into real world positional units (m)
 % uses a lookup table method, where every encoder input is represented
@@ -17,7 +17,6 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, en
 %              times:            times of all position values
 
 
-tic
 
 % convert inputs to row vectors
 aTimes = aTimes(:)';
@@ -64,7 +63,7 @@ faultyEventCount = sum(diff(aTimes)<=0) + sum(diff(bTimes)<=0);
 
 if faultyEventCount>0
     
-    fprintf('  WARNING: detected %i events simultaneously or out of order!\n', faultyEventCount)
+    fprintf('  %s: WARNING: detected %i events simultaneously or out of order!\n', session, faultyEventCount)
     
     % remove duplicate times (necessary for interpolation)
     [times, uniqueInds] = unique(times);
@@ -76,11 +75,6 @@ end
 
 % interpolate
 [positions, times] = interpData(times, positions, targetFs);
-
-% report analysis time
-decodingTime = toc/60; % minutes
-fprintf('  rotary decoding time: %.2f minutes\n', decodingTime)
-
 
 
 
