@@ -123,6 +123,7 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
                 % bottom view
                 yInds = size(frameTop,1)+1 : size(frameTop,1)+size(frameBot,1);
                 xInds = max(1, round((-6:6) + obsPixPositions(frameInds(j))));
+                xInds = xInds(xInds<=size(frame,2)); % make sure adding the line doesn't increase the width of the frame
                 frame(yInds, xInds, :) = 255;
                 
                 % top view
@@ -131,7 +132,7 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
             end
 
             % write frame to video
-            writeVideo(vidWriter, frame);
+            try; writeVideo(vidWriter, frame); catch; keyboard; end
         end
 
         % add blank frame between trials

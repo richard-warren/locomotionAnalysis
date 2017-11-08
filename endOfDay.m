@@ -1,26 +1,26 @@
 % spike analysis, make videos, make figures
 
 % settings
-sessionDirs = uigetdir2(dataDir, 'select folders to analyze');
+sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
 trialProportion = .1;
-tic
-for i=1:length(sessions)
+
+for i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), allVars);
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
     
     % make video
     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
 
 end
-toc
+
 delete(gcp); % delete parallel pool
 
 % generate plots
-obsAvoidance2('run3', 'obsHgtTest')
-obsAvoidance2('run4', 'obsHgtTest')
+% obsAvoidance2('run3', 'obsHgtTest')
+% obsAvoidance2('run4', 'obsHgtTest')
 obsAvoidance2('run5', 'obsHgtTest')
 
 
