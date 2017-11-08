@@ -1,0 +1,41 @@
+% function labels = getBestLabels(scores, objectNum)
+
+%% temp
+objectNum = 4;
+scores = rand(4,6);
+
+%%
+
+
+sequences = perms(1:objectNum)';
+labels = nan(size(sequences));
+labelScores = nan(size(sequences));
+
+
+for i = 1:size(sequences,1)
+    
+    scoresTemp = scores;
+    
+    for j = 1:objectNum
+        
+        % get index of current object in sequence
+        obInd = sequences(i,j);
+
+        % get max score and label for max score
+        [maxTemp, labelTemp] = max(scoresTemp(obInd,:));
+        labelScores(j, obInd) = maxTemp;
+        
+        % if max score is zero set label to nan
+        if maxTemp>0
+            labels(j, obInd) = labelTemp;
+            
+            % set scores for this label to zero for all objects to avoid reassigning this label to another object
+            scoresTemp(:, labels(obInd,j)) = 0; %
+        else
+            labels(j, obInd) = nan;
+        end
+        
+        
+    
+    end
+end

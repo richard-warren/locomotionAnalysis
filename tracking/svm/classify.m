@@ -1,11 +1,11 @@
 
-view = 'Top';
+view = 'Bot';
 
 % settings
 vidFile = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\run' view '.mp4'];
 classifier = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\paw' view '.mat'];
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-showTracking = false;
+showTracking = true;
 
 startFrame = 1;
 overlapThresh = .5;
