@@ -46,7 +46,7 @@ locations = struct();
 
 for i = startFrame:totalFrames
     
-    disp(i/totalFrames)
+%     disp(i/totalFrames)
     
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
