@@ -5,18 +5,20 @@ load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\trackedBo
 
 % user settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4';
-vid = VideoReader(vidFile);
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
-maxDistanceX = .8;
+maxDistanceX = .6;
+maxVel = 10000; % pixels / sec
 
 unaryWeight = 1;
-pairwiseWeight = 1;
-scoreWeight = 1;
+pairwiseWeight = 0;
+scoreWeight = 0;
 
 
 % initializations
 labels = nan(length(locations), objectNum);
+vid = VideoReader(vidFile);
+frameTimes = 0:.004:.004*(vid.NumberOfFrames-1); % temp, these are fake timestamps! oh shit!
 
 
 
@@ -34,7 +36,7 @@ labels(1,:) = getBestLabels(unaries, objectNum);
 
 
 
-%% iterate through remaining frames
+% iterate through remaining frames
 
 for i = 2:vid.NumberOfFrames
     
@@ -49,24 +51,34 @@ for i = 2:vid.NumberOfFrames
             vid.Width, vid.Height, anchorPts{j}(1), anchorPts{j}(2), maxDistanceX);
         
         % pairwise
-        % !!! get last detected ind for object
-        prevInd = 1;
-        unaries(j,:) = getPairwisePotentials(locations(i).x, locations(i).y,...
-            locations(i).x, prevY, dt, maxVel);
+        % get ind of last detection frame for object j
+        if ~isnan(labels(i-1, j)) 
+            prevFrame = i-1;
+        else
+            prevFrame = find(~isnan(labels(:,j)), 1, 'last');
+        end
+        
+        % get label at last dection frame
+        prevLabel = labels(prevFrame, j);
+        
+        pairwise(j,:) = getPairwisePotentials(locations(i).x, locations(i).y,...
+            locations(prevFrame).x(prevLabel), locations(prevFrame).y(prevLabel),...
+            frameTimes(i)-frameTimes(prevFrame), maxVel);
         
     end
-    
-    
-    for j = 1:objectNum
     
     % get track scores
     trackScores = repmat(locations(i).scores', objectNum, 1);
     
     % find best labels
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
+    scores(unaryWeight==0 | pairwiseWeight==0) = 0;
     labels(i,:) = getBestLabels(scores, objectNum);
 end
 
+
+% show tracking
+showTracking(vid, locations, labels, .04, anchorPts);
 
 
 

@@ -1,26 +1,22 @@
 function showTracking(vid, locations, labels, vidDelay, anchorPts)
     
-% settings
-circSize = 200;
-vidSizeScaling = 1.5;
 
-
-% initializations
 currentFrame = 1;
 sampleFrame = rgb2gray(read(vid,currentFrame));
 cmap = winter(length(anchorPts));
 
 % prepare figure
 close all;
-fig = figure('units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
-    'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
+fig = figure('units', 'pixels', 'position', [600 400 vid.Width*2 vid.Height*2],...
+    ''color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
 
 
 rawIm = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
-set(rawAxis, 'visible', 'off', 'units', 'pixels', 'position', [0 0 vid.Width*vidSizeScaling vid.Height*vidSizeScaling]);
-circSizes = circSize * ones(1,length(anchorPts)); % linspace(50,500,4)
+keyboard
+set(rawAxis, 'visible', 'off', 'units', 'pixels', 'position', [0 0 vid.Width*2 vid.Height*2]);
+circSizes = 200 * ones(1,length(anchorPts)); % linspace(50,500,4)
 
 scatterPtsAll = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
 scatterPts =    scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)), circSizes, cmap, 'filled', 'linewidth', 3); hold on
@@ -73,12 +69,9 @@ end
 function updateFrame(frameStep)
     
     currentFrame = currentFrame + frameStep;
-    if currentFrame > vid.NumberOfFrames; currentFrame = 1;
-    elseif currentFrame < 1; currentFrame = vid.NumberOfFrames; end
     
     % get frame and sub-frames
     frame = rgb2gray(read(vid,currentFrame));
-    frame = imadjust(uint8(frame), [.05 1], [0 1]);
     frame = getFeatures(frame);
     
     % update figure

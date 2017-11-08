@@ -7,12 +7,12 @@ load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\trackedBo
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4';
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
-maxDistanceX = .8;
-maxVel = 10000; % pixels / sec
+maxDistanceX = .6;
+maxVel = 35 / .004; % pixels / sec
 
 unaryWeight = 1;
 pairwiseWeight = 1;
-scoreWeight = 1;
+scoreWeight = 0;
 
 
 % initializations
@@ -36,7 +36,7 @@ labels(1,:) = getBestLabels(unaries, objectNum);
 
 
 
-%% iterate through remaining frames
+% iterate through remaining frames
 
 for i = 2:vid.NumberOfFrames
     
@@ -72,12 +72,13 @@ for i = 2:vid.NumberOfFrames
     
     % find best labels
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
+    scores(unaryWeight==0 | pairwiseWeight==0) = 0;
     labels(i,:) = getBestLabels(scores, objectNum);
 end
 
 
-%% show tracking
-showTracking(vid, locations, labels, .01, 1:objectNum);
+% show tracking
+showTracking(vid, locations, labels, .04, anchorPts);
 
 
 
