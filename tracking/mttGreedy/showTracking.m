@@ -1,4 +1,4 @@
-function showTracking(vid, locations, labels, gridPts, vidDelay, paws)
+function showTracking(vid, locations, labels, vidDelay, paws)
     
 
 currentFrame = 1;
@@ -69,10 +69,8 @@ function updateFrame(frameStep)
     % update figure
     set(rawIm, 'CData', frame);
     
-%     xs = [locations(currentFrame).x; gridPts(:,1)];
-%     ys = [locations(currentFrame).y; gridPts(:,2)];
-    xs = [locations(currentFrame).x; zeros(size(gridPts,1),1)];
-    ys = [locations(currentFrame).y; zeros(size(gridPts,1),1)];
+    xs = [locations(currentFrame).x;
+    ys = [locations(currentFrame).y;
 
     inds = labels(currentFrame,paws);
     

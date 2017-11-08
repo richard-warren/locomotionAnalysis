@@ -8,6 +8,7 @@ vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
 maxDistanceX = .8;
+maxVel = 10000; % pixels / sec
 
 unaryWeight = 1;
 pairwiseWeight = 1;
@@ -50,15 +51,21 @@ for i = 2:vid.NumberOfFrames
             vid.Width, vid.Height, anchorPts{j}(1), anchorPts{j}(2), maxDistanceX);
         
         % pairwise
-        prevInd = 1; % !!! get last detected ind for object
-        unaries(j,:) = getPairwisePotentials(locations(i).x, locations(i).y,...
-            locations(prevInd).x, locations(prevInd).y,...
-            frameTimes(i)-frameTimes(prevInd), maxVel);
+        % get ind of last detection frame for object j
+        if ~isnan(labels(i-1, j)) 
+            prevFrame = i-1;
+        else
+            prevFrame = find(~isnan(labels(:,j)), 1, 'last');
+        end
+        
+        % get label at last dection frame
+        prevLabel = labels(prevFrame, j);
+        
+        pairwise(j,:) = getPairwisePotentials(locations(i).x, locations(i).y,...
+            locations(prevFrame).x(prevLabel), locations(prevFrame).y(prevLabel),...
+            frameTimes(i)-frameTimes(prevFrame), maxVel);
         
     end
-    
-    
-    for j = 1:objectNum
     
     % get track scores
     trackScores = repmat(locations(i).scores', objectNum, 1);
@@ -68,6 +75,9 @@ for i = 2:vid.NumberOfFrames
     labels(i,:) = getBestLabels(scores, objectNum);
 end
 
+
+%% show tracking
+showTracking(vid, locations, labels, .01, 1:objectNum);
 
 
 

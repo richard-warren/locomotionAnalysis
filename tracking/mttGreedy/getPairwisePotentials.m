@@ -14,7 +14,9 @@ function pairwisePotentials = getPairwisePotentials(x, y, prevX, prevY, dt, maxV
 %               maxDistance:   scores are set to 0 if ddistances between anchor point and xy point is greater than max distance
 
 
-% compute distance of points to previous point
-% !!! 
-% !!!
-% !!!
+% get velocities of all xy moving from prevXY
+velocities = sqrt(sum(([x, y] - repmat([prevX, prevY], length(x), 1)).^2, 2)) / dt;
+velocities(velocities>maxVel) = maxVel;
+
+% normalize (s.t. 0 velocities are pairwise potentials of 1 and velocities >= maxVel are pairwise potentials of 0
+pairwisePotentials = (maxVel - velocities) / maxVel;

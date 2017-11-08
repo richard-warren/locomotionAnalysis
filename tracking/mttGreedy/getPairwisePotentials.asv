@@ -1,4 +1,4 @@
-function pairwisePotentials = getPairwisePotentials(x, y, prevX, prevY, dtmaxVel)
+function pairwisePotentials = getPairwisePotentials(x, y, prevX, prevY, dt, maxVel)
 
 % computes the prior likelihood that a paw exists in a given location
 % simply computse distance of the paw to the anchorPoint (x,y)
@@ -14,5 +14,12 @@ function pairwisePotentials = getPairwisePotentials(x, y, prevX, prevY, dtmaxVel
 %               maxDistance:   scores are set to 0 if ddistances between anchor point and xy point is greater than max distance
 
 
-% compute distant of points to anchorPoint
+% compute distance of points to previous point
+keyboard
 
+distances = sqrt(sum(([x, y] - repmat([prevX, prevY], length(x), 1)).^2, 2));
+velocities = distances / dt;
+velocities(velocities>maxVel) = maxVel;
+pairwisePotentials = velocities - maxVel
+% !!!
+% !!!
