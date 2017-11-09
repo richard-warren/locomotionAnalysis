@@ -8,7 +8,7 @@ dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 showTracking = false;
 
 startFrame = 1;
-overlapThresh = .3; % .3 pretty good, but loses paws sometimes when hind and forelimbs get too close
+overlapThresh = .4; % .3 pretty good, but loses paws sometimes when hind and forelimbs get too close
 scoreThresh = 0;
 
 

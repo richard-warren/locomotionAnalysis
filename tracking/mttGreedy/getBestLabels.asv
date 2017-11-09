@@ -16,19 +16,14 @@ if length(unique(bestLabels)) == length(bestLabels)
 end
 
 
-% only test sequences in which occluded states are LAST
-if any(isOccluded)
-    occludedObs = find(isOccluded);
-    finalObsInSeq = sequences(:, (end-length(occludedObs))+1:end); % these are the columns corresponding to the final objects in the sequence (ie last column if one occluded object, last two columns if two occluded objects)
-    validSequences = all( ismember(finalObsInSeq, repmat(occludedObs, size(sequences,1), 1)), 2); % these are the sequences in which the occluded states are LAST
-    sequences = sequences(validSequences, :);
-end
-
-
 % iterate through all possible sequences of objects
 for i = 1:size(sequences,1)
     
     scoresTemp = scores;
+    if any(isOccluded); keyboard; end
+    occludedObs = find(isOccluded);
+    finalObjects = sequences(:, (end-length(occludedInds))+1:end);
+    i
     
     for j = 1:objectNum
         
