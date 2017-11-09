@@ -1,4 +1,4 @@
-function showTracking(vid, locations, labels, vidDelay, anchorPts)
+function showTracking(vid, locations, labels, vidDelay, anchorPts, startFrame)
     
 % settings
 circSize = 200;
@@ -6,7 +6,8 @@ vidSizeScaling = 1.5;
 
 
 % initializations
-currentFrame = 1;
+if ~exist('startFrame', 'var'); startFrame = 1; end
+currentFrame = startFrame;
 sampleFrame = rgb2gray(read(vid,currentFrame));
 cmap = winter(length(anchorPts));
 
@@ -80,6 +81,10 @@ function updateFrame(frameStep)
     frame = rgb2gray(read(vid,currentFrame));
     frame = imadjust(uint8(frame), [.05 1], [0 1]);
     frame = getFeatures(frame);
+    
+    % add frame number
+    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(currentFrame),...
+                               'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
     set(rawIm, 'CData', frame);

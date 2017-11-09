@@ -1,4 +1,7 @@
 
+% notes:
+% - add penalty for emerging from occlusion, ie favor tracks that already exists over those that are re-emerging
+
 
 % load tracking data
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\trackedBot.mat', 'locations')
@@ -72,18 +75,14 @@ for i = 2:vid.NumberOfFrames
     
     % find best labels
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
-    scores(unaryWeight==0 | pairwiseWeight==0) = 0;
+    scores(unaries==0 | pairwise==0) = 0;
     labels(i,:) = getBestLabels(scores, objectNum);
 end
 
 
-% show tracking
-showTracking(vid, locations, labels, .04, anchorPts);
-
-
-
-
-
+%% show tracking
+startFrame = 980;
+showTracking(vid, locations, labels, .04, anchorPts, startFrame);
 
 
 

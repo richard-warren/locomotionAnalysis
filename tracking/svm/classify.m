@@ -5,10 +5,10 @@ view = 'Bot';
 vidFile = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\run' view '.mp4'];
 classifier = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\paw' view '.mat'];
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-showTracking = true;
+showTracking = false;
 
 startFrame = 1;
-overlapThresh = .5;
+overlapThresh = .3; % .3 pretty good, but loses paws sometimes when hind and forelimbs get too close
 scoreThresh = 0;
 
 
@@ -46,7 +46,7 @@ locations = struct();
 
 for i = startFrame:totalFrames
     
-%     disp(i/totalFrames)
+    disp(i/totalFrames)
     
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
@@ -59,6 +59,8 @@ for i = startFrame:totalFrames
     frameFiltered(1:yMin,:) = 0;
     frameFiltered(:,1:xMin) = 0;
     [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);  
+    
+    % ensure only one location per blob
     
     
     % store data
@@ -74,7 +76,7 @@ for i = startFrame:totalFrames
         set(scatterPts, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
-        pause(.001);
+        pause(.05);
     end
 end
 
