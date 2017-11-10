@@ -1,4 +1,4 @@
-function showLocations(vid, locations, labels, vidDelay, anchorPts, startFrame, lineLocations)
+function showLocations(vid, locations, labels, showPotentialLocations, vidDelay, anchorPts, startFrame, lineLocations)
     
 % settings
 circSize = 200;
@@ -23,7 +23,9 @@ rawAxis = gca;
 set(rawAxis, 'visible', 'off', 'units', 'pixels', 'position', [0 0 vid.Width*vidSizeScaling vid.Height*vidSizeScaling]);
 circSizes = circSize * ones(1,length(anchorPts)); % linspace(50,500,4)
 
-scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
+if showPotentialLocations
+    scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
+end
 scatterLocations =    scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)), circSizes, cmap, 'filled', 'linewidth', 3); hold on
 scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
                  [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
@@ -105,7 +107,9 @@ function updateFrame(frameStep)
     inds(isnan(inds)) = length(xs);
     
     set(scatterLocations, 'XData', xs(inds), 'YData', ys(inds), 'visible', 'on');
-    set(scatterPotentialLocations, 'XData', locations(currentFrame).x, 'YData', locations(currentFrame).y);
+    if showPotentialLocations
+        set(scatterPotentialLocations, 'XData', locations(currentFrame).x, 'YData', locations(currentFrame).y);
+    end
     
     % pause to reflcet on the little things...
     pause(vidDelay);

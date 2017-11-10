@@ -16,7 +16,7 @@ xOccludeBuffer = 40;
 minY = 70;
 
 unariesWeight = 1;
-pairwiseWeight = 100;
+pairwiseWeight = 1;
 scoreWeight = 0;
 
 
@@ -111,22 +111,11 @@ save([dataDir 'locationsTop.mat'], 'locationsTop');
 
 % show tracking
 if showTracking
-    startFrame = 1;
-%     showLocations(vid, potentialLocationsTop, labels, .04, anchorPts, startFrame, locationsBot);
-    showLocations(vid, potentialLocationsTop, labels, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
+    startFrame = 299;
+    showPotentialLocations = false;
+    showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
+% 	showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
 end
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
