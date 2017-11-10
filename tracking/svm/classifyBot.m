@@ -1,15 +1,13 @@
-
-view = 'Bot';
+function classifyBot(showTracking)
 
 % settings
-vidFile = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\run' view '.mp4'];
-classifier = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\paw' view '.mat'];
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4';
+classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-showTracking = false;
 objectNum = 4;
 
 startFrame = 1;
-overlapThresh = .5; % .3 pretty good, but loses paws sometimes when hind and forelimbs get too close // same true of .4
+overlapThresh = .8; % .5 for bottom // 
 scoreThresh = 0;
 
 
@@ -43,7 +41,7 @@ if showTracking
 end
 
 
-locations = struct();
+locationsBotAll = struct();
 
 for i = startFrame:totalFrames
     
@@ -63,18 +61,18 @@ for i = startFrame:totalFrames
     
     % ensure only one location per blob
     if length(x)>objectNum
-        
+
         % get blob labels for each point
         labelFrame = bwlabel(frameFiltered>0);
         labelInds = sub2ind(size(labelFrame), y, x);
         labels = labelFrame(labelInds);
-        
+
         % find blobs containing multiple points
         [counts, bins] = hist(labels, 1:max(labels(:)));
         blobsWithMultiples = bins(counts>1);
-        
+
         if ~isempty(blobsWithMultiples)
-        
+
             % keep only the most anterior point within each blob
             validInds = ~ismember(labels, blobsWithMultiples);
 
@@ -92,9 +90,9 @@ for i = startFrame:totalFrames
     
     
     % store data
-    locations(i).x = x;
-    locations(i).y = y;
-    locations(i).scores = scores;
+    locationsBotAll(i).x = x;
+    locationsBotAll(i).y = y;
+    locationsBotAll(i).scores = scores;
     
     if showTracking
         
@@ -108,7 +106,7 @@ for i = startFrame:totalFrames
     end
 end
 
-save([dataDir 'tracked' view '.mat'], 'locations');
+save([dataDir 'trackedBotAll.mat'], 'locationsBotAll');
 close all
 
 
