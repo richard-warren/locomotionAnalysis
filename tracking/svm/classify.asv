@@ -5,7 +5,7 @@ view = 'Bot';
 vidFile = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\run' view '.mp4'];
 classifier = ['C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\paw' view '.mat'];
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-showTracking = false;
+showTracking = true;
 objectNum = 4;
 
 startFrame = 1;
@@ -63,27 +63,23 @@ for i = startFrame:totalFrames
     
     % ensure only one location per blob
     if length(x)>objectNum
-        
-        % get blob labels for each point
+        keyboard;
         labelFrame = bwlabel(frameFiltered>0);
         labelInds = sub2ind(size(labelFrame), y, x);
         labels = labelFrame(labelInds);
-        
-        % find blobs containing multiple points
         [counts, bins] = hist(labels, 1:max(labels(:)));
         blobsWithMultiples = bins(counts>1);
         
-        % keep only the most anterior point within each blob
-        validInds = ismember(blobsWithMultiples, labels);
-        
         for j = 1:length(blobsWithMultiples)
-            [~, anteriorInd] = max( x .* (labels==blobsWithMultiples(j)));    
-            validInds(anteriorInd) = 1;
+            
+            [~, anteriorInd] = max( x .* (labels==blobsWithMultiples(j)));
+            notMostAnteriorInds = ones(1:length(x)); notMostAnteriorInds()
+            invalidInds = labels==blobsWithMultiples(j) & 
+            
         end
         
-        x = x(validInds);
-        y = y(validInds);
-        scores = scores(validInds);
+        
+        [c,ia,ic] = unique(curriculum{1}(:,3:4),'rows');
     end
     
     
@@ -97,7 +93,7 @@ for i = startFrame:totalFrames
         
         % update figure
         set(rawIm, 'CData', frame);
-        set(predictIm, 'CData', frameFiltered>0)
+        set(predictIm, 'CData', frameFiltered)
         set(scatterPts, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...

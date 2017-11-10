@@ -1,6 +1,5 @@
 
-% notes:
-% - add penalty for emerging from occlusion, ie favor tracks that already exists over those that are re-emerging
+
 
 
 % load tracking data
@@ -13,7 +12,7 @@ anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
 maxDistanceX = .6;
 maxVel = 35 / .004; % pixels / sec
 
-unaryWeight = 1;
+unaryWeight = 1.5;
 pairwiseWeight = 1;
 scoreWeight = 0;
 
@@ -82,7 +81,7 @@ for i = 2:vid.NumberOfFrames
 end
 
 
-%% show tracking
+% show tracking
 startFrame = 1;
 showTracking(vid, locations, labels, .04, anchorPts, startFrame);
 
