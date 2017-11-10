@@ -1,4 +1,4 @@
-function showTracking(vid, locations, labels, vidDelay, anchorPts, startFrame)
+function showLocations(vid, locations, labels, vidDelay, anchorPts, startFrame)
     
 % settings
 circSize = 200;

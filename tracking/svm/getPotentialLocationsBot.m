@@ -1,4 +1,4 @@
-function classifyBot(showTracking)
+function getPotentialLocationsBot(showTracking)
 
 % settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4';
@@ -41,7 +41,7 @@ if showTracking
 end
 
 
-locationsBotAll = struct();
+potentialLocationsBot = struct();
 
 for i = startFrame:totalFrames
     
@@ -90,9 +90,9 @@ for i = startFrame:totalFrames
     
     
     % store data
-    locationsBotAll(i).x = x;
-    locationsBotAll(i).y = y;
-    locationsBotAll(i).scores = scores;
+    potentialLocationsBot(i).x = x;
+    potentialLocationsBot(i).y = y;
+    potentialLocationsBot(i).scores = scores;
     
     if showTracking
         
@@ -106,7 +106,7 @@ for i = startFrame:totalFrames
     end
 end
 
-save([dataDir 'trackedBotAll.mat'], 'locationsBotAll');
+save([dataDir 'potentialLocationsBot.mat'], 'potentialLocationsBot');
 close all
 
 

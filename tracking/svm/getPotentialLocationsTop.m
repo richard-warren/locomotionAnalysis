@@ -1,13 +1,11 @@
-
+function getPotentialLocationsTop(showTracking)
 
 % settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runTop.mp4';
 classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-showTracking = true;
 objectNum = 4;
 circRoiPts = [55 146; 209 108; 364 135];
-xBuffer = 20;
 
 
 startFrame = 1;
@@ -26,7 +24,7 @@ totalFrames = vid.NumberOfFrames;
 cmap = winter(4);
 kernel = reshape(model.w, subHgt, subWid);
 wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
-load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\trackedBot', 'locationsBot');
+load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locationsBot.mat', 'locationsBot');
 
 % prepare figure
 if showTracking
@@ -46,7 +44,7 @@ if showTracking
 end
 
 
-locationsTop = struct();
+potentialLocationsTop = struct();
 
 for i = startFrame:totalFrames
     
@@ -64,42 +62,27 @@ for i = startFrame:totalFrames
     frameFiltered(frameFiltered < scoreThresh) = 0;
     [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
     
-    for j = 1:objectNum
-        
-        % check if paw is occluded
-        occludedByBins = abs(locationsBot(i).x(j) - locationsBot(i).x) < xBuffer & ...
-                      (locationsBot(i).y > locationsBot(i).y(j));
-        
-        if any(occludedByBins)
-            locationsTop(i).x(j) = nan;
-            locationsTop(i).y(j) = nan;
-        else
-            validXBins = abs(locationsBot(i).x(j) - x) < xBuffer;
-            [~, ind] = max(validXBins .* scores);
-            locationsTop(i).x(j) = x(ind);
-            locationsTop(i).y(j) = y(ind);
-        end
-        
-    end
+    
     
     % store data
-%     locationsTop(i).x = x;
-%     locationsTop(i).y = y;
-%     
+    potentialLocationsTop(i).x = x;
+    potentialLocationsTop(i).y = y;
+    potentialLocationsTop(i).scores = scores;
+    
+    
     if showTracking
         
         % update figure
         set(rawIm, 'CData', frame);
         set(predictIm, 'CData', frameFiltered)
-%         set(scatterPtsAll, 'XData', x, 'YData', y);
-        set(scatterPts, 'XData', locationsTop(i).x, 'YData', locationsTop(i).y);
+        set(scatterPtsAll, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
         pause(.05);
     end
 end
 
-save([dataDir 'trackedTop.mat'], 'locationsTop');
+save([dataDir 'potentialLocationsTop.mat'], 'potentialLocationsTop');
 close all
 
 
