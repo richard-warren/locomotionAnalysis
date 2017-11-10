@@ -46,8 +46,8 @@ for i = 2:vid.NumberOfFrames
     
     % get unary and pairwise potentials
     unaries = nan(objectNum, length(potentialLocationsBot(i).x));
-    pairwise = ones(objectNum, length(potentialLocationsBot(i).x));
-    isOccluded = zeros(1, objectNum);
+    pairwise = nan(objectNum, length(potentialLocationsBot(i).x));
+    wasOccluded = zeros(1, objectNum);
     
     for j = 1:objectNum
         
@@ -61,7 +61,7 @@ for i = 2:vid.NumberOfFrames
             prevFrame = i-1;
         else
             prevFrame = find(~isnan(labels(:,j)), 1, 'last');
-            isOccluded(j) = 1;
+            wasOccluded(j) = 1;
         end
         
         % get label at last dection frame
@@ -79,9 +79,9 @@ for i = 2:vid.NumberOfFrames
     % find best labels
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
     scores(unaries==0 | pairwise==0) = 0;
-    labels(i,:) = getBestLabels(scores, objectNum, isOccluded);
+    labels(i,:) = getBestLabels(scores, objectNum, wasOccluded);
     
-    % only keep labelled locations
+    % only keep labeled locations
     for j = 1:objectNum
         if isnan(labels(i,j))
             locationsBot(i).x(j) = nan;

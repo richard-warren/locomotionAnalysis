@@ -102,7 +102,8 @@ for i = startFrame:totalFrames
         set(scatterPts, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
-        pause(.05);
+        pause(.0005);
+%         if i==298; keyboard; end
     end
 end
 

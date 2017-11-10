@@ -10,8 +10,9 @@ labelScores = nan(size(sequences));
 
 % first see whether the labels are unique for each object
 % if so, simply return these labels and skip the algorithm below
-[~, bestLabels] = max(scores, [], 2);
+[maxes, bestLabels] = max(scores, [], 2);
 if length(unique(bestLabels)) == length(bestLabels)
+    bestLabels(maxes==0) = nan; 
     return;
 end
 
