@@ -73,17 +73,20 @@ for i = startFrame:totalFrames
         [counts, bins] = hist(labels, 1:max(labels(:)));
         blobsWithMultiples = bins(counts>1);
         
-        % keep only the most anterior point within each blob
-        validInds = ismember(blobsWithMultiples, labels);
+        if ~isempty(blobsWithMultiples)
         
-        for j = 1:length(blobsWithMultiples)
-            [~, anteriorInd] = max( x .* (labels==blobsWithMultiples(j)));    
-            validInds(anteriorInd) = 1;
+            % keep only the most anterior point within each blob
+            validInds = ~ismember(labels, blobsWithMultiples);
+
+            for j = 1:length(blobsWithMultiples)
+                [~, anteriorInd] = max( x .* (labels==blobsWithMultiples(j)));    
+                validInds(anteriorInd) = 1;
+            end
+
+            x = x(validInds);
+            y = y(validInds);
+            scores = scores(validInds);
         end
-        
-        x = x(validInds);
-        y = y(validInds);
-        scores = scores(validInds);
     end
     
     

@@ -81,7 +81,7 @@ for i = 2:vid.NumberOfFrames
 end
 
 
-% show tracking
+%% show tracking
 startFrame = 1;
 showTracking(vid, locations, labels, .04, anchorPts, startFrame);
 
