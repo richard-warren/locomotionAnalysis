@@ -8,9 +8,12 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     
     % user settings
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
-    subHgtWid = [40 40];
+%     subHgtWid = [40 40]; % use this for pawBot
+    subHgtWid = [30 40]; % use this for pawTop
     startPosits = [40 70; 40 100; 50 70; 50 100];
     negativeEgsPerEg = 10;
+    applyCircMask = true;
+    circRoiPts = [55 146; 209 108; 364 135];
     
     % initializations
     negImNumbers = (imNumbers(1)-1)*negativeEgsPerEg+1:imNumbers(end)*negativeEgsPerEg; % indices of negative examples
@@ -19,6 +22,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     
     % load video and sample frame
     vid = VideoReader(file);
+    wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
     frame = rgb2gray(read(vid,1));
    
 
@@ -44,6 +48,9 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
         
         % get random frame and allow user to move rectangles around
         frame = rgb2gray(read(vid,randi(vid.numberofframes)));
+        if applyCircMask
+            frame = frame .* wheelMask;
+        end
         set(rawPreview, 'CData', getFeatures(frame));
         updateSubPreviews();
         
@@ -85,6 +92,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
                     
                     % create/save negative examples for every positive example
                     for k=1:negativeEgsPerEg
+                        
                         % find a frame that doesn't overlap with positive examples
                         acceptableImage = false;
                         while ~acceptableImage 

@@ -4,7 +4,7 @@
 sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
 trialProportion = .1;
 
-for i=1:length(sessionDirs)
+parfor i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
@@ -19,9 +19,8 @@ end
 delete(gcp); % delete parallel pool
 
 % generate plots
-% obsAvoidance2('run3', 'obsHgtTest')
-% obsAvoidance2('run4', 'obsHgtTest')
-obsAvoidance2('run5', 'obsHgtTest')
+obsAvoidance2('run3', 'obsTest2')
+obsAvoidance2('run5', 'obsTest2')
 
 
 

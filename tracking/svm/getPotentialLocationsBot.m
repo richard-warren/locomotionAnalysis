@@ -98,11 +98,11 @@ for i = startFrame:totalFrames
         
         % update figure
         set(rawIm, 'CData', frame);
-        set(predictIm, 'CData', frameFiltered>0)
+        set(predictIm, 'CData', frameFiltered)
         set(scatterPts, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
-        pause(.0005);
+        pause(.05);
 %         if i==298; keyboard; end
     end
 end

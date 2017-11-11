@@ -113,8 +113,8 @@ save([dataDir 'locationsTop.mat'], 'locationsTop');
 if showTracking
     startFrame = 299;
     showPotentialLocations = false;
-    showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
-% 	showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
+%     showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
+	showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
 end
 
 

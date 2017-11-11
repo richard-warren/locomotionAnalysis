@@ -1,7 +1,8 @@
-function viewSupportVectors
-    load('trainClassifier\classifiers\classifier_11-Feb-2017.mat');
+function viewSupportVectors(classifierFile)
+
+    load(classifierFile);
     
-    sptVecs = classifier.SupportVectors;
+    sptVecs = model.SVs;
     
     aspectRatio = 2/1;
     rows = ceil(sqrt((1/aspectRatio)*(size(sptVecs,1))));

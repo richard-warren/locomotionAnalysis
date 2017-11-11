@@ -4,7 +4,7 @@ function obsPixPositions = trackObstacles(sessionPath, obsOnTimes, obsOffTimes, 
 
 
 % user settings
-pixThresh = 80;
+pixThresh = 85;
 obsMinThickness = 10;                                           
 
 

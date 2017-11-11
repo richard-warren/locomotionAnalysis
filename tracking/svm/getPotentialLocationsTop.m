@@ -16,7 +16,6 @@ scoreThresh = 0;
 % load classifier
 load(classifier, 'model', 'subHgt', 'subWid')
 
-
 % initializations
 vid = VideoReader(vidFile);
 sampleFrame = rgb2gray(read(vid,startFrame));
