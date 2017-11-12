@@ -87,14 +87,13 @@ for i = startFrame:totalFrames
         end
         
         % store data
+         potentialLocationsBot(i).x = x;
+        potentialLocationsBot(i).y = y;
+        potentialLocationsBot(i).scores = scores;
     end
     
     
-    
-    % store data
-    potentialLocationsBot(i).x = x;
-    potentialLocationsBot(i).y = y;
-    potentialLocationsBot(i).scores = scores;
+   
     
     if showTracking
         

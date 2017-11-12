@@ -24,7 +24,7 @@ set(rawAxis, 'visible', 'off', 'units', 'pixels', 'position', [0 0 vid.Width*vid
 circSizes = circSize * ones(1,length(anchorPts)); % linspace(50,500,4)
 
 if showPotentialLocations
-    scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'red', 'filled', 'linewidth', 2);
+    scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'white', 'filled', 'linewidth', 2);
 end
 scatterLocations =    scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)), circSizes, cmap, 'filled', 'linewidth', 3); hold on
 scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
@@ -87,8 +87,8 @@ function updateFrame(frameStep)
     
     % add vertical lines
     if exist('lineLocations', 'var')
-        inds = lineLocations(currentFrame).x;
-        inds = inds(~isnan(inds));
+        inds = lineLocations.x(currentFrame,:);
+        inds = round(inds(~isnan(inds)));
         frame(:, inds) = 255;
     end
     

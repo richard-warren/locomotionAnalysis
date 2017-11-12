@@ -89,11 +89,11 @@ for i = 2:vid.NumberOfFrames
     % only keep labeled locations
     for j = 1:objectNum
         if isnan(labels(i,j))
-            locationsBot.x(i,j) = nan;
-            locationsBot.y(i,j) = nan;
+            locationsBot.x(i) = nan;
+            locationsBotj).y(i) = nan;
         else
-            locationsBot.x(i,j) = potentialLocationsBot(i).x(labels(i,j));
-            locationsBot.y(i,j) = potentialLocationsBot(i).y(labels(i,j));
+            locationsBot(j).x(i) = potentialLocationsBot(i).x(labels(i,j));
+            locationsBot(j).y(i) = potentialLocationsBot(i).y(labels(i,j));
         end
     end
 end

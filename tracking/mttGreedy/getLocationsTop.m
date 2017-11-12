@@ -29,6 +29,11 @@ frameTimes = 0:.004:.004*(vid.NumberOfFrames-1); % temp, these are fake timestam
 
 
 
+% fill short periods of missing values in bottom paw tracking
+locationsBot = fixTracking(locationsBot);
+
+
+
 % iterate through remaining frames
 
 for i = 1:vid.NumberOfFrames
@@ -42,8 +47,8 @@ for i = 1:vid.NumberOfFrames
     for j = 1:objectNum
         
         % check if paw is occluded
-        occludedByBins = abs(locationsBot(i).x(j) - locationsBot(i).x) < xOccludeBuffer & ...
-                      (locationsBot(i).y > locationsBot(i).y(j));
+        occludedByBins = abs(locationsBot.x(i,j) - locationsBot.x(i,:)) < xOccludeBuffer & ...
+                      (locationsBot.y(i,:) > locationsBot.y(i,j));
         if any(occludedByBins)
             valid(j,:) = 0;
         
@@ -51,7 +56,7 @@ for i = 1:vid.NumberOfFrames
         else
             
             % get unary potentials
-            xDistances = abs(locationsBot(i).x(j) - potentialLocationsTop(i).x);
+            xDistances = abs(locationsBot.x(i,j) - potentialLocationsTop(i).x);
             xDistances(xDistances>maxXDistance) = maxXDistance;
             unaries(j,:) = (maxXDistance - xDistances) / maxXDistance;
             unaries(j,:) = unaries(j,:) .* (potentialLocationsTop(i).y>minY)';
@@ -88,7 +93,6 @@ for i = 1:vid.NumberOfFrames
     lowness = repmat(potentialLocationsTop(i).y' / vid.Height, objectNum, 1);
 
     % find best labels
-%     if i==23; keyboard; end
     scores = unariesWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores + lownessWeight.*lowness;
     scores = scores .* (unaries>0);
     scores = scores .* valid;
@@ -97,11 +101,11 @@ for i = 1:vid.NumberOfFrames
     % only keep labeled locations
     for j = 1:objectNum
         if isnan(labels(i,j))
-            locationsTop(i).x(j) = nan;
-            locationsTop(i).y(j) = nan;
+            locationsTop.x(i,j) = nan;
+            locationsTop.z(i,j) = nan;
         else
-            locationsTop(i).x(j) = potentialLocationsTop(i).x(labels(i,j));
-            locationsTop(i).y(j) = potentialLocationsTop(i).y(labels(i,j));
+            locationsTop.x(i,j) = potentialLocationsTop(i).x(labels(i,j));
+            locationsTop.z(i,j) = potentialLocationsTop(i).y(labels(i,j));
         end
     end
 end
@@ -111,14 +115,18 @@ save([dataDir 'locationsTop.mat'], 'locationsTop');
 
 
 
-
-
 % show tracking
+
 if showTracking
     startFrame = 1;
     showPotentialLocations = true;
-    showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
-% 	showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
+    showLines = false;
+    
+    if showLines
+        showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
+    else
+        showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
+    end
 end
 
 
