@@ -11,13 +11,13 @@ vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runTop
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 objectNum = 4;
 maxVel = 25 / .004; % pixels / sec
-maxXDistance = 20;
+maxXDistance = 15;
 xOccludeBuffer = 40;
 minY = 70;
 
 unariesWeight = 1;
 pairwiseWeight = 1;
-lownessWeight = 10;
+lownessWeight = 1;
 scoreWeight = 0;
 
 
@@ -35,6 +35,7 @@ for i = 1:vid.NumberOfFrames
     
     unaries = zeros(objectNum, length(potentialLocationsTop(i).x));
     pairwise = zeros(objectNum, length(potentialLocationsTop(i).x));
+    lowness = zeros(objectNum, length(potentialLocationsTop(i).x));
     valid = ones(objectNum, length(potentialLocationsTop(i).x));
     wasOccluded = zeros(1, objectNum); % keeps track of whether the object was occluded in the previous frame (used in getBestLabels)
     
@@ -66,7 +67,7 @@ for i = 1:vid.NumberOfFrames
                     wasOccluded(j) = 1;
                 end
 
-                % get label at previous dection frame
+                % get label at last dection frame
                 prevLabel = labels(prevFrame, j);
                 
                 if isempty(prevFrame)
@@ -83,13 +84,10 @@ for i = 1:vid.NumberOfFrames
     
     % get track scores (from svm)
     trackScores = repmat(potentialLocationsTop(i).scores', objectNum, 1);
-    
-    % get lowness of potential locations
-    lowness = repmat(potentialLocationsTop(i).y' / vid.Height, objectNum, 1);
 
     % find best labels
 %     if i==23; keyboard; end
-    scores = unariesWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores + lownessWeight.*lowness;
+    scores = unariesWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores + lownessWeight;
     scores = scores .* (unaries>0);
     scores = scores .* valid;
     labels(i,:) = getBestLabels(scores, objectNum, wasOccluded);
@@ -115,10 +113,10 @@ save([dataDir 'locationsTop.mat'], 'locationsTop');
 
 % show tracking
 if showTracking
-    startFrame = 1;
-    showPotentialLocations = true;
-    showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
-% 	showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
+    startFrame = 299;
+    showPotentialLocations = false;
+%     showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame, locationsBot);
+	showLocations(vid, potentialLocationsTop, labels, showPotentialLocations, .04, {[-1 -1], [-1 -1], [-1 -1], [-1 -1]}, startFrame);
 end
 
 

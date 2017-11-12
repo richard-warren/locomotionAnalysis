@@ -85,6 +85,8 @@ for i = startFrame:totalFrames
             y = y(validInds);
             scores = scores(validInds);
         end
+        
+        % store data
     end
     
     

@@ -9,8 +9,9 @@ vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
-maxDistanceX = .6;
+maxDistanceX = .55;
 maxVel = 35 / .004; % pixels / sec
+minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
 
 unaryWeight = 1.5;
 pairwiseWeight = 1;
@@ -21,6 +22,9 @@ scoreWeight = 0;
 labels = nan(length(potentialLocationsBot), objectNum);
 vid = VideoReader(vidFile);
 frameTimes = 0:.004:.004*(vid.NumberOfFrames-1); % temp, these are fake timestamps! oh shit!
+
+% fill short periods of missing values in bottom paw tracking
+
 
 
 
@@ -77,8 +81,10 @@ for i = 2:vid.NumberOfFrames
     trackScores = repmat(potentialLocationsBot(i).scores', objectNum, 1);
     
     % find best labels
+%     if i==298; keyboard; end
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
     scores(unaries==0 | pairwise==0) = 0;
+    scores(scores<minScore) = 0;
     labels(i,:) = getBestLabels(scores, objectNum, wasOccluded);
     
     % only keep labeled locations
@@ -98,7 +104,8 @@ save([dataDir 'locationsBot.mat'], 'locationsBot');
 % show tracking
 if showTracking
     startFrame = 1;
-    showLocations(vid, potentialLocationsBot, labels, .04, anchorPts, startFrame);
+    showPotentialLocations = false;
+    showLocations(vid, potentialLocationsBot, labels, showPotentialLocations, .04, anchorPts, startFrame);
 end
 
 
