@@ -12,7 +12,7 @@ dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 objectNum = 4;
 maxVel = 25 / .004; % pixels / sec
 maxXDistance = 20;
-xOccludeBuffer = 40;
+xOccludeBuffer = 30;
 minY = 70;
 
 unariesWeight = 1;
@@ -109,8 +109,8 @@ for i = 1:vid.NumberOfFrames
         end
     end
 end
-    
-   
+
+
 save([dataDir 'locationsTop.mat'], 'locationsTop');
 
 
