@@ -19,8 +19,8 @@ end
 delete(gcp); % delete parallel pool
 
 % generate plots
-obsAvoidance2('run3', 'obsTest2')
-obsAvoidance2('run5', 'obsTest2')
+obsAvoidance2('run3', {'obsTest2', 'obsTestBr2'})
+obsAvoidance2('run5', {'obsTest2', 'obsTestBr2'})
 
 
 

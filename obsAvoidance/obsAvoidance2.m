@@ -36,7 +36,7 @@ gausKernel = arrayfun(@(x) (1/(sig*sqrt(2*pi))) * exp(-.5*(x/sig)^2), -sig*5:1/(
 gausKernel = gausKernel/sum(gausKernel);
 
 cmap = winter(length(sessions));
-figure;
+figure('name', mouse);
 subplot(2,2,4); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
 
 
