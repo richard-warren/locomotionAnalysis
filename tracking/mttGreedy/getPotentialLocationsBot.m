@@ -57,7 +57,7 @@ for i = startFrame:totalFrames
     frameFiltered(frameFiltered < scoreThresh) = 0;
     frameFiltered(1:yMin,:) = 0;
     frameFiltered(:,1:xMin) = 0;
-    [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);  
+    [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
     
     % ensure only one location per blob
     if length(x)>objectNum
@@ -85,14 +85,13 @@ for i = startFrame:totalFrames
             y = y(validInds);
             scores = scores(validInds);
         end
-        
-        % store data
-         potentialLocationsBot(i).x = x;
-        potentialLocationsBot(i).y = y;
-        potentialLocationsBot(i).scores = scores;
     end
     
-    
+    % store data
+    potentialLocationsBot(i).x = x;
+    potentialLocationsBot(i).y = y;
+    potentialLocationsBot(i).scores = scores;
+        
    
     
     if showTracking
@@ -104,7 +103,6 @@ for i = startFrame:totalFrames
         
         % pause to reflcet on the little things...
         pause(.05);
-%         if i==298; keyboard; end
     end
 end
 

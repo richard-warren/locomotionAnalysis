@@ -1,11 +1,12 @@
 function getPotentialLocationsTop(showTracking)
 
 % settings
+% vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\testDark\runTop.mp4';
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runTop.mp4';
 classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-objectNum = 4;
-circRoiPts = [55 146; 209 108; 364 135];
+circRoiPts = [55 147; 209 109; 364 136];
+% circRoiPts = [35 153; 209 103; 371 131];
 
 
 startFrame = 1;
@@ -28,7 +29,6 @@ load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locations
 % prepare figure
 if showTracking
 
-    close all;
     figure('position', [680 144 698 834], 'menubar', 'none', 'color', 'black'); colormap gray
 
     rawAxis = subaxis(2,1,1, 'spacing', 0, 'margin', 0);

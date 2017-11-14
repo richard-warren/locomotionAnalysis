@@ -9,16 +9,18 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     % user settings
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
 %     subHgtWid = [40 40]; % use this for pawBot
-    subHgtWid = [30 40]; % use this for pawTop
+    subHgtWid = [60 40]; % use this for pawTop
     startPosits = [40 70; 40 100; 50 70; 50 100];
     negativeEgsPerEg = 10;
     applyCircMask = true;
-    circRoiPts = [55 146; 209 108; 364 135];
+    circRoiPts = [55 147; 209 109; 364 136];
+    negEgOverlap = .5; % allow negative examples to overlap by at most this much with the positive examples
     
     % initializations
     negImNumbers = (imNumbers(1)-1)*negativeEgsPerEg+1:imNumbers(end)*negativeEgsPerEg; % indices of negative examples
     imNumberInd = 1;
     negImNumberInd = 1;
+    pixPerEg = subHgtWid(1) * subHgtWid(2);
     
     % load video and sample frame
     vid = VideoReader(file);
@@ -102,7 +104,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
                             pixelsOverlap = sum(egsMask(:)+posMask(:)>1);
                             img = frame(pos(1):pos(1)+subHgtWid(1)-1, pos(2):pos(2)+subHgtWid(2)-1,:);
 
-                            if pixelsOverlap==0 && mean(img(:))>5; acceptableImage=true; end
+                            if pixelsOverlap<(pixPerEg*negEgOverlap) && mean(img(:))>5; acceptableImage=true; end
                         end
 
                         % save that shit

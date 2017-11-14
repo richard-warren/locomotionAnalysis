@@ -4,15 +4,13 @@ function getLocationsTop(showTracking)
 
 % load tracking data
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locationsBot.mat', 'locationsBot')
-load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\potentialLocationsTop.mat', 'potentialLocationsTop')
 
 % user settings
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runTop.mp4';
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 objectNum = 4;
 maxVel = 25 / .004; % pixels / sec
 maxXDistance = 20;
-xOccludeBuffer = 40;
+xOccludeBuffer = 30;
 minY = 70;
 
 unariesWeight = 1;
