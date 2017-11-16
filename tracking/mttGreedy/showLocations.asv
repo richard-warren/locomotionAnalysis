@@ -3,12 +3,12 @@ function showLocations(vid, locations, labels, showPotentialLocations, vidDelay,
 % settings
 circSize = 200;
 vidSizeScaling = 1.5;
-lineMaskWid = 20;
+lineMaskWid = 10;
 
 
 % initializations
 if ~exist('startFrame', 'var'); startFrame = 1; end
-% if ~exist('lineMask', 'var'); lineMask = false; end
+if ~exist('lineMask', 'var'); lineMask = false; end
 currentFrame = startFrame;
 sampleFrame = rgb2gray(read(vid,currentFrame));
 cmap = winter(length(anchorPts));
@@ -102,17 +102,11 @@ function updateFrame(frameStep)
     if exist('lineMask', 'var')
         mask = zeros(size(frame));
         for i =1:length(anchorPts)
-            if ~isnan(lineLocations.x(currentFrame,i))
-                x = round(lineLocations.x(currentFrame,i));
-                inds = x-lineMaskWid : x+lineMaskWid;
-                inds(inds<1)=1;
-                inds(inds>vid.Width) = vid.Width;
-                mask(:,inds) = 1;
-            end
+            if ~isnan(xs(i)
+            mask(:,xs(i)-lineMaskWid:xs(i)+lineMaskWid) = 1;
         end
-        frame(~mask) = 0;
     end
-    
+    frame(~mask) = 0;
     
     
     % add frame number

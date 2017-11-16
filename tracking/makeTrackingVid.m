@@ -10,9 +10,9 @@ circSize = 75;
 % load data
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locationsBot.mat', 'locationsBot')
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locationsTop.mat', 'locationsTop')
-locationsBot = fixTracking(locationsBot);
-locationsTop = fixTracking(locationsTop);
-locationsTop.x = locationsBot.x; % replace top x values with those from bottom, which are more reliable
+% locationsBot = fixTracking(locationsBot);
+% locationsTop = fixTracking(locationsTop);
+% locationsTop.x = locationsBot.x; % replace top x values with those from bottom, which are more reliable
 
 vidTop = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runTop.mp4');
 vidBot = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4');
@@ -73,3 +73,5 @@ end
 
 close(vidWrite);
 close(mainFig);
+
+

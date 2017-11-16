@@ -57,6 +57,7 @@ for i = startFrame:totalFrames
     frame = frame .* wheelMask;
     
     % filter with svm and apply non-maxima suppression
+%     keyboard
     frameFiltered = - (conv2(double(frame), kernel, 'same') - model.rho);
     frameFiltered(frameFiltered < scoreThresh) = 0;
     [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);

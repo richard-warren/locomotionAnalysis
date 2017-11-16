@@ -18,7 +18,7 @@ obsPos = .382; % m, position at which obstacle is in the middle of the frame // 
 frameEdges = [.336 .444]; % (m)
 sig = .0025; % sigma for gaussian kernal
 probYlims = [0 .008];
-minTouchTime = 0; % only touches count that are >= minTouchTime
+minTouchTime = .05; % only touches count that are >= minTouchTime
 
 
 % initializations
