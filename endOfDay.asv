@@ -2,25 +2,33 @@
 
 % settings
 sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
+dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 trialProportion = .1;
+
+lightExp = true;
+conditions = {'light off', 'light on'};
 
 parfor i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));open
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
     
     % make video
-    makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
+    if lightExp
+        
+    else
+        makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
+    end
 
 end
 
 delete(gcp); % delete parallel pool
 
 % generate plots
-obsAvoidance2('run3', {'obsTest2', 'obsTestBr2'})
-obsAvoidance2('run5', {'obsTest2', 'obsTestBr2'})
+obsAvoidanceLight2('run3', {'obsLightTest2'})
+obsAvoidanceLight2('run5', {'obsLightTest2'})
 
 
 

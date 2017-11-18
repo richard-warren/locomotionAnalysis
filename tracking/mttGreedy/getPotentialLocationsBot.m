@@ -52,7 +52,7 @@ for i = startFrame:totalFrames
     frame = getFeatures(frame);
     
     % filter with svm
-    frameFiltered = - (conv2(double(frame), kernel, 'same') - model.rho);
+    frameFiltered =  (conv2(double(frame), kernel, 'same') - model.rho);
     
     frameFiltered(frameFiltered < scoreThresh) = 0;
     frameFiltered(1:yMin,:) = 0;

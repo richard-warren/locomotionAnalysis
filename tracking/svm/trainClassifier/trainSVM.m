@@ -2,7 +2,7 @@ function trainSVM(className)
     
 % user settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
-categories = {'negative', 'positive'};
+categories = {'positive', 'negative'};
 
 % initializations
 labels = [];
@@ -34,12 +34,12 @@ for i = 1:length(categories)
     end
     
     % store category labels
-    labels = vertcat(labels, ones(length(files),1)*i);
+    labels = vertcat(labels, ones(length(files),1)*(i));
 end
 
 
 % train classifer
-model = svmtrain(labels, features, '-t 0');
+model = svmtrain(labels, features, '-t 0 -s svm_type 2');
 model.w = model.sv_coef' * model.SVs;
 subHgt = size(img,1);
 subWid = size(img,2);

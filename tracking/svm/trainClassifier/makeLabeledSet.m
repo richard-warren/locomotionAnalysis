@@ -9,10 +9,10 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     % user settings
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
 %     subHgtWid = [40 40]; % use this for pawBot
-    subHgtWid = [60 40]; % use this for pawTop
+    subHgtWid = [40 40]; % use this for pawTop
     startPosits = [40 70; 40 100; 50 70; 50 100];
     negativeEgsPerEg = 10;
-    applyCircMask = true;
+    applyCircMask = false;
     circRoiPts = [55 147; 209 109; 364 136];
     negEgOverlap = .5; % allow negative examples to overlap by at most this much with the positive examples
     
