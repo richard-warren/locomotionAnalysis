@@ -2,6 +2,7 @@
 
 % settings
 sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\';
 trialProportion = .2;
 
 parfor i=1:length(sessionDirs)
@@ -46,8 +47,8 @@ for j = 1:length(sessionDirs)
         end
     end
 
-%     makeVid(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
-    makeVid(session, [0 .445], .5, trialProportion, {'OFF', 'ON'}, trialConditions);
+    makeVid(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
+%     makeVid(session, [0 .445], .5, trialProportion, {'OFF', 'ON'}, trialConditions);
 end
 
 

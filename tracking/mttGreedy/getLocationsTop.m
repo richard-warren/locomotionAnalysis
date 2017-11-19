@@ -32,6 +32,10 @@ frameTimes = 0:.004:.004*(vid.NumberOfFrames-1); % temp, these are fake timestam
 % fill short periods of missing values in bottom paw tracking
 locationsBot = fixTracking(locationsBot);
 
+% fix x alignment for bottom view
+load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
+locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
+
 
 
 % iterate through remaining frames

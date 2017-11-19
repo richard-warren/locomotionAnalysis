@@ -53,12 +53,14 @@ if ~isempty(onTimes)
 
     % for each wheel break, delete subsequent touch on and off signals within the trial
     for i = 1:length(breakTimes)
-
-        trialObsOffTime = obsOffTimes( find(obsOffTimes>breakTimes(i), 1, 'first') );
-        invalidInds = onTimes>(breakTimes(i)-breakTimeThresh+minBounce) & onTimes<trialObsOffTime;
-        onTimes = onTimes(~invalidInds);
-        offTimes = offTimes(~invalidInds);
-
+        try
+            trialObsOffTime = obsOffTimes( find(obsOffTimes>breakTimes(i), 1, 'first') );
+            invalidInds = onTimes>(breakTimes(i)-breakTimeThresh+minBounce) & onTimes<trialObsOffTime;
+            onTimes = onTimes(~invalidInds);
+            offTimes = offTimes(~invalidInds);
+        catch
+            keyboard
+        end
     end
 
 

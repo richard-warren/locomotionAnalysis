@@ -1,20 +1,14 @@
-function makeLabeledSet(className, imNumbers, egsPerFrame, file)
+function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
 
-    % TO DO:
-    % - document
-    % - save position of egs, make that a component of th features?
-    % - make imNumbers not necessarily divisible by egsPerFrame
-    % - add box position constraint function
+    % !!! need to document
+    
     
     % user settings
     dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
-%     subHgtWid = [40 40]; % use this for pawBot
-    subHgtWid = [40 40]; % use this for pawTop
     startPosits = [40 70; 40 100; 50 70; 50 100];
-    negativeEgsPerEg = 10;
-    applyCircMask = false;
-    circRoiPts = [55 147; 209 109; 364 136];
+    negativeEgsPerEg = 15;
     negEgOverlap = .5; % allow negative examples to overlap by at most this much with the positive examples
+    negEgOffset = .5;
     
     % initializations
     negImNumbers = (imNumbers(1)-1)*negativeEgsPerEg+1:imNumbers(end)*negativeEgsPerEg; % indices of negative examples
@@ -24,10 +18,8 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     
     % load video and sample frame
     vid = VideoReader(file);
-    wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
     frame = rgb2gray(read(vid,1));
    
-
     % prepare figure
     close all;
     myFig = figure('units', 'normalized', 'outerposition', [0 .1 1 .9], 'keypressfcn', @keypress);
@@ -50,9 +42,6 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
         
         % get random frame and allow user to move rectangles around
         frame = rgb2gray(read(vid,randi(vid.numberofframes)));
-        if applyCircMask
-            frame = frame .* wheelMask;
-        end
         set(rawPreview, 'CData', getFeatures(frame));
         updateSubPreviews();
         
@@ -62,6 +51,9 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
     end
     
     close all
+    
+    
+    
     
     % ---------
     % FUNCTIONS
@@ -84,10 +76,12 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
                     egsMask(pos(2):pos(2)+pos(4), pos(1):pos(1)+pos(3)) = 1;
                 end
                 
-                
                 negEgPos = nan(0,2);
-                % save positive examples
+                
+                
+                % save positive and create negative examples
                 for j=1:egsPerFrame
+                    
                     img = subFrames(j).img;
                     save([dataDir className '\positive\img' num2str(imNumbers(imNumberInd)) '.mat'], 'img');
                     imNumberInd = imNumberInd+1;
@@ -101,16 +95,58 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file)
                             pos = [randi(size(frame,1)-subHgtWid(1)) randi(size(frame,2)-subHgtWid(2))]; % y,x
                             posMask = logical(zeros(size(frame,1), size(frame,2)));
                             posMask(pos(1):pos(1)+subHgtWid(1), pos(2):pos(2)+subHgtWid(2)) = 1;
+%                             keyboard
                             pixelsOverlap = sum(egsMask(:)+posMask(:)>1);
                             img = frame(pos(1):pos(1)+subHgtWid(1)-1, pos(2):pos(2)+subHgtWid(2)-1,:);
 
                             if pixelsOverlap<(pixPerEg*negEgOverlap) && mean(img(:))>5; acceptableImage=true; end
                         end
+                        
+                        % try replacing negative egs with negative egs adjacent to positive eg
+                        if k<=8
+                            
+                            positivePos = round(getPosition(subFrames(j).rect));
+                            posTemp = round([positivePos(2) positivePos(1)]); % this value will be adjusted below
+                            % get negative eg position
+                            switch k
+                                case 1
+                                    posTemp = posTemp + round([-subHgtWid(1) -subHgtWid(2)] .* negEgOffset);
+                                case 2
+                                    posTemp = posTemp + round([0 -subHgtWid(2)] .* negEgOffset);
+                                case 3
+                                    posTemp = posTemp + round([subHgtWid(1) -subHgtWid(2)] .* negEgOffset);
+                                case 4
+                                    posTemp = posTemp + round([subHgtWid(1) 0] .* negEgOffset);
+                                case 5
+                                    posTemp = posTemp + round([subHgtWid(1) subHgtWid(2)] .* negEgOffset);
+                                case 6
+                                    posTemp = posTemp + round([0 subHgtWid(2)] .* negEgOffset);
+                                case 7
+                                    posTemp = posTemp + round([-subHgtWid(1) subHgtWid(2)] .* negEgOffset);
+                                case 8
+                                    posTemp = posTemp + round([-subHgtWid(1) 0] .* negEgOffset);
+                            end
+                            
+                            try
+                                % determine whether positiion overlaps with a positive example
+                                posMask = logical(zeros(size(frame,1), size(frame,2)));
+                                posMask(posTemp(1):posTemp(1)+subHgtWid(1), posTemp(2):posTemp(2)+subHgtWid(2)) = 1;
+                                pixelsOverlap = sum(egsMask(:)+posMask(:)>1);
+                                imgTemp = frame(pos(1):pos(1)+subHgtWid(1)-1, pos(2):pos(2)+subHgtWid(2)-1,:);
 
-                        % save that shit
+                                if pixelsOverlap <= (pixPerEg*negEgOffset*1.1) && mean(imgTemp(:))>5
+                                    pos = posTemp;
+                                    img = imgTemp;
+                                end
+                            catch
+                                disp('subframe out of range')
+                            end
+                        end
+
+                        % save negative example
                         save([dataDir className '\negative\img' num2str(negImNumbers(negImNumberInd)) '.mat'], 'img');
                         negImNumberInd = negImNumberInd+1;
-                        negEgPos(end+1,:) = fliplr(pos+.5*fliplr(subHgtWid));
+                        negEgPos(end+1,:) = fliplr(pos+.5*subHgtWid);
                     end
                 end
                 circs = viscircles(rawAxis, negEgPos, ones(1,size(negEgPos,1))*.5*mean(subHgtWid));

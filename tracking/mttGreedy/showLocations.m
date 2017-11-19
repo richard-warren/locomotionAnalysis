@@ -3,7 +3,7 @@ function showLocations(vid, locations, labels, showPotentialLocations, vidDelay,
 % settings
 circSize = 200;
 vidSizeScaling = 1.5;
-lineMaskWid = 20;
+lineMaskWid = 15;
 
 
 % initializations

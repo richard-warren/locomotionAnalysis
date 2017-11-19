@@ -10,9 +10,14 @@ circSize = 75;
 % load data
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locationsBot.mat', 'locationsBot')
 load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\locationsTop.mat', 'locationsTop')
-% locationsBot = fixTracking(locationsBot);
-% locationsTop = fixTracking(locationsTop);
-% locationsTop.x = locationsBot.x; % replace top x values with those from bottom, which are more reliable
+locationsBot = fixTracking(locationsBot);
+locationsTop = fixTracking(locationsTop);
+
+% fix x alignment for bottom view
+load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
+locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
+
+locationsTop.x = locationsBot.x; % replace top x values with those from bottom, which are more reliable
 
 vidTop = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runTop.mp4');
 vidBot = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4');
