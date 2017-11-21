@@ -15,6 +15,7 @@ maxXDistance = 20;
 xOccludeBuffer = 40;
 minY = 70;
 circRoiPts = [55 147; 209 109; 364 136];
+stanceHMaxHgt = 15;
 stanceHgt = 6;
 
 unariesWeight = 5;
@@ -24,7 +25,7 @@ scoreWeight = 0;
 
 
 % initializations
-circRoiPtsStance = circRoiPts - repmat([0 stanceHgt], 3, 1); % paws during must live beneathe this circle during stance
+circRoiPtsStance = circRoiPts - repmat([0 stanceHMaxHgt], 3, 1); % paws during must live beneathe this circle during stance
 vid = VideoReader(vidFile);
 labels = nan(length(potentialLocationsTop), objectNum);
 locationsTop = struct();
@@ -132,14 +133,18 @@ for i = 1:vid.NumberOfFrames
             locationsTop.z(i,j) = potentialLocationsTop(i).y(labels(i,j));
         end
         
-        % if paw is in stance (negative velocity) make z location directly above the circle floor
         if locationsBot.xVel(i,j) < 0
+%         keyboard
             locationsTop.x(i,j) = locationsBot.x(i,j);
-%             keyboard
-            locationsTop.z(i,j) = wheelCenter(2) - round(sqrt(wheelRadius^2 - (locationsBot.x(i,j)-wheelCenter(1))^2));
-            disp(locationsTop.z(i,j))
+    %         locationsTop.z(i,j) = round(sqrt(wheelRadius^2 - locationsBot.x(i,j)^2))-100;
+            locationsTop.z(i,j) = 1;
+            disp(j)
         end
     end
+    
+    % if paw is in stance (negative velocity) make z location directly above the circle floor
+%     keyboard
+    
 end
 
 

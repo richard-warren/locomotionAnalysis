@@ -4,12 +4,12 @@ function getPotentialLocationsBot(showTracking)
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4';
 classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
-objectNum = 4;
+
 
 startFrame = 1;
-overlapThresh = .8; % .5 for bottom // 
+overlapThresh = .5;
 scoreThresh = 0;
-
+objectNum = 4;
 
 % load classifier
 load(classifier, 'model', 'subHgt', 'subWid')
@@ -23,7 +23,7 @@ yMin = 15;
 totalFrames = vid.NumberOfFrames;
 cmap = winter(4);
 kernel = reshape(model.w, subHgt, subWid);
-keyboard
+% figure; imagesc(kernel);
 
 % prepare figure
 if showTracking

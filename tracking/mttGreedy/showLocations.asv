@@ -118,12 +118,12 @@ function updateFrame(frameStep)
     
     % update figure
     set(rawIm, 'CData', frame);
-
-    set(scatterLocations, 'XData', locations.x(currentFrame,:), 'YData', locations.z((currentFrame),:), 'visible', 'on');
-
-%     if showPotentialLocations
-%         set(scatterPotentialLocations, 'XData', potentialLocations(currentFrame).x, 'YData', potentialLocations(currentFrame).y);
-%     end
+    xs = locations.x(currentFrame,:);
+%     xs(isnan(xs)) = 0;
+    set(scatterLocations, 'XData', xs, 'YData', locations.z((currentFrame),:), 'visible', 'on');
+    if showPotentialLocations
+        set(scatterPotentialLocations, 'XData', potentialLocations(currentFrame).x, 'YData', potentialLocations(currentFrame).y);
+    end
     
     % pause to reflcet on the little things...
     pause(vidDelay);

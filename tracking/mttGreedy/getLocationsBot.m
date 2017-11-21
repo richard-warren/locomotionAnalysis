@@ -103,7 +103,7 @@ save([dataDir 'locationsBot.mat'], 'locationsBot');
 % show tracking
 if showTracking
     startFrame = 1;
-    showPotentialLocations = false;
+    showPotentialLocations = true;
     showLocations(vid, potentialLocationsBot, labels, showPotentialLocations, .04, anchorPts, startFrame);
 end
 
