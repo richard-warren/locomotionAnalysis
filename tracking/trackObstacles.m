@@ -4,13 +4,15 @@ function obsPixPositions = trackObstacles(sessionPath, obsOnTimes, obsOffTimes, 
 
 
 % user settings
-pixThresh = 85;
+pixThreshFactor = 2.5; % pix thresh is set at pixThreshFactor * mean pixel intensity of first frame (which has no mouse)
 obsMinThickness = 10;                                           
-
+xRange = [60 360];
 
 
 % initializations
 vid = VideoReader([sessionPath '\runBot.mp4']);
+frame = rgb2gray(read(vid,1));
+pixThresh = pixThreshFactor * mean(frame(:));
 totalFrames = vid.NumberOfFrames;
 if mod(obsMinThickness,2)==1; obsMinThickness = obsMinThickness-1; end % ensure obsMinThickness is even, which ensures medFiltSize is odd // this way the filtered version doesn't shift by one pixel relative to the unfiltered version
 medFiltSize = obsMinThickness*2+1;
@@ -22,7 +24,6 @@ end
 if showTracking
     
     fig = figure('position', [1923 35 vid.Width vid.Height*2], 'menubar', 'none', 'color', 'black');
-    frame = rgb2gray(read(vid,1));
     
     axRaw = subplot(2,1,1, 'units', 'pixels');
     imRaw = imshow(frame);
@@ -52,6 +53,7 @@ for i = 1:length(obsOnTimes)
         
         % sum across columns and normalize
         colSums = sum(frame,1) / size(frame,1);
+        colSums(1:length(colSums)<xRange(1) | 1:length(colSums)>xRange(2)) = 0; % set column sums outside of xRange to 0
         
         % threshold and median filter to remove thin threshold crossings with few adjacent columns
         colThreshed = colSums > pixThresh;
@@ -68,9 +70,8 @@ for i = 1:length(obsOnTimes)
             set(imSum, 'CData', colFrame);
             
             pause(.001)
-            
+            if any(colThreshed); pause(.05); end
         end
-        
     end
 end
 
