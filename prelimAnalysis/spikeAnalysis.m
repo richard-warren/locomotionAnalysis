@@ -322,7 +322,9 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
             % track obstacle in bottom view
             obsPixPositions = trackObstacles([dataDir dataFolder],...
-                varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.frameTimeStamps, false);
+                varStruct.obsOnTimes, varStruct.obsOffTimes,...
+                varStruct.frameTimeStamps,...
+                varStruct.obsPositions, varStruct.obsTimes, false);
 
             % save
             varStruct.obsPixPositions = obsPixPositions;

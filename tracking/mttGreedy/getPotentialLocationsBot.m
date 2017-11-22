@@ -5,9 +5,6 @@ vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot
 classifier = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\';
 
-pixThreshFactor = 2.5; % pix thresh is set at pixThreshFactor * mean pixel intensity of first frame (which has no mouse)
-obsMinThickness = 10;                                           
-xRange = [60 360];
 
 startFrame = 1;
 overlapThresh = .5;
@@ -21,9 +18,6 @@ load(classifier, 'model', 'subHgt', 'subWid')
 % initializations
 vid = VideoReader(vidFile);
 sampleFrame = rgb2gray(read(vid,1));
-pixThresh = pixThreshFactor * mean(sampleFrame(:));
-if mod(obsMinThickness,2)==1; obsMinThickness = obsMinThickness-1; end % ensure obsMinThickness is even, which ensures medFiltSize is odd // this way the filtered version doesn't shift by one pixel relative to the unfiltered version
-medFiltSize = obsMinThickness*2+1;
 xMin = 20; % x and yMin are a temporary hack until i crop the videso properly
 yMin = 15;
 totalFrames = vid.NumberOfFrames;
@@ -56,23 +50,7 @@ for i = startFrame:totalFrames
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
-    
-    
-    
-    % mask obstacle
-    
-    % sum across columns and normalize
-    colSums = sum(frame,1) / size(frame,1);
-    colSums(1:length(colSums)<xRange(1) | 1:length(colSums)>xRange(2)) = 0; % set column sums outside of xRange to 0
 
-    % threshold and median filter to remove thin threshold crossings with few adjacent columns
-    colThreshed = colSums > pixThresh;
-    colThreshed = medfilt1(double(colThreshed), medFiltSize);
-
-%     keyboard
-    frame = frame .* uint8(repmat(~colThreshed, size(frame,1), 1));
-    
-    
     
     % filter with svm
     frameFiltered =  (conv2(double(frame), kernel, 'same') - model.rho);
@@ -125,8 +103,7 @@ for i = startFrame:totalFrames
         set(scatterPts, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
-        pause(.001);
-        if any(colThreshed); pause(.1); end
+        pause(.05);
     end
 end
 

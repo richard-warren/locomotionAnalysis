@@ -1,6 +1,5 @@
 
 % crop top and bot file from startTime to endTime AND block obstacle in bottom view
-% the method for fading out the obs is kind of shitty right now -- it only works when the obstacle is fully in the frame
 clear all
 
 % user settings
@@ -9,9 +8,9 @@ endTime = 146;
 fs = 250;
 folder = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\';
 obsWidth = 10; % make even
-obsFade = 5;
+obsFade = 4;
 playbackSpeed = .1;
-maskDimming = .3;
+maskDimming = .5;
 
 % initializations
 obsMask = [linspace(1,maskDimming,obsFade) ones(1,obsWidth).*maskDimming fliplr(linspace(1,maskDimming,obsFade))];
@@ -40,12 +39,12 @@ for i = 1:length(frames)
     frameBot = read(vidBot, frames(i));
     
     if ~isnan(obsPixPositions(frames(i)))
-        startPix = round(obsPixPositions(frames(i))-.5*length(obsMask));
-        obsRange = [startPix, startPix+length(obsMask)-1];
+        startInd = obsPixPositions(frames(i))-.5*length(obsMask);
+        obsRange = [startInd, startInd+length(obsMask)];
         obsRange(obsRange>vidBot.Width) = vidBot.Width;
         obsRange(obsRange<1) = 1;
-        if diff(obsRange)==length(obsMask)-1
-%             disp('ya')
+        obsMaskTemp = 
+        if diff(obsRange)~=0
             frameBot(:,obsRange(1):obsRange(2),:) = double(frameBot(:,obsRange(1):obsRange(2),:)) .* repmat(obsMask,size(frameBot,1),1,3);
         end
         

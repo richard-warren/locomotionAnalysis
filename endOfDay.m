@@ -5,7 +5,7 @@ sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessio
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\';
 trialProportion = .2;
 
-parfor i=1:length(sessionDirs)
+for i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
@@ -17,11 +17,11 @@ parfor i=1:length(sessionDirs)
 
 end
 
-delete(gcp); % delete parallel pool
+% delete(gcp); % delete parallel pool
 
 % generate plots
-obsAvoidanceLight2('run3', {'obsTestLight2'})
-obsAvoidanceLight2('run5', {'obsTestLight2'})
+% obsAvoidanceLight2('run3', {'obsTestLight2'})
+obsAvoidanceLight2('run5', {'whiskTestOmg'})
 
 
 
