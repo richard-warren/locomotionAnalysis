@@ -3,14 +3,14 @@
 % settings
 sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\';
-trialProportion = .2;
+trialProportion = .15;
 
 for i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'obsPixPositions'});
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
     
     % make video
 %     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
@@ -25,7 +25,7 @@ obsAvoidanceLight2('run5', {'whiskTestOmg'})
 
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data

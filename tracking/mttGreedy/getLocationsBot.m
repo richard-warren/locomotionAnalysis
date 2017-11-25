@@ -35,13 +35,14 @@ for i = 1:objectNum
                                       anchorPts{i}(1), anchorPts{i}(2), maxDistanceX);
 end
 
-labels(1,:) = getBestLabels(unaries, objectNum);
+
+labels(1,:) = getBestLabels(unaries, objectNum, [0 0 0 0]);
 locationsBot = struct();
 locationsBot.x = nan(vid.NumberOfFrames, objectNum);
-locationsBot.y = nan(vid.NumberOfFrames, objectNum);
+locationsBot.z = nan(vid.NumberOfFrames, objectNum);
 
 locationsBot.x(1,:) = potentialLocationsBot(1).x(labels(1,:));
-locationsBot.y(1,:) = potentialLocationsBot(1).y(labels(1,:));
+locationsBot.z(1,:) = potentialLocationsBot(1).y(labels(1,:));
 
 
 % iterate through remaining frames
@@ -90,10 +91,10 @@ for i = 2:vid.NumberOfFrames
     for j = 1:objectNum
         if isnan(labels(i,j))
             locationsBot.x(i,j) = nan;
-            locationsBot.y(i,j) = nan;
+            locationsBot.z(i,j) = nan;
         else
             locationsBot.x(i,j) = potentialLocationsBot(i).x(labels(i,j));
-            locationsBot.y(i,j) = potentialLocationsBot(i).y(labels(i,j));
+            locationsBot.z(i,j) = potentialLocationsBot(i).y(labels(i,j));
         end
     end
 end
@@ -104,7 +105,7 @@ save([dataDir 'locationsBot.mat'], 'locationsBot');
 if showTracking
     startFrame = 1;
     showPotentialLocations = true;
-    showLocations(vid, potentialLocationsBot, labels, showPotentialLocations, .04, anchorPts, startFrame);
+    showLocations(vid, potentialLocationsBot, locationsBot, showPotentialLocations, .04, anchorPts, startFrame);
 end
 
 

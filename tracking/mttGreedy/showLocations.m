@@ -121,9 +121,9 @@ function updateFrame(frameStep)
 
     set(scatterLocations, 'XData', locations.x(currentFrame,:), 'YData', locations.z((currentFrame),:), 'visible', 'on');
 
-%     if showPotentialLocations
-%         set(scatterPotentialLocations, 'XData', potentialLocations(currentFrame).x, 'YData', potentialLocations(currentFrame).y);
-%     end
+    if showPotentialLocations
+        set(scatterPotentialLocations, 'XData', potentialLocations(currentFrame).x, 'YData', potentialLocations(currentFrame).y);
+    end
     
     % pause to reflcet on the little things...
     pause(vidDelay);

@@ -1,11 +1,10 @@
 
 % crop top and bot file from startTime to endTime AND block obstacle in bottom view
 % the method for fading out the obs is kind of shitty right now -- it only works when the obstacle is fully in the frame
-clear all
 
 % user settings
-startTime = 137;
-endTime = 146;
+startTime = 10*60 + 40;
+endTime = 10*60 + 52;
 fs = 250;
 folder = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\';
 obsWidth = 10; % make even

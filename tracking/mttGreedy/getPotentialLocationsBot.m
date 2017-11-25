@@ -23,7 +23,7 @@ yMin = 15;
 totalFrames = vid.NumberOfFrames;
 cmap = winter(4);
 kernel = reshape(model.w, subHgt, subWid);
-% figure; imagesc(kernel);
+figure; imagesc(kernel);
 
 % prepare figure
 if showTracking

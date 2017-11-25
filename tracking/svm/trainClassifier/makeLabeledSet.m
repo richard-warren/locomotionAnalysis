@@ -48,6 +48,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
         % wait for user to press enter
         stillGoing = true;
         while stillGoing; waitforbuttonpress; end
+        disp(imNumberInd)
     end
     
     close all
