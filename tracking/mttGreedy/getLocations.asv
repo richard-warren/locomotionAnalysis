@@ -1,0 +1,9 @@
+
+
+% performs paw tracking
+session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171126_000\';
+classifier = 
+
+
+
+potentialLocationsBot = getPotentialLocationsBot(vid, classifier, subHgt, subWid, obsPixPositions, showTracking);

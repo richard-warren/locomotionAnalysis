@@ -1,15 +1,16 @@
-function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, subWid, obsPixPositions, startFrame, showTracking)
+function potentialLocationsBot = getPotentialLocationsBot(vid, classifier, subHgt, subWid, obsPixPositions, showTracking)
 
 % !!! need to document
-% !!! need to add obstacle blocking
+
 
 
 % settings
 overlapThresh = .5; % used for non-maxima suppression // determines how tightly packed potential locations can be (higher numbers = more tightly packed) // ranged from 0 to 1
 scoreThresh = 1;    % only pixels above scoreThresh are potential paw locations
 objectNum = 4;      % number of paws
-xMin = 35;
-yMax = 220;
+
+% load classifier
+load(classifier, 'model', 'subHgt', 'subWid')
 
 
 % initializations
@@ -27,18 +28,18 @@ if showTracking
 
     rawAxis = subaxis(2,1,1, 'spacing', 0, 'margin', 0);
     rawIm = image(sampleFrame, 'parent', rawAxis, 'CDataMapping', 'scaled');
-    set(gca, 'visible', 'off', 'CLim', [0 255]);
+    set(gca, 'visible', 'off');
     hold on; scatterPts = scatter(rawAxis, 0, 0, 200, 'filled');
 
     predictAxis = subaxis(2,1,2, 'spacing', 0.01, 'margin', .01);
     predictIm = image(sampleFrame, 'parent', predictAxis, 'CDataMapping', 'scaled');
-    set(gca, 'visible', 'off', 'CLim', [0 10]);
+    set(gca, 'visible', 'off');
 end
 
 
 potentialLocationsBot = struct();
 
-for i = startFrame:totalFrames
+for i = 1:totalFrames
     
     disp(i/totalFrames)
     
@@ -46,10 +47,9 @@ for i = startFrame:totalFrames
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
 
+    
     % filter with svm
     frameFiltered =  (conv2(double(frame), kernel, 'same') - model.rho);
-    frameFiltered(:, 1:xMin) = 0;
-    frameFiltered(yMax:end, :) = 0;
     
     frameFiltered(frameFiltered < scoreThresh) = 0;
     [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
@@ -86,7 +86,8 @@ for i = startFrame:totalFrames
     potentialLocationsBot(i).x = x;
     potentialLocationsBot(i).y = y;
     potentialLocationsBot(i).scores = scores;
-    
+        
+   
     
     if showTracking
         

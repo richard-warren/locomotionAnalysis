@@ -3,8 +3,8 @@
 % the method for fading out the obs is kind of shitty right now -- it only works when the obstacle is fully in the frame
 
 % user settings
-startTime = 10*60 + 40;
-endTime = 10*60 + 52;
+startTime = 3*60 + 22;
+endTime = 3*60 + 34;
 fs = 250;
 folder = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\';
 obsWidth = 10; % make even
