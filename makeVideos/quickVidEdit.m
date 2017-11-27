@@ -14,6 +14,7 @@ maskDimming = .3;
 
 % initializations
 obsMask = [linspace(1,maskDimming,obsFade) ones(1,obsWidth).*maskDimming fliplr(linspace(1,maskDimming,obsFade))];
+obsMask = ones(size(obsMask)) * maskDimming;
 frames = (startTime*fs)+1 : endTime*fs;
 
 vidTop = VideoReader([folder 'runTopRaw.mp4']);

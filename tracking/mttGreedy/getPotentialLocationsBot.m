@@ -1,7 +1,6 @@
 function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, subWid, obsPixPositions, startFrame, showTracking)
 
 % !!! need to document
-% !!! need to add obstacle blocking
 
 
 % settings
@@ -10,9 +9,13 @@ scoreThresh = 1;    % only pixels above scoreThresh are potential paw locations
 objectNum = 4;      % number of paws
 xMin = 35;
 yMax = 220;
+obsMaskDepth = .3;
+obsMaskWid = 18;
 
 
 % initializations
+obsPixLeft = floor(obsMaskWid/2);
+obsPixRight = ceil(obsMaskWid/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model.w, subHgt, subWid);
@@ -45,6 +48,14 @@ for i = startFrame:totalFrames
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
+    
+    % mask obstacle
+    obsPixMinMax = [obsPixPositions(i) - obsPixLeft, obsPixPositions(i) + obsPixRight - 1];
+    if any(obsPixMinMax>0 & obsPixMinMax<=vid.width)
+        obsPixMinMax(obsPixMinMax<1) = 1;
+        obsPixMinMax(obsPixMinMax>vid.Width) = vid.Width;
+        frame(:,obsPixMinMax(1):obsPixMinMax(2)) = frame(:,obsPixMinMax(1):obsPixMinMax(2)) .* obsMaskDepth;
+    end
 
     % filter with svm
     frameFiltered =  (conv2(double(frame), kernel, 'same') - model.rho);

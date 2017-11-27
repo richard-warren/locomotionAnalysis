@@ -4,7 +4,7 @@ function obsPixPositions = trackObstacles(sessionPath, obsOnTimes, obsOffTimes, 
 
 
 % user settings
-pixThreshFactor = 2.5; % pix thresh is set at pixThreshFactor * mean pixel intensity of first frame (which has no mouse)
+pixThreshFactor = 3; % pix thresh is set at pixThreshFactor * mean pixel intensity of first frame (which has no mouse)
 obsMinThickness = 10;                                           
 xRange = [60 360];
 

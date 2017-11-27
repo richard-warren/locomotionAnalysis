@@ -12,8 +12,8 @@ fields = fieldnames(locations);
 locationsFixed = locations;
 
 for i = 1:length(fields)
+    disp(i/length(fields))
     for j = 1:size(locationsFixed.(fields{i}), 2)
-%         disp( ((j/size(locationsFixed.(fields{i}), 2)) / length(fields)) * i);
         
         % fill missing values
         locationsFixed.(fields{i})(:,j) = fillShortMissing(locationsFixed.(fields{i})(:,j), samplesToFill, interpMethod);
