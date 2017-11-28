@@ -13,17 +13,15 @@ locationsFixed = locations;
 
 for i = 1:length(fields)
     for j = 1:size(locationsFixed.(fields{i}), 2)
-%         disp( ((j/size(locationsFixed.(fields{i}), 2)) / length(fields)) * i);
         
         % fill missing values
         locationsFixed.(fields{i})(:,j) = fillShortMissing(locationsFixed.(fields{i})(:,j), samplesToFill, interpMethod);
-        
+
         % smooth that ish
-        nanInds = isnan(locationsFixed.(fields{i})(:,j));
-        locationsFixed.(fields{i})(:,j) = smooth(locationsFixed.(fields{i})(:,j), smoothSamples);
-        locationsFixed.(fields{i})(nanInds,j) = nan;
-%         locationsFixed.(fields{i})(:,j) = medfilt1(locationsFixed.(fields{i})(:,j), smoothSamples, 'omitnan');
-        
-        
+        locationsFixed.(fields{i})(:,j) = medfilt1(locationsFixed.(fields{i})(:,j), smoothSamples, 'omitnan');
+
+%         nanInds = isnan(locationsFixed.(fields{i})(:,j));
+%         locationsFixed.(fields{i})(:,j) = smooth(locationsFixed.(fields{i})(:,j), smoothSamples);
+%         locationsFixed.(fields{i})(nanInds,j) = nan;
     end
 end

@@ -17,11 +17,11 @@ for i=1:length(sessionDirs)
 
 end
 
-%% delete(gcp); % delete parallel pool
+% delete(gcp); % delete parallel pool
 
 % generate plots
 % obsAvoidanceLight2('run3', {'obsTestLight2'})
-obsAvoidanceLight2('run5', {'obsTestLight2'})
+obsAvoidanceLight2('run5', {'whiskTestOmg'})
 
 
 

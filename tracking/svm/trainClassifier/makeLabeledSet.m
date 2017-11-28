@@ -153,6 +153,12 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
                 end
                 circs = viscircles(rawAxis, negEgPos, ones(1,size(negEgPos,1))*.5*mean(subHgtWid));
                 waitforbuttonpress; delete(circs)
+            
+            % if the letter 'n' is pressed, select new random frame
+            elseif key==110
+                frame = rgb2gray(read(vid,randi(vid.numberofframes)));
+                set(rawPreview, 'CData', getFeatures(frame));
+                updateSubPreviews();
             end
         end
     end

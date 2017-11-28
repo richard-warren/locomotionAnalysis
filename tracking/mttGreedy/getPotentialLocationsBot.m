@@ -5,7 +5,7 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, su
 
 % settings
 overlapThresh = .5; % used for non-maxima suppression // determines how tightly packed potential locations can be (higher numbers = more tightly packed) // ranged from 0 to 1
-scoreThresh = 1;    % only pixels above scoreThresh are potential paw locations
+scoreThresh = .5;    % only pixels above scoreThresh are potential paw locations
 objectNum = 4;      % number of paws
 xMin = 35;
 yMax = 220;
@@ -58,7 +58,7 @@ for i = startFrame:totalFrames
     end
 
     % filter with svm
-    frameFiltered =  (conv2(double(frame), kernel, 'same') - model.rho);
+    frameFiltered = (conv2(double(frame), kernel, 'same') - model.rho);
     frameFiltered(:, 1:xMin) = 0;
     frameFiltered(yMax:end, :) = 0;
     
