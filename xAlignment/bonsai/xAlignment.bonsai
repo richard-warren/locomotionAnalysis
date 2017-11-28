@@ -4,8 +4,8 @@
     <Nodes>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q1:FileCapture">
-          <q1:FileName>C:\Users\rick\Google Drive\columbia\obstacleData\sessions\xTopBotMatch\runTop.mp4</q1:FileName>
-          <q1:PlaybackRate>250</q1:PlaybackRate>
+          <q1:FileName>C:\Users\rick\Google Drive\columbia\obstacleData\xAlignments\171128\runTop.mp4</q1:FileName>
+          <q1:PlaybackRate>30</q1:PlaybackRate>
           <q1:StartPosition>0</q1:StartPosition>
           <q1:PositionUnits>Frames</q1:PositionUnits>
           <q1:Loop>false</q1:Loop>
@@ -33,7 +33,7 @@
             <q1:X>0</q1:X>
             <q1:Y>0</q1:Y>
           </q1:Offset>
-          <q1:MinArea>120</q1:MinArea>
+          <q1:MinArea>40</q1:MinArea>
           <q1:MaxArea xsi:nil="true" />
         </Combinator>
       </Expression>
@@ -76,8 +76,8 @@
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q1:FileCapture">
-          <q1:FileName>C:\Users\rick\Google Drive\columbia\obstacleData\sessions\xTopBotMatch\runBot.mp4</q1:FileName>
-          <q1:PlaybackRate>250</q1:PlaybackRate>
+          <q1:FileName>C:\Users\rick\Google Drive\columbia\obstacleData\xAlignments\171128\runBot.mp4</q1:FileName>
+          <q1:PlaybackRate>30</q1:PlaybackRate>
           <q1:StartPosition>0</q1:StartPosition>
           <q1:PositionUnits>Frames</q1:PositionUnits>
           <q1:Loop>false</q1:Loop>

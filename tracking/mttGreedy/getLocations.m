@@ -37,8 +37,8 @@ save([session 'tracking\locationsBot.mat'], 'locationsBot');
 
 %% get potential locations for top
 tic
-close all
-potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model, subHgt, subWid, startFrame, true);
+potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model, subHgt, subWid, startFrame, false);
+toc
 save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 
 

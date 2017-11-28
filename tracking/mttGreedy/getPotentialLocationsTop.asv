@@ -1,4 +1,4 @@
-function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinear model, subHgt, subWid, startFrame, showTracking)
+function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model, subHgt, subWid, startFrame, showTracking)
 
 % !!! need to document
 
@@ -22,8 +22,7 @@ figure; imagesc(kernel);
 
 
 % !!! fix x alignment for bottom view
-load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
-locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
+locationsBot.x = round(locationsBot.x*xLinearMapping(1) + xLinearMapping(2));
 
 
 % prepare figure
@@ -34,11 +33,11 @@ if showTracking
     rawAxis = subaxis(3,1,1, 'spacing', 0, 'margin', 0);
     rawIm = image(sampleFrame, 'parent', rawAxis, 'CDataMapping', 'scaled');
     set(gca, 'visible', 'off');
+    hold on; scatterPtsAll = scatter(rawAxis, 0, 0, 100, 'filled', 'red');
     
     maskAxis = subaxis(3,1,2, 'spacing', 0, 'margin', 0);
     maskIm = image(sampleFrame, 'parent', maskAxis, 'CDataMapping', 'scaled');
     set(gca, 'visible', 'off');
-    hold on; scatterPtsAll = scatter(maskAxis, 0, 0, 100, 'filled', 'red');
     
     predictAxis = subaxis(3,1,3, 'spacing', 0.01, 'margin', .01);
     predictIm = image(sampleFrame, 'parent', predictAxis, 'CDataMapping', 'scaled');
@@ -91,6 +90,9 @@ for i = startFrame:totalFrames
     
     
     if showTracking
+        
+        % put lines in top frame
+        for
         
         % update figure
         set(rawIm, 'CData', frame);

@@ -5,7 +5,7 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLi
 
 % settings
 overlapThresh = .5;
-scoreThresh = 2;
+scoreThresh = 1;
 yMin = 80; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
 circRoiPts = [36 172; 224 122; 386 157];
 xMaskWidth = 8;
@@ -90,6 +90,13 @@ for i = startFrame:totalFrames
     
     
     if showTracking
+        
+        % put lines in top frame
+        for j = 1:4
+            if ~isnan(locationsBot.x(i,j))
+                frame(:,locationsBot.x(i,j)) = 1;
+            end
+        end
         
         % update figure
         set(rawIm, 'CData', frame);
