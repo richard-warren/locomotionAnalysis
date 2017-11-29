@@ -42,7 +42,7 @@ save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 
 %% get locations for top
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameTimeStamps, fs);
-showLocations(vidTop, potentialLocationsTop, fixTracking(locationsTop), showPotentialLocations, .02, anchorPtsBot, startFrame*5);
+showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, startFrame*5);
 
 
 
