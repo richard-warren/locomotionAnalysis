@@ -3,7 +3,7 @@ function showLocations(vid, potentialLocations, locations, showPotentialLocation
 % settings
 circSize = 200;
 vidSizeScaling = 1.5;
-lineMaskWid = 15;
+% lineMaskWid = 15;
 
 
 % initializations
@@ -12,6 +12,8 @@ if ~exist('startFrame', 'var'); startFrame = 1; end
 currentFrame = startFrame;
 sampleFrame = rgb2gray(read(vid,currentFrame));
 cmap = winter(length(anchorPts));
+fields = fieldnames(locations);
+dim2 = fields{2};
 
 % prepare figure
 close all;
@@ -119,7 +121,7 @@ function updateFrame(frameStep)
     % update figure
     set(rawIm, 'CData', frame);
 
-    set(scatterLocations, 'XData', locations.x(currentFrame,:), 'YData', locations.z((currentFrame),:), 'visible', 'on');
+    set(scatterLocations, 'XData', locations.x(currentFrame,:), 'YData', locations.(dim2)((currentFrame),:), 'visible', 'on');
 
     if showPotentialLocations
         set(scatterPotentialLocations, 'XData', potentialLocations(currentFrame).x, 'YData', potentialLocations(currentFrame).y);

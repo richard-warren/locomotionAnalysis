@@ -9,9 +9,8 @@ scoreThresh = .5;    % only pixels above scoreThresh are potential paw locations
 objectNum = 4;      % number of paws
 xMin = 35;
 yMax = 220;
-obsMaskDepth = .3;
+obsMaskDepth = 0;
 obsMaskWid = 18;
-
 
 % initializations
 obsPixLeft = floor(obsMaskWid/2);
@@ -19,6 +18,7 @@ obsPixRight = ceil(obsMaskWid/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model.w, subHgt, subWid);
+bg = getBgImage(vid, 1000, true);
 
 
 % prepare figure
@@ -48,6 +48,7 @@ for i = startFrame:totalFrames
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
+    frame = frame - bg;
     
     % mask obstacle
     obsPixMinMax = [obsPixPositions(i) - obsPixLeft, obsPixPositions(i) + obsPixRight - 1];

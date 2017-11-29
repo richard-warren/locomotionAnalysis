@@ -8,7 +8,7 @@ overlapThresh = .5;
 scoreThresh = 1;
 yMin = 80; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
 circRoiPts = [36 172; 224 122; 386 157];
-xMaskWidth = 8;
+xMaskWidth = 15;
 
 
 % initializations
@@ -19,6 +19,7 @@ kernel = reshape(model.w, subHgt, subWid);
 % wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
 figure; imagesc(kernel);
+bg = getBgImage(vid, 1000, true);
 
 
 % !!! fix x alignment for bottom view
@@ -53,6 +54,7 @@ for i = startFrame:totalFrames
     
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
+    frame = frame - bg;
     frame = getFeatures(frame);
     frameMasked = frame .* wheelMask; % mask wheel
     frameMasked(1:yMin,:) = 0;        % make top of frame
@@ -94,7 +96,7 @@ for i = startFrame:totalFrames
         % put lines in top frame
         for j = 1:4
             if ~isnan(locationsBot.x(i,j))
-                frame(:,locationsBot.x(i,j)) = 1;
+                frame(:,locationsBot.x(i,j)) = 255;
             end
         end
         

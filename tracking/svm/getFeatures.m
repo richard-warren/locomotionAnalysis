@@ -4,7 +4,7 @@ function featureFrame = getFeatures(frame)
     
     featureFrame = frame;
     
-%     featureFrame = medfilt2(featureFrame, [1 5], 'symmetric');
+%     featureFrame = medfilt2(featureFrame, [5 20], 'symmetric'); % [height width]
 %     featureFrame = imadjust(uint8(featureFrame), [.1 1], [0 1]);
     
 end

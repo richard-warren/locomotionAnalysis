@@ -19,6 +19,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
     % load video and sample frame
     vid = VideoReader(file);
     frame = rgb2gray(read(vid,1));
+    bg = getBgImage(vid, 1000, true);
    
     % prepare figure
     close all;
@@ -42,6 +43,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
         
         % get random frame and allow user to move rectangles around
         frame = rgb2gray(read(vid,randi(vid.numberofframes)));
+        frame = frame - bg;
         set(rawPreview, 'CData', getFeatures(frame));
         updateSubPreviews();
         
@@ -105,45 +107,45 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
                         end
                         
                         % try replacing negative egs with negative egs adjacent to positive eg
-                        if k<=8
-                            
-                            positivePos = round(getPosition(subFrames(j).rect));
-                            posTemp = round([positivePos(2) positivePos(1)]); % this value will be adjusted below
-                            % get negative eg position
-                            switch k
-                                case 1
-                                    posTemp = posTemp + round([-subHgtWid(1) -subHgtWid(2)] .* negEgOffset);
-                                case 2
-                                    posTemp = posTemp + round([0 -subHgtWid(2)] .* negEgOffset);
-                                case 3
-                                    posTemp = posTemp + round([subHgtWid(1) -subHgtWid(2)] .* negEgOffset);
-                                case 4
-                                    posTemp = posTemp + round([subHgtWid(1) 0] .* negEgOffset);
-                                case 5
-                                    posTemp = posTemp + round([subHgtWid(1) subHgtWid(2)] .* negEgOffset);
-                                case 6
-                                    posTemp = posTemp + round([0 subHgtWid(2)] .* negEgOffset);
-                                case 7
-                                    posTemp = posTemp + round([-subHgtWid(1) subHgtWid(2)] .* negEgOffset);
-                                case 8
-                                    posTemp = posTemp + round([-subHgtWid(1) 0] .* negEgOffset);
-                            end
-                            
-                            try
-                                % determine whether positiion overlaps with a positive example
-                                posMask = logical(zeros(size(frame,1), size(frame,2)));
-                                posMask(posTemp(1):posTemp(1)+subHgtWid(1), posTemp(2):posTemp(2)+subHgtWid(2)) = 1;
-                                pixelsOverlap = sum(egsMask(:)+posMask(:)>1);
-                                imgTemp = frame(pos(1):pos(1)+subHgtWid(1)-1, pos(2):pos(2)+subHgtWid(2)-1,:);
-
-                                if pixelsOverlap <= (pixPerEg*negEgOffset*1.1) && mean(imgTemp(:))>5
-                                    pos = posTemp;
-                                    img = imgTemp;
-                                end
-                            catch
-                                disp('subframe out of range')
-                            end
-                        end
+%                         if k<=8
+%                             
+%                             positivePos = round(getPosition(subFrames(j).rect));
+%                             posTemp = round([positivePos(2) positivePos(1)]); % this value will be adjusted below
+%                             % get negative eg position
+%                             switch k
+%                                 case 1
+%                                     posTemp = posTemp + round([-subHgtWid(1) -subHgtWid(2)] .* negEgOffset);
+%                                 case 2
+%                                     posTemp = posTemp + round([0 -subHgtWid(2)] .* negEgOffset);
+%                                 case 3
+%                                     posTemp = posTemp + round([subHgtWid(1) -subHgtWid(2)] .* negEgOffset);
+%                                 case 4
+%                                     posTemp = posTemp + round([subHgtWid(1) 0] .* negEgOffset);
+%                                 case 5
+%                                     posTemp = posTemp + round([subHgtWid(1) subHgtWid(2)] .* negEgOffset);
+%                                 case 6
+%                                     posTemp = posTemp + round([0 subHgtWid(2)] .* negEgOffset);
+%                                 case 7
+%                                     posTemp = posTemp + round([-subHgtWid(1) subHgtWid(2)] .* negEgOffset);
+%                                 case 8
+%                                     posTemp = posTemp + round([-subHgtWid(1) 0] .* negEgOffset);
+%                             end
+%                             
+%                             try
+%                                 % determine whether positiion overlaps with a positive example
+%                                 posMask = logical(zeros(size(frame,1), size(frame,2)));
+%                                 posMask(posTemp(1):posTemp(1)+subHgtWid(1), posTemp(2):posTemp(2)+subHgtWid(2)) = 1;
+%                                 pixelsOverlap = sum(egsMask(:)+posMask(:)>1);
+%                                 imgTemp = frame(pos(1):pos(1)+subHgtWid(1)-1, pos(2):pos(2)+subHgtWid(2)-1,:);
+% 
+%                                 if pixelsOverlap <= (pixPerEg*negEgOffset*1.1) && mean(imgTemp(:))>5
+%                                     pos = posTemp;
+%                                     img = imgTemp;
+%                                 end
+%                             catch
+%                                 disp('subframe out of range')
+%                             end
+%                         end
 
                         % save negative example
                         save([dataDir className '\negative\img' num2str(negImNumbers(negImNumberInd)) '.mat'], 'img');
@@ -157,6 +159,7 @@ function makeLabeledSet(className, imNumbers, egsPerFrame, file, subHgtWid)
             % if the letter 'n' is pressed, select new random frame
             elseif key==110
                 frame = rgb2gray(read(vid,randi(vid.numberofframes)));
+                frame = frame - bg;
                 set(rawPreview, 'CData', getFeatures(frame));
                 updateSubPreviews();
             end

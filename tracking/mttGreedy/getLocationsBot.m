@@ -6,11 +6,14 @@ function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, 
 % settings
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
-maxDistanceX = .55;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
+maxDistanceX = .6;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
+maxDistanceY = .75;
 maxVel = 35 / .004;    % pixels / sec
+
+
 minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
-unaryWeight = 1.5;
-pairwiseWeight = 1;
+unaryWeight = 1;
+pairwiseWeight = 2;
 scoreWeight = 0;
 
 
@@ -27,16 +30,16 @@ for i = 1:objectNum
     
     unaries(i,:) = getUnaryPotentials(potentialLocationsBot(startFrame).x, potentialLocationsBot(startFrame).y,...
                                       frameWid, frameHgt,...
-                                      anchorPts{i}(1), anchorPts{i}(2), maxDistanceX);
+                                      anchorPts{i}(1), anchorPts{i}(2), maxDistanceX, maxDistanceY);
 end
 
 labels(startFrame,:) = getBestLabels(unaries, objectNum, [0 0 0 0]);
 locationsBot = struct();
 locationsBot.x = nan(length(potentialLocationsBot), objectNum);
-locationsBot.z = nan(length(potentialLocationsBot), objectNum);
+locationsBot.y = nan(length(potentialLocationsBot), objectNum);
 
 locationsBot.x(startFrame,:) = potentialLocationsBot(startFrame).x(labels(startFrame,:));
-locationsBot.z(startFrame,:) = potentialLocationsBot(startFrame).y(labels(startFrame,:));
+locationsBot.y(startFrame,:) = potentialLocationsBot(startFrame).y(labels(startFrame,:));
 
 
 
@@ -53,7 +56,7 @@ for i = (startFrame+1) : length(potentialLocationsBot)
         
         % unary
         unaries(j,:) = getUnaryPotentials(potentialLocationsBot(i).x, potentialLocationsBot(i).y,...
-            frameWid, frameHgt, anchorPts{j}(1), anchorPts{j}(2), maxDistanceX);
+            frameWid, frameHgt, anchorPts{j}(1), anchorPts{j}(2), maxDistanceX, maxDistanceY);
         
         % pairwise
         
@@ -93,10 +96,10 @@ for i = (startFrame+1) : length(potentialLocationsBot)
     for j = 1:objectNum
         if isnan(labels(i,j))
             locationsBot.x(i,j) = nan;
-            locationsBot.z(i,j) = nan;
+            locationsBot.y(i,j) = nan;
         else
             locationsBot.x(i,j) = potentialLocationsBot(i).x(labels(i,j));
-            locationsBot.z(i,j) = potentialLocationsBot(i).y(labels(i,j));
+            locationsBot.y(i,j) = potentialLocationsBot(i).y(labels(i,j));
         end
     end
     
