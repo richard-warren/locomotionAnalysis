@@ -3,7 +3,7 @@
 % performs paw tracking
 
 % settings
-session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171129_000\';
+session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171130_000\';
 classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
 classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
 xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
@@ -28,21 +28,25 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 % perform tracking
 
 %% get potential locations for bottom
+tic
 potentialLocationsBot = getPotentialLocationsBot(vidBot, model, subHgt, subWid, obsPixPositions, startFrame, false);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
+toc
 
 %% get locations for bottom
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
-showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocations, .02, anchorPtsBot, startFrame*5);
+showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocations, .02, anchorPtsBot, 200000);
 
 %% get potential locations for top
+tic
 potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model, subHgt, subWid, startFrame, false);
+toc
 save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 
-%% get locations for top
+% get locations for top
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameTimeStamps, fs);
-showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, startFrame*5);
+showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 300000);
 
 
 
