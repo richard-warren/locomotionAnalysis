@@ -59,7 +59,7 @@ positions = cumsum(deltas) * (mmPerTic / 1000);
 
 
 % report whether events are recorded out of order
-faultyEventCount = sum(diff(aTimes)<=0) + sum(diff(bTimes)<=0);
+faultyEventCount = sum(diff(aTimes)<=0) + sum(diff(bTimes)<=0) + length(intersect(aTimes, bTimes));
 
 if faultyEventCount>0
     

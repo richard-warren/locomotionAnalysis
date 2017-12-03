@@ -21,7 +21,7 @@ end
 
 % generate plots
 % obsAvoidanceLight2('run3', {'obsTestLight2'})
-obsAvoidanceLight2('run5', {'whiskTestOmg'})
+% obsAvoidanceLight2('run5', {'whiskTestOmg'})
 
 
 
