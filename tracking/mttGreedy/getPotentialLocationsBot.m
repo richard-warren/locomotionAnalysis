@@ -4,7 +4,7 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, su
 
 
 % settings
-overlapThresh = .5; % used for non-maxima suppression // determines how tightly packed potential locations can be (higher numbers = more tightly packed) // ranged from 0 to 1
+overlapThresh = .5; % used for non-maxima suppression // higher numbers = more tightly packed
 scoreThresh = .5;   % only pixels above scoreThresh are potential paw locations (.5 seems to work for marker video)
 objectNum = 4;      % number of paws
 xMin = 35;
@@ -51,7 +51,7 @@ for i = startFrame:totalFrames
     frame = frame - bg;
     
     % mask obstacle
-    obsPixMinMax = [obsPixPositions(i) - obsPixLeft, obsPixPositions(i) + obsPixRight - 1];
+    obsPixMinMax = round([obsPixPositions(i) - obsPixLeft, obsPixPositions(i) + obsPixRight - 1]);
     if any(obsPixMinMax>0 & obsPixMinMax<=vid.width)
         obsPixMinMax(obsPixMinMax<1) = 1;
         obsPixMinMax(obsPixMinMax>vid.Width) = vid.Width;

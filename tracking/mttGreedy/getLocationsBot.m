@@ -12,7 +12,7 @@ maxVel = 35 / .004;    % pixels / sec
 
 
 minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
-unaryWeight = 1;
+unaryWeight = 1.5;
 pairwiseWeight = 1;
 scoreWeight = 0;
 
