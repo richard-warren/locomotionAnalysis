@@ -5,7 +5,7 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, su
 
 % settings
 overlapThresh = .5; % used for non-maxima suppression // determines how tightly packed potential locations can be (higher numbers = more tightly packed) // ranged from 0 to 1
-scoreThresh = .5;    % only pixels above scoreThresh are potential paw locations
+scoreThresh = .5;   % only pixels above scoreThresh are potential paw locations (.5 seems to work for marker video)
 objectNum = 4;      % number of paws
 xMin = 35;
 yMax = 220;

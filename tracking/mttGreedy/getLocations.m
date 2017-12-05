@@ -4,8 +4,8 @@
 
 % settings
 session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171130_000\';
-classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
-classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
+classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBotMarker.mat';
+classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTopMarker.mat';
 xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
 showPotentialLocations = true;
 fs = 250;
@@ -29,9 +29,16 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 %% get potential locations for bottom
 tic
-potentialLocationsBot = getPotentialLocationsBot(vidBot, model, subHgt, subWid, obsPixPositions, startFrame, false);
+close all
+potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWid, obsPixPositions, startFrame, false);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 toc
+
+% track hind!!!
+% close all
+% load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\hind.mat', 'model', 'subHgt', 'subWid');
+% potentialLocationsBot = getPotentialLocationsBot(vidBot, model, subHgt, subWid, obsPixPositions, startFrame, true);
+% save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 
 %% get locations for bottom
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
@@ -40,13 +47,13 @@ showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocation
 
 %% get potential locations for top
 tic
-potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model, subHgt, subWid, startFrame, false);
+potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, modelTop, subHgt, subWid, startFrame, true);
 toc
 save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 
-% get locations for top
+%% get locations for top
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameTimeStamps, fs);
-showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 300000);
+showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 2155430);
 
 
 

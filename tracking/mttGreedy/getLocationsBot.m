@@ -6,14 +6,14 @@ function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, 
 % settings
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
-maxDistanceX = .6;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
+maxDistanceX = .75;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
 maxDistanceY = .75;
 maxVel = 35 / .004;    % pixels / sec
 
 
 minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
 unaryWeight = 1;
-pairwiseWeight = 2;
+pairwiseWeight = 1;
 scoreWeight = 0;
 
 
@@ -70,10 +70,10 @@ for i = (startFrame+1) : length(potentialLocationsBot)
         
         % get label at last dection frame
         prevLabel = labels(prevFrame, j);
-        
+        try
         pairwise(j,:) = getPairwisePotentials(potentialLocationsBot(i).x, potentialLocationsBot(i).y,...
             potentialLocationsBot(prevFrame).x(prevLabel), potentialLocationsBot(prevFrame).y(prevLabel),...
-            frameTimeStamps(i)-frameTimeStamps(prevFrame), maxVel);
+            frameTimeStamps(i)-frameTimeStamps(prevFrame), maxVel); catch; keyboard; end
         
     end
     
