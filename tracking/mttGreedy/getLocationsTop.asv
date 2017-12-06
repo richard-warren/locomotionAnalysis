@@ -127,7 +127,7 @@ for i = startFrame:length(locationsBot.x)
         % if paw is in stance (negative velocity) make z location directly above the circle floor
         if locationsBot.xVel(i,j) < stanceVel && (abs(obsPixPositions(i) - locationsBot.x(i,j)) > obsProximity || isnan(obsPixPositions(i)))
             locationsTop.x(i,j) = locationsBot.x(i,j);
-            locationsTop.z(i,j) = wheelCenter(2) - round(sqrt(wheelRadius^2 - (locationsBot.x(i,j)-wheelCenter(1))^2)); % !!! should replace this with pre-computed lookup table
+            locationsTop.z(i,j) = wheelCenter(2) - round(sqrt(wheelRadius^2 - (locationsBot.x(i,j)-wheelCenter(1))^2)); % !!! should replace this with pre-comp
         end
     end
 end

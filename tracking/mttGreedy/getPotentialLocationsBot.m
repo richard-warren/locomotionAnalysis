@@ -41,7 +41,7 @@ end
 
 potentialLocationsBot = struct();
 
-for i = startFrame:totalFrames
+for i = startFrame:totalFrames%(startFrame+10000)
     
     disp(i/totalFrames)
     

@@ -6,14 +6,14 @@ function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, 
 % settings
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
-maxDistanceX = .75;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
+maxDistanceX = .6;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
 maxDistanceY = .75;
 maxVel = 35 / .004;    % pixels / sec
 
 
 minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
-unaryWeight = 1.5;
-pairwiseWeight = 1;
+unaryWeight = 1;
+pairwiseWeight = 2;
 scoreWeight = 0;
 
 
@@ -45,7 +45,7 @@ locationsBot.y(startFrame,:) = potentialLocationsBot(startFrame).y(labels(startF
 
 % iterate through remaining frames
 
-for i = (startFrame+1) : length(potentialLocationsBot)
+for i = (startFrame+1):length(potentialLocationsBot)
     
     % get unary and pairwise potentials
     unaries = nan(objectNum, length(potentialLocationsBot(i).x));

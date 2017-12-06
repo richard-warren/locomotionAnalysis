@@ -3,8 +3,8 @@ function locationsFixed = fixTracking(locations)
 % !!! need to document // this is just post-processing for raw tracking values // interpolates short epochs of missing values and smooths! omg!
 
 % user settings
-samplesToFill = 8;
-smoothSamples = 5;
+samplesToFill = 3;
+smoothSamples = 3;
 interpMethod = 'spline';
 
 % initializations

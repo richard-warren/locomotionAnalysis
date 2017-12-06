@@ -21,6 +21,7 @@ if ~exist([session '\tracking'], 'dir'); mkdir([session '\tracking']); end
 vidBot = VideoReader([session '\runBot.mp4']);
 vidTop = VideoReader([session '\runTop.mp4']);
 startFrame = find(frameTimeStamps>rewardTimes(1), 1, 'first');
+% startFrame = 154200;
 anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 
@@ -34,28 +35,24 @@ potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWi
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 toc
 
-% track hind!!!
-% close all
-% load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\hind.mat', 'model', 'subHgt', 'subWid');
-% potentialLocationsBot = getPotentialLocationsBot(vidBot, model, subHgt, subWid, obsPixPositions, startFrame, true);
-% save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
-
-%% get locations for bottom
+% get locations for bottom
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
-showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocations, .02, anchorPtsBot, 200000);
+% showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocations, .02, anchorPtsBot, startFrame);
 
 %% get potential locations for top
 tic
-potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, modelTop, subHgt, subWid, startFrame, true);
+potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, modelTop, subHgt, subWid, startFrame, false);
 toc
 save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 
-%% get locations for top
-locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameTimeStamps, fs);
-showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 2155430);
+% get locations for top
+locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, obsPixPositions, frameTimeStamps, fs);
+showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 200000);
 
-
+%% make tracking vid
+frameInds = find(~isnan(obsPixPositions));
+makeTrackingVid(session, frameInds)
 
 
 
