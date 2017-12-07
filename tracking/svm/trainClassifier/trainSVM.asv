@@ -42,10 +42,11 @@ end
 % model = svmtrain(labels, features, '-t 0 -s svm_type 2');
 % model.w = model.sv_coef' * model.SVs;
 keyboard
-tic; modelRaw = fitcsvm(features, labels, 'KernelFunction', 'polynomial'); toc
-modelCrossVal = crossval(modelRaw);
-model.classLoss = kfoldLoss(modelCrossVal);
-fprintf('generalization loss: %f', model.classLoss);
+tic; modelRaw = fitcsvm(features, labels, 'KernelFunction', 'gaussian', 'CrossVal', 'On'); toc
+fprintf('generalization loss: %f\n', kfoldLoss(modelRaw));
+
+model.rho = 
+model.w = 
 
 subHgt = size(img,1);
 subWid = size(img,2);
