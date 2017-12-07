@@ -41,12 +41,15 @@ end
 % train classifer
 % model = svmtrain(labels, features, '-t 0 -s svm_type 2');
 % model.w = model.sv_coef' * model.SVs;
-keyboard
-tic; modelRaw = fitcsvm(features, labels, 'KernelFunction', 'gaussian', 'CrossVal', 'On'); toc
-fprintf('generalization loss: %f\n', kfoldLoss(modelRaw));
 
-model.rho = 
-model.w = 
+keyboard
+tic
+rng(1); % for reproducibility initialize random seed
+modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear', 'OptimizeHyperparameters',  {'BoxConstraint'})
+toc
+% modelCrossVal = crossval(modelRaw);
+% model.classLoss = kfoldLoss(modelCrossVal);
+% fprintf('generalization loss: %f', model.classLoss);
 
 subHgt = size(img,1);
 subWid = size(img,2);

@@ -41,11 +41,17 @@ end
 % train classifer
 % model = svmtrain(labels, features, '-t 0 -s svm_type 2');
 % model.w = model.sv_coef' * model.SVs;
+
 keyboard
-tic; modelRaw = fitcsvm(features, labels, 'KernelFunction', 'polynomial'); toc
-modelCrossVal = crossval(modelRaw);
-model.classLoss = kfoldLoss(modelCrossVal);
-fprintf('generalization loss: %f', model.classLoss);
+tic
+rng(1); % for reproducibility initialize random seed
+modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})
+% modelRaw = fitcsvm(features, labels, 'KernelFunction', 'polynomial', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale', 'PolynomialOrder'})
+% modelRaw = fitcsvm(features, labels, 'KernelFunction', 'gaussian', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})
+toc
+% modelCrossVal = crossval(modelRaw);
+% model.classLoss = kfoldLoss(modelCrossVal);
+% fprintf('generalization loss: %f', model.classLoss);
 
 subHgt = size(img,1);
 subWid = size(img,2);
