@@ -15,12 +15,10 @@ egInd = 1;
 stillGoing = true;
 fileDir = vidFile(1:find(vidFile=='\',1,'last'));
 fileName = vidFile(find(vidFile=='\',1,'last')+1 : find(vidFile=='.',1,'last')-1);
-keyboard
 frameInd = [];
 
 
 % prepare figure
-close all;
 fig = figure('units', 'pixels', 'outerposition', [300 300 vid.Width*figSize vid.Height*figSize],...
              'color', [0 0 0], 'menubar', 'none', 'keypressfcn', @keypress);
 imPreview = image(getFeatures(frame));
@@ -104,7 +102,7 @@ function getNewFrame
 end
 
 function saveData
-    save([fileDir fileName 'handLabeledLocations'], 'locations', 'locationFrameInds');
+    save([fileDir 'tracking\' fileName 'HandLabeledLocations'], 'locations', 'locationFrameInds');
 end
 
 end

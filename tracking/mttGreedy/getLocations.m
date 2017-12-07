@@ -3,7 +3,7 @@
 % performs paw tracking
 
 % settings
-session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171130_000\';
+session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\';
 classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBotMarker.mat';
 classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTopMarker.mat';
 xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
@@ -21,7 +21,6 @@ if ~exist([session '\tracking'], 'dir'); mkdir([session '\tracking']); end
 vidBot = VideoReader([session '\runBot.mp4']);
 vidTop = VideoReader([session '\runTop.mp4']);
 startFrame = find(frameTimeStamps>rewardTimes(1), 1, 'first');
-% startFrame = 154200;
 anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 
@@ -33,6 +32,10 @@ vid = VideoReader(vidFile);
 frameInds = 1:vid.NumberOfFrames;
 labelPawLocations('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
 
+%% create labeled set
+makeLabeledSet2('pawBot',...
+                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4')
 
 
 
@@ -43,7 +46,7 @@ potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWi
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 toc
 
-% get locations for bottom
+%% get locations for bottom
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
 % showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocations, .02, anchorPtsBot, startFrame);
