@@ -28,10 +28,9 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 %% hand label paw locations
 
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
-vid = VideoReader(vidFile);
-frameInds = 1:vid.NumberOfFrames;
-labelPawLocations('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
+
+
+
 
 
 
