@@ -37,6 +37,11 @@ makeLabeledSet2('pawBot',...
                 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
                 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4')
 
+viewTrainingSet('pawBot');
+
+%% train svm
+
+trainSVM('pawBot');
 
 
 %% get potential locations for bottom

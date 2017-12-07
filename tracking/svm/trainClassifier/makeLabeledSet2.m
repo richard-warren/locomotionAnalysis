@@ -7,6 +7,7 @@ function makeLabeledSet2(className, labeledDataFile, vidFile)
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
 subFrameSize = [40 40]; % y,x
 negEgsPerEg = 5;
+maxOverlap = .01;
 
 
 % initializations
@@ -19,6 +20,7 @@ centPad = floor(subFrameSize / 2); % y,x
 egsPerFrame = size(locations,3);
 imNumberInd = 1;
 negImNumberInd = 1;
+pixPerSub = prod(subFrameSize);
 
 % load video and sample frame
 vid = VideoReader(vidFile);
@@ -68,8 +70,9 @@ for i = 1:length(locations)
                            randi([centPad(2)+1 size(frame,2)-centPad(2)-1])]; % y,x
                     temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
                     pixelsOverlap = sum(temp(:));
-                    img = frame(pos(1)-centPad(1):pos(1)-centPad(1), pos(2)-centPad(2):pos(2)-centPad(2));
-                    if pixelsOverlap==0 && mean(img(:))>5
+                    img = frame(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
+                    
+                    if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:))
                         acceptableImage = true;
                     end
                 end
@@ -77,11 +80,7 @@ for i = 1:length(locations)
                 % save negative example
                 save([dataDir className '\negative\img' num2str(negImNumberInd) '.mat'], 'img');
                 negImNumberInd = negImNumberInd+1;
-            end
-            
-        % if positive eg does not fit within frame
-        else
-            
+            end    
         end
     end
 end
