@@ -18,12 +18,13 @@ for i = 1:length(categories)
     files = files(3:end);
     
     % initialize category feature matrix
+    load([dataDir 'trainingImages\' className '\' category '\' files{1}], 'img')
     featuresAll{i} = nan(length(files), numel(img));
 
     % get training examples
     for j = 1:length(files)
-        disp(j/length(files))
-
+        
+        % load image
         load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'img')
                 
         % extract and save features
@@ -38,23 +39,24 @@ end
 % concatonate feature matrices
 features = nan(0, numel(img));
 for i = 1:length(categories)
-    
-    features = [features; f]
-    
+    features = [features; featuresAll{i}];
 end
 
 
 % train classifer
-disp('training classifier!')
-tic
-model = svmtrain(labels, features, '-t 0 -s svm_type 2');
-model.w = model.sv_coef' * model.SVs;
-toc/60;
+% fprintf('training classifier...\n');
+% tic
+% model = svmtrain(labels, features, '-t 0 -s svm_type 2');
+% fprintf('training time: %i minutes\n', toc\60);
+% model.w = model.sv_coef' * model.SVs;
 
-% keyboard
+keyboard
 
 % tic
-% rng(1); % for reproducibility initialize random seed
+rng(1); % for reproducibility initialize random seed
+modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear');
+model.w = sum((modelRaw.Alpha .* modelRaw.Y(modelRaw.IsSupportVector)) .* modelRaw.SupportVectors, 1); % 267x1681
+model.rho = modelRaw.bias;
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'polynomial', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale', 'PolynomialOrder'})
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'gaussian', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})

@@ -54,6 +54,10 @@ model.w = model.sv_coef' * model.SVs;
 
 % tic
 % rng(1); % for reproducibility initialize random seed
+% modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear');
+% model.w = sum((modelRaw.Alpha .* modelRaw.Y(modelRaw.IsSupportVector)) .* modelRaw.SupportVectors, 1); % 267x1681
+% model.rho = modelRaw.Bias;
+
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'polynomial', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale', 'PolynomialOrder'})
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'gaussian', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})

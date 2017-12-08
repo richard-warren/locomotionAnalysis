@@ -4,8 +4,8 @@
 
 % settings
 session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\';
-classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBotMarker.mat';
-classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTopMarker.mat';
+classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
+classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
 xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
 showPotentialLocations = true;
 fs = 250;
@@ -20,7 +20,6 @@ load([session 'runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'rewardT
 if ~exist([session '\tracking'], 'dir'); mkdir([session '\tracking']); end
 vidBot = VideoReader([session '\runBot.mp4']);
 vidTop = VideoReader([session '\runTop.mp4']);
-startFrame = find(frameTimeStamps>rewardTimes(1), 1, 'first');
 anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 
@@ -42,21 +41,25 @@ viewTrainingSet('pawBot');
 
 %% train svm
 
-tic; trainSVM('pawBot'); toc/60
+trainSVM('pawBot');
 
 
 %% get potential locations for bottom
-tic
-potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWid, obsPixPositions, startFrame, false);
+
+fprintf('getting potential bottom locations... ')
+close all
+frameInds = find(~isnan(obsPixPositions));
+tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWid, obsPixPositions, frameInds, true);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
-toc
+fprintf('analysis time: %i minutes\n', toc/60)
+
 
 %% get locations for bottom
-locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
+
+locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
-% frameInds = find(~isnan(obsPixPositions));
-frameInds = startFrame:(startFrame+10000);
-showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
+showLocations(vidBot, frameInds, potentialLocationsBot, (locationsBot), showPotentialLocations, .02, anchorPtsBot);
+
 
 %% get potential locations for top
 tic

@@ -46,7 +46,5 @@ for i = 1:length(categories)
     colormap gray
     image(collage, 'CDataMapping', 'scaled');
     set(gca, 'units', 'normalized', 'position', [0 0 1 1], 'CLim', [0 255])
-    
-    
 end
 

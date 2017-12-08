@@ -1,4 +1,4 @@
-function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, frameWid, frameHgt)
+function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, frameWid, frameHgt, frameInds)
 
 % !!! need to document
 
@@ -13,39 +13,37 @@ maxVel = 30 / .004;    % pixels / sec
 
 minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
 unaryWeight = 1;
-pairwiseWeight = 2;
+pairwiseWeight = 1;
 scoreWeight = 0;
 
 
 % initializations
 labels = nan(length(potentialLocationsBot), objectNum);
-startFrame = find(cellfun(@(x) ~isempty(x), {potentialLocationsBot.x}), 1, 'first');
-
 
 
 % set starting frame locations
-unaries = nan(objectNum, length(potentialLocationsBot(startFrame).x));
+unaries = nan(objectNum, length(potentialLocationsBot(frameInds(1)).x));
 
 for i = 1:objectNum
     
-    unaries(i,:) = getUnaryPotentials(potentialLocationsBot(startFrame).x, potentialLocationsBot(startFrame).y,...
+    unaries(i,:) = getUnaryPotentials(potentialLocationsBot(frameInds(1)).x, potentialLocationsBot(frameInds(1)).y,...
                                       frameWid, frameHgt,...
                                       anchorPts{i}(1), anchorPts{i}(2), maxDistanceX, maxDistanceY);
 end
 
-labels(startFrame,:) = getBestLabels(unaries, objectNum, [0 0 0 0]);
+labels(frameInds(1),:) = getBestLabels(unaries, objectNum, [0 0 0 0]);
 locationsBot = struct();
 locationsBot.x = nan(length(potentialLocationsBot), objectNum);
 locationsBot.y = nan(length(potentialLocationsBot), objectNum);
 
-locationsBot.x(startFrame,:) = potentialLocationsBot(startFrame).x(labels(startFrame,:));
-locationsBot.y(startFrame,:) = potentialLocationsBot(startFrame).y(labels(startFrame,:));
+locationsBot.x(frameInds(1),:) = potentialLocationsBot(frameInds(1)).x(labels(frameInds(1),:));
+locationsBot.y(frameInds(1),:) = potentialLocationsBot(frameInds(1)).y(labels(frameInds(1),:));
 
 
 
 % iterate through remaining frames
 
-for i = (startFrame+1):(startFrame+10000)%length(potentialLocationsBot)
+for i = frameInds(2:end)%length(potentialLocationsBot)
     
     % get unary and pairwise potentials
     unaries = nan(objectNum, length(potentialLocationsBot(i).x));
