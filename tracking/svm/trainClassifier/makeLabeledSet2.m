@@ -1,4 +1,4 @@
-function makeLabeledSet2(className, labeledDataFile, vidFile)
+function makeLabeledSet2(className, labeledDataFile, vidFile, obsPixPositions)
 
 % !!! need to document
 
@@ -32,12 +32,17 @@ vid = VideoReader(vidFile);
 bg = getBgImage(vid, 1000, false);
 
 
-% iterate through all example frame
+% iterate through frames of all examples (locations)
 for i = 1:length(locations)
     
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
+    
+    % mask obstacle
+    if ~isnan(obsPixPositions(locationFrameInds(i)))
+        frame = maskObs(frame, obsPixPositions(locationFrameInds(i)));
+    end
         
     % create mask of locations of positive examples
     egsMask = zeros(size(frame,1), size(frame,2));

@@ -1,4 +1,4 @@
-function showLocations(vid, frameInds, potentialLocations, locations, showPotentialLocations, vidDelay, anchorPts, startFrame, lineLocations, lineMask)
+function showLocations(vid, frameInds, potentialLocations, locations, showPotentialLocations, vidDelay, anchorPts, lineLocations)
     
 % settings
 circSize = 200;
@@ -7,9 +7,7 @@ vidSizeScaling = 1.5;
 
 
 % initializations
-if ~exist('startFrame', 'var'); startFrame = 1; end
-% if ~exist('lineMask', 'var'); lineMask = false; end
-currentFrame = startFrame;
+currentFrame = frameInds(1);
 sampleFrame = rgb2gray(read(vid,currentFrame));
 % cmap = winter(length(anchorPts));
 cmap = [1 76 153; 1 153 1; 255 255 51; 255 1 255] / 255;
@@ -81,8 +79,8 @@ end
 function updateFrame(frameStep)
     
     currentFrame = currentFrame + frameStep;
-    if currentFrame > vid.NumberOfFrames; currentFrame = 1;
-    elseif currentFrame < 1; currentFrame = vid.NumberOfFrames; end
+    if currentFrame > length(frameInds); currentFrame = 1;
+    elseif currentFrame < 1; currentFrame = length(frameInds); end
     
     % get frame and sub-frames
     frame = rgb2gray(read(vid,frameInds(currentFrame)));
@@ -97,26 +95,9 @@ function updateFrame(frameStep)
         frame(:, inds) = 255;
     end
     
-       
-    % mask everything outside of valid x ranges
-%     if exist('lineMask', 'var')
-%         mask = zeros(size(frame));
-%         for i =1:length(anchorPts)
-%             if ~isnan(lineLocations.x(currentFrame,i))
-%                 x = round(lineLocations.x(currentFrame,i));
-%                 inds = x-lineMaskWid : x+lineMaskWid;
-%                 inds(inds<1)=1;
-%                 inds(inds>vid.Width) = vid.Width;
-%                 mask(:,inds) = 1;
-%             end
-%         end
-%         frame(~mask) = 0;
-%     end
-    
-    
     
     % add frame number
-    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(currentFrame),...
+    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(frameInds(currentFrame)),...
                                'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure

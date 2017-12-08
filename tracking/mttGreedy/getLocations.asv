@@ -55,7 +55,7 @@ toc
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
 % frameInds = find(~isnan(obsPixPositions));
-frameInds = startFrame:(startFrame+10000);
+frameInds = 
 showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
 
 %% get potential locations for top

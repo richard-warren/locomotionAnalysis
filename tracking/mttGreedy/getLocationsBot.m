@@ -45,7 +45,7 @@ locationsBot.y(startFrame,:) = potentialLocationsBot(startFrame).y(labels(startF
 
 % iterate through remaining frames
 
-for i = (startFrame+1):length(potentialLocationsBot)
+for i = (startFrame+1):(startFrame+10000)%length(potentialLocationsBot)
     
     % get unary and pairwise potentials
     unaries = nan(objectNum, length(potentialLocationsBot(i).x));
@@ -70,10 +70,10 @@ for i = (startFrame+1):length(potentialLocationsBot)
         
         % get label at last dection frame
         prevLabel = labels(prevFrame, j);
-        try
+
         pairwise(j,:) = getPairwisePotentials(potentialLocationsBot(i).x, potentialLocationsBot(i).y,...
             potentialLocationsBot(prevFrame).x(prevLabel), potentialLocationsBot(prevFrame).y(prevLabel),...
-            frameTimeStamps(i)-frameTimeStamps(prevFrame), maxVel); catch; keyboard; end
+            frameTimeStamps(i)-frameTimeStamps(prevFrame), maxVel);
         
     end
     

@@ -24,6 +24,7 @@ for i = 1:length(categories)
     % get training examples
     for j = 1:length(files)
         
+        % load image
         load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'img')
                 
         % extract and save features
@@ -43,7 +44,10 @@ end
 
 
 % train classifer
+fprintf('training classifier...\n');
+tic
 model = svmtrain(labels, features, '-t 0 -s svm_type 2');
+fprintf('training time: %i minutes\n', toc\60);
 model.w = model.sv_coef' * model.SVs;
 
 % keyboard
