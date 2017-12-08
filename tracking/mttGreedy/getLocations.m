@@ -3,10 +3,10 @@
 % performs paw tracking
 
 % settings
-session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\';
-classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBotMarker.mat';
-classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTopMarker.mat';
-xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
+session = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\';
+classifierBot = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawBotMarker.mat';
+classifierTop = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawTopMarker.mat';
+xMapping = 'C:\Users\LindseyBuckingham\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
 showPotentialLocations = true;
 fs = 250;
 
@@ -27,15 +27,15 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 %% hand label paw locations
 
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
+vidFile = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
 vid = VideoReader(vidFile);
 frameInds = 1:vid.NumberOfFrames;
-labelPawLocations('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
+labelPawLocations('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
 
 %% create labeled set
 makeLabeledSet2('pawBot',...
-                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4')
+                'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+                'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4')
 
 viewTrainingSet('pawBot');
 
@@ -47,14 +47,15 @@ tic; trainSVM('pawBot'); toc/60
 %% get potential locations for bottom
 tic
 close all
-potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWid, obsPixPositions, startFrame, false);
+potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWid, obsPixPositions, startFrame, true);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 toc
 
 %% get locations for bottom
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
-% showLocations(vidBot, potentialLocationsBot, locationsBot, showPotentialLocations, .02, anchorPtsBot, startFrame);
+frameInds = find(~isnan(obsPixPositions));
+showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot, startFrame);
 
 %% get potential locations for top
 tic

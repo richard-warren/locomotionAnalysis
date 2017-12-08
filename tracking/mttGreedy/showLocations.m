@@ -1,4 +1,4 @@
-function showLocations(vid, potentialLocations, locations, showPotentialLocations, vidDelay, anchorPts, startFrame, lineLocations, lineMask)
+function showLocations(vid, frameInds, potentialLocations, locations, showPotentialLocations, vidDelay, anchorPts, startFrame, lineLocations, lineMask)
     
 % settings
 circSize = 200;
@@ -11,7 +11,8 @@ if ~exist('startFrame', 'var'); startFrame = 1; end
 % if ~exist('lineMask', 'var'); lineMask = false; end
 currentFrame = startFrame;
 sampleFrame = rgb2gray(read(vid,currentFrame));
-cmap = winter(length(anchorPts));
+% cmap = winter(length(anchorPts));
+cmap = [1 76 153; 1 153 1; 255 255 51; 255 1 255] / 255;
 fields = fieldnames(locations);
 dim2 = fields{2};
 
@@ -84,7 +85,7 @@ function updateFrame(frameStep)
     elseif currentFrame < 1; currentFrame = vid.NumberOfFrames; end
     
     % get frame and sub-frames
-    frame = rgb2gray(read(vid,currentFrame));
+    frame = rgb2gray(read(vid,frameInds(currentFrame)));
     frame = imadjust(uint8(frame), [.05 1], [0 1]);
     frame = getFeatures(frame);
     
@@ -121,10 +122,10 @@ function updateFrame(frameStep)
     % update figure
     set(rawIm, 'CData', frame);
 
-    set(scatterLocations, 'XData', locations.x(currentFrame,:), 'YData', locations.(dim2)((currentFrame),:), 'visible', 'on');
+    set(scatterLocations, 'XData', locations.x(frameInds(currentFrame),:), 'YData', locations.(dim2)((frameInds(currentFrame)),:), 'visible', 'on');
 
     if showPotentialLocations
-        set(scatterPotentialLocations, 'XData', potentialLocations(currentFrame).x, 'YData', potentialLocations(currentFrame).y);
+        set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).y);
     end
     
     % pause to reflcet on the little things...
