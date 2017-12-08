@@ -6,16 +6,21 @@ function makeLabeledSet2(className, labeledDataFile, vidFile)
 % settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
 subFrameSize = [40 40]; % y,x
-negEgsPerEg = 5;
-maxOverlap = .01;
+negEgsPerEg = 10;
+maxOverlap = .25;
 
 
 % initializations
 load(labeledDataFile, 'locations', 'locationFrameInds');
 nanInds = isnan(locationFrameInds);
 locations = locations(:,~nanInds,:);
-locationFrameInds = locationFrameInds(~nanInds); % !!! sorting these chhronologically will likely make getting vid frames faster
+locationFrameInds = locationFrameInds(~nanInds);
 centPad = floor(subFrameSize / 2); % y,x
+
+% sort chronologically (this may make reading video frames faster)
+[locationFrameInds, sortInds] = sort(locationFrameInds);
+locations = locations(:, sortInds, :);
+
 
 egsPerFrame = size(locations,3);
 imNumberInd = 1;
@@ -59,7 +64,7 @@ for i = 1:length(locations)
             fprintf('positive eg #%i\n', imNumberInd);
 
             % create/save negative examples for every positive example
-            for k=1:negEgsPerEg
+            for k = 1:negEgsPerEg
 
                 % find a frame that doesn't overlap with positive examples
                 acceptableImage = false;
@@ -73,6 +78,7 @@ for i = 1:length(locations)
                     img = frame(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
                     
                     if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:))
+%                     if pixelsOverlap==0
                         acceptableImage = true;
                     end
                 end

@@ -6,7 +6,7 @@ categories = {'positive', 'negative'};
 
 % initializations
 labels = [];
-
+featuresAll = cell(1,length(categories));
 
 % iterate through image categories
 for i = 1:length(categories)
@@ -16,34 +16,35 @@ for i = 1:length(categories)
     files = dir([dataDir 'trainingImages\' className '\' category]);
     files = {files.name};
     files = files(3:end);
+    
+    % initialize category feature matrix
+    load([dataDir 'trainingImages\' className '\' category '\' files{1}], 'img')
+    featuresAll{i} = nan(length(files), numel(img));
 
     % get training examples
     for j = 1:length(files)
-
-        load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'img')
-
-        % initialize storage variable on first pass
-        if ~exist('features', 'var')
-            features = nan(0, numel(img));
-        end
         
+        load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'img')
+                
         % extract and save features
         img = getFeatures(img);
-        features(end+1,:) = img(:);
-
+        featuresAll{i}(j,:) = img(:);
     end
     
     % store category labels
     labels = vertcat(labels, ones(length(files),1)*(i));
 end
 
+% concatonate feature matrices
+features = nan(0, numel(img));
+for i = 1:length(categories)
+    features = [features; featuresAll{i}];
+end
+
 
 % train classifer
-disp('training classifier!')
-tic
 model = svmtrain(labels, features, '-t 0 -s svm_type 2');
 model.w = model.sv_coef' * model.SVs;
-toc/60;
 
 % keyboard
 

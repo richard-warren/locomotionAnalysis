@@ -7,8 +7,8 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, su
 overlapThresh = .5; % used for non-maxima suppression // higher numbers = more tightly packed
 scoreThresh = 0;   % only pixels above scoreThresh are potential paw locations (.5 seems to work for marker video)
 objectNum = 4;      % number of paws
-xMin = 35;
-yMax = 220;
+% xMin = 35;
+% yMax = 220;
 obsMaskDepth = 0;
 obsMaskWid = 18;
 
@@ -18,7 +18,7 @@ obsPixRight = ceil(obsMaskWid/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model.w, subHgt, subWid);
-bg = getBgImage(vid, 1000, true);
+bg = getBgImage(vid, 1000, false);
 
 
 % prepare figure
@@ -60,8 +60,8 @@ for i = startFrame:totalFrames%(startFrame+10000)
 
     % filter with svm
     frameFiltered = (conv2(double(frame), kernel, 'same') - model.rho);
-    frameFiltered(:, 1:xMin) = 0;
-    frameFiltered(yMax:end, :) = 0;
+%     frameFiltered(:, 1:xMin) = 0;
+%     frameFiltered(yMax:end, :) = 0;
     
     frameFiltered(frameFiltered < scoreThresh) = 0;
     [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);

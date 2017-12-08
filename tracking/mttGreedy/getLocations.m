@@ -41,7 +41,7 @@ viewTrainingSet('pawBot');
 
 %% train svm
 
-trainSVM('pawBot');
+tic; trainSVM('pawBot'); toc/60
 
 
 %% get potential locations for bottom
