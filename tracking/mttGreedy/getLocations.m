@@ -50,7 +50,7 @@ close all; figure; imagesc(reshape(-model.Beta,51,51))
 
 %% get potential locations for bottom
 
-scoreThresh = .5;
+scoreThresh = 0;
 showTracking = false;
 
 fprintf('getting potential bottom locations... ')
@@ -66,7 +66,7 @@ fprintf('analysis time: %i minutes\n', toc/60)
 
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
-showLocations(vidBot, frameInds, potentialLocationsBot, (locationsBot), showPotentialLocations, .02, anchorPtsBot);
+showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
 
 
 %% get potential locations for top
@@ -75,7 +75,7 @@ potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMa
 toc
 save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 
-% get locations for top
+%% get locations for top
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, obsPixPositions, frameTimeStamps, fs);
 showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 200000);
 
