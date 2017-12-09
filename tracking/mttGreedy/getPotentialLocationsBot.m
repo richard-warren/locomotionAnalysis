@@ -1,11 +1,10 @@
-function potentialLocationsBot = getPotentialLocationsBot(vid, model, subHgt, subWid, obsPixPositions, frameInds, showTracking)
+function potentialLocationsBot = getPotentialLocationsBot(vid, model, scoreThresh, subHgt, subWid, obsPixPositions, frameInds, showTracking)
 
 % !!! need to document
 
 
 % settings
 overlapThresh = .5; % used for non-maxima suppression // higher numbers = more tightly packed
-scoreThresh = 0;   % only pixels above scoreThresh are potential paw locations (.5 seems to work for marker video)
 objectNum = 4;      % number of paws
 % xMin = 35;
 % yMax = 220;
@@ -13,14 +12,14 @@ objectNum = 4;      % number of paws
 % initializations
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
-kernel = reshape(model.w, subHgt, subWid);
+kernel = reshape(model.Beta, subHgt, subWid);
 bg = getBgImage(vid, 1000, false);
 
 
 % prepare figure
 if showTracking
     
-    figure; imagesc(kernel);
+    figure; imagesc(-kernel);
 
     figure('position', [680 144 698 834], 'menubar', 'none', 'color', 'black'); colormap gray
 
@@ -48,18 +47,17 @@ for i = frameInds
     
     % mask obstacle
     frame = maskObs(frame, obsPixPositions(i));
-    keyboard
 
     % filter with svm
-    frameFiltered = conv2(double(frame), kernel, 'same') - model.rho;
+    frameFiltered = -(conv2(double(frame)/model.KernelParameters.Scale, kernel, 'same') + model.Bias);
 %     frameFiltered(:, 1:xMin) = 0;
 %     frameFiltered(yMax:end, :) = 0;
     
     frameFiltered(frameFiltered < scoreThresh) = scoreThresh;
     frameFiltered = frameFiltered - scoreThresh;
 %     keyboard
-%     [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
-    x = nan; y = nan; scores = nan;
+    [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
+%     x = nan; y = nan; scores = nan;
     
     % ensure only one location per blob
     if length(x)>objectNum

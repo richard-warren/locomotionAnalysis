@@ -32,24 +32,32 @@ frameInds = find(obsPixPositions>1 & obsPixPositions<vid.Width);
 labelPawLocations('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
 
 %% create labeled set
-makeLabeledSet2('pawBot',...
-                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
-                obsPixPositions)
+makeLabeledSet('pawBot',...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+               obsPixPositions)
 
 viewTrainingSet('pawBot');
 
 %% train svm
 
-trainSVM('pawBot');
-
+% train bot svm and reload
+egPortion = .1; % only use this portion of the positive and negative examples
+trainSVM('pawBot', egPortion);
+load(classifierBot, 'model', 'subHgt', 'subWid');
+modelBot = model;
+close all; figure; imagesc(reshape(-model.Beta,51,51))
 
 %% get potential locations for bottom
+
+scoreThresh = .5;
+showTracking = false;
 
 fprintf('getting potential bottom locations... ')
 close all
 frameInds = find(~isnan(obsPixPositions));
-tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, subHgt, subWid, obsPixPositions, frameInds, true);
+tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, scoreThresh, subHgt, subWid,...
+                                                      obsPixPositions, frameInds, showTracking);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 fprintf('analysis time: %i minutes\n', toc/60)
 

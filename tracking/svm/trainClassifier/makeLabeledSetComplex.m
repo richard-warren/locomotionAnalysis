@@ -1,4 +1,4 @@
-function makeLabeledSet2(className, labeledDataFile, vidFile, obsPixPositions)
+function makeLabeledSetComplex(className, labeledDataFile, vidFile, obsPixPositions)
 
 % !!! need to document
 
@@ -6,7 +6,7 @@ function makeLabeledSet2(className, labeledDataFile, vidFile, obsPixPositions)
 % settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
 subFrameSize = [40 40]; % y,x
-negEgsPerEg = 10;
+negEgsPerEg = 5;
 maxOverlap = .25;
 
 

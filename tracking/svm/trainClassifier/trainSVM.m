@@ -1,4 +1,4 @@
-function trainSVM(className)
+function trainSVM(className, egPortion)
     
 % user settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
@@ -17,12 +17,16 @@ for i = 1:length(categories)
     files = {files.name};
     files = files(3:end);
     
+    % randomize files list
+    files = files(randperm(length(files)));
+    
     % initialize category feature matrix
     load([dataDir 'trainingImages\' className '\' category '\' files{1}], 'img')
-    featuresAll{i} = nan(length(files), numel(img));
+    egNum = round(length(files) * egPortion);
+    featuresAll{i} = nan(egNum, numel(img));
 
     % get training examples
-    for j = 1:length(files)
+    for j = 1:egNum
         
         % load image
         load([dataDir 'trainingImages\' className '\' category '\' files{j}], 'img')
@@ -33,7 +37,7 @@ for i = 1:length(categories)
     end
     
     % store category labels
-    labels = vertcat(labels, ones(length(files),1)*(i));
+    labels = vertcat(labels, ones(egNum,1)*(i));
 end
 
 % concatonate feature matrices
@@ -44,27 +48,27 @@ end
 
 
 % train classifer
-fprintf('training classifier...\n');
-tic
-model = svmtrain(labels, features, '-t 0 -s svm_type 2');
-fprintf('training time: %i minutes\n', toc\60);
-model.w = model.sv_coef' * model.SVs;
+% fprintf('training classifier...\n');
+% tic
+% model = svmtrain(labels, features, '-t 0 -s svm_type 2');
+% fprintf('training time: %i minutes\n', toc\60);
+% model.w = model.sv_coef' * model.SVs;
 
 % keyboard
 
 % tic
 % rng(1); % for reproducibility initialize random seed
-% modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear');
+model = fitcsvm(features, labels, 'KernelScale', 559.69);
+modelCrossVal = crossval(model);
+fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
 % model.w = sum((modelRaw.Alpha .* modelRaw.Y(modelRaw.IsSupportVector)) .* modelRaw.SupportVectors, 1); % 267x1681
-% model.rho = modelRaw.Bias;
 
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'linear', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'polynomial', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale', 'PolynomialOrder'})
 % modelRaw = fitcsvm(features, labels, 'KernelFunction', 'gaussian', 'OptimizeHyperparameters',  {'BoxConstraint', 'KernelScale'})
 % toc
-% modelCrossVal = crossval(modelRaw);
-% model.classLoss = kfoldLoss(modelCrossVal);
-% fprintf('generalization loss: %f', model.classLoss);
+
+
 
 
 subHgt = size(img,1);
