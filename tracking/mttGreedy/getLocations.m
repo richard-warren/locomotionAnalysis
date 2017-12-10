@@ -7,14 +7,16 @@ session = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\session
 classifierBot = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
 classifierTop = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
 xMapping = 'C:\Users\LindseyBuckingham\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
+trainingData = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingData\pawBot\labeledFeatures.mat';
 showPotentialLocations = true;
 fs = 250;
 
 % initializations
+load(trainingData, 'features', 'labels', 'subFrameSize')
 load(xMapping, 'xLinearMapping');
-load(classifierTop, 'model', 'subHgt', 'subWid');
+load(classifierTop, 'model');
 modelTop = model;
-load(classifierBot, 'model', 'subHgt', 'subWid');
+load(classifierBot, 'model');
 modelBot = model;
 load([session 'runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'rewardTimes')
 if ~exist([session '\tracking'], 'dir'); mkdir([session '\tracking']); end
@@ -63,21 +65,20 @@ viewTrainingSet('leftHindBot');
 %% train svm
 
 % train bot svm and reload
-egPortion = .1; % only use this portion of the positive and negative examples
-trainSVM('pawBot', egPortion);
-load(classifierBot, 'model', 'subHgt', 'subWid');
+trainSVM('pawBot');
+load(classifierBot, 'model', 'subFrameSize');
 modelBot = model;
-close all; figure; imagesc(reshape(-model.Beta,51,51))
+close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)))
 
 %% get potential locations for bottom
 
 scoreThresh = 0;
-showTracking = false;
+showTracking = true;
 
-fprintf('getting potential bottom locations... ')
+fprintf('getting potential bottom locations...\n')
 close all
 frameInds = find(~isnan(obsPixPositions));
-tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, scoreThresh, subHgt, subWid,...
+tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, features, labels, scoreThresh, subFrameSize,...
                                                       obsPixPositions, frameInds, showTracking);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 fprintf('analysis time: %i minutes\n', toc/60)

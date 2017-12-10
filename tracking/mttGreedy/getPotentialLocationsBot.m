@@ -1,4 +1,4 @@
-function potentialLocationsBot = getPotentialLocationsBot(vid, model, scoreThresh, subHgt, subWid, obsPixPositions, frameInds, showTracking)
+function potentialLocationsBot = getPotentialLocationsBot(vid, model, features, labels, scoreThresh, subFrameSize, obsPixPositions, frameInds, showTracking)
 
 % !!! need to document
 
@@ -6,13 +6,11 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model, scoreThres
 % settings
 overlapThresh = .5; % used for non-maxima suppression // higher numbers = more tightly packed
 objectNum = 4;      % number of paws
-% xMin = 35;
-% yMax = 220;
 
 % initializations
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
-kernel = reshape(model.Beta, subHgt, subWid);
+kernel = reshape(model.Beta, subFrameSize(1), subFrameSize(2));
 bg = getBgImage(vid, 1000, false);
 
 
@@ -50,14 +48,10 @@ for i = frameInds
 
     % filter with svm
     frameFiltered = -(conv2(double(frame)/model.KernelParameters.Scale, kernel, 'same') + model.Bias);
-%     frameFiltered(:, 1:xMin) = 0;
-%     frameFiltered(yMax:end, :) = 0;
     
     frameFiltered(frameFiltered < scoreThresh) = scoreThresh;
     frameFiltered = frameFiltered - scoreThresh;
-%     keyboard
-    [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
-%     x = nan; y = nan; scores = nan;
+    [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize, overlapThresh);
     
     % ensure only one location per blob
     if length(x)>objectNum
@@ -86,6 +80,8 @@ for i = frameInds
             scores = scores(validInds);
         end
     end
+    
+    % knn search!!!
     
     % store data
     potentialLocationsBot(i).x = x;
