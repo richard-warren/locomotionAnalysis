@@ -1,4 +1,4 @@
-function makeLabeledSet(className, labeledDataFile, vidFile, obsPixPositions, posEgs, negEgsPerEg)
+function makeLabeledSet(className, labeledDataFile, vidFile, obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws)
 
 % !!! need to document
 
@@ -7,6 +7,7 @@ function makeLabeledSet(className, labeledDataFile, vidFile, obsPixPositions, po
 dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingData\';
 subFrameSize = [50 50]; % y,x
 maxOverlap = .25;
+
 
 
 % initializations
@@ -69,11 +70,22 @@ for i = randperm(length(locations))
             if ~any(imgInds{1}<1 | imgInds{1}>vid.Height) && ~any(imgInds{2}<1 | imgInds{2}>vid.Width)
 
                 img = frame(imgInds{1}, imgInds{2});
+                
+                if includeLocations
+                    img(end, end-1:end) = xy;
+                end
+                
                 features(:, imNumberInd) = img(:);
-                labels(imNumberInd) = 1;
+                if ismember(j, paws)
+                    labels(imNumberInd) = 1;
+                    posEgsCount = posEgsCount+1;
+                    fprintf('positive eg #%i\n', posEgsCount);
+                else
+                    labels(imNumberInd) = 2;
+                end
                 imNumberInd = imNumberInd+1;
-                posEgsCount = posEgsCount+1;
-                fprintf('positive eg #%i\n', posEgsCount);
+                
+                
 
                 % create/save negative examples for every positive example
                 for k = 1:negEgsPerEg
@@ -95,6 +107,11 @@ for i = randperm(length(locations))
                     end
 
                     % store negative example
+                    
+                    if includeLocations
+                        img(end, end-1:end) = fliplr(pos);
+                    end
+                    
                     features(:, imNumberInd) = img(:);
                     labels(imNumberInd) = 2;
                     imNumberInd = imNumberInd+1;

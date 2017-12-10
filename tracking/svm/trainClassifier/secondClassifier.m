@@ -1,4 +1,4 @@
-function trainSVM(className)
+function secondClassifier(className)
 
 % !!! need to document
 
@@ -12,9 +12,9 @@ load([dataDir '\trainingData\' className '\labeledFeatures.mat'], 'features', 'l
 
 
 % train svm
-model = fitcsvm(features', labels, 'KernelScale', 559.69);
-modelCrossVal = crossval(model);
-fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
+model = fitcsvm(features', labels, 'KernelFunction', 'Gaussian', 'OptimizeHyperparameters', {'KernelScale', 'BoxConstraint'});
+% modelCrossVal = crossval(model);
+% fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
 
 
 % save model

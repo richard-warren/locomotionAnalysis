@@ -37,13 +37,29 @@ labelPawLocations('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData
 
 posEgs = 1000;
 negEgsPerEg = 5;
+includeLocation = false;
+paws = 1:4;
 
 makeLabeledSet('pawBot',...
                'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
                'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
-               obsPixPositions, posEgs, negEgsPerEg)
+               obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
 
 viewTrainingSet('pawBot');
+
+%% create labeled set WITH subframe location as features
+
+posEgs = 1000;
+negEgsPerEg = 5;
+includeLocation = true;
+paws = 1:4;
+
+makeLabeledSet('pawBot2',...
+               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+               obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
+
+viewTrainingSet('pawBot2');
 
 %% train svm
 
@@ -62,12 +78,12 @@ fprintf('getting potential bottom locations...\n')
 close all
 frameInds = find(~isnan(obsPixPositions));
 tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, features, labels, scoreThresh, subFrameSize,...
-                                                      obsPixPositions, frameInds(1000:end), showTracking);
+                                                      obsPixPositions, frameInds, showTracking);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 fprintf('analysis time: %i minutes\n', toc/60)
 
 
-%% get locations for bottom
+% get locations for bottom
 
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
