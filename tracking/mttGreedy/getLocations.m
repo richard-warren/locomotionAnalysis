@@ -55,8 +55,8 @@ close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)
 
 %% get potential locations for bottom
 
-scoreThresh = 0;
-showTracking = true;
+scoreThresh = 1;
+showTracking = false;
 
 fprintf('getting potential bottom locations...\n')
 close all

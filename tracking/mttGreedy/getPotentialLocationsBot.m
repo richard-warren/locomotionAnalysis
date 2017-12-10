@@ -83,24 +83,24 @@ for i = frameInds
         end
     end
     
-    % knn search!!!
-    
-    frameFeatures = nan(size(features,1), length(x));
-    
-    for j = 1:length(x)
-        
-        xy = [x(j) y(j)];
-        imgInds = {xy(2)-centPad(1):xy(2)+centPad(1)-1, xy(1)-centPad(2):xy(1)+centPad(2)-1};
-        
-        if ~any(imgInds{1}<1 | imgInds{1}>vid.Height) && ~any(imgInds{2}<1 | imgInds{2}>vid.Width) % !!! eventually pad images to deal with edges
-            img = frame(imgInds{1}, imgInds{2});
-            frameFeatures(:,j) = img(:);
-        end
-    end
-    
-    ids = knnsearch(features', frameFeatures');
-    isPaw = labels(ids);
-    
+%     % knn search
+%     
+%     frameFeatures = nan(size(features,1), length(x));
+%     
+%     for j = 1:length(x)
+%         
+%         xy = [x(j) y(j)];
+%         imgInds = {xy(2)-centPad(1):xy(2)+centPad(1)-1, xy(1)-centPad(2):xy(1)+centPad(2)-1};
+%         
+%         if ~any(imgInds{1}<1 | imgInds{1}>vid.Height) && ~any(imgInds{2}<1 | imgInds{2}>vid.Width) % !!! eventually pad images to deal with edges
+%             img = frame(imgInds{1}, imgInds{2});
+%             frameFeatures(:,j) = img(:);
+%         end
+%     end
+%     
+%     ids = knnsearch(features', frameFeatures', 'K', 1);
+%     isPaw = labels(ids);
+%     
     % store data
     potentialLocationsBot(i).x = x;
     potentialLocationsBot(i).y = y;
@@ -113,7 +113,7 @@ for i = frameInds
         set(rawIm, 'CData', frame);
         set(predictIm, 'CData', frameFiltered)
         set(scatterPts, 'XData', x, 'YData', y);
-        set(scatterKnn, 'XData', x(isPaw==1), 'YData', y(isPaw==1));
+%         set(scatterKnn, 'XData', x(isPaw==1), 'YData', y(isPaw==1));
         
         % pause to reflcet on the little things...
         pause(.001);
