@@ -1,7 +1,7 @@
 function trainSVM(className, egPortion)
     
 % user settings
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
+dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\';
 categories = {'positive', 'negative'};
 
 % initializations
@@ -54,7 +54,7 @@ end
 % fprintf('training time: %i minutes\n', toc\60);
 % model.w = model.sv_coef' * model.SVs;
 
-% keyboard
+keyboard
 
 % tic
 % rng(1); % for reproducibility initialize random seed

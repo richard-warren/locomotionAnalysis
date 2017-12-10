@@ -3,10 +3,10 @@
 % performs paw tracking
 
 % settings
-session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\';
-classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
-classifierTop = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
-xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
+session = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\';
+classifierBot = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
+classifierTop = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
+xMapping = 'C:\Users\LindseyBuckingham\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
 showPotentialLocations = true;
 fs = 250;
 
@@ -26,18 +26,39 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 %% hand label paw locations
 
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
+vidFile = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
 vid = VideoReader(vidFile);
 frameInds = find(obsPixPositions>1 & obsPixPositions<vid.Width);
-labelPawLocations('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
+labelPawLocations('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
 
 %% create labeled set
 makeLabeledSet('pawBot',...
-               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
                obsPixPositions)
 
 viewTrainingSet('pawBot');
+
+%% create complex labeled set (paw vs not paw)
+
+makeLabeledSetComplex('pawBotComplex',...
+                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+                      obsPixPositions)
+
+viewTrainingSet('pawBotComplex');
+
+%% create complex labeled set (paw vs other)
+
+paws = 1; % which paw to classify against other paws and negative examples
+
+makeLabeledSetComplex('leftHindBot',...
+                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+                      obsPixPositions, paws)
+
+viewTrainingSet('leftHindBot');
+
 
 %% train svm
 

@@ -1,10 +1,10 @@
-function makeLabeledSetComplex(className, labeledDataFile, vidFile, obsPixPositions)
+function makeLabeledSetComplex(className, labeledDataFile, vidFile, obsPixPositions, paws)
 
 % !!! need to document
 
 
 % settings
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingImages\';
+dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingImages\';
 subFrameSize = [40 40]; % y,x
 negEgsPerEg = 5;
 maxOverlap = .25;
@@ -64,9 +64,16 @@ for i = 1:length(locations)
         
         if ~any(imgInds{1}<1 | imgInds{1}>vid.Height) && ~any(imgInds{2}<1 | imgInds{2}>vid.Width)
             img = frame(imgInds{1}, imgInds{2});
-            save([dataDir className '\positive\img' num2str(imNumberInd) '.mat'], 'img');
-            imNumberInd = imNumberInd+1;
-            fprintf('positive eg #%i\n', imNumberInd);
+            img(end, end-1:end) = xy; % replace last two pixels with image center coordinate
+            if ismember(j, paws)
+                save([dataDir className '\positive\img' num2str(imNumberInd) '.mat'], 'img');
+                imNumberInd = imNumberInd+1;
+                fprintf('positive eg #%i\n', imNumberInd);
+            else
+                save([dataDir className '\negative\img' num2str(negImNumberInd) '.mat'], 'img');
+                negImNumberInd = negImNumberInd+1;
+            end
+                        
 
             % create/save negative examples for every positive example
             for k = 1:negEgsPerEg
@@ -81,6 +88,7 @@ for i = 1:length(locations)
                     temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
                     pixelsOverlap = sum(temp(:));
                     img = frame(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
+                    img(end, end-1:end) = fliplr(pos); % replace last two pixels with image center coordinate
                     
                     if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:))
 %                     if pixelsOverlap==0
