@@ -1,5 +1,7 @@
 function trainSVM(className, egPortion)
-    
+
+% !!! need to document
+
 % user settings
 dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\';
 categories = {'positive', 'negative'};

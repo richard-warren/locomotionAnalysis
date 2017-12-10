@@ -2,6 +2,8 @@ function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, 
 
 % !!! need to document
 
+% temp
+load();
 
 % settings
 objectNum = 4;
