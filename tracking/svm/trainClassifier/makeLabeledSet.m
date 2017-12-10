@@ -21,10 +21,8 @@ centPad = floor(subFrameSize / 2); % y,x
 [locationFrameInds, sortInds] = sort(locationFrameInds);
 locations = locations(:, sortInds, :);
 
-
 egsPerFrame = size(locations,3);
 imNumberInd = 1;
-negImNumberInd = 1;
 pixPerSub = prod(subFrameSize);
 
 % load video and sample frame
@@ -33,6 +31,10 @@ bg = getBgImage(vid, 1000, false);
 
 
 % iterate through frames of all examples (locations)
+
+features = nan(pixPerSub, size(locations,2));
+labels = nan(1, size(locations,2));
+
 for i = 1:length(locations)
     
     % get frame
@@ -47,7 +49,7 @@ for i = 1:length(locations)
     % create mask of locations of positive examples
     egsMask = zeros(size(frame,1), size(frame,2));
 
-    for j=1:egsPerFrame
+    for j = 1:egsPerFrame
         xy = round(locations(1:2, i, j));
         imgInds = {xy(2)-centPad(1):xy(2)+centPad(1), xy(1)-centPad(2):xy(1)+centPad(2)}; % would be smarter to have binary vector keeping track of whether imgInds are valid (if example is too close to edge), so I don't need to compute imgInds multiple times, etc
         imgInds{1}(imgInds{1}<1)=1; imgInds{1}(imgInds{1}>vid.Height)=vid.Height;
@@ -60,13 +62,15 @@ for i = 1:length(locations)
     for j = 1:egsPerFrame
         
         xy = round(locations(1:2, i, j));
-        imgInds = {xy(2)-centPad(1):xy(2)+centPad(1), xy(1)-centPad(2):xy(1)+centPad(2)};
+        imgInds = {xy(2)-centPad(1):xy(2)+centPad(1)-1, xy(1)-centPad(2):xy(1)+centPad(2)-1};
         
         if ~any(imgInds{1}<1 | imgInds{1}>vid.Height) && ~any(imgInds{2}<1 | imgInds{2}>vid.Width)
+            
             img = frame(imgInds{1}, imgInds{2});
-            save([dataDir className '\positive\img' num2str(imNumberInd) '.mat'], 'img');
+            features(:, imNumberInd) = img(:);
+            labels(imNumberInd) = 1;
             imNumberInd = imNumberInd+1;
-            fprintf('positive eg #%i\n', imNumberInd);
+            fprintf('eg #%i\n', imNumberInd);
 
             % create/save negative examples for every positive example
             for k = 1:negEgsPerEg
@@ -78,23 +82,30 @@ for i = 1:length(locations)
 
                     pos = [randi([centPad(1)+1 size(frame,1)-centPad(1)-1])...
                            randi([centPad(2)+1 size(frame,2)-centPad(2)-1])]; % y,x
-                    temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
+                    temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
                     pixelsOverlap = sum(temp(:));
-                    img = frame(pos(1)-centPad(1):pos(1)+centPad(1), pos(2)-centPad(2):pos(2)+centPad(2));
+                    img = frame(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
                     
                     if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:))
                         acceptableImage = true;
                     end
                 end
 
-                % save negative example
-                save([dataDir className '\negative\img' num2str(negImNumberInd) '.mat'], 'img');
-                negImNumberInd = negImNumberInd+1;
+                % store negative example
+                features(:, imNumberInd) = img(:);
+                labels(imNumberInd) = 2;
+                imNumberInd = imNumberInd+1;
             end    
         end
     end
 end
 
+% remove nan values
+validInds = ~isnan(labels);
+features = features(:,validInds,:);
+labels = labels(validInds);
+
+save([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
 
 
 

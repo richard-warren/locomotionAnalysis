@@ -5,39 +5,35 @@ dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\tra
 figSize = [1000, 1800]; % h,w
 
 % initializations
-categories = {'positive', 'negative'};
 colormap gray
+load([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
 
-for i = 1:length(categories)
+for i = 1:2
     
-    % get file names
-    fullDir = [dataDir className '\' categories{i}];
-    files = dir(fullDir);
-    files = {files.name};
-    files = files(3:end);
-    
-    % get img size
-    load([fullDir '\' files{2}], 'img');
-    imgSize = size(img);
-    
-
-    rows = floor(figSize(1) / imgSize(1));
-    cols = floor(figSize(2) / imgSize(2));
-    collage = nan(rows*imgSize(1), cols*imgSize(2));
+    % determine figure dimensions
+    rows = floor(figSize(1) / subFrameSize(1));
+    cols = floor(figSize(2) / subFrameSize(2));
+    collage = nan(rows*subFrameSize(1), cols*subFrameSize(2));
 
     figure('units', 'pixels', 'position', [50 50 size(collage,2) size(collage,1)], 'color', 'black', 'menubar', 'none')
+    
+    inds = find(labels==i);
+    inds = inds(randperm(length(inds)));
+    currentInd = 1;
     
     for j = 1:rows
         for k = 1:cols
             
             % get random image
-            fileInd = randi([1 length(files)]);
-            load([fullDir '\' files{fileInd}], 'img');
+            img = features(:, inds(currentInd));
+            img = reshape(img, subFrameSize(1), subFrameSize(2));
             
             % incorporate image into collage
-            rowInd =(j-1)*imgSize(1)+1;
-            colInd =(k-1)*imgSize(2)+1; 
-            collage(rowInd:rowInd+imgSize(1)-1, colInd:colInd+imgSize(2)-1) = img;
+            rowInd =(j-1) * subFrameSize(1) + 1;
+            colInd =(k-1) * subFrameSize(2) + 1; 
+            collage(rowInd:rowInd+subFrameSize(1)-1, colInd:colInd+subFrameSize(2)-1) = img;
+            
+            currentInd = currentInd + 1;
             
         end
     end
