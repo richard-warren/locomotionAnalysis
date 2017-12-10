@@ -61,19 +61,19 @@ for i = frameInds
         % get blob labels for each point
         labelFrame = bwlabel(frameFiltered>0);
         labelInds = sub2ind(size(labelFrame), y, x);
-        blobLabels = labelFrame(labelInds);
+        labels = labelFrame(labelInds);
 
         % find blobs containing multiple points
-        [counts, bins] = hist(blobLabels, 1:max(blobLabels(:)));
+        [counts, bins] = hist(labels, 1:max(labels(:)));
         blobsWithMultiples = bins(counts>1);
 
         if ~isempty(blobsWithMultiples)
 
             % keep only the most anterior point within each blob
-            validInds = ~ismember(blobLabels, blobsWithMultiples);
+            validInds = ~ismember(labels, blobsWithMultiples);
 
             for j = 1:length(blobsWithMultiples)
-                [~, anteriorInd] = max( x .* (blobLabels==blobsWithMultiples(j)));    
+                [~, anteriorInd] = max( x .* (labels==blobsWithMultiples(j)));    
                 validInds(anteriorInd) = 1;
             end
 
@@ -84,6 +84,7 @@ for i = frameInds
     end
     
     % knn search!!!
+    keyboard
     
     frameFeatures = nan(size(features,1), length(x));
     
@@ -113,7 +114,7 @@ for i = frameInds
         set(rawIm, 'CData', frame);
         set(predictIm, 'CData', frameFiltered)
         set(scatterPts, 'XData', x, 'YData', y);
-        set(scatterKnn, 'XData', x(isPaw==1), 'YData', y(isPaw==1));
+        set(scatterKnn, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
         pause(.001);

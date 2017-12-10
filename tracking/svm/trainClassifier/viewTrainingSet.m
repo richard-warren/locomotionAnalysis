@@ -1,7 +1,7 @@
 function viewTrainingSet(className)
 
 % user settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingImages\';
+dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingData\';
 figSize = [1000, 1800]; % h,w
 
 % initializations
@@ -23,18 +23,18 @@ for i = 1:2
     
     for j = 1:rows
         for k = 1:cols
-            
-            % get random image
-            img = features(:, inds(currentInd));
-            img = reshape(img, subFrameSize(1), subFrameSize(2));
-            
-            % incorporate image into collage
-            rowInd =(j-1) * subFrameSize(1) + 1;
-            colInd =(k-1) * subFrameSize(2) + 1; 
-            collage(rowInd:rowInd+subFrameSize(1)-1, colInd:colInd+subFrameSize(2)-1) = img;
-            
-            currentInd = currentInd + 1;
-            
+            if currentInd<=length(inds)
+                % get random image
+                img = features(:, inds(currentInd));
+                img = reshape(img, subFrameSize(1), subFrameSize(2));
+
+                % incorporate image into collage
+                rowInd =(j-1) * subFrameSize(1) + 1;
+                colInd =(k-1) * subFrameSize(2) + 1; 
+                collage(rowInd:rowInd+subFrameSize(1)-1, colInd:colInd+subFrameSize(2)-1) = img;
+
+                currentInd = currentInd + 1;
+            end
         end
     end
     

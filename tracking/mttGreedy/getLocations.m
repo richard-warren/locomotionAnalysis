@@ -34,33 +34,16 @@ frameInds = find(obsPixPositions>1 & obsPixPositions<vid.Width);
 labelPawLocations('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
 
 %% create labeled set
+
+posEgs = 1000;
+negEgsPerEg = 5;
+
 makeLabeledSet('pawBot',...
                'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
                'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
-               obsPixPositions)
+               obsPixPositions, posEgs, negEgsPerEg)
 
 viewTrainingSet('pawBot');
-
-%% create complex labeled set (paw vs not paw)
-
-makeLabeledSetComplex('pawBotComplex',...
-                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
-                      obsPixPositions)
-
-viewTrainingSet('pawBotComplex');
-
-%% create complex labeled set (paw vs other)
-
-paws = 1; % which paw to classify against other paws and negative examples
-
-makeLabeledSetComplex('leftHindBot',...
-                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-                      'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
-                      obsPixPositions, paws)
-
-viewTrainingSet('leftHindBot');
-
 
 %% train svm
 
@@ -79,7 +62,7 @@ fprintf('getting potential bottom locations...\n')
 close all
 frameInds = find(~isnan(obsPixPositions));
 tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, modelBot, features, labels, scoreThresh, subFrameSize,...
-                                                      obsPixPositions, frameInds, showTracking);
+                                                      obsPixPositions, frameInds(1000:end), showTracking);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 fprintf('analysis time: %i minutes\n', toc/60)
 

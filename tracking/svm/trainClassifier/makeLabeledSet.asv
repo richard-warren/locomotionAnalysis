@@ -61,7 +61,7 @@ for i = randperm(length(locations))
     % save positive and create negative examples
     for j = 1:egsPerFrame
         
-        if posEgsCount < posEgs
+        if posEgCount < posEgs
             
             xy = round(locations(1:2, i, j));
             imgInds = {xy(2)-centPad(1):xy(2)+centPad(1)-1, xy(1)-centPad(2):xy(1)+centPad(2)-1};
@@ -73,7 +73,7 @@ for i = randperm(length(locations))
                 labels(imNumberInd) = 1;
                 imNumberInd = imNumberInd+1;
                 posEgsCount = posEgsCount+1;
-                fprintf('positive eg #%i\n', posEgsCount);
+                fprintf('eg #%i\n', imNumberInd);
 
                 % create/save negative examples for every positive example
                 for k = 1:negEgsPerEg
@@ -103,9 +103,7 @@ for i = randperm(length(locations))
         end
     end
     
-    if posEgsCount==posEgs
-        break;
-    end
+    if pos
 end
 
 % remove nan values
@@ -113,6 +111,16 @@ validInds = ~isnan(labels);
 features = features(:,validInds,:);
 labels = labels(validInds);
 
+% discard extra positive examples
+posInds = find(labels==1);
+posInds = posInds(randperm(length(posInds)));
+posInds = posInds(1:posNegEgs(1));
+negInds = find(labels==2);
+negInds = negInds(randperm(length(negInds)));
+negInds = negInds(1:posNegEgs(2));
+
+features = features(:, [posInds negInds], :);
+labels = labels([posInds negInds]);
 
 save([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
 
