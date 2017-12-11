@@ -1,7 +1,7 @@
 function viewTrainingSet(className)
 
 % user settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingData\';
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
 figSize = [1000, 1800]; % h,w
 
 % initializations

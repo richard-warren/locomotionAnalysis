@@ -4,7 +4,7 @@ function makeLabeledSet(className, labeledDataFile, vidFile, obsPixPositions, po
 
 
 % settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingData\';
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
 subFrameSize = [50 50]; % y,x
 maxOverlap = .25;
 

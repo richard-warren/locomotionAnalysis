@@ -3,19 +3,16 @@
 % performs paw tracking
 
 % settings
-session = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\';
-classifierBot = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
-classifierTop = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\classifiers\pawTop.mat';
-xMapping = 'C:\Users\LindseyBuckingham\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
-trainingData = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\svm\trainingData\pawBot\labeledFeatures.mat';
+session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\';
+classifierBot = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot.mat';
+xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
+trainingData = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\pawBot\labeledFeatures.mat';
 showPotentialLocations = true;
 fs = 250;
 
 % initializations
 load(trainingData, 'features', 'labels', 'subFrameSize')
 load(xMapping, 'xLinearMapping');
-load(classifierTop, 'model');
-modelTop = model;
 load(classifierBot, 'model');
 modelBot = model;
 load([session 'runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'rewardTimes')
@@ -28,12 +25,12 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 %% hand label paw locations
 
-vidFile = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
+vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
 vid = VideoReader(vidFile);
 frameInds = find(obsPixPositions>1 & obsPixPositions<vid.Width);
-labelPawLocations('C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
+labelPawLocations('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4', frameInds, 500);
 
-%% create labeled set
+%% create labeled set, paw vs other
 
 posEgs = 1000;
 negEgsPerEg = 5;
@@ -41,13 +38,13 @@ includeLocation = false;
 paws = 1:4;
 
 makeLabeledSet('pawBot',...
-               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
                obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
 
 viewTrainingSet('pawBot');
 
-%% create labeled set WITH subframe location as features
+%% create labeled set, paw vs other, WITH subframe location as features
 
 posEgs = 1000;
 negEgsPerEg = 5;
@@ -55,11 +52,25 @@ includeLocation = true;
 paws = 1:4;
 
 makeLabeledSet('pawBot2',...
-               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
-               'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
                obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
 
 viewTrainingSet('pawBot2');
+
+%% create labeled set, left hind vs other, WITH subframe location as features
+
+posEgs = 250;
+negEgsPerEg = 5; % i think this is actually negEgs for each frame, not for each posEg... should fix this..
+includeLocation = true;
+paws = 1;
+
+makeLabeledSet('leftHind',...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runBotHandLabeledLocations.mat', ...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4',...
+               obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
+
+viewTrainingSet('leftHind');
 
 %% train svm
 
