@@ -62,7 +62,7 @@ viewTrainingSet('pawBot2');
 
 posEgs = 250;
 negEgsPerEg = 5; % i think this is actually negEgs for each frame, not for each posEg... should fix this..
-includeLocation = true;
+includeLocation = false;
 paws = 1;
 
 makeLabeledSet('leftHind',...
