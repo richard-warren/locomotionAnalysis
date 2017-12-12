@@ -11,6 +11,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     %         getting obstacle on and off times
     %         getting obstacle light on and off times
     %         getting frame time stamps
+    %         getting wisk frame time stamps
     %         getting webcam time stamps
     %         video tracking of obstacle in bottom view
     %
@@ -20,6 +21,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     % the necessary files exist in the directory to compute it
     %
     % input:     dataDir           directory containing session folders
+    %            dataFolder        !!!
     %            varsToOverwrite   cell array of of variables that should be re-computed
 
 
@@ -254,12 +256,12 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
             load([sessionDir '\run.mat'], 'exposure')
 
             % get camera metadata and spike timestamps
-            camMetadata = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
-            frameCounts = camMetadata(:,2);
-            timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
+            camMetadataWisk = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+            frameCountsWisk = camMetadataWisk(:,2);
+            timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,3));
 
-            if length(exposure.times) >= length(frameCounts)
-                frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, dataFolder);
+            if length(exposure.times) >= length(frameCountsWisk)
+                frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, dataFolder);
             else
                 disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
                 frameTimeStamps = [];
@@ -267,6 +269,35 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
             % save values
             varStruct.frameTimeStamps = frameTimeStamps;
+            anythingAnalyzed = true;
+        end
+    end
+    
+    
+    
+    
+    % get wisk frame timeStamps
+    if analyzeVar('frameTimeStampsWisk', varNames, varsToOverWrite)
+
+        if exist([sessionDir 'wisk.csv'], 'file')
+            
+            fprintf('%s: getting wisk frame time stamps\n', dataFolder)
+            load([sessionDir '\run.mat'], 'exposure')
+
+            % get camera metadata and spike timestamps
+            camMetadataWisk = dlmread([sessionDir '\wisk.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+            frameCountsWisk = camMetadataWisk(:,1);
+            timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
+
+            if length(exposure.times) >= length(frameCountsWisk)
+                frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, dataFolder);
+            else
+                disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
+                frameTimeStampsWisk = [];
+            end
+
+            % save values
+            varStruct.frameTimeStampsWisk = frameTimeStampsWisk;
             anythingAnalyzed = true;
         end
     end
@@ -284,8 +315,8 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
             fprintf('%s: getting webcam time stamps\n', dataFolder)
 
             % load data
-            camMetadata = dlmread([sessionDir '\run.csv']);
-            camSysClock = camMetadata(:,1) / 1000;
+            camMetadataWisk = dlmread([sessionDir '\run.csv']);
+            camSysClock = camMetadataWisk(:,1) / 1000;
             camSpikeClock = varStruct.frameTimeStamps;
             webCamSysClock = dlmread([sessionDir '\webCam.csv']) / 1000; % convert from ms to s
 

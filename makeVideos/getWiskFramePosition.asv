@@ -1,0 +1,22 @@
+function getWiskFramePosition(frameTop, frameWisk, wiskScaling)
+
+% !!! need to document
+
+% settings
+wiskScaling = 18/52;
+
+% rescale wisk
+wisk = imresize(wisk, wiskScaling);
+
+ccorr = normxcorr2(wisk, top);
+[~, imax] = max(abs(ccorr(:)));
+[ypeak, xpeak] = ind2sub(size(ccorr),imax(1));
+xpeak = xpeak-size(wisk,2);
+ypeak = ypeak-size(wisk,1);
+
+topNew = [top, zeros(size(top,1), size(wisk,2))];
+topInds = {ypeak:(ypeak+size(wisk,1)-1), xpeak:(xpeak+size(wisk,2)-1)};
+% topNew(topInds{1}, topInds{2}) = (topNew(topInds{1}, topInds{2}) + wisk) / 2;
+topNew(topInds{1}, topInds{2}) = wisk;
+
+close all; figure; imshow(topNew); pimpFig
