@@ -82,6 +82,12 @@ fprintf('analysis time: %i minutes\n', toc/60)
 
 %% get locations for bottom
 
+% settings
+showPotentialLocations = true;
+
+% initializations
+vidBot = VideoReader([session '\runBot.mp4']);
+
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
 showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);

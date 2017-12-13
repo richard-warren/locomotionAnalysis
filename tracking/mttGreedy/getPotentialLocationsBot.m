@@ -55,33 +55,33 @@ for i = frameInds
     frameFiltered = frameFiltered - scoreThresh;
     [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
     
-    % ensure only one location per blob
-    if length(x)>objectNum
-
-        % get blob labels for each point
-        labelFrame = bwlabel(frameFiltered>0);
-        labelInds = sub2ind(size(labelFrame), y, x);
-        blobLabels = labelFrame(labelInds);
-
-        % find blobs containing multiple points
-        [counts, bins] = hist(blobLabels, 1:max(blobLabels(:)));
-        blobsWithMultiples = bins(counts>1);
-
-        if ~isempty(blobsWithMultiples)
-
-            % keep only the most anterior point within each blob
-            validInds = ~ismember(blobLabels, blobsWithMultiples);
-
-            for j = 1:length(blobsWithMultiples)
-                [~, anteriorInd] = max( x .* (blobLabels==blobsWithMultiples(j)));    
-                validInds(anteriorInd) = 1;
-            end
-
-            x = x(validInds);
-            y = y(validInds);
-            scores = scores(validInds);
-        end
-    end
+%     % ensure only one location per blob
+%     if length(x)>objectNum
+% 
+%         % get blob labels for each point
+%         labelFrame = bwlabel(frameFiltered>0);
+%         labelInds = sub2ind(size(labelFrame), y, x);
+%         blobLabels = labelFrame(labelInds);
+% 
+%         % find blobs containing multiple points
+%         [counts, bins] = hist(blobLabels, 1:max(blobLabels(:)));
+%         blobsWithMultiples = bins(counts>1);
+% 
+%         if ~isempty(blobsWithMultiples)
+% 
+%             % keep only the most anterior point within each blob
+%             validInds = ~ismember(blobLabels, blobsWithMultiples);
+% 
+%             for j = 1:length(blobsWithMultiples)
+%                 [~, anteriorInd] = max( x .* (blobLabels==blobsWithMultiples(j)));    
+%                 validInds(anteriorInd) = 1;
+%             end
+% 
+%             x = x(validInds);
+%             y = y(validInds);
+%             scores = scores(validInds);
+%         end
+%     end
     
     
     

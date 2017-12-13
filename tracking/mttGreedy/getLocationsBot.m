@@ -11,9 +11,9 @@ maxDistanceY = .55;
 maxVel = 30 / .004;    % pixels / sec
 
 
-minScore = 1.5; % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
 unaryWeight = 1;
-pairwiseWeight = 2;
+pairwiseWeight = 1;
+minScore = .5 * (unaryWeight + pairwiseWeight); % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
 scoreWeight = 0;
 
 
