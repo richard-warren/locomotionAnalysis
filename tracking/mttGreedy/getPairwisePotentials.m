@@ -15,7 +15,7 @@ function pairwisePotentials = getPairwisePotentials(x, y, prevX, prevY, dt, maxV
 
 
 % get velocities of all xy moving from prevXY
-velocities = sqrt(sum(([x, y] - repmat([prevX, prevY], length(x), 1)).^2, 2)) / dt;
+try; velocities = sqrt(sum(([x, y] - repmat([prevX, prevY], length(x), 1)).^2, 2)) / dt; catch; keyboard; end
 velocities(velocities>maxVel) = maxVel;
 
 % normalize (s.t. 0 velocities are pairwise potentials of 1 and velocities >= maxVel are pairwise potentials of 0

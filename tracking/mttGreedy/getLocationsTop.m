@@ -83,7 +83,7 @@ for i = startFrame:length(locationsBot.x)
                 % get label at previous dection frame
                 prevLabel = labels(prevFrame, j);
                 
-                if isempty(prevFrame)
+                if isempty(prevFrame) || isempty(potentialLocationsTop(i).x)
                     pairwise(j,:) = 0;
                 else
                     pairwise(j,:) = getPairwisePotentials(potentialLocationsTop(i).x, potentialLocationsTop(i).y,...
@@ -102,9 +102,13 @@ for i = startFrame:length(locationsBot.x)
     lowness = repmat(potentialLocationsTop(i).y' / range(locationsBot.y(:)), objectNum, 1);
 
     % find best labels
-    scores = unariesWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores + lownessWeight.*lowness;
-    scores = scores .* (unaries>0);
-    scores = scores .* valid;
+    try
+        scores = unariesWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores + lownessWeight.*lowness;
+        scores = scores .* (unaries>0);
+        scores = scores .* valid;
+    catch
+        scores = []; % !!! this try/catch is a hack... need better way of handling frames where there are no potential locations
+    end
     
     % !!! this if/then is temporary // it would be better if getBestLabels handled empty values itself // NEED TO LOOK INTO WHAT HAPPENS WHEN THERE ARE FEWER POTENTIAL OBJECTS THAN LOCATIONS... ARE NANS RETURNED?
     if isempty(scores)

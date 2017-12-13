@@ -16,7 +16,7 @@ sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model.Beta, subFrameSize(1), subFrameSize(2));
 wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
-bg = getBgImage(vid, 1000, false);
+bg = getBgImage(vid, 1000, true);
 
 
 % !!! fix x alignment for bottom view
@@ -77,11 +77,11 @@ for i = frameInds
     
     
     % filter with svm and apply non-maxima suppression
-    frameFiltered = -(conv2(double(frameMasked)/model.KernelParameters.Scale, kernel, 'same') + model.Bias);
+    frameFiltered = -(conv2(double(frame)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);
     frameFiltered(frameFiltered < scoreThresh) = 0;
 %     frameFiltered(1:yMin,:) = 0;
 %     frameFiltered = frameFiltered .* wheelMask;
-    [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize, overlapThresh);
+    [x, y, scores] = nonMaximumSupress(frameFiltered, [subHgt subWid], overlapThresh);
         
     
     % store data
@@ -94,7 +94,7 @@ for i = frameInds
         
         % put lines in top frame
         for j = 1:4
-            if locationsBot.x(i,j)>0 && locationsBot.x(i,j)<vid.Width
+            if ~isnan(locationsBot.x(i,j))
                 frame(:,locationsBot.x(i,j)) = 255;
             end
         end
