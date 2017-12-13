@@ -1,4 +1,4 @@
-function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, obsPixPositions, frameTimeStamps, fs)
+function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameInds, obsPixPositions, frameTimeStamps, fs)
 
 % !!! need to document and make not shitty
 
@@ -40,9 +40,9 @@ end
 
 
 
-% iterate through all frames
+% iterate through all frameInds
 
-for i = startFrame:length(locationsBot.x)
+for i = frameInds
     
     % report progress
     disp(i/length(locationsBot.x))

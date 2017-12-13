@@ -9,6 +9,7 @@ xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMa
 % initializations
 load(xMapping, 'xLinearMapping');
 load([session 'runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'rewardTimes')
+frameInds = find(~isnan(obsPixPositions));
 anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 
@@ -17,7 +18,6 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
 vid = VideoReader(vidFile);
-frameInds = find(obsPixPositions>1 & obsPixPositions<vid.Width);
 labelPawLocations(vidFile, frameInds, 500);
 
 
@@ -72,7 +72,6 @@ load(model2, 'model', 'subFrameSize');
 model2 = model; subFrameSize2 = subFrameSize;
 vidBot = VideoReader([session '\runBot.mp4']);
 
-frameInds = find(~isnan(obsPixPositions));
 tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
                                                       scoreThresh, obsPixPositions, frameInds, showTracking);
 save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
@@ -96,7 +95,6 @@ showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot
 
 vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4';
 vid = VideoReader(vidFile);
-frameInds = find(obsPixPositions>1 & obsPixPositions<vid.Width);
 labelPawLocations(vidFile, frameInds, 200);
 
 
@@ -146,7 +144,6 @@ model = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop
 load(model, 'model', 'subFrameSize');
 vidTop = VideoReader([session '\runTop.mp4']);
 
-frameInds = find(~isnan(obsPixPositions));
 tic; potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model, subFrameSize, scoreThresh,...
                                                       frameInds, showTracking);
 save([session 'tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
@@ -157,12 +154,12 @@ fprintf('potential locations top analysis time: %i minutes\n', toc/60)
 % settings
 fs = 250;
 
-locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, obsPixPositions, frameTimeStamps, fs);
-showLocations(vidTop, potentialLocationsTop, locationsTop, showPotentialLocations, .02, anchorPtsBot, 200000);
+locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameInds, obsPixPositions, frameTimeStamps, fs);
+showLocations(vidTop, frameInds, potentialLocationsBot, fixTracking(locationsTop), showPotentialLocations, .02, anchorPtsBot);
+save([session 'tracking\locationsTop.mat'], 'locationsTop');
 
 %% make tracking vid
 
-frameInds = find(~isnan(obsPixPositions));
 makeTrackingVid(session, frameInds)
 
 
