@@ -62,7 +62,7 @@ viewTrainingSet('pawBot2');
 
 posEgs = 500;
 negEgsPerEg = 1; % i think this is actually negEgs for each frame, not for each posEg... should fix this...
-includeLocation = true;
+includeLocation = false;
 paws = 1;
 
 makeLabeledSet('leftHind',...
@@ -83,8 +83,8 @@ close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)
 
 %% get potential locations for bottom
 
-scoreThresh = 0;
-showTracking = true;
+scoreThresh = 1;
+showTracking = t;
 
 fprintf('getting potential bottom locations...\n')
 close all
