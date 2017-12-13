@@ -1,11 +1,10 @@
-function makeLabeledSet(className, labeledDataFile, vidFile, obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws)
+function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws)
 
 % !!! need to document
 
 
 % settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
-subFrameSize = [50 50]; % y,x
 maxOverlap = .25;
 
 
@@ -65,17 +64,16 @@ for i = randperm(length(locations))
         if posEgsCount < posEgs
             
             xy = round(locations(1:2, i, j));
-            imgInds = {xy(2)-centPad(1):xy(2)+centPad(1)-1, xy(1)-centPad(2):xy(1)+centPad(2)-1};
+            [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
 
-            if ~any(imgInds{1}<1 | imgInds{1}>vid.Height) && ~any(imgInds{2}<1 | imgInds{2}>vid.Width)
+            if ~isPadded % if image falls fully within bounds of frame
 
-                img = frame(imgInds{1}, imgInds{2});
-                
                 if includeLocations
                     img(end, end-1:end) = xy;
                 end
                 
                 features(:, imNumberInd) = img(:);
+                
                 if ismember(j, paws)
                     labels(imNumberInd) = 1;
                     posEgsCount = posEgsCount+1;
@@ -83,6 +81,7 @@ for i = randperm(length(locations))
                 else
                     labels(imNumberInd) = 2;
                 end
+                
                 imNumberInd = imNumberInd+1;
                 
                 
@@ -99,8 +98,8 @@ for i = randperm(length(locations))
                                randi([centPad(2)+1 size(frame,2)-centPad(2)-1])]; % y,x
                         temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
                         pixelsOverlap = sum(temp(:));
-                        img = frame(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
-
+                        img = getSubFrame(frame, pos, subFrameSize);
+                        
                         if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:))
                             acceptableImage = true;
                         end

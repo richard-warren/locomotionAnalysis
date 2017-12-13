@@ -1,5 +1,5 @@
 function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, subFrameSize1, subFrameSize2,...
-                                                          scoreThresh, obsPixPositions, frameInds, showTracking)
+                                                          labels, scoreThresh, obsPixPositions, frameInds, showTracking)
 
 % !!! need to document
 
@@ -11,14 +11,14 @@ objectNum = 4;      % number of paws
 % initializations
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
-kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
+kernel = reshape(model1.Beta, subFrameSize(1), subFrameSize(2));
 bg = getBgImage(vid, 1000, false);
 
 
 % prepare figure
 if showTracking
     
-    figure(); imagesc(-kernel);
+    figure; imagesc(-kernel);
 
     figure('position', [680 144 698 834], 'menubar', 'none', 'color', 'black'); colormap gray
 
@@ -53,7 +53,7 @@ for i = frameInds
     
     frameFiltered(frameFiltered < scoreThresh) = scoreThresh;
     frameFiltered = frameFiltered - scoreThresh;
-    [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
+    [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize, overlapThresh);
     
     % ensure only one location per blob
     if length(x)>objectNum
@@ -87,22 +87,22 @@ for i = frameInds
     
     % perform second round of classification
     
-    frameFeatures = nan(prod(subFrameSize2), length(x));
+    frameFeatures = nan(size(features,1), length(x));
     
     for j = 1:length(x)
         
-        img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
+        img = getSubFrame(frame, [y(j) x(j)], subFrameSize);
         frameFeatures(:,j) = img(:);
     end
     
-    classes = predict(model2, frameFeatures');
-    isPaw = (classes==1);
+    classes = classify(model2, frame);
+    isPaw = labels(ids);
     
     
     % store data
-    potentialLocationsBot(i).x = x(isPaw);
-    potentialLocationsBot(i).y = y(isPaw);
-    potentialLocationsBot(i).scores = scores(isPaw);
+    potentialLocationsBot(i).x = x;
+    potentialLocationsBot(i).y = y;
+    potentialLocationsBot(i).scores = scores;
     
     
     if showTracking
@@ -111,45 +111,14 @@ for i = frameInds
         set(rawIm, 'CData', frame);
         set(predictIm, 'CData', frameFiltered)
         set(scatter1, 'XData', x, 'YData', y);
-        set(scatter2, 'XData', x(isPaw), 'YData', y(isPaw));
+        set(scatter2, 'XData', x(isPaw==1), 'YData', y(isPaw==1));
         
         % pause to reflcet on the little things...
         pause(.001);
     end
 end
 
-
-
-
-% % ---------
-% % FUNCTIONS
-% % ---------
-% 
-% % keypress controls
-% function changeFrames(~,~)
-%     
-%     key = double(get(fig, 'currentcharacter'));
-%     
-%     if ~isempty(key) && isnumeric(key)
-%         
-%         if key==28                      % LEFT: move frame backward
-%             pause(.001);
-%             paused = true;
-%             updateFrame(-1);
-%         
-%         elseif key==29                  % RIGHT: move frame forward
-%             pause(.001);
-%             paused = true;
-%             updateFrame(1);
-%         
-%         elseif key==27                  % ESCAPE: close window
-%             playing = false;
-%             paused = false;
-%         else                            % OTHERWISE: close window
-%             paused = ~paused;
-%         end
-%     end
-% end
+close all
 
 
 

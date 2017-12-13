@@ -12,7 +12,8 @@ load([dataDir '\trainingData\' className '\labeledFeatures.mat'], 'features', 'l
 
 
 % train svm
-model = fitcsvm(features', labels, 'KernelScale', 559.69);
+% model = fitcsvm(features', labels, 'KernelScale', 559.69);
+model = fitcsvm(features', labels, 'KernelScale', 'Auto');
 modelCrossVal = crossval(model);
 fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
 
