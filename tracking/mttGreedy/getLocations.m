@@ -125,7 +125,7 @@ load(['C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\' class]
 
 close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)))
 
-%% train bot second classifier
+%% train top second classifier
 
 class = 'pawTop';
 
@@ -136,7 +136,7 @@ trainSecondClassifier(class); % this is saved as [class '2']
 %% get potential locations for top
 
 % settings
-scoreThresh = 0;
+scoreThresh = 1;
 showTracking = false;
 model = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawTop';
 
@@ -154,11 +154,11 @@ fprintf('potential locations top analysis time: %i minutes\n', toc/60)
 % settings
 fs = 250;
 
-locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameInds, obsPixPositions, frameTimeStamps, fs);
-showLocations(vidTop, frameInds, potentialLocationsBot, fixTracking(locationsTop), showPotentialLocations, .02, anchorPtsBot);
+locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, fs);
+% showLocations(vidTop, frameInds, potentialLocationsTop, (locationsTop), showPotentialLocations, .02, anchorPtsBot);
 save([session 'tracking\locationsTop.mat'], 'locationsTop');
 
-%% make tracking vid
+% make tracking vid
 
 makeTrackingVid(session, frameInds)
 

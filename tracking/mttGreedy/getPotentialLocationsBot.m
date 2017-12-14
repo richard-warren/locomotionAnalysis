@@ -5,7 +5,7 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, s
 
 
 % settings
-overlapThresh = .5; % used for non-maxima suppression // higher numbers = more tightly packed
+overlapThresh = .7; % used for non-maxima suppression // higher numbers = more tightly packed
 objectNum = 4;      % number of paws
 
 % initializations

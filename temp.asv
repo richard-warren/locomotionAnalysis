@@ -1,0 +1,46 @@
+
+
+vid = VideoReader('C:\Users\rick\Desktop\wiskTest\wisk.avi');
+bg = getBgImage(vid, 1000, true);
+%%
+
+% settings
+thresh = 1;
+maxY = 235;
+b
+
+close all; figure('position', [1030 100 867 827]);
+im = imagesc(rgb2gray(read(vid,1))); hold on;
+scat = scatter(100, 100, 100, 'filled');
+
+for i = 1:vid.NumberofFrames
+    
+    % get frame and thresholded frame
+    frame = rgb2gray(read(vid,i));
+    frame = frame - bg;
+    frameThreshed = frame>thresh;
+    frameThreshed(maxY:end,:) = 0;
+    
+    % get boundary points
+    [y, x] = ind2sub(size(frameThreshed), find(frameThreshed));
+    pts = convhull(x, y);
+
+    x = x(pts);
+    y = y(pts);
+
+    validInds = x>5 & y>5;
+    x = x(validInds);
+    y = y(validInds);
+    
+    set(im, 'CData', frame);
+    set(scat, 'XData', x, 'YData', y)
+    pause(.05);
+    
+    
+end
+
+%%
+
+
+
+close all; imshow(frame); hold on; scatter(x, y)

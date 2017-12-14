@@ -1,4 +1,4 @@
-function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, frameInds, obsPixPositions, frameTimeStamps, fs)
+function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, fs)
 
 % !!! need to document and make not shitty
 
@@ -14,8 +14,8 @@ stanceVel = -500;     % paws moving less than this vel are considered to be in s
 obsProximity = 60;    % if paw is within obsProximity pixels of obstacle, stance is no longer assumed when velocity is less than stanceVel
 
 unariesWeight = 1;
-pairwiseWeight = 1;
-lownessWeight = 1;
+pairwiseWeight = 0;
+lownessWeight = 0;
 scoreWeight = 0;
 
 
@@ -26,7 +26,6 @@ locationsTop = struct();
 startFrame = find(cellfun(@(x) ~isempty(x), {potentialLocationsTop.x}), 1, 'first');
 
 % fix x alignment for bottom view
-load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
 locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
 
 % fix bottom view tracking (fixTracking fills short stretches of missing values and median filters)

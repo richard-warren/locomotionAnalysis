@@ -1,49 +1,73 @@
 
-implay('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest\runBot.mp4', 50);
-implay('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest\runWisk.mp4', 50);
+
+vid = VideoReader('C:\Users\rick\Desktop\wiskTest\wisk.mp4');
+bgRaw = getBgImage(vid, 1000, false); % !!! need to ensure obstacle is not in these frames
+%%
+
+% settings
+thresh = 10;
+xMinMax = [80 305];
+yMinMax = [70 250];
+xMin = 80;
+edgeMin = 80;
+bgThresh = 40;
+dilation = 10;
+
+% initializations
+bgThreshed = bg>bgThresh;
+dilateKernel = strel('diamond', dilation);
+bg = imdilate(bgRaw, dilateKernel);
+bgThreshed = imdilate(bgThreshed, dilateKernel);
+bgThreshed = ~bgThreshed;
+close all; figure('position', [2000 2 561 994]);
+subplot(2,1,1)
+imRaw = imagesc(rgb2gray(read(vid,1))); hold on;
+
+contourPlot = plot(0, 0, 'color', 'red', 'linewidth', 3);
+subplot(2,1,2)
+imThresh = imagesc(rgb2gray(read(vid,1))>thresh); hold on;
+
+for i = 1:vid.NumberofFrames
+    
+    % get frame and thresholded frame
+    frameRaw = rgb2gray(read(vid,i));
+    frame = frameRaw - bg;
+    frameThreshed = (frame >= thresh);
+    frameThreshed = frameThreshed .* bgThreshed;
+    frameThreshed([1:yMinMax(1), yMinMax(2):end],:) = 0;
+    frameThreshed(:, [1:xMinMax(1), xMinMax(2):end]) = 0;
+    
+%     
+%     frameThreshed(:, 1:xMin) = 0;
+    
+    % get boundary points
+    [y, x] = ind2sub(size(frameThreshed), find(frameThreshed));
+    
+    try
+        pts = convhull(x, y);
+        x = x(pts);
+        y = y(pts);
+
+        validInds = x>xMinMax(1) & y>yMinMax(1);
+        x = x(validInds);
+        y = y(validInds);
+    catch
+        x = [];
+    end
+
+    
+    
+    set(imRaw, 'CData', frameRaw);
+%     set(scat, 'XData', x, 'YData', y)
+    set(contourPlot, 'XData', x, 'YData', y)
+    set(imThresh, 'CData', frameThreshed);
+    pause(.05);
+    
+    
+end
 
 %%
 
-spikeAnalysis('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\', 'wiskTest');
-load('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest\runAnalyzed.mat')
-
-%%
-
-makeVidWisk('wiskTest', [.25 .445], .1, .1);
-
-%% test alignment
-
-wiskScaling = 18/52;
-
-% ind1 = 16091;
-% ind2 = 16091;
-ind1 = 15000;
-ind2 = ind1;
-
-vidTop = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest\runTop.mp4');
-vidWisk = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest\runWisk.mp4');
-
-top = rgb2gray(read(vidTop, ind1));
-wisk = rgb2gray(read(vidWisk, ind2));
-wisk = imresize(wisk, wiskScaling);
-
-c = normxcorr2(wisk, top);
-[max_c, imax] = max(abs(c(:)));
-[ypeak, xpeak] = ind2sub(size(c),imax(1));
-xpeak = xpeak-size(wisk,2);
-ypeak = ypeak-size(wisk,1);
-%%
-topNew = [top, zeros(size(top,1), size(wisk,2))];
-topInds = {ypeak:(ypeak+size(wisk,1)-1), xpeak:(xpeak+size(wisk,2)-1)};
-% topNew(topInds{1}, topInds{2}) = (topNew(topInds{1}, topInds{2}) + wisk) / 2;
-topNew(topInds{1}, topInds{2}) = wisk;
-
-close all; figure; imshow(topNew); pimpFig
 
 
-
-% close all; figure; subplot(2,1,1); imshow(top); subplot(2,1,2); imshow(wisk);
-
-
-
-
+close all; imshow(frame); hold on; scatter(x, y)

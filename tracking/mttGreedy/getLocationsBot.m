@@ -7,7 +7,7 @@ function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, 
 objectNum = 4;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % RH, LH, RF, LF (x, y)
 maxDistanceX = .6;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
-maxDistanceY = .55;
+maxDistanceY = .65;
 maxVel = 30 / .004;    % pixels / sec
 
 

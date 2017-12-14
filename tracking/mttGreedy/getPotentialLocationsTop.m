@@ -20,7 +20,9 @@ bg = getBgImage(vid, 1000, false);
 
 
 % !!! fix x alignment for bottom view
-locationsBot.x = round(locationsBot.x*xLinearMapping(1) + xLinearMapping(2));
+locationsBot = fixTracking(locationsBot);
+locationsBot.x = round(locationsBot.x*xLinearMapping(1) + xLinearMapping(2)) + 8; % !!! + 5 is a hack!!!, only temporary
+
 
 
 % prepare figure
