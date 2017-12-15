@@ -13,7 +13,7 @@ yMinMax = [70 250];
 xMin = 80;
 edgeMin = 80;
 bgThresh = 40;
-dilation = 10;
+dilation = 5;
 obsThresh = 200;
 
 % initializations
