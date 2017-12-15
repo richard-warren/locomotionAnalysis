@@ -14,6 +14,7 @@ xMin = 80;
 edgeMin = 80;
 bgThresh = 40;
 dilation = 10;
+obsThresh = 200;
 
 % initializations
 dilateKernel = strel('diamond', dilation);
@@ -29,15 +30,17 @@ contourPlot = plot(0, 0, 'color', 'red', 'linewidth', 3);
 subplot(2,1,2)
 imThresh = imagesc(rgb2gray(read(vid,1))>thresh); hold on;
 
-for i = frameInds(10000:end)
+for i = frameInds(5000:end)
     
     % get frame and thresholded frame
     frameRaw = rgb2gray(read(vid,i));
-    frame = frameRaw - bg;
-    frameThreshed = (frame >= thresh);
+%     frame = frameRaw - bg;
+    obsMask = uint8(frameRaw < obsThresh);
+    obsMask = imdilate(obsMask, dilateKernel);
+    frameThreshed = (frameRaw >= thresh);
     frameThreshed = frameThreshed .* bgThreshed;
-    frameThreshed([1:yMinMax(1), yMinMax(2):end],:) = 0;
-    frameThreshed(:, [1:xMinMax(1), xMinMax(2):end]) = 0;
+%     frameThreshed([1:yMinMax(1), yMinMax(2):end],:) = 0;
+%     frameThreshed(:, [1:xMinMax(1), xMinMax(2):end]) = 0;
     
 %     
 %     frameThreshed(:, 1:xMin) = 0;
