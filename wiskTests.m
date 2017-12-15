@@ -1,8 +1,10 @@
 
 
+%% use crude thresholding algorithm to git whisk polygon
+
 vid = VideoReader('C:\Users\rick\Desktop\wiskTest\wisk.mp4');
-bgRaw = getBgImage(vid, 1000, false); % !!! need to ensure obstacle is not in these frames
-%%
+bgRaw = getBgImage(vid, 500, false); % !!! need to ensure obstacle is not in these frames
+
 
 % settings
 thresh = 10;
@@ -41,25 +43,25 @@ for i = 1:vid.NumberofFrames
 %     frameThreshed(:, 1:xMin) = 0;
     
     % get boundary points
-    [y, x] = ind2sub(size(frameThreshed), find(frameThreshed));
+    [yTip, xTip] = ind2sub(size(frameThreshed), find(frameThreshed));
     
     try
-        pts = convhull(x, y);
-        x = x(pts);
-        y = y(pts);
+        pts = convhull(xTip, yTip);
+        xTip = xTip(pts);
+        yTip = yTip(pts);
 
-        validInds = x>xMinMax(1) & y>yMinMax(1);
-        x = x(validInds);
-        y = y(validInds);
+        validInds = xTip>xMinMax(1) & yTip>yMinMax(1);
+        xTip = xTip(validInds);
+        yTip = yTip(validInds);
     catch
-        x = [];
+        xTip = [];
     end
 
     
     
     set(imRaw, 'CData', frameRaw);
 %     set(scat, 'XData', x, 'YData', y)
-    set(contourPlot, 'XData', x, 'YData', y)
+    set(contourPlot, 'XData', xTip, 'YData', yTip)
     set(imThresh, 'CData', frameThreshed);
     pause(.05);
     
@@ -71,27 +73,41 @@ end
 % settings
 file = 'C:\Users\rick\Desktop\wiskTest\wiskShort.avi';
 wiskData = 'C:\Users\rick\Desktop\wiskTest\wiskShort.measures';
+minLength = 0;
 
 % initializations
 vid = VideoReader(file);
 wiskMeasures = LoadMeasurements(wiskData);
 
 
-close all; figure;
+close all; figure('position', [2000 600 550 400]);
 im = imshow(rgb2gray(read(vid,1))); hold on;
-scat = scatter(10, 10, 50, 'red', 'filled');
+scatBase = scatter(10, 10, 50, 'blue', 'filled');
+scatTip = scatter(10, 10, 50, 'red', 'filled');
+polyPlot = plot(0, 0, 'color', 'red', 'linewidth', 3);
+
 
 for i = 1:vid.NumberOfFrames
     
-    % get frame and wisk tips
+    % get frame
     frame = read(vid,i);
-    x = [measurements([measurements.fid]==i).tip_x];
-    y = [measurements([measurements.fid]==i).tip_y];
+    
+    % get wisk base and tips
+    inds = ([measurements.fid]==i) & [measurements.length]>minLength;
+    xBase = [measurements(inds).follicle_x];
+    yBase = [measurements(inds).follicle_y];
+    xTip = [measurements(inds).tip_x];
+    yTip = [measurements(inds).tip_y];
+    
+    % get convex hull around tips
+    pts = convhull(xTip, yTip);
     
     % update preview
     set(im, 'CData', frame);
-    set(scat, 'XData', x, 'y);
-    pause(.02);
+    set(scatTip, 'XData', xTip, 'YData', yTip);
+    set(scatBase, 'XData', xBase, 'YData', yBase);
+    set(polyPlot, 'XData', xTip(pts), 'YData', yTip(pts));
+    pause(.1);
     
 end
 
