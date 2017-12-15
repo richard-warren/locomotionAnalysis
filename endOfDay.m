@@ -47,7 +47,7 @@ for j = 1:length(sessionDirs)
         end
     end
 
-    makeVid(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
+    makeVidWisk(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
 %     makeVid(session, [0 .445], .5, trialProportion, {'OFF', 'ON'}, trialConditions);
 end
 

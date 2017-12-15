@@ -6,7 +6,7 @@ bgRaw = getBgImage(vid, 500, false); % !!! need to ensure obstacle is not in the
 %%
 
 % settings
-frameInds = find(obsPixPositions>300 & obsPixPositions<500);
+frameInds = find(obsPixPositions>300 & obsPositions<400);
 thresh = 10;
 xMinMax = [80 305];
 yMinMax = [70 250];

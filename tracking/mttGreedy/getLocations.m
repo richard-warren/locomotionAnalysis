@@ -25,7 +25,7 @@ labelPawLocations(vidFile, frameInds, 500);
 
 posEgs = 500;
 negEgsPerEg = 5;
-subFrameSize = [50 50];
+subFrameSize = [40 40];
 includeLocation = false;
 paws = 1:4;
 class = 'pawBot';
