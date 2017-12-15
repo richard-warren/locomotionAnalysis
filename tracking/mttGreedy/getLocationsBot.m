@@ -11,7 +11,7 @@ maxDistanceY = .65;
 maxVel = 30 / .004;    % pixels / sec
 
 
-unaryWeight = 1;
+unaryWeight = 2;
 pairwiseWeight = 1;
 minScore = .5 * (unaryWeight + pairwiseWeight); % location scores lower than minScores are set to zero (this way an object preferes occlusion to being assigned to a crummy location)
 scoreWeight = 0;
@@ -79,9 +79,13 @@ for i = frameInds(2:end)%length(potentialLocationsBot)
     trackScores = repmat(potentialLocationsBot(i).scores', objectNum, 1);
     
     % find best labels
-    scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
-    scores(unaries==0 | pairwise==0) = 0;
-    scores(scores<minScore) = 0;
+    try % !!! this try/catch is temporary // it would be better if getBestLabels handled empty values itself // NEED TO LOOK INTO WHAT HAPPENS WHEN THERE ARE FEWER POTENTIAL OBJECTS THAN LOCATIONS... ARE NANS RETURNED?
+        scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*trackScores;
+        scores(unaries==0 | pairwise==0) = 0;
+        scores(scores<minScore) = 0;
+    catch
+        scores = [];
+    end
     
     % !!! this if/then is temporary // it would be better if getBestLabels handled empty values itself // NEED TO LOOK INTO WHAT HAPPENS WHEN THERE ARE FEWER POTENTIAL OBJECTS THAN LOCATIONS... ARE NANS RETURNED?
     if isempty(scores)

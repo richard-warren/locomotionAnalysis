@@ -25,7 +25,7 @@ labelPawLocations(vidFile, frameInds, 500);
 
 posEgs = 500;
 negEgsPerEg = 5;
-subFrameSize = [40 40];
+subFrameSize = [45 45];
 includeLocation = false;
 paws = 1:4;
 class = 'pawBot';
@@ -78,7 +78,7 @@ save([session 'tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 fprintf('potential locations bot analysis time: %i minutes\n', toc/60)
 
 
-%% get bot locations
+% get bot locations
 
 % settings
 showPotentialLocations = true;
@@ -88,7 +88,7 @@ vidBot = VideoReader([session '\runBot.mp4']);
 
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
 save([session 'tracking\locationsBot.mat'], 'locationsBot');
-showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
+showLocations(vidBot, frameInds, potentialLocationsBot, (locationsBot), showPotentialLocations, .02, anchorPtsBot);
 
 
 %% hand label top locations

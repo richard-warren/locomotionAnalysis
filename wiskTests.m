@@ -71,16 +71,31 @@ for i = frameInds(5000:end)
     
 end
 
+%% prep file for whisker tracking
+
+dir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\';
+
+vid = VideoReader([dir 'runWisk.mp4']);
+vidWrite = VideoWriter([dir 'runWiskEdited.mp4']);
+
+for i = 1:vid.NumberOfFrames
+    
+    
+    
+end
+
+
+
 %% show whiski whisker tracking
 
 % settings
-file = 'C:\Users\rick\Desktop\wiskTest\wiskShort.avi';
-wiskData = 'C:\Users\rick\Desktop\wiskTest\wiskShort.measures';
+file = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\runWisk.mp4';
+wiskData = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\runWisk.measures';
 minLength = 0;
 
 % initializations
 vid = VideoReader(file);
-wiskMeasures = LoadMeasurements(wiskData);
+measurements = LoadMeasurements(wiskData);
 
 
 close all; figure('position', [2000 600 550 400]);
@@ -90,7 +105,7 @@ scatTip = scatter(10, 10, 50, 'red', 'filled');
 polyPlot = plot(0, 0, 'color', 'red', 'linewidth', 3);
 
 
-for i = 1:vid.NumberOfFrames
+for i = 10000:vid.NumberOfFrames
     
     % get frame
     frame = read(vid,i);
@@ -103,7 +118,11 @@ for i = 1:vid.NumberOfFrames
     yTip = [measurements(inds).tip_y];
     
     % get convex hull around tips
-    pts = convhull(xTip, yTip);
+    try
+        pts = convhull(xTip, yTip);
+    catch
+        pts = [];
+    end
     
     % update preview
     set(im, 'CData', frame);
