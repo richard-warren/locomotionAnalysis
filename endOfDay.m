@@ -1,7 +1,7 @@
 % spike analysis, make videos, make figures
 
 % settings
-sessionDirs = uigetdir2([getenv('DATADIR') 'sessions\'], 'select folders to analyze');
+sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 trialProportion = .15;
 
 for i=1:length(sessionDirs)
@@ -30,7 +30,7 @@ for j = 1:length(sessionDirs)
     % load session data
     nameInd = find(sessionDirs{j}=='\',1,'last');
     session = sessionDirs{j}(nameInd+1:end);
-    load([getenv('DATADIR') 'sessions\' session '\runAnalyzed.mat'],...
+    load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
          'obsOnTimes', 'obsOffTimes',...
 	     'obsLightOnTimes', 'obsLightOffTimes');
 
