@@ -75,7 +75,7 @@ end
 
 %% prep file for whisker tracking
 
-dir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\';
+dir = [getenv('OBSDATADIR') session '\'];
 
 vid = VideoReader([dir 'runWisk.mp4']);
 vidWrite = VideoWriter([dir 'runWiskEdited.mp4']);

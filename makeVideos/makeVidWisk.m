@@ -9,17 +9,17 @@ function makeVidWisk(session, obsPosRange, playBackSpeed, trialProportion, trial
 
 
 % settings
-editedDir = [getenv('DATADIR') 'editedVid\'];
+editedDir = [getenv('OBSDATADIR') 'editedVid\'];
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 
 
 % initializations
-vidTop = VideoReader([getenv('DATADIR') 'sessions\' session '\runTop.mp4']);
-vidBot = VideoReader([getenv('DATADIR') 'sessions\' session '\runBot.mp4']);
-vidWisk = VideoReader([getenv('DATADIR') 'sessions\' session '\runWisk.mp4']);
-vidWeb = VideoReader([getenv('DATADIR') 'sessions\' session '\webCam.avi']);
+vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
+vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']);
+vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']);
 
 frameDim = round([vidTop.Height + vidBot.Height, vidBot.Width + (vidWeb.Width * (vidBot.Height/vidWeb.Height))]);
 webDim = [vidBot.Height, frameDim(2) - vidBot.Width];
@@ -39,7 +39,7 @@ set(vidWriter, 'FrameRate', fps)
 if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
 
-load([getenv('DATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsPixPositions', 'obsTimes',...
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsPixPositions', 'obsTimes',...
                                             'wheelPositions', 'wheelTimes',...
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...

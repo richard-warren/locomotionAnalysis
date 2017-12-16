@@ -54,12 +54,8 @@ for i = 1:length(obsOnTimes)
         % threshold and median filter to remove thin threshold crossings with few adjacent columns
         colThreshed = colSums > pixThresh;
         colThreshed = medfilt1(double(colThreshed), medFiltSize);
-        
-        if any(colThreshed)
-            if ((find(colThreshed,1,'first')-xLims(1)) < obsMinThickness) ||...
-               ((xLims(2)-find(colThreshed,1,'last')) < obsMinThickness)
-                colThreshed(:) = 0;
-            end
+        if find(colThreshed,1,'first') || colThreshed(xLims(2))
+            colThreshed(:) = 0;
         end
         
         trialObsPixPositions(j) = mean(find(colThreshed));
