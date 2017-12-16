@@ -6,9 +6,6 @@ function obsAvoidance2(mouse, expName)
 %               expName:    string or cell array of experiments to include in analysis
 
 % user settings
-% dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
-
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters
 touchPosRes = .0001;
@@ -22,7 +19,7 @@ minTouchTime = .05; % only touches count that are >= minTouchTime
 
 
 % initializations
-sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
+sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
 
 sessionInds = strcmp(sessionInfo.mouse, mouse) &...
               cellfun(@(x) any(strcmp(x, expName)), sessionInfo.experiment) &...
@@ -45,7 +42,7 @@ subplot(2,2,4); bar(nan(1,length(sessions))); hold on % ghost bar plot to get ou
 for i = 1:length(sessions)
 
     % load session data
-    load([dataDir sessions{i} '\runAnalyzed.mat'],...
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
             'wheelPositions', 'wheelTimes',...
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...

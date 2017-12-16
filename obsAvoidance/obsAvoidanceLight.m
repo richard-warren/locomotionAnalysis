@@ -9,8 +9,6 @@ function obsAvoidanceLight2(mouse, expName)
 
 
 % user settings
-% dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters
 touchPosRes = .0001;
@@ -25,7 +23,7 @@ conditionLabels = {'light', 'no light'};
 
 
 % initializations
-sessionInfo = readtable([dataDir 'sessionInfo.xlsx']);
+sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
 
 sessionInds = strcmp(sessionInfo.mouse, mouse) &...
               cellfun(@(x) any(strcmp(x, expName)), sessionInfo.experiment) &...
@@ -54,7 +52,7 @@ cmaps{2} = cmap(1:length(sessions),:);
 for i = 1:length(sessions)
 
     % load session data
-    load([dataDir sessions{i} '\runAnalyzed.mat'],...
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
             'wheelPositions', 'wheelTimes',...
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...

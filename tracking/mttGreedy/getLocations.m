@@ -3,10 +3,10 @@
 % performs paw tracking
 
 % settings
-session = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\';
-xMapping = 'C:\Users\rick\Desktop\github\locomotionAnalysis\xAlignment\xLinearMapping.mat';
+session = '171202_000';
 
 % initializations
+xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat'];
 load(xMapping, 'xLinearMapping');
 load([session 'runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'rewardTimes')
 frameInds = find(~isnan(obsPixPositions));
@@ -16,8 +16,7 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 
 %% hand label paw bot locations
 
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runBot.mp4';
-vid = VideoReader(vidFile);
+vidFile = [getenv('OBSDATADIR') 'sessions\runBot.mp4'];
 labelPawLocations(vidFile, frameInds, 500);
 
 

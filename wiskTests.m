@@ -1,7 +1,9 @@
 %% use crude thresholding algorithm to git whisk polygon
 
-vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\runWisk.mp4');
-load('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\runAnalyzed.mat', 'obsPixPositions');
+session = 'wiskTest2';
+
+vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']);
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions');
 bgRaw = getBgImage(vid, 500, false); % !!! need to ensure obstacle is not in these frames
 %%
 
@@ -89,12 +91,12 @@ end
 %% show whiski whisker tracking
 
 % settings
-file = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\runWisk.mp4';
-wiskData = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest2\runWisk.measures';
+vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4'];
+wiskData = [getenv('OBSDATADIR') 'sessions\' session '\runWisk.measures'];
 minLength = 0;
 
 % initializations
-vid = VideoReader(file);
+vid = VideoReader(vidFile);
 measurements = LoadMeasurements(wiskData);
 
 
