@@ -1,8 +1,31 @@
 %% test whiski tracking
 
 wiskData = LoadWhiskers('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\runWiskTest4\runWisk.whiskers');
+vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\runWiskTest4\runWisk.mp4');
+%%
+close all; figure;
+im = imshow(rgb2gray(read(vid,1))); pimpFig
 
-
+for i = 1:vid.NumberOfFrames
+    
+    % get frame
+    frame = rgb2gray(read(vid, i)) - 100;
+    
+    % draw whiskers
+    inds = find([wiskData.time]==(i-1));
+    
+    for j = inds
+        x = round(wiskData(j).x); x = max(1, x);
+        y = round(wiskData(j).y); y = max(1, y);
+        linearInds = sub2ind(size(frame), y, x);
+        frame(linearInds) = 255;
+    end
+    
+    % update preview
+    set(im, 'CData', frame);
+    pause(.001);
+    
+end
 
 
 
