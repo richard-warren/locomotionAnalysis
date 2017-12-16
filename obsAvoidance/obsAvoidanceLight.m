@@ -1,7 +1,6 @@
-function obsAvoidanceLight(mouse, expName)
+function obsAvoidanceLight2(mouse, expName)
 
-
-% OBSTACLE AVOIDANCE LIGHT
+% compare obstacle avoidance with and without the obstacle light on
 %
 % input         mouse:      name of mouse to analyze
 %               expName:    string or cell array of experiments to include in analysis
@@ -12,17 +11,17 @@ function obsAvoidanceLight(mouse, expName)
 % user settings
 % dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
 dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
-
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters
 touchPosRes = .0001;
 ylims = [.1 .7]; % m/s
-trialRange = [0 .8]; % only include trials #s between these limits, so performance metrices are not dragged down when the animal is warming up or sated near the end
+% trialRange = [0 .8]; % only include trials #s between these limits, so performance metrices are not dragged down when the animal is warming up or sated near the end
 obsPos = .382; % m, position at which obstacle is in the middle of the frame // use getFrameTimes function to determine this value
 frameEdges = [.336 .444]; % (m)
 sig = .0025; % sigma for gaussian kernal
-probYlims = [0 .008];
+probYlims = [0 .004];
 minTouchTime = 0; % only touches count that are >= minTouchTime
+conditionLabels = {'light', 'no light'};
 
 
 % initializations
@@ -33,20 +32,23 @@ sessionInds = strcmp(sessionInfo.mouse, mouse) &...
               sessionInfo.include;
 sessions = sessionInfo.session(sessionInds);
 
-posInterp = -obsPrePost(1) : posRes : obsPrePost(2); % velocities will be interpolated across this grid of positional values
-touchPosInterp = frameEdges(1): touchPosRes : frameEdges(2);
+posInterp = -obsPrePost(1) : posRes : obsPrePost(2);            % velocities will be interpolated across this grid of positional values
+touchPosInterp = frameEdges(1): touchPosRes : frameEdges(2);    % positions for touch probability figs with be interpolated across this grid
 
-gausKernel = arrayfun(@(x) (1/(sig*sqrt(2*pi))) * exp(-.5*(x/sig)^2), -sig*5:1/(1/touchPosRes):sig*5);
+gausKernel = arrayfun(@(x) (1/(sig*sqrt(2*pi))) * exp(-.5*(x/sig)^2), -sig*5:1/(1/touchPosRes):sig*5); % kernal for touch probability figure
 gausKernel = gausKernel/sum(gausKernel);
 
-cmap{1} = winter(length(sessions));
-cmap{2} = copper(length(sessions));
-figure('name', mouse);
-subplot(2,3,3); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
-subplot(2,3,6); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
-labels = {' (light on)', ' (light off)'};
+data = struct(); % stores trial data for all sessions
+dataInd = 0;
+
+cmap = winter(length(sessions)*2);
+cmaps{1} = cmap(end-length(sessions)+1:end,:);
+cmaps{2} = cmap(1:length(sessions),:);
 
 
+
+
+% COMPILE DATA
 
 % iterate over sessions
 for i = 1:length(sessions)
@@ -74,34 +76,20 @@ for i = 1:length(sessions)
     validPosInds = touchPositions>frameEdges(1) & touchPositions<frameEdges(2);
     touchOnTimes = touchOnTimes(validPosInds);
     touchOffTimes = touchOffTimes(validPosInds);
-    touchPositions = touchPositions(validPosInds);
-    
-    
-    % limit to middle trials only
-    trialLims = round(trialRange * length(obsOnTimes));
-    trialLims = max(trialLims, 1); % ensure no 0 indices
-    obsOnTimes = obsOnTimes(trialLims(1):trialLims(2));
-    obsOffTimes = obsOffTimes(trialLims(1):trialLims(2));
-    
-    trialLims = round(trialRange * length(obsLightOnTimes));
-    trialLims = max(trialLims, 1); % ensure no 0 indices
-    obsLightOnTimes = obsLightOnTimes(trialLims(1):trialLims(2));
-    obsLightOffTimes = obsLightOffTimes(trialLims(1):trialLims(2));
-    
+    touchPositions = touchPositions(validPosInds);    
+  
     
     % compute velocity
     vel = getVelocity(wheelPositions, .5, targetFs);
     
     
     % iterate over all trials
-    sessionVels = nan(length(obsOnTimes), length(posInterp));
-    obsAvoided = nan(1,length(obsOnTimes));
-    obsLightOn = nan(1,length(obsOnTimes));
-    obsTouchLightOn = nan(1,length(touchPositions));
-    
-    obsOnPositions = nan(1,length(obsOnTimes)); % record positions at which obstacle turns on (this may be jittered)
-
     for j = 1:length(obsOnTimes)
+        
+        dataInd = dataInd + 1;
+        data(dataInd).session = sessions{1};
+        data(dataInd).sessionNum = i;
+        data(dataInd).name = mouse;
         
         % locate trial
         obsOnPos = obsPositions( find(obsTimes >= obsOnTimes(j), 1, 'first') );
@@ -122,99 +110,112 @@ for i = 1:length(sessions)
         trialVelInterp = interp1(trialPos, trialVel, posInterp, 'linear');
 
         % store results
-        sessionVels(j,:) = trialVelInterp;
+        data(dataInd).velocity = trialVelInterp;
         
-        % find whether obstacle was avoided
-        obsAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
+        % find whether and where obstacle was toucheed
+        trialTouchInds = touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j);
+        data(dataInd).avoided = ~any(trialTouchInds);
+        trialTouchPositions = touchPositions(trialTouchInds);
+        
+        % compute touch probability as function of position
+        touchCounts = histcounts(trialTouchPositions, touchPosInterp);
+        touchCounts = touchCounts / length(trialTouchPositions);
+        trialTouchProb = conv(touchCounts, gausKernel, 'same');
+        trialTouchProb(isnan(trialTouchProb)) = 0;
+        data(dataInd).touchProbability = trialTouchProb;
         
         % find whether light was on
-        obsLightOn(j) = min(abs(obsOnTimes(j) - obsLightOnTimes)) < .5;
-        
-        % record whether light was on for touches in trial
-        obsTouchLightOn(touchOnTimes>=obsOnTimes(j) & touchOnTimes<=obsOffTimes(j)) = obsLightOn(j);
+        data(dataInd).obsLightOn = min(abs(obsOnTimes(j) - obsLightOnTimes)) < .5;
         
         % record position at which obstacle turned on
-        obsOnPositions(j) = obsPos - obsOnPos;
-    end
-    
-    
-    for k = 1:2
-        
-        % set inds to plot light on (k=1) or light off (k=2) trials
-        if k==1
-            inds = obsLightOn;
-            touchInds = (obsTouchLightOn==1);
-        else
-            inds = ~obsLightOn;
-            touchInds = (obsTouchLightOn==0);
-        end
-        
-        % compute touch probability
-        touchCounts = histcounts(touchPositions(touchInds), touchPosInterp);
-        touchCounts = touchCounts / sum(inds);
-        touchProb = conv(touchCounts, gausKernel, 'same');
-
-        
-        % plot touch probability
-        subplot(2,3,1 + (k-1)*3)
-        touchPosCenters = touchPosInterp(1:end-1) - .5*touchPosRes;
-        plot(touchPosCenters - obsPos, touchProb, 'color', cmap{k}(i,:), 'linewidth', 2); hold on;
-
-
-        % get mean obstacle start position
-        obsOnMean = mean(obsOnPositions);
-
-        % plot session mean velocity
-        subplot(2,3,2 + (k-1)*3)
-        plot(posInterp, nanmean(sessionVels(logical(inds),:), 1), 'color', cmap{k}(i,:), 'linewidth', 2); hold on
-        line(-[obsOnMean obsOnMean], ylims, 'color', cmap{k}(i,:), 'linewidth', 2);
-
-        % plot session success rate
-        subplot(2,3,3 + (k-1)*3)
-        bar(i, mean(obsAvoided(logical(inds))), 'facecolor', cmap{k}(i,:)); hold on
+        data(dataInd).obsOnPositions = obsPos - obsOnPos;
     end
 end
 
 
 
+% PLOT EVERYTHING
 
-% pimp out figure
+% prepare figure
+figure('name', mouse);
+
+
+% plot touch probability
+subplot(1,3,1)
+allTouchProbs = reshape([data(:).touchProbability], length(data(1).touchProbability), length(data))';
+touchPosCenters = touchPosInterp(1:end-1) - .5*touchPosRes - obsPos;
+plot(touchPosCenters, mean(allTouchProbs([data.obsLightOn],:), 1), 'color', mean(cmaps{1},1), 'linewidth', 3); hold on;
+plot(touchPosCenters, mean(allTouchProbs(~[data.obsLightOn],:), 1), 'color', mean(cmaps{2},1), 'linewidth', 3);
+
+title('touch probability')
+xlabel('\itposition (m)')
+ylabel('\ittouch probability')
+
+set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)], 'ylim', probYlims, 'ytick', {});
+
+legend(conditionLabels); legend('boxoff');
+
+
+
+% plot velocity
+
+subplot(1,3,2)
+allVelocities = reshape([data(:).velocity], length(data(1).velocity), length(data))';
+
+for i = 1:length(sessions)
+    sessionInds = [data.sessionNum]==i;
+    
+    plot(posInterp, nanmean(allVelocities([data.obsLightOn] & sessionInds,:), 1), 'color', cmaps{1}(i,:), 'linewidth', 1); hold on
+    plot(posInterp, nanmean(allVelocities(~[data.obsLightOn] & sessionInds,:), 1), 'color', cmaps{2}(i,:), 'linewidth', 1);
+end
+
+plot(posInterp, nanmean(allVelocities([data.obsLightOn],:), 1), 'color', mean(cmaps{1},1), 'linewidth', 3); hold on
+plot(posInterp, nanmean(allVelocities(~[data.obsLightOn],:), 1), 'color', mean(cmaps{2},1), 'linewidth', 3);
+
+title('velocity');
+xlabel('\itposition (m)')
+ylabel('\itvelocity (m/s)')
+
+set(gca, 'xlim', [-obsPrePost(1) obsPrePost(2)], 'ylim', ylims)
+x1 = frameEdges(1)-obsPos;
+x2 = frameEdges(2)-obsPos;
+line([x1 x1], ylims, 'color', [0 0 0], 'linewidth', 1)
+line([x2 x2], ylims, 'color', [0 0 0], 'linewidth', 1)
+obsOnPos = -mean([data.obsOnPositions]);
+line([obsOnPos obsOnPos], ylims, 'color', [0 0 0], 'linewidth', 1)
+
+
+% plot obstacle avoidance
+subplot(1,3,3)
+
+% compute avoidance per session for light on and off conditions
+lightOnAvoidance  = nan(1,length(sessions));
+lightOffAvoidance = nan(1,length(sessions));
+
+for i = 1:length(sessions)
+        
+    trialOn = [data.sessionNum]==i & [data.obsLightOn];
+    trialOff = [data.sessionNum]==i & ~[data.obsLightOn];
+    
+    lightOnAvoidance(i)  = sum([data(trialOn).avoided]) / sum(trialOn);
+    lightOffAvoidance(i) = sum([data(trialOff).avoided]) / sum(trialOff);
+end
+
+scatter(ones(1,length(sessions))*1.5, lightOnAvoidance, 75, cmaps{1}, 'filled', 'jitter', 'on'); hold on
+scatter(ones(1,length(sessions))*3.5, lightOffAvoidance, 75, cmaps{2}, 'filled', 'jitter', 'on');
+line([1 2], repmat(mean(lightOnAvoidance),1,2), 'color', 'black', 'linewidth', 2);
+line([3 4], repmat(mean(lightOffAvoidance),1,2), 'color', 'black', 'linewidth', 2);
+set(gca, 'ylim', [0 1], 'xlim', [.5 4.5], 'xtick', [1.5 3.5], 'xticklabel', conditionLabels);
+
+title('success rate')
+xlabel('\itcondition')
+ylabel('\itfraction avoided')
+
 pimpFig;
 set(gcf, 'menubar', 'none',...
          'units', 'inches',...
-         'position', [4 1.5 11 6.5]);
+         'position', [4 4 14.5 4]);
 
-
-for k = 1:2
-    
-    % pimp out touch probability
-    subplot(2,3,1 + (k-1)*3)
-    set(gca, 'xdir', 'reverse', 'xlim', [touchPosCenters(1) touchPosCenters(end)] - obsPos, 'ylim', probYlims, 'ytick', {});
-    title(['touch probability' labels{k}])
-    xlabel('\itposition (m)')
-    ylabel('\ittouch probability')
-
-
-    % pimp out velocity figure
-    subplot(2,3,2 + (k-1)*3)
-    set(gca, 'xlim', [-obsPrePost(1) obsPrePost(2)], 'ylim', ylims)
-    
-    title(['velocity' labels{k}]);
-    xlabel('\itposition (m)')
-    ylabel('\itvelocity (m/s)')
-    y1 = frameEdges(1)-obsPos;
-    y2 = frameEdges(2)-obsPos;
-    line([y1 y1], ylims, 'color', cmap{k}(1,:), 'linewidth', 2)
-    line([y2 y2], ylims, 'color', cmap{k}(1,:), 'linewidth', 2)
-
-
-    % pimp out bar graph
-    subplot(2,3,3 + (k-1)*3)
-    set(gca, 'ylim', [0 1], 'xlim', [.25 length(sessions)+.75])
-    title(['success rate' labels{k}])
-    xlabel('\itsession #')
-    ylabel('\itfraction avoided')
-end
 
 
 % save fig
