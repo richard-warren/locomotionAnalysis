@@ -13,7 +13,7 @@ dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\session
 editedDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\editedVid\';
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 wiskScaling = 18/52;
-border = 4; % thickness (pixels) to draw around the wisk frame
+border = 5; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 
 
@@ -41,7 +41,7 @@ set(vidWriter, 'FrameRate', fps)
 if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
 
-load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsPixPositions', 'obsTimes',...
+load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', ''...
                                            'wheelPositions', 'wheelTimes',...
                                            'obsOnTimes', 'obsOffTimes',...
                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...
@@ -50,11 +50,8 @@ load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsPixPositions', 'o
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
 
 % get position where wisk frame should overlap with runTop frame
-topInd = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width, 1, 'first'); % find a frame where the obstacle is at the right edge, eg within the whisker camera
-frameTop = rgb2gray(read(vidTop, topInd));
-wiskInd = find(frameTimeStampsWisk==frameTimeStamps(topInd), 1, 'first');
-frameWisk = rgb2gray(read(vidWisk, wiskInd));
-[yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, scalings);
+!!!
+
 
 % edit video
 w = waitbar(0, 'editing video...');
@@ -101,7 +98,9 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
                 frameWisk([1:border, end-border:end], :) = 255;
                 frameWisk(:, [1:border, end-border:end]) = 255;
                 frame(yWiskPos:yWiskPos+size(frameWisk,1)-1, xWiskPos:xWiskPos+size(frameWisk,2)-1) = frameWisk;
+%                 frame(1:vidTop.Height, [vidTop.Width+1:vidTop.Width+wiskDim(2)] + round(webDim(2)/2)-wiskDim(2)/2) = frameWisk;
             end
+%             if frameInds(j)>15000; keyboard; end
             
             % webCam
             frameWeb = webFrames(:,:,webFramesInterp(j));

@@ -2,7 +2,7 @@
 
 % settings
 sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\';
+dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
 trialProportion = .15;
 
 for i=1:length(sessionDirs)
@@ -25,7 +25,7 @@ end
 
 
 
-% make video with trials labelled by condition
+%% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data
@@ -48,7 +48,6 @@ for j = 1:length(sessionDirs)
     end
 
     makeVidWisk(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
-%     makeVid(session, [0 .445], .5, trialProportion, {'OFF', 'ON'}, trialConditions);
 end
 
 
