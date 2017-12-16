@@ -9,19 +9,17 @@ function makeVidWisk(session, obsPosRange, playBackSpeed, trialProportion, trial
 
 
 % settings
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
-editedDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\editedVid\';
+editedDir = [getenv('DATADIR') 'editedVid\'];
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
-wiskScaling = 18/52;
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 
 
 % initializations
-vidTop = VideoReader([dataDir session '\runTop.mp4']);
-vidBot = VideoReader([dataDir session '\runBot.mp4']);
-vidWisk = VideoReader([dataDir session '\runWisk.mp4']);
-vidWeb = VideoReader([dataDir session '\webCam.avi']);
+vidTop = VideoReader([getenv('DATADIR') 'sessions\' session '\runTop.mp4']);
+vidBot = VideoReader([getenv('DATADIR') 'sessions\' session '\runBot.mp4']);
+vidWisk = VideoReader([getenv('DATADIR') 'sessions\' session '\runWisk.mp4']);
+vidWeb = VideoReader([getenv('DATADIR') 'sessions\' session '\webCam.avi']);
 
 frameDim = round([vidTop.Height + vidBot.Height, vidBot.Width + (vidWeb.Width * (vidBot.Height/vidWeb.Height))]);
 webDim = [vidBot.Height, frameDim(2) - vidBot.Width];
@@ -41,11 +39,11 @@ set(vidWriter, 'FrameRate', fps)
 if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
 
-load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsPixPositions', 'obsTimes',...
-                                           'wheelPositions', 'wheelTimes',...
-                                           'obsOnTimes', 'obsOffTimes',...
-                                           'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...
-                                           'touchSig', 'touchSigTimes');
+load([getenv('DATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsPixPositions', 'obsTimes',...
+                                            'wheelPositions', 'wheelTimes',...
+                                            'obsOnTimes', 'obsOffTimes',...
+                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...
+                                            'touchSig', 'touchSigTimes');
 
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
 

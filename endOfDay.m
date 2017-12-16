@@ -1,8 +1,7 @@
 % spike analysis, make videos, make figures
 
 % settings
-sessionDirs = uigetdir2('C:\Users\rick\Google Drive\columbia\obstacleData\sessions', 'select folders to analyze');
-dataDir = 'C:\Users\LindseyBuckingham\Google Drive\columbia\obstacleData\sessions\';
+sessionDirs = uigetdir2([getenv('DATADIR') 'sessions\'], 'select folders to analyze');
 trialProportion = .15;
 
 for i=1:length(sessionDirs)
@@ -31,9 +30,9 @@ for j = 1:length(sessionDirs)
     % load session data
     nameInd = find(sessionDirs{j}=='\',1,'last');
     session = sessionDirs{j}(nameInd+1:end);
-    load([dataDir session '\runAnalyzed.mat'],...
-                          'obsOnTimes', 'obsOffTimes',...
-                          'obsLightOnTimes', 'obsLightOffTimes');
+    load([getenv('DATADIR') 'sessions\' session '\runAnalyzed.mat'],...
+         'obsOnTimes', 'obsOffTimes',...
+	     'obsLightOnTimes', 'obsLightOffTimes');
 
     % find obstacle light on trial inds
     trialConditions = zeros(1,length(obsOnTimes));
