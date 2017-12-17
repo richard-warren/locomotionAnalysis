@@ -1,6 +1,6 @@
 function makeVidWisk(session, obsPosRange, playBackSpeed, trialProportion, trialLabels, trialInds)
 
-% !!! need to document
+% !!! needs further documentation
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
 % kept and everything else is edited out. obsPosRange is in m and defines
@@ -13,9 +13,9 @@ editedDir = [getenv('OBSDATADIR') 'editedVid\'];
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
-obsBotThickness = 15;
-obsWiskThickness = 3; % 43
-obsWiskYLims = [122 219]; 
+obsTopThickness = 18;
+obsWiskThickness = 25;
+obsColor = 255;
 
 
 % initializations
@@ -93,15 +93,12 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
             
             % bot
             frameBot = rgb2gray(read(vidBot, frameInds(j)));
-            frameBot = addObsToFrame(frameBot, obsPixPositions(frameInds(j)), obsBotThickness, [1, size(frameBot,1)], 255);
             frame(vidTop.Height+1:end, 1:vidBot.Width) = frameBot;
             
             % wisk
-%             [timeDif, wiskFrameInd] = min(abs(frameTimeStampsWisk - frameTimeStamps(frameInds(j))));
-            wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
-            if ~isempty(wiskFrameInd) % timeDif < .01 % only write wisk frame if it is temporally close to run frame
-                frameWisk = rgb2gray(read(vidWisk, wiskFrameInd));
-                frameWisk = addObsToFrame(frameWisk, obsPixPositionsWisk(wiskFrameInd), obsWiskThickness, obsWiskYLims, 255);
+            [timeDif, wiskFrameInd] = min(abs(frameTimeStampsWisk - frameTimeStamps(frameInds(j))));
+            if timeDif < .01 % only write wisk frame if it is temporally close to run frame
+                frameWisk = rgb2gray(read(vidWisk, wiskFrameIfnd));
                 frameWisk = imresize(frameWisk, wiskScaling);
                 frameWisk([1:border, end-border:end], :) = 255;
                 frameWisk(:, [1:border, end-border:end]) = 255;

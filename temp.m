@@ -2,7 +2,7 @@
 
 wiskData = LoadWhiskers('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\runWiskTest4\runWisk.whiskers');
 vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\runWiskTest4\runWisk.mp4');
-%%
+
 close all; figure;
 im = imshow(rgb2gray(read(vid,1))); pimpFig
 

@@ -7,6 +7,7 @@ function obsPixPositions = trackObstacles(vid, obsOnTimes, obsOffTimes, frameTim
 
 % initializations
 frame = rgb2gray(read(vid,1));
+if invertColors; frame = 255-frame; end
 pixThresh = pixThreshFactor * mean(frame(:));
 totalFrames = vid.NumberOfFrames;
 if mod(obsMinThickness,2)==1; obsMinThickness = obsMinThickness-1; end % ensure obsMinThickness is even, which ensures medFiltSize is odd // this way the filtered version doesn't shift by one pixel relative to the unfiltered version

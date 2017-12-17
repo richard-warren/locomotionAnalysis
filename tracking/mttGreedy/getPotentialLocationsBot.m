@@ -46,7 +46,7 @@ for i = frameInds
     frame = frame - bg;
     
     % mask obstacle
-    frame = maskObs(frame, obsPixPositions(i));
+    frame = maskObs(frame, obsPixPositions(i)); % !!! should replace this with addObsToFrame
 
     % filter with svm
     frameFiltered = -(conv2(double(frame)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);

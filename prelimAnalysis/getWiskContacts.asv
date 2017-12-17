@@ -1,0 +1,57 @@
+
+
+vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest4\runWisk.mp4');
+load('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest4\runAnalyzed.mat');
+bg = 255 - getBgImage(vid, 500, true);
+
+%%
+
+% settings
+bgThresh = 50;
+wiskThresh = 30;
+erosion = 3;
+dilation = 7;
+
+% initializations
+frameInd = find(obsPixPositionsWisk<200, 1, 'first');
+frame = 255 - rgb2gray(read(vid, frameInd));
+erodeKern = strel('disk', erosion);
+dilateKern = strel('disk', dilation);
+close all; figure;
+
+% raw
+subplot(2,3,1)
+imshow(frame);
+
+% bg mask
+subplot(2,3,2)
+bgMask = frame > bgThresh;
+bgMask = imerode(bgMask, erodeKern);
+bgMask = imdilate(bgMask, dilateKern);
+imshow(bgMask)
+
+% masked
+subplot(2,3,3)
+masked = frame .* uint8(~bgMask);
+imshow(masked)
+
+% obs mask
+subplot(2,3,4)
+labelFrame = bwlabel(bgMask>0);
+firstColInds = find(labelFrame(:,1));
+invalidLabels = unique(labelFrame(firstColInds,1));
+obsMask = ~ismember(labelFrame, invalidLabels) & labelFrame>0;
+imshow(obsMask);
+
+% wisk threshed
+subplot(2,3,5)
+maskedThreshed = masked > wiskThresh;
+imshow(maskedThreshed)
+
+% combined
+subplot(2
+
+
+
+
+pimpFig
