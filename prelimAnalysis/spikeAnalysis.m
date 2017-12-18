@@ -372,36 +372,33 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
         end
     end
     
-     
+
+
     
-    
-%     % track the pixel positions of the obstacle in wisk view
-%     if analyzeVar('obsPixPositionsWisk', varNames, varsToOverWrite)
-% 
-%         if ~isempty('obsOntimes') && ...
-%            any(strcmp(fieldnames(varStruct), 'frameTimeStampsWisk'))
-% 
-%             fprintf('%s: tracking obstacles in wisk view\n', dataFolder)
-% 
-%             % settings
-%             vidWisk = VideoReader([dataDir dataFolder '\runWisk.mp4']);
-%             xLims = [160 vidWisk.Width];
-%             yLims = [125 215];
-%             pixThreshFactor = 5;
-%             invertColors = true;
-%             showTracking = false;
-%             obsMinThickness = 10;
-% 
-%             % track obstacle in bottom view
-%             obsPixPositionsWisk = trackObstacles(vidWisk, varStruct.obsOnTimes, varStruct.obsOffTimes,...
-%                 varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
-%                 xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
-% 
-%             % save
-%             varStruct.obsPixPositionsWisk = obsPixPositionsWisk;
-%             anythingAnalyzed = true;
-%         end
-%     end
+    % get wisk contact times and pixels at which contacts occur
+    if analyzeVar('isWiskTouching', varNames, varsToOverWrite) ||...
+        analyzeVar('wiskTouchSignal', varNames, varsToOverWrite)
+        
+        if ~isempty('obsOntimes') %!!! probably needs more checks here
+            
+            fprintf('%s: analyzing wisk contacts\n', dataFolder)
+
+            % settings
+            showTracking = false;
+
+            % initializations
+            vidWisk = VideoReader([dataDir dataFolder '\runWisk.mp4']);
+
+            % track obstacle in bottom view
+            [wiskTouchSignal, wiskTouchPixels] = getWiskContacts(vidWisk, showTracking,...
+                varStruct.frameTimeStampsWisk, varStruct.obsOnTimes, varStruct.obsOffTimes);
+
+            % save
+            varStruct.wiskTouchSignal = wiskTouchSignal;
+            varStruct.wiskTouchPixels = wiskTouchPixels;
+            anythingAnalyzed = true;
+        end
+    end
 
 
 
