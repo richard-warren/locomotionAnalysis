@@ -66,7 +66,6 @@ for i = obsOnInds
 
     
     % obs mask
-    tic
     blobInfo = bwlabel(bgMask);
     firstCol = blobInfo(:,1);
     invalidLabels = unique(firstCol);

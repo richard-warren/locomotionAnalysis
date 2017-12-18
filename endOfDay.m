@@ -9,9 +9,7 @@ for i=1:length(sessionDirs)
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    tic
     spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'wiskTouchSignal', 'wiskTouchPixels'});
-    toc
     
     % make video
 %     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
