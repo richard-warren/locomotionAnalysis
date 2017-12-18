@@ -1,65 +1,138 @@
+function [isWiskTouching, contactPixels] = getWiskContacts(vid, showTracking, frameTimeStampsWisk, obsOnTimes, obsOffTimes)
 
-
-vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest4\runWisk.mp4');
-load('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\wiskTest4\runAnalyzed.mat');
-bg = 255 - getBgImage(vid, 500, true);
-
-%%
+% !!! need to document
 
 % settings
-pixPos = [100 vid.Width];
 bgThresh = 60;
 wiskThresh = 30;
 erosion = 3;
 dilation = 5;
+minBlobArea = 2000;
+borderThickness = 10;
+borderThresh = .15;
 
 % initializations
-frameInds = find(obsPixPositionsWisk>pixPos(1) & obsPixPositionsWisk<pixPos(2));
-close all; figure; pimpFig
+isWiskTouching = false(size(frameTimeStampsWisk));
+contactPixels = cell(size(frameTimeStampsWisk));
+erodeKern = strel('disk', erosion);
+dilateKern = strel('disk', dilation);
 
-for i = frameInds
+% get inds of frames where obs is on
+onInds = knnsearch(frameTimeStampsWisk, obsOnTimes);
+offInds =  knnsearch(frameTimeStampsWisk, obsOffTimes);
+isObsOn = zeros(size(frameTimeStampsWisk));
+isObsOn(onInds) = 1;
+isObsOn(offInds) = -1;
+obsOnInds = find(logical(cumsum(isObsOn)))';
+
+if showTracking
     
-    frame = 255 - rgb2gray(read(vid, i));
-    erodeKern = strel('disk', erosion);
-    dilateKern = strel('disk', dilation);
+    figure('position', [1921 1 750 450], 'menubar', 'none', 'color', 'black');
+    frame = rgb2gray(read(vid,1));
+    bgMask = frame > bgThresh;
+    
+    subaxis(2,3,1, 'margin', 0, 'padding', 0, 'margin', 0)
+    imRaw = imshow(frame);
+    
+    subaxis(2,3,2)
+    imMasked = imshow(bgMask);
+    
+    subaxis(2,3,3)
+    imObs = imshow(bgMask);
+    
+    subaxis(2,3,4)
+    imWisk = imshow(bgMask);
+    
+    subaxis(2,3,5)
+    imBorder = imshow(bgMask);
+    
+    subaxis(2,3,6)
+    imTouching = imshow(bgMask);
+end
 
+
+
+for i = obsOnInds
+    
+%     disp(i/vid.NumberOfFrames)
+    
     % raw
-    subplot(3,3,1)
-    imshow(frame);
+    frame = 255 - rgb2gray(read(vid, i));
 
-    % bg mask
-    subplot(3,3,2)
+    % masked by bg
     bgMask = frame > bgThresh;
     bgMask = imerode(bgMask, erodeKern);
     bgMask = imdilate(bgMask, dilateKern);
-    imshow(bgMask)
-
-    % masked
-    subplot(3,3,3)
     masked = frame .* uint8(~bgMask);
-    imshow(masked)
 
     % obs mask
-    subplot(3,3,4)
-    labelFrame = bwlabel(bgMask>0);
-    firstColInds = find(labelFrame(:,1));
-    invalidLabels = unique(labelFrame(firstColInds,1));
-    % !!! keep only largest blob that exceeds some minimum
-    obsMask = ~ismember(labelFrame, invalidLabels) & labelFrame>0;
-    imshow(obsMask);
+    tic
+%     blobInfo = regionprops(bgMask, 'Area', 'BoundingBox', 'Image');
+%     boundingBoxes = reshape([blobInfo.BoundingBox], 4, length(blobInfo));
+%     validInds = ([blobInfo.Area] > minBlobArea) & (boundingBoxes(1,:)>1);
+%     blobInfo = blobInfo(validInds);
+%     obsMask = zeros(size(frame));
+%     if ~isempty(blobInfo)
+%         [~,maxInd] = max([blobInfo.Area]);
+%         blobInfo = blobInfo(maxInd);
+%         x = ceil(blobInfo.BoundingBox(1));
+%         y = ceil(blobInfo.BoundingBox(2));
+%         obsMask(y : y+blobInfo.BoundingBox(4)-1, x : x+blobInfo.BoundingBox(3)-1) = blobInfo.Image;
+%     end
+
+    keyboard    
+    toc
 
     % wisk threshed
-    subplot(3,3,5)
-    maskedThreshed = masked > wiskThresh;
-    imshow(maskedThreshed)
-
-    % combined
-    subplot(3,3,6)
-    combined = uint8(obsMask);
-    combined(maskedThreshed) = 2;
-    imagesc(combined);
+    wisks = masked > wiskThresh;
     
-    pause(.1)
+    % get mask for obstacle border
+    borderMask = zeros(size(frame));
+    
+    if ~isempty(blobInfo)
+        
+        xP = x - borderThickness;
+        yP = y - borderThickness;
+        
+        if xP>0 && yP>0
+            obsMaskShifted = zeros(size(frame));
+            obsMaskShifted(yP : yP+blobInfo.BoundingBox(4)-1, xP : xP+blobInfo.BoundingBox(3)-1) = blobInfo.Image;
+            borderMask = xor(obsMask, obsMaskShifted) & ~obsMask;
+        end
+    end
+    
+    
+    % get wisk touches, ie wisks masked by obstacle border
+    wiskInBorder = wisks & borderMask;
+    
+    
+    % store results
+    if (sum(wiskInBorder(:)) / sum(borderMask(:))) > borderThresh
+        isWiskTouching(i) = true;
+    end
+    contactPixels{i} = find(wiskInBorder);
+    
+    
+    % update displays
+    if showTracking
+        
+        if isWiskTouching(i)
+            frame(wiskInBorder) = 255;
+        end
+        
+        set(imRaw, 'CData', frame);
+        set(imMasked, 'CData', masked);
+        set(imObs, 'CData', obsMask);
+        set(imWisk, 'CData', wisks);
+        set(imBorder, 'CData', borderMask);
+        set(imTouching, 'CData', wiskInBorder);
+        
+        if isempty(blobInfo)
+            pause(.001)
+        else
+            pause(.05);
+        end
+    end
 end
 
 

@@ -14,7 +14,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     %         getting wisk frame time stamps
     %         getting webcam time stamps
     %         video tracking of obstacle in bottom view
-    %         video tracking of obstacle in wisk view
+    %         get times of wisk contact, and pixels at which wisk contact occurs within wisk vid
     %
     % for each session, loads existing runAnalyzed.mat
     % if a computed variable is not already stored in runAnalyzed.mat AND the files necessary to compute it exist, it computes the variable
@@ -375,33 +375,33 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
      
     
     
-    % track the pixel positions of the obstacle in wisk view
-    if analyzeVar('obsPixPositionsWisk', varNames, varsToOverWrite)
-
-        if ~isempty('obsOntimes') && ...
-           any(strcmp(fieldnames(varStruct), 'frameTimeStampsWisk'))
-
-            fprintf('%s: tracking obstacles in wisk view\n', dataFolder)
-
-            % settings
-            vidWisk = VideoReader([dataDir dataFolder '\runWisk.mp4']);
-            xLims = [160 vidWisk.Width];
-            yLims = [125 215];
-            pixThreshFactor = 5;
-            invertColors = true;
-            showTracking = false;
-            obsMinThickness = 10;
-
-            % track obstacle in bottom view
-            obsPixPositionsWisk = trackObstacles(vidWisk, varStruct.obsOnTimes, varStruct.obsOffTimes,...
-                varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
-                xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
-
-            % save
-            varStruct.obsPixPositionsWisk = obsPixPositionsWisk;
-            anythingAnalyzed = true;
-        end
-    end
+%     % track the pixel positions of the obstacle in wisk view
+%     if analyzeVar('obsPixPositionsWisk', varNames, varsToOverWrite)
+% 
+%         if ~isempty('obsOntimes') && ...
+%            any(strcmp(fieldnames(varStruct), 'frameTimeStampsWisk'))
+% 
+%             fprintf('%s: tracking obstacles in wisk view\n', dataFolder)
+% 
+%             % settings
+%             vidWisk = VideoReader([dataDir dataFolder '\runWisk.mp4']);
+%             xLims = [160 vidWisk.Width];
+%             yLims = [125 215];
+%             pixThreshFactor = 5;
+%             invertColors = true;
+%             showTracking = false;
+%             obsMinThickness = 10;
+% 
+%             % track obstacle in bottom view
+%             obsPixPositionsWisk = trackObstacles(vidWisk, varStruct.obsOnTimes, varStruct.obsOffTimes,...
+%                 varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
+%                 xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
+% 
+%             % save
+%             varStruct.obsPixPositionsWisk = obsPixPositionsWisk;
+%             anythingAnalyzed = true;
+%         end
+%     end
 
 
 
