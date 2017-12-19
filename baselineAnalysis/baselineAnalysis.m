@@ -11,7 +11,8 @@ function baselineAnalysis(mouse)
 
 
 % user settings
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
+dataDir = [getenv('OBSDATADIR') 'sessions\'];
+resultsDir = [getenv('OBSDATADIR') 'figures\'];
 trialRange = [.05 .8]; % only include trials in the middle between these two limits
 rewardRotations = 9.1;
 positRange = [1 7]; % units: wheel rotations // only compute trial median velocity within these wheel positions on a per-trial basis 
@@ -32,7 +33,7 @@ sessionInds = strcmp(sessionInfo.mouse, mouse) &...
 sessions = sessionInfo.session(sessionInds);
 
 cmap = winter(length(sessions));
-figure;
+figure('name', mouse);
 subplot(1,2,2); bar(nan(1,length(sessions))); hold on % ghost bar plot to get our axis labels
 
 
@@ -110,6 +111,6 @@ ylabel('velocity (m/s)', 'fontweight', 'bold')
 
 
 % save figure
-savefig(['baselineAnalysis\figs\' mouse '.fig'])
+savefig([resultsDir mouse 'Baseline.fig'])
 
 

@@ -111,6 +111,7 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
                 % resize, adjust contrast, and draw border
                 frameWisk = imresize(frameWisk, wiskScaling);
                 frameWisk = imadjust(frameWisk, [.75 .95], [0 1]);
+                frameWisk = 255 - frameWisk;
                 frameWisk([1:border, end-border:end], :) = 255;
                 frameWisk(:, [1:border, end-border:end]) = 255;
                 
