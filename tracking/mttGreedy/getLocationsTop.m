@@ -1,4 +1,4 @@
-function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, fs)
+function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, paws, fs)
 
 % !!! need to document and make not shitty
 
@@ -7,15 +7,15 @@ function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLi
 objectNum = 4;
 maxVel = 25 / .004;   % max velocity (pixels / sec)
 maxXDistance = 20;    % max distance of x position in top from x position in bottom view
-xOccludeBuffer = 10;  % if paws in bottom view have x values within xOccludeBuffer of one another, the paw further away from the camera is treated as occluded
+% xOccludeBuffer = 10;  % if paws in bottom view have x values within xOccludeBuffer of one another, the paw further away from the camera is treated as occluded
 stanceHgt = 6;        % paws in stance (negative x velocity in bottom view) are assigned z values stanceHgt pixels above wheel (wheel defined by circRoiPts)
 circRoiPts = [36 172; 224 122; 386 157];
 stanceVel = -500;     % paws moving less than this vel are considered to be in stance (pixels / sec)
 obsProximity = 60;    % if paw is within obsProximity pixels of obstacle, stance is no longer assumed when velocity is less than stanceVel
 
-unariesWeight = 1;
-pairwiseWeight = 0;
-lownessWeight = 0;
+unariesWeight = 0;
+pairwiseWeight = 1;
+lownessWeight = 1;
 scoreWeight = 0;
 
 
@@ -23,7 +23,6 @@ scoreWeight = 0;
 labels = nan(length(potentialLocationsTop), objectNum);
 locationsTop = struct();
 [wheelRadius, wheelCenter] = fitCircle(circRoiPts - repmat([0 stanceHgt], 3, 1));
-startFrame = find(cellfun(@(x) ~isempty(x), {potentialLocationsTop.x}), 1, 'first');
 
 % fix x alignment for bottom view
 locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
@@ -33,7 +32,7 @@ locationsBot = fixTracking(locationsBot);
 
 % get x velocities for bottom view tracking
 locationsBot.xVel = nan(size(locationsBot.x));
-for i = 1:4
+for i = paws
     locationsBot.xVel(:,i) = getVelocity(locationsBot.x(:,i), .025, fs);
 end
 
@@ -53,16 +52,16 @@ for i = frameInds
     wasOccluded = zeros(1, objectNum); % keeps track of whether the object was occluded in the previous frame (used in getBestLabels)
     
     
-    for j = 1:objectNum
+    for j = paws %1:objectNum
         
-        % check if paw is occluded
-        occludedByBins = abs(locationsBot.x(i,j) - locationsBot.x(i,:)) < xOccludeBuffer & ...
-                      (locationsBot.y(i,:) > locationsBot.y(i,j));
-        if any(occludedByBins)
-            valid(j,:) = 0;
-        
-        % if not occluded, compute scores for all potential locations
-        else
+%         % check if paw is occluded
+%         occludedByBins = abs(locationsBot.x(i,j) - locationsBot.x(i,:)) < xOccludeBuffer & ...
+%                       (locationsBot.y(i,:) > locationsBot.y(i,j));
+%         if any(occludedByBins)
+%             valid(j,:) = 0;
+%         
+%         % if not occluded, compute scores for all potential locations
+%         else
             
             % get unary potentials
             xDistances = abs(locationsBot.x(i,j) - potentialLocationsTop(i).x);
@@ -91,7 +90,7 @@ for i = frameInds
                     valid(j, pairwise(j,:)==0) = 0;
                 end
             end
-        end
+%         end
     end
     
     % get track scores (from svm)
@@ -118,7 +117,7 @@ for i = frameInds
     
 
     % only keep labeled locations
-    for j = 1:objectNum
+    for j = paws %1:objectNum
         if isnan(labels(i,j))
             locationsTop.x(i,j) = nan;
             locationsTop.z(i,j) = nan;

@@ -1,4 +1,4 @@
-function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model, subFrameSize, scoreThresh, frameInds, showTracking)
+function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model, subFrameSize, scoreThresh, frameInds, paws, showTracking)
 
 % !!! need to document
 
@@ -63,7 +63,7 @@ for i = frameInds
     % make x positions out of range
     xMask = uint8(zeros(size(frame)));
     
-    for j = 1:4
+    for j = paws%1:4
         if ~isnan(locationsBot.x(i,j))
             
             % get mask indices for single paw
@@ -95,7 +95,7 @@ for i = frameInds
     if showTracking
         
         % put lines in top frame
-        for j = 1:4
+        for j = paws%1:4
             if locationsBot.x(i,j)>0 && locationsBot.x(i,j)<vid.Width
                 frame(:,locationsBot.x(i,j)) = 255;
             end

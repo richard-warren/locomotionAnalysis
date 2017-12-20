@@ -3,7 +3,7 @@ function velocity = getVelocity(data, windowSize, fs)
     % gets velocity by smoothing with first order Savitzky-Golay filter, then differentiating
     %
     % input         data: position data from which to compute velocity
-    %               windowSize: size of window separating samples that are subtracted from one another to compute velocity
+    %               windowSize: size of window separating samples that are subtracted from one another to compute velocity (s)
     %               fs: frequency at which data are sampled
     %
     % output        velocity: computed velocity

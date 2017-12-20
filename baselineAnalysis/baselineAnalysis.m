@@ -13,7 +13,7 @@ function baselineAnalysis(mouse)
 % user settings
 dataDir = [getenv('OBSDATADIR') 'sessions\'];
 resultsDir = [getenv('OBSDATADIR') 'figures\'];
-trialRange = [.05 .8]; % only include trials in the middle between these two limits
+trialRange = [.05 1]; % only include trials in the middle between these two limits
 rewardRotations = 9.1;
 positRange = [1 7]; % units: wheel rotations // only compute trial median velocity within these wheel positions on a per-trial basis 
 wheelDiam = 0.1905; % m
