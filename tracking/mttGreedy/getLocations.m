@@ -129,7 +129,7 @@ close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)
 
 % settings
 scoreThresh = 0;
-showTracking = false;
+showTracking = true;
 model = [getenv('OBSDATADIR') 'svm\classifiers\pawTop'];
 paws = [2 4];
 
@@ -153,7 +153,7 @@ locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMappi
 showLocations(vidTop, frameInds, potentialLocationsTop, (locationsTop), showPotentialLocations, .02, anchorPtsBot);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
-% make tracking vid
+%% make tracking vid
 
 makeTrackingVid(session, frameInds)
 

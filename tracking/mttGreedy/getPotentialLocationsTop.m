@@ -7,7 +7,7 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLi
 overlapThresh = .5;
 yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
 circRoiPts = [36 172; 224 122; 386 157];
-xMaskWidth = 20;
+xMaskWidth = 40;
 
 
 % initializations
@@ -108,7 +108,7 @@ for i = frameInds
         set(scatterPtsAll, 'XData', x, 'YData', y);
         
         % pause to reflcet on the little things...
-        pause(.1);
+        pause(.2);
 %         keyboard
     end
 end

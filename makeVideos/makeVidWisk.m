@@ -102,12 +102,7 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
                 
                 % get wisk frame
                 frameWisk = rgb2gray(read(vidWisk, wiskFrameInd));
-                
-%                 % if wisk touching obs draw points of contacts
-%                 if wiskTouchSignal(wiskFrameInd) > wiskTouchThresh
-%                     frameWisk(wiskTouchPixels{wiskFrameInd}) = 0;
-%                 end
-                
+                               
                 % resize, adjust contrast, and draw border
                 frameWisk = imresize(frameWisk, wiskScaling);
                 frameWisk = imadjust(frameWisk, [.75 .95], [0 1]);
@@ -144,11 +139,11 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
             end
             
             
-%             % change color of frame if touching
-%             currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
-%             if currentTouch
-%                 frame(:,:,3) = frame(:,:,1)*.2;
-%             end
+            % change color of frame if touching
+            currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
+            if currentTouch
+                frame(:,:,3) = frame(:,:,1)*.2;
+            end
             
             % make wisk view yellow if contacting obstacle
             if ~isempty(wiskFrameInd)

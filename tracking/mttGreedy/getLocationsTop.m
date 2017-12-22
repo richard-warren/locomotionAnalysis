@@ -6,7 +6,7 @@ function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLi
 % settings
 objectNum = 4;
 maxVel = 25 / .004;   % max velocity (pixels / sec)
-maxXDistance = 20;    % max distance of x position in top from x position in bottom view
+maxXDistance = 25;    % max distance of x position in top from x position in bottom view
 % xOccludeBuffer = 10;  % if paws in bottom view have x values within xOccludeBuffer of one another, the paw further away from the camera is treated as occluded
 stanceHgt = 6;        % paws in stance (negative x velocity in bottom view) are assigned z values stanceHgt pixels above wheel (wheel defined by circRoiPts)
 circRoiPts = [36 172; 224 122; 386 157];
@@ -14,7 +14,7 @@ stanceVel = -500;     % paws moving less than this vel are considered to be in s
 obsProximity = 60;    % if paw is within obsProximity pixels of obstacle, stance is no longer assumed when velocity is less than stanceVel
 
 unariesWeight = 0;
-pairwiseWeight = 1;
+pairwiseWeight = 0;
 lownessWeight = 1;
 scoreWeight = 0;
 

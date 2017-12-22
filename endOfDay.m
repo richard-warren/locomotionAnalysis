@@ -19,15 +19,15 @@ end
 % delete(gcp); % delete parallel pool
 
 % generate plots
-baselineAnalysis('run6')
-baselineAnalysis('run7')
-baselineAnalysis('run8')
+% baselineAnalysis('run6')
+% baselineAnalysis('run7')
+% baselineAnalysis('run8')
 % obsAvoidanceLight2('run3', {'obsTestLight2'})
 % obsAvoidanceLight2('run5', {'whiskTestOmg'})
 
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data
