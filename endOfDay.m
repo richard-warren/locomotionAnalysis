@@ -3,13 +3,13 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 trialProportion = .15;
-
+%%
 for i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'wiskTouchSignal'});
     
     % make video
 %     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
@@ -27,7 +27,7 @@ end
 
 
 
-% make video with trials labelled by condition
+%% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data

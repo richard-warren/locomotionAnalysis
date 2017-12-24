@@ -376,7 +376,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
     
     % get wisk contact times and pixels at which contacts occur
-    if analyzeVar('isWiskTouching', varNames, varsToOverWrite) ||...
+    if analyzeVar('wiskTouchPixels', varNames, varsToOverWrite) ||...
         analyzeVar('wiskTouchSignal', varNames, varsToOverWrite)
         
         if ~isempty('obsOntimes') %!!! probably needs more checks here
@@ -391,7 +391,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
             % track obstacle in bottom view
             [wiskTouchSignal, wiskTouchPixels] = getWiskContacts(vidWisk, showTracking,...
-                varStruct.frameTimeStampsWisk, varStruct.obsOnTimes, varStruct.obsOffTimes);
+                varStruct.frameTimeStampsWisk, varStruct.obsPixPositions);
 
             % save
             varStruct.wiskTouchSignal = wiskTouchSignal;

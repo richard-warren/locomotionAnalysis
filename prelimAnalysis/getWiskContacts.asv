@@ -9,8 +9,8 @@ erosion = 3;
 dilation = 5;
 minObsArea = 2000;
 borderThickness = 10;
-wiskTouchThresh = .15; % just used for visualziation // if this is surpassed, pixels are colored white at points fo contact on raw image
-obsPixLims = [300 500]; % only analyze frame where obsPixPosition in top view is within these limits
+wiskTouchThresh = .1; % just used for visualziation // if this is surpassed, pixels are colored white at points fo contact on raw image
+obsPixLims = [375 450]; 
 
 % initializations
 wiskTouchSignal = nan(size(frameTimeStampsWisk));
@@ -19,7 +19,7 @@ erodeKern = strel('disk', erosion);
 dilateKern = strel('disk', dilation);
 
 % get inds of frames where obs is on
-frameInds = find(obsPixPositions>=obsPixLims(1) & obsPixPositions<=obsPixLims(2));
+frameInds = find(obsPixPositions>)';
 
 if showTracking
     
