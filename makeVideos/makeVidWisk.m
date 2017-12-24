@@ -142,7 +142,7 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
             % change color of frame if touching
             currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
             if currentTouch
-                frame(:,:,2) = frame(:,:,1)*.2;
+                frame(:,:,2) = frame(:,:,1)*.15;
             end
             
             % make wisk view yellow if contacting obstacle

@@ -1,4 +1,4 @@
-function obsAvoidanceLight2(mouse, expName)
+function obsAvoidanceLight(mouse, expName)
 
 % compare obstacle avoidance with and without the obstacle light on
 %
@@ -18,7 +18,7 @@ obsPos = .382; % m, position at which obstacle is in the middle of the frame // 
 frameEdges = [.336 .444]; % (m)
 sig = .0025; % sigma for gaussian kernal
 probYlims = [0 .004];
-minTouchTime = 0; % only touches count that are >= minTouchTime
+minTouchTime = .00; % only touches count that are >= minTouchTime
 conditionLabels = {'light', 'no light'};
 
 
@@ -217,4 +217,4 @@ set(gcf, 'menubar', 'none',...
 
 
 % save fig
-savefig(['obsAvoidance\figs\' mouse 'lights.fig'])
+savefig([getenv('OBSDATADIR') 'figures\' mouse 'LightsOnOff.fig'])

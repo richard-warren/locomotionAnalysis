@@ -3,8 +3,8 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 trialProportion = .15;
-%%
-for i=1:length(sessionDirs)
+%
+parfor i=1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
@@ -22,12 +22,13 @@ end
 % baselineAnalysis('run6')
 % baselineAnalysis('run7')
 % baselineAnalysis('run8')
-% obsAvoidanceLight2('run3', {'obsTestLight2'})
-% obsAvoidanceLight2('run5', {'whiskTestOmg'})
+obsAvoidanceLight('run6', {'obsNoBr'})
+obsAvoidanceLight('run7', {'obsNoBr'})
+obsAvoidanceLight('run8', {'obsNoBr'})
 
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data
