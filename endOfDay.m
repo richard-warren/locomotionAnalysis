@@ -9,7 +9,7 @@ parfor i=1:length(sessionDirs)
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'wiskTouchSignal'});
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
     
     % make video
 %     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
@@ -21,7 +21,7 @@ end
 % generate plots
 % baselineAnalysis('run6')
 % baselineAnalysis('run7')
-% baselineAnalysis('run8')
+% baselineAnalysis('ru  n8')
 obsAvoidanceLight('run6', {'obsNoBr'})
 obsAvoidanceLight('run7', {'obsNoBr'})
 obsAvoidanceLight('run8', {'obsNoBr'})

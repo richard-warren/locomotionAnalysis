@@ -3,8 +3,8 @@ function [wiskTouchSignal, wiskTouchPixels] = getWiskContacts(vid, showTracking,
 % !!! need to document
 
 % settings
-bgThresh = 60;
-wiskThresh = 35;
+bgThresh = 80;
+wiskThresh = 50;
 erosion = 3;
 dilation = 5;
 minObsArea = 2000;
