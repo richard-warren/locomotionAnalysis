@@ -16,8 +16,8 @@ function [touchDebounced, onTimes, offTimes] = debounceTouch(touchRaw, touchTime
 
 
 % user settings
-minBounce = .01;
-touchThresh = 3.5;
+minBounce = .02;
+touchThresh = 3;
 breakTimeThresh = .05; % seconds of touch that activates the wheel break
 
 % get touch on and off times
