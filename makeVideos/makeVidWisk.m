@@ -14,7 +14,7 @@ maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this dura
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 obsBotThickness = 15;
-wiskTouchThresh = .1; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
+wiskTouchThresh = -1; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
 
 
 % initializations
@@ -47,6 +47,13 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...
                                             'touchSig', 'touchSigTimes',...
                                             'wiskTouchSignal', 'wiskTouchPixels');
+
+                                        
+% convert wisk contacts to z scores
+realInds = ~isnan(wiskTouchSignal);
+normedReal = zscore(wiskTouchSignal(realInds));
+wiskTouchSignal = nan(size(wiskTouchSignal));
+wiskTouchSignal(realInds) = normedReal;
 
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
 
