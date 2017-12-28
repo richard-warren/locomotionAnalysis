@@ -22,9 +22,10 @@ end
 % baselineAnalysis('run6')
 % baselineAnalysis('run7')
 % baselineAnalysis('run8')
-obsAvoidanceLight('run6', {'obsNoBr', 'obsBr'})
-obsAvoidanceLight('run7', {'obsNoBr', 'obsBr'})
-obsAvoidanceLight('run8', {'obsNoBr', 'obsBr'})
+% obsAvoidanceLight('run6', {'obsNoBr', 'obsBr'})
+% obsAvoidanceLight('run7', {'obsNoBr', 'obsBr'})
+% obsAvoidanceLight('run8', {'obsNoBr', 'obsBr'})
+obsAvoidanceLearningSummary({'run6', 'run7', 'run8'})
 
 
 

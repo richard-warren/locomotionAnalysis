@@ -1,21 +1,20 @@
-% function obsAvoidanceLearningSummary(mice)
+function obsAvoidanceLearningSummary(mice)
 
 % shows obstacle avoidance for all mice over time, with and without wheel break...
 % assumes at least noBrSessions have been collected... otherwise will behave incorrectly
 %
 % input         mouse:      name of mouse to analyze
 
-% temp
-mice = {'run6', 'run7', 'run8'};
-
 
 % user settings
 minTouchTime = .05; % only touches count that are >= minTouchTime
-conditionNames = {'light', 'no light'};
+conditionYAxes = {'(light)', '(no light)'};
 experimentNames = {'obsNoBr', 'obsBr'};
 frameEdges = [.336 .444]; % (m) % !!! should double check this
 noBrSessions = 3; % uses the most recent noBrSessions 
 brSessions = 7; % uses the first (oldest) brSessions
+mouseScatSize = 25;
+meanScatSize = 100;
 
 % initializations
 xInds = 1:(noBrSessions + brSessions);
@@ -93,32 +92,48 @@ for i = 1:length(mice)
 end
 
 
-%% plot everything
+% plot everything
 
 % prepare figure
-close all
-figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 200 800 500], 'color', [1 1 1]);
+figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 200 750 500], 'color', [1 1 1]);
+fields = {'lightOnAvoidance', 'lightOffAvoidance'};
 
+% plot light on and light off avoidance for each mouse
 
-% plot light on and light off avoidance
+allAvoidanceData = nan(length(mice), (noBrSessions+brSessions), 2); % (mice, session, isLightOn)
+
 for i = 1:2
     
     subplot(2,1,i)
     
     for j = 1:length(mice)
         
-        bins = strcmp(mice{i}, {data.mouse}) & [data.includeSessions];
+        bins = strcmp(mice{j}, {data.mouse}) & [data.includeSessions];
         
-        if i==1
-            plot(xInds(1:length(bins)), [data(inds).lightOnAvoidance])
-        else
-            plot(xInds(1:length(bins)), [data(inds).lightOffAvoidance])
-        end
+        plot(xInds(1:sum(bins)), [data(bins).(fields{i})], 'color', cmap(j,:)); hold on
+        scatter(xInds(1:sum(bins)), [data(bins).(fields{i})], mouseScatSize, cmap(j,:), 'filled')
+        
+        allAvoidanceData(j, 1:sum(bins), i) = [data(bins).(fields{i})];
         
     end
     
+    % pimp fig
+    set(gca, 'box', 'off', 'xtick', xInds, 'xlim', [xInds(1)-.5 xInds(end)], 'ylim', [0 1])
+    if i==2; xlabel('session', 'fontweight', 'bold'); end
+    ylabel({'fraction avoided', conditionYAxes{i}}, 'fontweight', 'bold')
+    line([noBrSessions+.5 noBrSessions+.5], [0 1], 'lineWidth', 3, 'color', get(gca, 'xcolor'))
+    
 end
-%%
+
+% plot means
+for i = 1:2
+    
+    subplot(2,1,i)
+    meanAvoidance = nanmean(squeeze(allAvoidanceData(:,:,i)),1);
+    plot(xInds, meanAvoidance, 'lineWidth', 3, 'color', get(gca, 'xcolor'))
+    scatter(xInds, meanAvoidance, meanScatSize, get(gca, 'xcolor'), 'filled')
+    
+end
 
 
 
