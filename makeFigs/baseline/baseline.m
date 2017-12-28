@@ -1,4 +1,4 @@
-function baselineAnalysis(mouse)
+function baseline(mouse)
 
 % BASELINE ANALYSIS
 

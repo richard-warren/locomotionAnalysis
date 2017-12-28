@@ -1,4 +1,4 @@
-function obsAvoidanceLight(mouse, expName)
+function obsAvoidanceLearning(mouse, expName)
 
 % compare obstacle avoidance with and without the obstacle light on
 %
@@ -217,4 +217,4 @@ set(gcf, 'menubar', 'none',...
 
 
 % save fig
-savefig([getenv('OBSDATADIR') 'figures\' mouse 'LightsOnOff.fig'])
+savefig([getenv('OBSDATADIR') 'figures\' mouse 'obsAvoidanceLearning.fig'])

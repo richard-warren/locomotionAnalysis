@@ -1,4 +1,4 @@
-% function baselineSummary(mice)
+function baselineSummary(mice)
 
 % BASELINE ANALYSIS
 
@@ -8,8 +8,6 @@
 % mean speeds are computed in space between vertical lines on the plot (positRange)
 % only middle trials are included, defined by trialRange
 
-% temp
-mice = {'run6', 'run7', 'run8'};
 
 
 % user settings
@@ -83,7 +81,8 @@ for i = 1:size(sessions,1)
     
     % store values
     data(i).mouse = sessions.mouse{i};
-    data(i).vel = smooth(nanmean(velInterp, 1), smoothSmps);
+    data(i).vel = nanmean(velInterp, 1);
+    data(i).vel = smooth(data(i).vel, smoothSmps);
     middlePositInds = (positsInterp > positRangeMeters(1)) & (positsInterp < positRangeMeters(2));
     data(i).meanVel = nanmean( nanmean(velInterp(:, middlePositInds), 2) ); % !!! why is nanmean necessary here!!!
     
@@ -92,9 +91,10 @@ end
 
 % plot mouse means
 
-close all; figure('name', 'baselineSummary');
 
 % compute and plot mouse means
+
+figure('name', 'baselineSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 500 900 400], 'color', [1 1 1]);
 
 allVels = reshape([data.vel], length([data(1).vel]), length(data))';
 mouseMeanTraces = nan(length(mice), size(allVels,2));
@@ -107,7 +107,7 @@ for i = 1:length(mice)
     % get mouse means across sessions
     bins = strcmp(mice{i}, {data.mouse});
     mouseMeanTraces(i,:) = nanmean(allVels(bins,:),1);
-    mouseMedVels(i) = median([data(bins).meanVel]);
+    mouseMedVels(i) = mean([data(bins).meanVel]);
     
     % trace
     subplot(1,3,1:2)
@@ -130,10 +130,8 @@ meanVel = mean(mouseMedVels);
 line([-.5 .5], [meanVel meanVel], 'color', [0 0 0], 'linewidth', 3)
 
 
-% pimp figure
 
-% global propertiies
-set(gcf, 'menubar', 'none', 'units', 'pixels', 'position', [500 500 900 400], 'color', [1 1 1])
+% pimp fig
 
 % velocity traces
 subplot(1,3,1:2); set(gca, 'ylim', ylims, 'xlim', [0 maxPosit], 'box', 'off', 'xtick', 0:1:5, 'ytick', yTicks)
@@ -149,7 +147,6 @@ ylabel('velocity (m/s)', 'fontweight', 'bold')
 % scatter plot
 subplot(1,3,3); set(gca, 'ylim', ylims, 'xlim', [-1.5 1.5], 'xcolor', 'none', 'ytick', yTicks)
 ylabel('velocity (m/s)', 'fontweight', 'bold')
-
 
 
 % save figure
