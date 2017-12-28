@@ -191,7 +191,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
         fprintf('%s: getting obstacle light on and off times\n', dataFolder)
         load([sessionDir 'run.mat'], 'obsLight')
 
-        if exist('obsLight', 'var') & any(obsLight.values>2)
+        if exist('obsLight', 'var') && any(obsLight.values>2)
 
             % find reward times
             obsLightOnInds  = find(diff(obsLight.values>2)==1) + 1;

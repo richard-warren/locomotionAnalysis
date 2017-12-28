@@ -15,8 +15,8 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts, sessio
 
 % initializations
 
-ttlTrialStartInds = [1; find(diff(ttlTimes)>.4)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
-frameTrialStartInds = [1; find(diff(frameTimesRaw)>.45) + 1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
+ttlTrialStartInds = [1; find(diff(ttlTimes)>.48)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
+frameTrialStartInds = [1; find(diff(frameTimesRaw)>.48) + 1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
 
 frameCountDiffs = diff(frameCounts);
 missedFrameInds = find(frameCountDiffs>1);
