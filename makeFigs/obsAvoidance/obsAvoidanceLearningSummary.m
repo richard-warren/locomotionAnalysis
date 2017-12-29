@@ -3,7 +3,7 @@ function obsAvoidanceLearningSummary(mice)
 % shows obstacle avoidance for all mice over time, with and without wheel break...
 % assumes at least noBrSessions have been collected... otherwise will behave incorrectly
 %
-% input         mouse:      name of mouse to analyze
+% input         mice:      name of mice to analyze
 
 
 % user settings
@@ -39,7 +39,8 @@ for i = 1:size(sessions,1)
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...
             'obsLightOnTimes', 'obsLightOffTimes',...
-            'touchOnTimes', 'touchOffTimes');
+            'touchOnTimes', 'touchOffTimes', 'touchSig');
+    load([getenv('OBSDATADIR') 'sessions\' sessions.session{i} '\run.mat'], 'breaks', 'touch');
     
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
     
@@ -65,7 +66,9 @@ for i = 1:size(sessions,1)
     for j = 1:length(obsOnTimes)
         
         % find whether and where obstacle was toucheed
-        isAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
+%         isAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
+        isAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j)) &&...
+                       ~any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
         
         % find whether light was on
         isLightOn(j) = min(abs(obsOnTimes(j) - obsLightOnTimes)) < 1; % did the light turn on near whether the obstacle turned on
@@ -134,7 +137,6 @@ for i = 1:2
     scatter(xInds, meanAvoidance, meanScatSize, get(gca, 'xcolor'), 'filled')
     
 end
-
 
 
 % save fig

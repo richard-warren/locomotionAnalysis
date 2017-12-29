@@ -2,18 +2,15 @@
 
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
-trialProportion = .15;
-%%
+miceToPlot = {'run6', 'run7', 'run8'};
+vidTrialProportion = .1;
+%
 parfor i = 1:length(sessionDirs)
     
-    nameInd = find(sessionDirs{i}=='\',1,'last');
-    
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), allVars);
+    nameInd = find(sessionDirs{i}=='\',1,'last');
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'touchSig'});
     
-    % make video
-%     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
-
 end
 
 % delete(gcp); % delete parallel pool
@@ -22,12 +19,11 @@ end
 % baselineAnalysis('run6')
 % baselineAnalysis('run7')
 % baselineAnalysis('run8')
-% obsAvoidanceLight('run6', {'obsNoBr', 'obsBr'})
-% obsAvoidanceLight('run7', {'obsNoBr', 'obsBr'})
-% obsAvoidanceLight('run8', {'obsNoBr', 'obsBr'})
-%%
-obsAvoidanceLearningSummary({'run6', 'run7', 'run8'})
-
+% obsAvoidanceLearning('run6', {'obsBr'})
+% obsAvoidanceLearning('run7', {'obsBr'})
+% obsAvoidanceLearning('run8', {'obsBr'})
+obsAvoidanceLearningSummary(miceToPlot)
+speedOverTimeSummary(miceToPlot)
 
 
 % make video with trials labelled by condition
@@ -52,7 +48,7 @@ for j = 1:length(sessionDirs)
         end
     end
 
-    makeVidWisk(session, [.25 .445], .1, trialProportion, {'OFF', 'ON'}, trialConditions);
+    makeVidWisk(session, [.25 .445], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
 end
 
 

@@ -12,6 +12,8 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts, sessio
 % NOTE:    this code breaks if there are many adjacent missed frames - it will think this is a reward break in the camera when it is not really...
 %          the break in ttls ocurring at reward times should be .5 seconds. gaps greater than .4 will be considered reward times
 
+% settings
+fs = 250;
 
 % initializations
 
@@ -25,11 +27,27 @@ frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed
 
 % ensure the correct number of trials were detected
 if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
-    keyboard
-    fprintf('  %s: same number of rewards not detected! WTF!!! STOPPING ANALYSIS!!!', session)
-%     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
-    return
     
+    
+    % this bit of code removes frameTrialStartInds that do not align with ttlTrialStartInds (the latter and not the former being reliable)
+    ttlTrialLengths = diff(ttlTimes(ttlTrialStartInds));
+    camTrialLengths = diff(frameTrialStartInds)/250;
+    
+    for i = 2:length(ttlTrialLengths) % start at second frame because first trial often has many missing frames...
+        if abs(ttlTrialLengths(i) - camTrialLengths(i)) > .5
+            camTrialLengths = camTrialLengths([1:i-1 i+1:end]); % remove element i from camTrialLengths
+            frameTrialStartInds = frameTrialStartInds([1:i-1 i+1:end]);
+        end
+    end
+    fprintf('  %s: same number of rewards not detected! WTF!!! BUT WAS ABLE TO FIX THIS WITH A HACK!!!', session)
+    
+    
+    if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
+        fprintf('  %s: same number of rewards not detected! WTF!!! STOPPING ANALYSIS!!!', session)
+        %     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
+        return
+    end
+
 end
 
 

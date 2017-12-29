@@ -16,7 +16,8 @@ function [touchDebounced, onTimes, offTimes] = debounceTouch(touchRaw, touchTime
 
 
 % user settings
-minBounce = .02;
+minBounceDown = .05;
+minBounceUp = .005;
 touchThresh = 3;
 breakTimeThresh = .05; % seconds of touch that activates the wheel break
 
@@ -36,12 +37,18 @@ if ~isempty(onTimes)
     offTimes = offTimes(offTimes>onTimes(1));
 
 
-
     % for every touch, combine with with subsequent touch if it occurs within minBounce of current touch's off time
     for i = 1:(length(onTimes)-1)
-
-        if (onTimes(i+1) - offTimes(i)) <= minBounce
+        if (onTimes(i+1) - offTimes(i)) <= minBounceDown
             onTimes(i+1) = nan;
+            offTimes(i) = nan;
+        end
+    end
+    
+    % eliminate touches shorter than minBounceUp
+    for i = 1:(length(onTimes)-1)
+        if (offTimes(i) - onTimes(i)) <= minBounceUp
+            onTimes(i) = nan;
             offTimes(i) = nan;
         end
     end
@@ -55,7 +62,7 @@ if ~isempty(onTimes)
     for i = 1:length(breakTimes)
         try
             trialObsOffTime = obsOffTimes( find(obsOffTimes>breakTimes(i), 1, 'first') );
-            invalidInds = onTimes>(breakTimes(i)-breakTimeThresh+minBounce) & onTimes<trialObsOffTime;
+            invalidInds = onTimes>(breakTimes(i)-breakTimeThresh+minBounceDown) & onTimes<trialObsOffTime;
             onTimes = onTimes(~invalidInds);
             offTimes = offTimes(~invalidInds);
         catch
