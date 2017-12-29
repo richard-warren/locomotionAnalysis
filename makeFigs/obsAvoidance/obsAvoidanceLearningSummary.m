@@ -10,7 +10,7 @@ function obsAvoidanceLearningSummary(mice)
 minTouchTime = .05; % only touches count that are >= minTouchTime
 conditionYAxes = {'(light)', '(no light)'};
 experimentNames = {'obsNoBr', 'obsBr'};
-frameEdges = [.336 .444]; % (m) % !!! should double check this
+frameEdges = [.336 .415]; % (m) % [(pos at which obs enters frame) (pos at which obs clears hind paws (this is to avoid including tail contacts))]
 noBrSessions = 3; % uses the most recent noBrSessions 
 brSessions = 7; % uses the first (oldest) brSessions
 mouseScatSize = 25;

@@ -3,13 +3,13 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 trialProportion = .15;
-
+%%
 parfor i = 1:length(sessionDirs)
     
     nameInd = find(sessionDirs{i}=='\',1,'last');
     
     % spike analysis
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), allVars);
     
     % make video
 %     makeVid(sessionDirs{i}(nameInd+1:end), [.25 .445], .1, trialProportion);
@@ -25,6 +25,7 @@ end
 % obsAvoidanceLight('run6', {'obsNoBr', 'obsBr'})
 % obsAvoidanceLight('run7', {'obsNoBr', 'obsBr'})
 % obsAvoidanceLight('run8', {'obsNoBr', 'obsBr'})
+%%
 obsAvoidanceLearningSummary({'run6', 'run7', 'run8'})
 
 

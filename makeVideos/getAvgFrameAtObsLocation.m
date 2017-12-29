@@ -12,14 +12,11 @@ function avgFrame = getAvgFrameAtObsLocation(session, obsPos)
 % approximate coordinates: wheel center, .382 // right edge of frame, .336 // left edge of frame, .444
 
 % load data
-dataDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\';
+dataDir = [getenv('OBSDATADIR') 'sessions\'];
 vid = VideoReader([dataDir session '\runTop.mp4']);
 
 load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
-
-% user settings
-windows = 3; % number of separate windows to plot all frames in
 
  
 
@@ -38,24 +35,9 @@ for i = 1:length(obsOnTimes)
     end
 end
 
-
-% plot all frames
-% groupInds = floor(linspace(1,length(obsOnTimes)+1, windows+1));
-% 
-% for i=1:windows
-%     
-%     figure;
-%     inds = groupInds(i):groupInds(i+1)-1;
-%     montage(allFrames(:,:,:,inds))
-%     pimpFig;
-%     
-% end
-
 % compute average frame
 avgFrame = nanmean(allFrames,4);
 
-% plot average frame
-% figure; imshow(nanmean(allFrames,4)); pimpFig
 
 
 
