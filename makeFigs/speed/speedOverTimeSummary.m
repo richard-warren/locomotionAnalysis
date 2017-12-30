@@ -1,6 +1,8 @@
 function speedOverTimeSummary(mice)
 
 % shows average speed as mice jump over obstacle for each session, showing (hopefully) that mice get faster over time
+% one plot for light, one for no light
+% also shows mean light vs no light for most recent sessions
 % starts with the first session with wheel break
 %
 % input         mice:      name of mice to analyze
@@ -8,11 +10,12 @@ function speedOverTimeSummary(mice)
 
 % user settings
 sessionsToPlot = 7;
+lightVsNoLightSessions = 3; % for the plot comparing light vs no light speed, only take the most recent lightVsNoLightSessions for each mouse
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters
-yLims = [.1 .7]; % m/s
+yLims = [.1 .6]; % m/s
 obsPos = .382; % m, position at which obstacle is in the middle of the frame // use getFrameTimes function to determine this value
-conditionYAxes = {'(light)', '(no light)'};
+conditionYAxes = {'(light)', '(no light)', ''};
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -94,32 +97,55 @@ for i = 1:length(mice)
     
 end
 
-cmap = winter(max([data.sessionNum]));
+sessionNum = max([data.sessionNum]);
+cmap = winter(sessionNum*2);
+condColors = [cmap(end,:); cmap(1,:)];
+cmap = {cmap(sessionNum+1:end,:), cmap(1:sessionNum,:)};
 
 % plot everything
 
 % prepare figure
-figure('name', 'speedOverTimeSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 200 550 600], 'color', [1 1 1]);
+figure('name', 'speedOverTimeSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 200 550 800], 'color', [1 1 1]);
 fields = {'lightOnVel', 'lightOffVel'};
 
 % plot light on and light off avoidance for each mouse
 
-for i = 1:2    
+for i = 1:3
     
-    subplot(2,1,i)
+    subplot(3,1,i)
     
-    for j = 1:max([data.sessionNum])
+    % plot individual conditions over time
+    if i<3
+        for j = 1:max([data.sessionNum])
+
+            bins = [data.sessionNum] == j;
+            sessionVels = reshape([data(bins).(fields{i})], length(posInterp), sum(bins))';
+
+            plot(posInterp, nanmean(sessionVels,1), 'color', cmap{i}(j,:), 'linewidth', 3); hold on
+
+        end
         
-        bins = [data.sessionNum] == j;
-        sessionVels = reshape([data(bins).(fields{i})], length(posInterp), sum(bins))';
+    % plot condition comparison    
+    else
         
-        plot(posInterp, nanmean(sessionVels,1), 'color', cmap(j,:), 'linewidth', 3); hold on
+        inds = nan(lightVsNoLightSessions * length(mice), 1);
+
+        for j = 1:length(mice)
+            indInds = (j-1)*length(mice)+1: (j-1)*length(mice)+length(mice);
+            inds(indInds) = find(strcmp(mice{j}, {data.mouse}), lightVsNoLightSessions, 'last');
+        end
         
+        for j = 1:2
+    
+            allVels = reshape([data(inds).(fields{j})], length(posInterp), length(inds))';
+            plot(posInterp, nanmean(allVels,1), 'color', condColors(j,:), 'linewidth', 3); hold on
+
+        end
     end
     
     % pimp fig
     set(gca, 'box', 'off', 'xlim', [posInterp(1) posInterp(end)], 'ylim', yLims)
-    if i==2; xlabel('position (m)', 'fontweight', 'bold'); end
+    if i==3; xlabel('position (m)', 'fontweight', 'bold'); end
     ylabel({'speed (m/s)', conditionYAxes{i}}, 'fontweight', 'bold')
     obsOnPos = -mean([data.avgObsOnPos]);
     line([obsOnPos obsOnPos], yLims, 'color', get(gca, 'xcolor'), 'linewidth', 2)
@@ -129,5 +155,19 @@ end
 
 
 
+
+keyboard
+
+
+
+
 % save fig
 savefig([getenv('OBSDATADIR') 'figures\speedOverTimeSummary.fig'])
+
+
+
+
+
+
+
+

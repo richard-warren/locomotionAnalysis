@@ -101,8 +101,9 @@ end
 % ---------------
 % plot everything
 % ---------------
+keyboard
 
-% prepare figure
+%% prepare figure
 figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 200 600 650], 'color', [1 1 1]);
 fields = {'lightOnAvoidance', 'lightOffAvoidance'};
 
@@ -163,7 +164,7 @@ jitterPos = jitterPos(randperm(length(jitterPos)));
 allMeans = {lightMeans, lightOffMeans};
 
 for i = 1:length(mice)
-    line(centers+jitterPos(i), [lightMeans(i) lightOffMeans(i)], 'linewidth', 1, 'color', [.5 .5 .5]); hold on
+    line(centers, lightMeans(i))
 end
 
 for i = 1:2
@@ -173,12 +174,12 @@ for i = 1:2
 end
 
 posTemp = get(gca, 'position');
-set(gca, 'xlim', [centers(1)-border centers(2)+border], 'ylim', [0 1], 'box', 'off',...
-    'position', [posTemp(1) posTemp(2) .25 posTemp(4)], 'xtick', centers, 'xticklabel', {'light', 'no light'}, 'xcolor', [0 0 0])
+set(gca, 'xlim', [centers(1)-border centers(2)+border], 'ylim', [0 1], 'box', 'off', 'xcolor', 'none', 'position', [posTemp(1) posTemp(2) .25 posTemp(4)])
 ylabel({'fraction avoided', conditionYAxes{i}}, 'fontweight', 'bold')
 
-% save fig
+%% save fig
 savefig([getenv('OBSDATADIR') 'figures\obsAvoidanceLearningSummary.fig'])
+
 
 
 
