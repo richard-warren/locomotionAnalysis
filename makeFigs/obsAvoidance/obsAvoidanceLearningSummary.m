@@ -71,8 +71,7 @@ for i = 1:size(sessions,1)
         
         % find whether and where obstacle was toucheed
 %         isAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
-        isAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j)) &&...
-                       ~any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
+        isAvoided(j) = ~any(touchOnTimes>obsOnTimes(j) & touchOnTimes<obsOffTimes(j));
         
         % find whether light was on
         isLightOn(j) = min(abs(obsOnTimes(j) - obsLightOnTimes)) < 1; % did the light turn on near whether the obstacle turned on

@@ -4,6 +4,7 @@ function speedOverTimeSummary(mice)
 % one plot for light, one for no light
 % also shows mean light vs no light for most recent sessions
 % starts with the first session with wheel break
+% note: for each session MEDIAN speed is computed (to minimize impact of very slow trials) - then averaging is preformed across sessions
 %
 % input         mice:      name of mice to analyze
 
@@ -81,8 +82,8 @@ for i = 1:size(sessions,1)
     end
     
     data(i).mouse = sessions.mouse{i};
-    data(i).lightOnVel = nanmean(sessionVels(isLightOn,:),1);
-    data(i).lightOffVel = nanmean(sessionVels(~isLightOn,:),1);
+    data(i).lightOnVel = nanmedian(sessionVels(isLightOn,:),1);
+    data(i).lightOffVel = nanmedian(sessionVels(~isLightOn,:),1);
     data(i).avgObsOnPos = nanmean(obsOnPositions);
     
 end
@@ -152,12 +153,6 @@ for i = 1:3
     line([0 0], yLims, 'color', get(gca, 'xcolor'), 'linewidth', 2)
     
 end
-
-
-
-
-keyboard
-
 
 
 
