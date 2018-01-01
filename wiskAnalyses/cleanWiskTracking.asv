@@ -1,0 +1,30 @@
+
+% temp
+session = '171231_002';
+
+% initializations
+file = ['C:\Users\rick\Google Drive\columbia\obstacleData\sessions\' session '\runWiskEdited.'];
+wisks = LoadWhiskers([file 'whiskers']);
+measures = LoadMeasurements([file 'measurements']);
+vid = VideoReader([file 'mp4']);
+
+
+close all; figure;
+im = imshow(rgb2gray(read(vid,1)));
+
+%%
+
+for i = 1:vid.NumberOfFrames
+    
+    % get frame
+    frame = rgb2gray(read(vid,i));
+    
+    % get wisk data
+    inds = [wisks.id]==i;
+    
+    
+    % update preview
+    set(im, 'CData', frame);
+    pause(.1)
+    
+end
