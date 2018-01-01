@@ -1,18 +1,18 @@
-function bgImage = getBgImage(vid, meanFrameNum, showImage)
+function bgImage = getBgImage(vid, meanFrameNum, maxTimeToSkip, diffThresh, showImage)
     % given a vid file, spits out a bg image that is the average of meanFrameNum frames
     % only uses frame where average pixel difference is > diffThresh to ensure it only takes frames where the mouse is moving
 
     
     % user settings
-    skipTime = 60; % time to skip at the beginning of the sesion, to account for periods where the mouse is being put on the wheel (s)
+    skipTime = 0; % time to skip at the beginning of the sesion, to account for periods where the mouse is being put on the wheel (s)
 %     medFiltKernel = [10 5];
 %     contrast = [.05 .5; 0 1]; % [low in, high in; low out, high out]
-    maxTimeToSkip = 0; % skip this much time after a frame to avoid grabbing only successive frames
-    diffThresh = 2*10e-4;
+%     maxTimeToSkip = 0; % skip this much time after a frame to avoid grabbing only successive frames
+%     diffThresh = 2*10e-4;
     
     
     % initializations
-    currentFrame = round(skipTime * vid.FrameRate);
+    currentFrame = max(round(skipTime * vid.FrameRate), 2);
     frameLast = rgb2gray(read(vid, currentFrame-1));
     meanFrame = zeros(size(frameLast)); % re-computes mean every time it grabs a new frame to avoid having to store many frames in memory simultaneously
     meanFrameCount = 0;
