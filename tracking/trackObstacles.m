@@ -82,7 +82,7 @@ for i = 1:length(obsOnTimes)
     % find mapping from obsPositions (from rotary encoder) to obsPixPositions for trial
     trialObsPositions = interp1(obsTimes, obsPositions, frameTimeStamps(frameInds)); % get position of obstacle for all frames
     validInds = ~isnan(trialObsPixPositions);
-    mapping = polyfit(trialObsPositions(validInds), trialObsPixPositions(validInds), 1);
+    mapping = polyfit(trialObsPositions(validInds), trialObsPixPositions(validInds), 1)
     
     % recreate obsPixPositions for trial by mapping from obsPositions to obsPixPositions
     % (this effectively smooths the obstacle position, and more importantly ensures that the obstacles is tracked even at the very edges of the frame)

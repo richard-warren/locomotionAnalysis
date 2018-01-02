@@ -13,7 +13,7 @@ function avgFrame = getAvgFrameAtObsLocation(session, obsPos)
 
 % load data
 dataDir = [getenv('OBSDATADIR') 'sessions\'];
-vid = VideoReader([dataDir session '\runTop.mp4']);
+vid = VideoReader([dataDir session '\runWisk.mp4']);
 
 load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
