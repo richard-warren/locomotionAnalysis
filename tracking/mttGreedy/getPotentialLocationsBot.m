@@ -34,7 +34,7 @@ if showTracking
 end
 
 
-potentialLocationsBot = struct();
+potentialLocationsBot(max(frameInds)) = struct();
 
 for i = frameInds
     

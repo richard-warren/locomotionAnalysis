@@ -1,90 +1,85 @@
-% function getPotentialLocationsTopMarkers(vid, frameInds, thresh, showTracking)
+function potentialLocationsTop = getPotentialLocationsTopMarkers(vid, frameInds, thresh, showTracking)
 
 
 % !!! need to document
 
-% temp
-vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\markerTest1\runTop.mp4');
-thresh = 120;
-showTracking = true;
 
 % settings
-circRoiPts = [36 172; 224 122; 386 157];
-minBlobArea = 30;
+circRoiPts = [42 164; 220 115; 377 143];
+circRoiOffSet = 4;
+minBlobArea = 10;
 
 
 % initializations
+circRoiPts = circRoiPts - repmat([0 circRoiOffSet], 3, 1);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
-%%
 
 
 % prepare figure
 if showTracking
 
-    figure('menubar', 'none', 'color', 'white'); colormap gray
+    fig = figure('menubar', 'none', 'color', 'white'); colormap gray
 
     rawAxis = subaxis(2,1,1, 'spacing', 0, 'margin', 0);
-    rawIm = image(sampleFrame, 'parent', rawAxis, 'CDataMapping', 'scaled');
+    rawIm = image(sampleFrame, 'parent', rawAxis, 'CDataMapping', 'scaled'); hold on;
     set(gca, 'visible', 'off');
-    hold on; scatterPtsAll = scatter(rawAxis, 0, 0, 100, 'filled', 'red');
+    scatterPtsRaw = scatter(rawAxis, 0, 0, 50, 'filled', 'red');
     
     threshAxis = subaxis(2,1,2, 'spacing', 0, 'margin', 0);
-    treshIm = image(sampleFrame, 'parent', threshAxis, 'CDataMapping', 'scaled');
+    treshIm = image(sampleFrame, 'parent', threshAxis, 'CDataMapping', 'scaled'); hold on
     set(gca, 'visible', 'off');
+    scatterPtsThresh = scatter(threshAxis, 0, 0, 50, 'filled', 'red');
     
-    set(gcf, 'position', [680 144 vid.Width*2 vid.Height*4])
+    set(gcf, 'position', [1950 10 vid.Width*2 vid.Height*4])
     
 end
 
-%%
-potentialLocationsTop = struct();
+
+
+% track markers on frameInd at a time
+potentialLocationsTop(frameInds(end)) = struct();
 
 for i = frameInds
     
     disp(i/totalFrames)
     
     % get frame and subframes
-    frame = rgb2gray(read(vid,i));
+    frame = rgb2gray(read(vid,i)) .* wheelMask;
     frame = frame - bg;
-    frameMasked = frame .* wheelMask; % mask wheel
-    frameThreshed = frameMasked > thresh;
+    frameThreshed = frame > thresh;
     
     
     % blob analysis
-    blobInfo = regionprops(frameThreshed, 'Area', 'Centroid');
-    
-        
+    blobInfo = regionprops(frameThreshed, 'Area', 'Centroid'); % get blobs
+    [~, sortInds] = sort([blobInfo.Area], 'descend');
+    blobInfo = blobInfo(sortInds); % sort from largest to smallest
+    if length(blobInfo) > 4; blobInfo = blobInfo(1:4); end % only keep four largest blobs
+    blobInfo = blobInfo([blobInfo.Area] > minBlobArea); % get rid of blobs that are too small
+            
     
     % store data
-    potentialLocationsTop(i).x = x;
-    potentialLocationsTop(i).y = y;
-    potentialLocationsTop(i).scores = scores;
+    centroids = reshape([blobInfo.Centroid], 2, length(blobInfo))';
+    potentialLocationsTop(i).x = centroids(:,1);
+    potentialLocationsTop(i).z = centroids(:,2);
     
     
     if showTracking
-        
-        % put lines in top frame
-        for j = paws%1:4
-            if locationsBot.x(i,j)>0 && locationsBot.x(i,j)<vid.Width
-                frame(:,locationsBot.x(i,j)) = 255;
-            end
-        end
-        
+                
         % update figure
         set(rawIm, 'CData', frame);
-        set(treshIm, 'CData', frameMasked);
-        set(predictIm, 'CData', frameFiltered)
-        set(scatterPtsAll, 'XData', x, 'YData', y);
+        set(treshIm, 'CData', frameThreshed);
+        set(scatterPtsRaw, 'XData', potentialLocationsTop(i).x, 'YData', potentialLocationsTop(i).z);
+        set(scatterPtsThresh, 'XData', potentialLocationsTop(i).x, 'YData', potentialLocationsTop(i).z);
         
         % pause to reflcet on the little things...
-        pause(.2);
+        pause(.02);
 %         keyboard
     end
 end
 
-close all
+if showTracking; close fig; end
 

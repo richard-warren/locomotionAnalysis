@@ -125,7 +125,7 @@ load([getenv('OBSDATADIR') 'svm\classifiers\' class], 'model', 'subFrameSize');
 close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)))
 
 
-%% get potential locations for top
+%% get potential locations for top (SVM)
 
 % settings
 scoreThresh = 0;
@@ -142,7 +142,22 @@ tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLin
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
 fprintf('potential locations top analysis time: %i minutes\n', toc/60)
 
-%% get locations for top
+
+%% get potential locations for top (markers)
+
+% settings
+markerThresh = 100;
+showTracking = false;
+
+% initializations
+vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+
+tic; potentialLocationsTop = getPotentialLocationsTopMarkers(vidTop, frameInds, markerThresh, showTracking);
+save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
+fprintf('potential locations top analysis time: %i minutes\n', toc/60)
+
+
+%% get locations for top (SVM)
 
 % settings
 showPotentialLocations = true;
@@ -152,6 +167,13 @@ fs = 250;
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, paws, fs);
 showLocations(vidTop, frameInds, potentialLocationsTop, (locationsTop), showPotentialLocations, .02, anchorPtsBot);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
+
+%% get locations for top (markers)
+
+locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBot, frameTimeStamps, xLinearMapping, frameInds);
+showLocations(vidTop, frameInds, potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot);
+save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
+
 
 %% make tracking vid
 

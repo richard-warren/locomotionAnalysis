@@ -70,7 +70,7 @@ for i = frameInds
             
             % get pairwise potentials
             if i>1
-                % get ind of last detection frame for object j
+                % get ind of last detection frame for object j % !!! i think this is a bug... i cant just do i-1 because i-1 might not actually be a member of frameInds!!!
                 if ~isnan(labels(i-1, j)) 
                     prevFrame = i-1;
                 else

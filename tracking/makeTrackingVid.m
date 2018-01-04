@@ -8,18 +8,18 @@ fps = 25; % playback fps
 circSize = 75;
 
 % load data
-load([session 'tracking\locationsBot.mat'], 'locationsBot')
-load([session 'tracking\locationsTop.mat'], 'locationsTop')
+load([getenv('OBSDATADIR') '\sessions\' session '\tracking\locationsBot.mat'], 'locationsBot')
+load([getenv('OBSDATADIR') '\sessions\' session '\tracking\locationsTop.mat'], 'locationsTop')
 locationsBot = fixTracking(locationsBot);
 locationsTop = fixTracking(locationsTop);
 
 % fix x alignment for bottom view
 load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
 % locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
-locationsTop.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2); % replace top x values with those from bottom, which are more reliable
+% locationsTop.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2); % replace top x values with those from bottom, which are more reliable
 
-vidTop = VideoReader([session 'runTop.mp4']);
-vidBot = VideoReader([session 'runBot.mp4']);
+vidTop = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runTop.mp4']);
+vidBot = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runBot.mp4']);
 frameTop = read(vidTop,1);
 frameBot = read(vidBot,1);
 
@@ -39,7 +39,7 @@ topAxis = subplot(2,1,1, 'units', 'pixels');
 colormap gray
 topImshow = image(frameTop, 'parent', topAxis, 'CDataMapping', 'scaled'); hold on;
 set(topAxis, 'visible', 'off', 'CLim', [0 255])
-scatterTop = scatter(topAxis, locationsTop.x(1,[2,4]), locationsTop.z(1,[2,4]), circSize, colors([2,4],:), 'filled');
+scatterTop = scatter(topAxis, locationsTop.x(1,:), locationsTop.z(1,:), circSize, colors, 'filled');
 txt = text(topAxis, 5 , 5, '', 'color', [1 1 1]);
 
 botAxis = subplot(2,1,2, 'units', 'pixels');
@@ -69,7 +69,7 @@ for i = frameInds
     set(botImshow, 'CData', frameBot);
 
     % update circles
-    set(scatterTop, 'XData', locationsTop.x(i,[2,4]), 'YData', locationsTop.z(i,[2,4]))
+    set(scatterTop, 'XData', locationsTop.x(i,:), 'YData', locationsTop.z(i,:))
     set(scatterBot, 'XData', locationsBot.x(i,:), 'YData', locationsBot.y(i,:))
 
     writeVideo(vidWrite, getframe(gcf));
