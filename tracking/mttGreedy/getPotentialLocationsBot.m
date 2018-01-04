@@ -12,7 +12,7 @@ objectNum = 4;      % number of paws
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
-bg = getBgImage(vid, 1000, false);
+bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 
 % prepare figure
@@ -44,6 +44,7 @@ for i = frameInds
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
     frame = frame - bg;
+    frame(frame>40) = 40; % a hack to limit influence of markers shining in bottom view
     
     % mask obstacle
     frame = maskObs(frame, obsPixPositions(i)); % !!! should replace this with addObsToFrame

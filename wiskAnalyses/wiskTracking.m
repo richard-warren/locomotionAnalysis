@@ -12,9 +12,10 @@ minScore = 0;
 angleLims = [0 135];
 
 % initializations
-file = ['C:\Users\rick\Google Drive\columbia\obstacleData\sessions\' session '\runWiskEdited.'];
+% file = ['C:\Users\rick\Google Drive\columbia\obstacleData\sessions\' session '\runWiskEdited.'];
+file = 'C:\Users\rick\Desktop\test\runWisk.';
 wisks = LoadWhiskers([file 'whiskers']);
-wisks = rmfield(wisks, {'id', 'thick', 'scores'}); % remove fields i don't need to free up memory
+% wisks = rmfield(wisks, {'id', 'thick', 'scores'}); % remove fields i don't need to free up memory
 measures = LoadMeasurements([file 'measurements']);
 measures = rmfield(measures, {'wid', 'label', 'face_x', 'face_y', 'curvature'}); % remove fields i don't need to free up memory
 vid = VideoReader([file 'mp4']);

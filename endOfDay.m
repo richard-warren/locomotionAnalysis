@@ -3,17 +3,17 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 miceToPlot = {'run6', 'run7', 'run8'};
-vidTrialProportion = .1;
+vidTrialProportion = .5;
 %
-for i = 1:length(sessionDirs)
+parfor i = 1:length(sessionDirs)
     
     % spike analysis
     nameInd = find(sessionDirs{i}=='\',1,'last');
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'obsPixPositions'});
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
     
 end
 
-%% delete(gcp); % delete parallel pool
+% delete(gcp); % delete parallel pool
 
 % generate plots
 % baselineAnalysis('run6')

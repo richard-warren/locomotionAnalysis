@@ -27,7 +27,7 @@ pixPerSub = prod(subFrameSize);
 
 % load video and sample frame
 vid = VideoReader(vidFile);
-bg = getBgImage(vid, 1000, false);
+bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 
 % iterate through frames of all examples (locations)
@@ -40,6 +40,7 @@ for i = randperm(length(locations))
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
+    frame(frame>40) = 40; % a hack to limit influence of markers shining in bottom view
     
     % mask obstacle
     if ~isnan(obsPixPositions(locationFrameInds(i)))
