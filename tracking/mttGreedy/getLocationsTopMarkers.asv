@@ -1,13 +1,13 @@
 function locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBot, frameTimeStamps, xLinearMapping, frameInds)
 
 % !!! need to document
-unaryWeight = 1;
+unaryWeight = .01;
 pairwiseWeight = 1;
 
 
 % settings
-maxXDistance = 25;    % max distance of x position in top from x position in bottom view
-maxVel = (25 / .004) * 100000;   % max velocity (pixels / sec)
+maxXDistance = 40;    % max distance of x position in top from x position in bottom view
+maxVel = 25 / .004;   % max velocity (pixels / sec)
 
 % initializations
 locationsTop.x = nan(length(potentialLocationsTop), 4);
@@ -43,7 +43,6 @@ for i = 1:4
         locationsTop.z(frameInds(1), pawSequence(i)) = potentialLocationsTop(frameInds(1)).z(maxInd);
         alreadyTaken(maxInd) = true;
     end
-    
 end
 
 
@@ -61,6 +60,9 @@ for i = 2:length(frameInds)
     [~, pawSequence] = sort(locationsBot.y(frameInds(i), :), 'descend');
     alreadyTaken = false(4,1);
     
+    scores = nan(4, length(potentialLocationsTop(frameInds(i)).x));
+%     wasOccluded = true;
+    
     for j = 1:length(pawSequence)
         
         % get unary potentials
@@ -75,15 +77,19 @@ for i = 2:length(frameInds)
         
         % get pairwise potentials
         
-        for k = fliplr(1:i) % find last ind with detected frame
-            if ~isnan
+        % find last ind with detected paw
+        lastInd = 1;
+        for k = fliplr(1:i-1) % find last ind with detected frame
+            if ~isnan(locationsTop.x(frameInds(k), pawSequence(j)))
+                lastInd = k;
+                break;
+            end
         end
-        lastInd = find(~isnan(locationsTop.x(:, pawSequence(j))), 1, 'last');
-        
-        
-        dx = locationsTop.x(lastInd, pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
-        dz = locationsTop.z(lastInd, pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
-        dt = frameTimeStamps(frameInds(i)) - frameTimeStamps(lastInd);
+%         if (i-lastInd)==1; wasOccluded = false; end % if the paw was most recently tracked in the previous framed, then it was not occluded
+                
+        dx = locationsTop.x(frameInds(lastInd), pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
+        dz = locationsTop.z(frameInds(lastInd), pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
+        dt = frameTimeStamps(frameInds(i)) - frameTimeStamps(frameInds(lastInd));
         vels = sqrt(dx.^2 + dz.^2) / dt;
         isTooFast = vels > maxVel;
         
@@ -94,26 +100,30 @@ for i = 2:length(frameInds)
         
         
         % compute scores
-        scores = (unaries * unaryWeight) + (pairwise * pairwiseWeight);
-        scores(isTooFar | isTooFast) = 0;
+        try
+            pawScores = (unaries * unaryWeight) + (pairwise * pairwiseWeight);
+            r
+            scores(pawSequence(j), :) = ;
+            scores(pawSequence(j), (isTooFar | isTooFast | alreadyTaken)') = 0;
+        catch
+            keyboard
+        end
         
-        
-        [maxScore, maxInd] = max(scores);
+        [maxScore, maxInd] = max(scores(pawSequence(j), :));
         
         if maxScore>0
             locationsTop.x(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
             locationsTop.z(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
             alreadyTaken(maxInd) = true;
         end
-        
-        
-%         if nearestDistance < maxXDistance
-%             locationsTop.x(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(nearestInd);
-%             locationsTop.z(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(nearestInd);
-%             alreadyTaken(nearestInd) = true;
-%         end
-        
     end
+    
+    % maximize scores
+%     labels = getBestLabels(scores, 4, wasOccluded);
+%     trackedInds = ~isnan(labels);
+%     labels = labels(trackedInds);
+%     locationsTop.x(frameInds(i), trackedInds) = potentialLocationsTop(frameInds(i)).x(labels);
+%     locationsTop.z(frameInds(i), trackedInds) = potentialLocationsTop(frameInds(i)).z(labels);
 end
 
 

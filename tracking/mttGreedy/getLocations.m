@@ -170,8 +170,10 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'l
 
 %% get locations for top (markers)
 
+locationsBotFixed = fixTracking(locationsBot);
+
 locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBot, frameTimeStamps, xLinearMapping, frameInds);
-showLocations(vidTop, frameInds, potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot);
+showLocations(vidTop, frameInds(10000:end), potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 

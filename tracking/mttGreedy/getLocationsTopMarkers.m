@@ -1,7 +1,7 @@
 function locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBot, frameTimeStamps, xLinearMapping, frameInds)
 
 % !!! need to document
-unaryWeight = 1;
+unaryWeight = .01;
 pairwiseWeight = 1;
 
 
@@ -14,7 +14,7 @@ locationsTop.x = nan(length(potentialLocationsTop), 4);
 locationsTop.z = nan(length(potentialLocationsTop), 4);
 
 % fix x alignment for bottom view and smooth/interpolate
-locationsBot.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2);
+% locationsBot.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2);
 locationsBot = fixTracking(locationsBot); % fixTracking fills short stretches of missing values and median filters
 
 
@@ -58,7 +58,10 @@ for i = 2:length(frameInds)
     
     % sort paws from closest to furthest away from camera
     [~, pawSequence] = sort(locationsBot.y(frameInds(i), :), 'descend');
-    alreadyTaken = false(4,1);
+    alreadyTaken = false(length(potentialLocationsTop(frameInds(i)).x), 1);
+    
+    scores = nan(4, length(potentialLocationsTop(frameInds(i)).x));
+%     wasOccluded = true;
     
     for j = 1:length(pawSequence)
         
@@ -82,6 +85,7 @@ for i = 2:length(frameInds)
                 break;
             end
         end
+%         if (i-lastInd)==1; wasOccluded = false; end % if the paw was most recently tracked in the previous framed, then it was not occluded
                 
         dx = locationsTop.x(frameInds(lastInd), pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
         dz = locationsTop.z(frameInds(lastInd), pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
@@ -96,26 +100,25 @@ for i = 2:length(frameInds)
         
         
         % compute scores
-        scores = (unaries * unaryWeight) + (pairwise * pairwiseWeight);
-        scores(isTooFar | isTooFast) = 0;
+        pawScores = (unaries * unaryWeight) + (pairwise * pairwiseWeight);
+        pawScores(isTooFar | isTooFast | alreadyTaken) = 0;
+        scores(pawSequence(j), :) = pawScores;
         
-        
-        [maxScore, maxInd] = max(scores);
+        [maxScore, maxInd] = max(scores(pawSequence(j), :));
         
         if maxScore>0
             locationsTop.x(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
             locationsTop.z(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
             alreadyTaken(maxInd) = true;
         end
-        
-        if frameInds(i)==218465; keyboard; end
     end
     
     % maximize scores
-    labels = getBestLabels(scores, objectNum, wasOccluded);
-    
-    
-    
+%     labels = getBestLabels(scores, 4, wasOccluded);
+%     trackedInds = ~isnan(labels);
+%     labels = labels(trackedInds);
+%     locationsTop.x(frameInds(i), trackedInds) = potentialLocationsTop(frameInds(i)).x(labels);
+%     locationsTop.z(frameInds(i), trackedInds) = potentialLocationsTop(frameInds(i)).z(labels);
 end
 
 

@@ -74,7 +74,7 @@ for i = frameInds
                 if ~isnan(labels(i-1, j)) 
                     prevFrame = i-1;
                 else
-                    prevFrame = find(~isnan(labels(:,j)), 1, 'last');
+                    prevFrame = find(~isnan(labels(:,j)), 1, 'last'); % !!! this can be sped up quite a bit using a for loop
                     wasOccluded(j) = 1;
                 end
 
