@@ -379,7 +379,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     if analyzeVar('wiskTouchPixels', varNames, varsToOverWrite) ||...
         analyzeVar('wiskTouchSignal', varNames, varsToOverWrite)
         
-        if ~isempty('obsOntimes') %!!! probably needs more checks here
+        if ~isempty('obsOntimes') && exist([sessionDir 'runWisk.mp4'], 'file')  %!!! probably needs more checks here
             
             fprintf('%s: analyzing wisk contacts\n', dataFolder)
 

@@ -88,6 +88,9 @@ end
 
 
 % determine which sessions to include (get last noBrSessions without wheel break and first brSessions with wheel break)
+temp = num2cell(false(length(data)));
+[data(1:length(data)).includeSessions] = temp{:};
+
 for i = 1:length(mice)
     
     % get no break session nums
