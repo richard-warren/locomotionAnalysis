@@ -24,24 +24,29 @@ vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
 gridPts = [gridX(:), gridY(:)];
 numOccluded = size(gridPts,1);
 locations = potentialLocationsBot;
+locationsBot.x = nan(length(potentialLocationsBot), 4);
+locationsBot.y = nan(length(potentialLocationsBot), 4);
+
+
+%% viterbi
 
 tic
-
-%% viterbi forward
-
 locationScores = cell(length(frameInds), 1);
 locationTraceBacks = cell(length(frameInds), 1);
 
-for i = 1:length(frameInds)
+for j = paws
     
-    currentFrame = frameInds(i);
-
-    for j = paws
+    % forward
+    disp('forward!')
+    for i = 1:length(frameInds)
+    
+        currentFrame = frameInds(i);
+        currentNum = length(locations(currentFrame).x);
         
         % get unary potentials
         unaries = getUnaryPotentials(locations(currentFrame).x, locations(currentFrame).y, vid.Width, vid.Height,...
             anchorPts{j}(1), anchorPts{j}(2), maxDistanceX, maxDistanceY);
-        unaires = unaries * unaryWeight;
+        unaries = [unaries * unaryWeight; zeros(numOccluded,1)];
         
         % get pairwise potentials
         if i>1
@@ -49,100 +54,35 @@ for i = 1:length(frameInds)
                 [locations(currentFrame-1).x, locations(currentFrame-1).y],...
                 maxVelocity, pairwiseWeight, occludedWeight, gridPts);
         else
-            pairwise = zeros(length(locations(currentFrame).x));
+            pairwise = zeros(currentNum + numOccluded, 1);
         end
         
-        % get best score for each potential location, as well as previous location that led to that score
-        if i>1
-            currentNum = length(unaries);
-            prevNum = length(locationScores(getPairwisePotentials-1).x);
-            
-            scores = pairwise;
-            scores(1:currentNum, 1:prevNum) = scores(1:currentNum, 1:prevNum) + ...
-                                            + repmat(unaries, 1, prevNum));
-            locationScores{i} = scores;
-            locationTraceBacks{i};
-        else
-        end
-    
-    
-    
-    
-    
+        % get best score for each potential location, as well as previous location that led to that score        
+        scores = pairwise + repmat(unaries, 1, size(pairwise,2));
+        [locationScores{i}, locationTraceBacks{i}] = max(scores, [], 2);
     end
-        
     
-    
-    % get pairwise potentials
-    
-end
-
-
-
-%% find most probable paths!
-
-% initializations
-objectNum = size(unary{1}, 1);
-labels = nan(length(unary), objectNum);
-nodeScores = cell(1, length(unary));
-backPointers = cell(1, length(unary)-1);
-pathScores = nan(1,4);
-nodeScores{1} = unary{1};
-
-
-for i = 1:objectNum
-    
-    for j = 2:length(unary)
-        
-        % forward
-        
-        % initialize containers for first object only
-        if i==1
-            nodeScores{j}   = nan(objectNum, size(pairwise{j-1},1));
-            backPointers{j-1} = nan(objectNum, size(pairwise{j-1},1));
-        end
-        
-        previousScores = nodeScores{j-1}(i,:);
-        currentUnary   = unary{j}(i,:)';
-        
-        allTransitionScores = repmat(previousScores, length(currentUnary), 1) + ...
-                              repmat(currentUnary, 1, length(previousScores)) + ...
-                              pairwise{j-1};
-        
-        % make invalid transitions impossible                      
-        invalidInds = (pairwise{j-1}==0) |...
-                      (repmat(previousScores, length(currentUnary), 1)==0);          
-        allTransitionScores(invalidInds) = 0;
-        
-        % make transitions to locations with 0 unary potential impossible
-        inds = find(currentUnary==0);
-        allTransitionScores(inds<=length(locations(j).x), 1:length(locations(j-1).x)) = 0;
-        
-        % make transitions to previously occupied state impossible
-        if i>1
-            labelInds = labels(j-1,1:i-1);
-            labelInds = labelInds( labelInds <= length(locations(j-1).x) ); % occluded locations can be multiply occupied
-            allTransitionScores(:, labelInds) = 0;
-        end
-        
-        
-        [nodeScores{j}(i,:), backPointers{j-1}(i,:)] = max(allTransitionScores, [], 2);
-%         backPointers{j-1}(i,:) = backPointers{j-1}(i,:) .* double(nodeScores{j}(i,:)>0);
-    end
     
     % backward
-    [pathScores(i), labels(end,i)] = max(nodeScores{end}(i,:));
-    
-    for j = fliplr(1:length(unary)-1) 
-        labels(j,i) = backPointers{j}(i, labels(j+1,i));
+    disp('backward!')
+    [~, prevInd] = max(locationScores{i});
+        
+    for i = fliplr(1:length(frameInds):1)
+        
+        locationsBot.x(frameInds(i), j) = potentialLocationsBot(frameInds(end)).x(prevInd);
+        locationsBot.y(frameInds(i), j) = potentialLocationsBot(frameInds(end)).y(prevInd);
+        prevInd = locationTraceBacks{i}(prevInd);
+        
     end
 end
 
 
-toc
+
+
+
 
 %% visualize tracking
-showTracking(VideoReader(vid), locations, labels, gridPts, vidDelay, paws);
+showLocations(vid, frameInds, potentialLocationsBot, locationsBot, true, .02, anchorPts);
 
 
 
