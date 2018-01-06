@@ -187,7 +187,7 @@ locationsBotFixed.x(:, [1 2]) = locationsBotFixed.x(:, [1 2]) + hindOffset;
 locationsBotFixed.x(:, [3 4]) = locationsBotFixed.x(:, [3 4]) + foreOffset;
 
 locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBotFixed, frameTimeStamps, xLinearMapping, frameInds);
-showLocations(vidTop, frameInds(10000:end), potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot, locationsBotFixed);
+showLocations(vidTop, frameInds(), potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 

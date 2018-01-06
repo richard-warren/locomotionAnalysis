@@ -56,7 +56,14 @@ for i = 2:length(frameInds)
     
     
     % sort paws from closest to furthest away from camera
-    [~, pawSequence] = sort(locationsBot.y(frameInds(i), :), 'descend');
+    ys = locationsBot.y(frameInds(i),:);
+    [~, pawSequence] = sort(ys, 'descend');
+
+    if any(isnan(ys))
+        nans = sum(isnan(ys));
+        pawSequence = [pawSequence(1+nans:end) 1:nans];
+    end
+
     alreadyTaken = false(length(potentialLocationsTop(frameInds(i)).x), 1);
     
     scores = nan(4, length(potentialLocationsTop(frameInds(i)).x));
