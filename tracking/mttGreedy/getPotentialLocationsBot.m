@@ -1,12 +1,13 @@
 function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, subFrameSize1, subFrameSize2,...
-                                                          scoreThresh, obsPixPositions, frameInds, showTracking)
+                                                          scoreThresh, obsPixPositions, frameInds, showTracking, locationsTop)
 
 % !!! need to document
 
 
 % settings
 overlapThresh = .7; % used for non-maxima suppression // higher numbers = more tightly packed
-objectNum = 4;      % number of paws
+% objectNum = 4;      % number of paws
+xNearness = 30;
 
 % initializations
 sampleFrame = rgb2gray(read(vid,1));
@@ -18,7 +19,7 @@ bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 % prepare figure
 if showTracking
     
-    figure(); imagesc(-kernel);
+%     figure(); imagesc(-kernel);
 
     figure('position', [680 144 698 834], 'menubar', 'none', 'color', 'black'); colormap gray
 
@@ -51,6 +52,17 @@ for i = frameInds
 
     % filter with svm
     frameFiltered = -(conv2(double(frame)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);
+    
+    % mask st only x locations close to x locations tracked in top view remain
+    mask = zeros(size(frame));
+    for j = 1:length(locationsTop(i).x)
+        x = round(locationsTop(i).x(j));
+        startInd = max(1, x - xNearness);
+        endInd = min(vid.Width, x + xNearness);
+        mask(:, startInd:endInd) = 1;
+    end
+    frameFiltered = frameFiltered .* mask;
+    
     
     frameFiltered(frameFiltered < scoreThresh) = scoreThresh;
     frameFiltered = frameFiltered - scoreThresh;

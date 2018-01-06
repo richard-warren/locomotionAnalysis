@@ -25,7 +25,7 @@ locationsTop = struct();
 [wheelRadius, wheelCenter] = fitCircle(circRoiPts - repmat([0 stanceHgt], 3, 1));
 
 % fix x alignment for bottom view
-locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
+% locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
 
 % fix bottom view tracking (fixTracking fills short stretches of missing values and median filters)
 locationsBot = fixTracking(locationsBot);

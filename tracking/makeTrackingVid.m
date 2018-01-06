@@ -25,7 +25,7 @@ frameBot = read(vidBot,1);
 
 
 % initializations
-vidWrite = VideoWriter([session 'trackingSample.mp4'], 'MPEG-4');
+vidWrite = VideoWriter([getenv('OBSDATADIR') '\editedVid\' session 'trackingSample.mp4'], 'MPEG-4');
 set(vidWrite, 'FrameRate', fps);
 open(vidWrite);
 colors = winter(4);

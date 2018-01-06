@@ -3,7 +3,7 @@
 % performs paw tracking
 
 % settings
-session = 'markerTest1';
+session = 'markerTest2';
 
 % initializations
 xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat'];
@@ -59,6 +59,7 @@ trainSecondClassifier(class); % this is saved as [class '2']
 
 
 % settings
+withXRestrictions = true; % if top was tracked with markers, use these locations to limit search for locations in bot
 scoreThresh = 0;
 showTracking = false;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot'];
@@ -71,8 +72,15 @@ load(model2, 'model', 'subFrameSize');
 model2 = model; subFrameSize2 = subFrameSize;
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
-tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                      scoreThresh, obsPixPositions, frameInds, showTracking);
+tic
+if withXRestrictions
+    potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
+                                                     scoreThresh, obsPixPositions, frameInds, showTracking, potentialLocationsTop);
+else
+    potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
+                                                     scoreThresh, obsPixPositions, frameInds, showTracking);
+end
+                                                  
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
 fprintf('potential locations bot analysis time: %i minutes\n', toc/60)
 
@@ -146,7 +154,7 @@ fprintf('potential locations top analysis time: %i minutes\n', toc/60)
 %% get potential locations for top (markers)
 
 % settings
-markerThresh = 100;
+markerThresh = 150;
 showTracking = false;
 
 % initializations
@@ -170,9 +178,15 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'l
 
 %% get locations for top (markers)
 
-locationsBotFixed = fixTracking(locationsBot);
+% settings
+hindOffset = -5;      % markers on hind legs are more anterior that foot pad that is tracked on the bot view, so bot view x values are shifted to the left by hindOffset
+foreOffset = 5;
 
-locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBot, frameTimeStamps, xLinearMapping, frameInds);
+locationsBotFixed = fixTracking(locationsBot);
+locationsBotFixed.x(:, [1 2]) = locationsBotFixed.x(:, [1 2]) + hindOffset;
+locationsBotFixed.x(:, [3 4]) = locationsBotFixed.x(:, [3 4]) + foreOffset;
+
+locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBotFixed, frameTimeStamps, xLinearMapping, frameInds);
 showLocations(vidTop, frameInds(10000:end), potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 

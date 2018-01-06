@@ -1,7 +1,7 @@
 function locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBot, frameTimeStamps, xLinearMapping, frameInds)
 
 % !!! need to document
-unaryWeight = .01;
+unaryWeight = .5;
 pairwiseWeight = 1;
 
 
@@ -13,9 +13,8 @@ maxVel = 25 / .004;   % max velocity (pixels / sec)
 locationsTop.x = nan(length(potentialLocationsTop), 4);
 locationsTop.z = nan(length(potentialLocationsTop), 4);
 
-% fix x alignment for bottom view and smooth/interpolate
+% fix x alignment for bottom view
 % locationsBot.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2);
-locationsBot = fixTracking(locationsBot); % fixTracking fills short stretches of missing values and median filters
 
 
 
