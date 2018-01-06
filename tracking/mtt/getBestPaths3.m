@@ -1,77 +1,85 @@
 % to try: make frame skipping inferface // smarter reappearance function?
 
+session = 'markerTest2';
 
 % load tracking data
-load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trackedData\tracked.mat', 'locations')
+load([getenv('OBSDATADIR') 'sessions/' session '/tracking/potentialLocationsBot.mat'], 'potentialLocationsBot');
 
 % user settings
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\testVideo\runBot.mp4';
-
-unaryWeight = 2;
-pairwiseWeight = .1;
+unaryWeight = 1;
+pairwiseWeight = 1;
 occludedWeight = .001;
-occlusionGridSpacing = 30;
-maxDistance = .8;
-
+occlusionGridSpacing = 50;
+maxDistanceX = .65;
+maxDistanceY = .65;
 maxVelocity = 30;
-paws = 1:4;
-vidDelay = .02;
+anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % LH, RH, LF, RF (x, y)
+paws = [2];
 
 % initializations
-frameHeight = 242; % !!! hacky temp
-frameWidth = 398;
-[gridX, gridY] = meshgrid(1:occlusionGridSpacing:frameWidth,...
-                          1:occlusionGridSpacing:frameHeight);
+frameInds = 34757:35085; % temp
+vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
+[gridX, gridY] = meshgrid(1:occlusionGridSpacing:vid.Width,...
+                          1:occlusionGridSpacing:vid.Height);
 gridPts = [gridX(:), gridY(:)];
 numOccluded = size(gridPts,1);
+locations = potentialLocationsBot;
 
 tic
 
-% compute unary potentials
-unary = cell(1,length(locations));
+%% viterbi forward
 
-for i = 1:length(locations)
+locationScores = cell(length(frameInds), 1);
+locationTraceBacks = cell(length(frameInds), 1);
 
-    % ensure first unaries are not zero (this will cause all paths to be zero for all time!)
-    if (i==1 && unaryWeight==0)
-        unaryWeightTemp = 1;
-    else
-        unaryWeightTemp = unaryWeight;
-    end
+for i = 1:length(frameInds)
     
-    % don't enfore maxDistance for first frame
-    if (i==1)
-        maxDistanceTemp = 1;
-    else
-        maxDistanceTemp = maxDistance;
-    end
-    
+    currentFrame = frameInds(i);
 
-    frameUnaries = nan(4, length(locations(i).x) + numOccluded);
-    
-    frameUnaries(1,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, .2, numOccluded, unaryWeightTemp, maxDistanceTemp); % RH
-    frameUnaries(2,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 0, 1, numOccluded, unaryWeightTemp, maxDistanceTemp); % RF
-    frameUnaries(3,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, .2, numOccluded, unaryWeightTemp, maxDistanceTemp); % LH
-    frameUnaries(4,1:end) = getUnaryPotentials(locations(i).x, locations(i).y, locations(i).scores, frameWidth, frameHeight, 1, 1, numOccluded, unaryWeightTemp, maxDistanceTemp); % LF
+    for j = paws
         
-    unary{i} = frameUnaries;
+        % get unary potentials
+        unaries = getUnaryPotentials(locations(currentFrame).x, locations(currentFrame).y, vid.Width, vid.Height,...
+            anchorPts{j}(1), anchorPts{j}(2), maxDistanceX, maxDistanceY);
+        unaires = unaries * unaryWeight;
+        
+        % get pairwise potentials
+        if i>1
+            pairwise = getPairwisePotentials([locations(currentFrame).x, locations(currentFrame).y],...
+                [locations(currentFrame-1).x, locations(currentFrame-1).y],...
+                maxVelocity, pairwiseWeight, occludedWeight, gridPts);
+        else
+            pairwise = zeros(length(locations(currentFrame).x));
+        end
+        
+        % get best score for each potential location, as well as previous location that led to that score
+        if i>1
+            currentNum = length(unaries);
+            prevNum = length(locationScores(getPairwisePotentials-1).x);
+            
+            scores = pairwise;
+            scores(1:currentNum, 1:prevNum) = scores(1:currentNum, 1:prevNum) + ...
+                                            + repmat(unaries, 1, prevNum));
+            locationScores{i} = scores;
+            locationTraceBacks{i};
+        else
+        end
+    
+    
+    
+    
+    
+    end
+        
+    
+    
+    % get pairwise potentials
     
 end
 
 
 
-% compute pairwise potentials
-pairwise = cell(1,length(locations)-1);
-
-for i = 1:length(locations)-1
-    
-    pairwise{i} = getPairwisePotentials([locations(i+1).x, locations(i+1).y], [locations(i).x, locations(i).y],...
-                                        maxVelocity, pairwiseWeight, occludedWeight, gridPts);
-end
-
-
-
-% find most probable paths!
+%% find most probable paths!
 
 % initializations
 objectNum = size(unary{1}, 1);
@@ -134,7 +142,7 @@ end
 toc
 
 %% visualize tracking
-showTracking(VideoReader(vidFile), locations, labels, gridPts, vidDelay, paws);
+showTracking(VideoReader(vid), locations, labels, gridPts, vidDelay, paws);
 
 
 

@@ -94,8 +94,9 @@ showPotentialLocations = true;
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
-save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locationsBot');
 showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
+save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locationsBot');
+
 
 
 %% hand label top locations
@@ -182,6 +183,8 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'l
 hindOffset = -5;      % markers on hind legs are more anterior that foot pad that is tracked on the bot view, so bot view x values are shifted to the left by hindOffset
 foreOffset = 5;
 
+% initializations
+vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 locationsBotFixed = fixTracking(locationsBot);
 locationsBotFixed.x(:, [1 2]) = locationsBotFixed.x(:, [1 2]) + hindOffset;
 locationsBotFixed.x(:, [3 4]) = locationsBotFixed.x(:, [3 4]) + foreOffset;
