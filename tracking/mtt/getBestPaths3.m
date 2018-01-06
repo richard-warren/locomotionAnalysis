@@ -7,7 +7,7 @@ load([getenv('OBSDATADIR') 'sessions/' session '/tracking/potentialLocationsBot.
 
 % user settings
 unaryWeight = 1;
-pairwiseWeight = 1;
+pairwiseWeight = 0;
 occludedWeight = .001;
 occlusionGridSpacing = 50;
 maxDistanceX = .65;
@@ -57,31 +57,32 @@ for j = paws
             pairwise = zeros(currentNum + numOccluded, 1);
         end
         
+        % !!! need to make invalid transitions impossible
+        
         % get best score for each potential location, as well as previous location that led to that score        
         scores = pairwise + repmat(unaries, 1, size(pairwise,2));
         [locationScores{i}, locationTraceBacks{i}] = max(scores, [], 2);
+        % !!! need to multiply current scores by previous best scores...
     end
     
     
     % backward
     disp('backward!')
-    [~, prevInd] = max(locationScores{i});
+    [~, prevInd] = max(locationScores{end});
         
-    for i = fliplr(1:length(frameInds):1)
+    for i = fliplr(1:length(frameInds)-1)
         
-        locationsBot.x(frameInds(i), j) = potentialLocationsBot(frameInds(end)).x(prevInd);
-        locationsBot.y(frameInds(i), j) = potentialLocationsBot(frameInds(end)).y(prevInd);
+        if prevInd <= length(potentialLocationsBot(frameInds(i)).x)
+            locationsBot.x(frameInds(i), j) = potentialLocationsBot(frameInds(i)).x(prevInd);
+            locationsBot.y(frameInds(i), j) = potentialLocationsBot(frameInds(i)).y(prevInd);
+        end
+        
         prevInd = locationTraceBacks{i}(prevInd);
-        
     end
 end
 
 
-
-
-
-
-%% visualize tracking
+% visualize tracking
 showLocations(vid, frameInds, potentialLocationsBot, locationsBot, true, .02, anchorPts);
 
 
