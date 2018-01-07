@@ -8,11 +8,11 @@ frameInds = 36120:36499; % temp
 
 unaryWeight = 1;
 pairwiseWeight = .1;
-occludedWeight = .1;
+occludedWeight = .001;
 occlusionGridSpacing = 50;
 maxDistanceX = .65;
 maxDistanceY = .65;
-maxVelocity = 30;
+maxVelocity = 50;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % LH, RH, LF, RF (x, y)
 
 % initializations
@@ -34,8 +34,10 @@ locations.y = nan(length(potentialLocations), 4);
 locationScores = cell(length(frameInds), 1);
 locationTraceBacks = cell(length(frameInds), 1);
 
-paws = 1:2;
+paws = 2;
 % close all; figure; im = imagesc(randn(10));
+unariesAll = cell(1, length(frameInds));
+pairwiseAll = cell(1, length(frameInds));
 
 for j = paws
     
@@ -67,16 +69,23 @@ for j = paws
         % compute scores
         scores = pairwise;
         scores(:,1:prevNum) = scores(:,1:prevNum) + repmat(unaries, 1, prevNum);
-        scores(1:currentNum, 1:prevNum) = scores(1:currentNum, 1:prevNum) .* ~invalidTransitions;
-        scores(1:currentNum, 1:prevNum) = scores(1:currentNum, 1:prevNum) .* ~repmat(invalidPositions,1,prevNum);
+        scores(1:currentNum, 1:prevNum) = scores(1:currentNum, 1:prevNum) .*...
+                                                      ~invalidTransitions .*...
+                                                      ~repmat(invalidPositions,1,prevNum);
         
         [bestScores, locationTraceBacks{i}] = max(scores, [], 2);
-        if i>1; bestScores = bestScores .* locationScores{i-1}(locationTraceBacks{i}); end
-        locationScores{i} = bestScores;
+        if i>1
+            bestScores = bestScores + locationScores{i-1}(locationTraceBacks{i});
+%             bestScores(locationScores{i-1}(locationTraceBacks{i})==0) = 0; % !!! not sure if this is a good idea
+        end
+        locationScores{i} = bestScores;% / nansum(bestScores);
         if max(bestScores)==0; fprintf('zero max: %i\n', j); end
                 
 %         set(im, 'CData', scores(1:min(10,size(scores,1)),1:min(10,size(scores,2))))
 %         pause(1)
+        % temp
+        unariesAll{i} = unaries;
+        pairwiseAll{i} = pairwise;
         
     end
     
@@ -104,7 +113,22 @@ end
 
 
 % visualize tracking
-showLocations(vid, frameInds, potentialLocations, locations, true, .02, anchorPts);
+% showLocations(vid, frameInds, potentialLocations, locations, true, .02, anchorPts);
+
+
+
+%% russell et al attempt
+
+M = match2nd(unariesAll, pairwiseAll(2:end), [], numOccluded, 0);
+
+
+
+
+
+
+
+
+
 
 
 
