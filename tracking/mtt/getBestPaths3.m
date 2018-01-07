@@ -6,15 +6,14 @@ session = 'markerTest2';
 load([getenv('OBSDATADIR') 'sessions/' session '/tracking/potentialLocationsBot.mat'], 'potentialLocationsBot');
 
 % user settings
-unaryWeight = 1;
-pairwiseWeight = 0;
+unaryWeight = 0;
+pairwiseWeight = 1;
 occludedWeight = .001;
 occlusionGridSpacing = 50;
 maxDistanceX = .65;
 maxDistanceY = .65;
 maxVelocity = 30;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % LH, RH, LF, RF (x, y)
-paws = [2];
 
 % initializations
 frameInds = 34757:35085; % temp
@@ -23,16 +22,19 @@ vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
                           1:occlusionGridSpacing:vid.Height);
 gridPts = [gridX(:), gridY(:)];
 numOccluded = size(gridPts,1);
-locations = potentialLocationsBot;
-locationsBot.x = nan(length(potentialLocationsBot), 4);
-locationsBot.y = nan(length(potentialLocationsBot), 4);
+potentialLocations = potentialLocationsBot;
 
 
 %% viterbi
 
 tic
+locations.x = nan(length(potentialLocationsBot), 4);
+locations.y = nan(length(potentialLocationsBot), 4);
 locationScores = cell(length(frameInds), 1);
 locationTraceBacks = cell(length(frameInds), 1);
+
+paws = [1];
+figure; im = imagesc(scores);
 
 for j = paws
     
@@ -41,49 +43,65 @@ for j = paws
     for i = 1:length(frameInds)
     
         currentFrame = frameInds(i);
-        currentNum = length(locations(currentFrame).x);
+        currentNum = length(potentialLocations(currentFrame).x);
         
         % get unary potentials
-        unaries = getUnaryPotentials(locations(currentFrame).x, locations(currentFrame).y, vid.Width, vid.Height,...
+        unaries = getUnaryPotentials(potentialLocations(currentFrame).x, potentialLocations(currentFrame).y, vid.Width, vid.Height,...
             anchorPts{j}(1), anchorPts{j}(2), maxDistanceX, maxDistanceY);
         unaries = [unaries * unaryWeight; zeros(numOccluded,1)];
         
         % get pairwise potentials
         if i>1
-            pairwise = getPairwisePotentials([locations(currentFrame).x, locations(currentFrame).y],...
-                [locations(currentFrame-1).x, locations(currentFrame-1).y],...
+            pairwise = getPairwisePotentials([potentialLocations(currentFrame).x, potentialLocations(currentFrame).y],...
+                [potentialLocations(currentFrame-1).x, potentialLocations(currentFrame-1).y],...
                 maxVelocity, pairwiseWeight, occludedWeight, gridPts);
+            prevNum = length(potentialLocations(currentFrame-1).x);
         else
-            pairwise = zeros(currentNum + numOccluded, 1);
+            pairwise = ones(currentNum + numOccluded, 1);
+            prevNum = 1;
         end
         
-        % !!! need to make invalid transitions impossible
-        
         % get best score for each potential location, as well as previous location that led to that score        
-        scores = pairwise + repmat(unaries, 1, size(pairwise,2));
+        scores = pairwise;
+        scores(:,1:prevNum) = scores(:,1:prevNum) + repmat(unaries, 1, prevNum);
+        
+        % !!! adjust getPairewisePotentials to return invalid transitions
+        
         [locationScores{i}, locationTraceBacks{i}] = max(scores, [], 2);
-        % !!! need to multiply current scores by previous best scores...
+%         if i>1 % multiply current scores by previous best scores
+%             locationScores{i} = locationScores{i} .* locationScores{i-1}(locationTraceBacks{i});
+%         end
+        set(im, 'CData', scores>0)
+        pause(1)
+        
     end
     
     
     % backward
     disp('backward!')
-    [~, prevInd] = max(locationScores{end});
+    [~, currentInd] = max(locationScores{end});
+    
+    for i = fliplr(1:length(frameInds))
         
-    for i = fliplr(1:length(frameInds)-1)
-        
-        if prevInd <= length(potentialLocationsBot(frameInds(i)).x)
-            locationsBot.x(frameInds(i), j) = potentialLocationsBot(frameInds(i)).x(prevInd);
-            locationsBot.y(frameInds(i), j) = potentialLocationsBot(frameInds(i)).y(prevInd);
+        [~, maxInd] = max(locationScores{i});
+        if maxInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
+            locations.x(frameInds(i),j) = potentialLocations(frameInds(i)).x(maxInd);
+            locations.y(frameInds(i),j) = potentialLocations(frameInds(i)).y(maxInd);
         end
+        %
         
-        prevInd = locationTraceBacks{i}(prevInd);
+%         if currentInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
+%             locations.x(frameInds(i), j) = potentialLocations(frameInds(i)).x(currentInd);
+%             locations.y(frameInds(i), j) = potentialLocations(frameInds(i)).y(currentInd);
+%         end
+%         
+%         currentInd = locationTraceBacks{i}(currentInd);
     end
 end
 
 
 % visualize tracking
-showLocations(vid, frameInds, potentialLocationsBot, locationsBot, true, .02, anchorPts);
+showLocations(vid, frameInds, potentialLocations, locations, true, .02, anchorPts);
 
 
 
