@@ -16,6 +16,7 @@ end
 % delete(gcp); % delete parallel pool
 
 % generate plots
+disp('making plots')
 % baselineAnalysis('run6')
 % baselineAnalysis('run7')
 % baselineAnalysis('run8')

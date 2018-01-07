@@ -85,7 +85,7 @@ for j = paws
 %         pause(1)
         % temp
         unariesAll{i} = unaries;
-        pairwiseAll{i} = pairwise;
+        pairwiseAll{i} = sparse(pairwise);
         
     end
     
@@ -119,13 +119,20 @@ end
 
 %% russell et al attempt
 
-M = match2nd(unariesAll, pairwiseAll(2:end), [], numOccluded, 0);
+labels = match2nd(unariesAll, pairwiseAll(2:end), [], numOccluded, 0);
 
 
+for j = paws
+    for i = 1:length(frameInds)
 
+        if labels(i) <= length(potentialLocations(frameInds(i)).x) % if it is not occluded
+            locations.x(frameInds(i),j) = potentialLocations(frameInds(i)).x(labels(i));
+            locations.y(frameInds(i),j) = potentialLocations(frameInds(i)).y(labels(i));
+        end
+    end
+end
 
-
-
+showLocations(vid, frameInds, potentialLocations, locations, true, .02, anchorPts);
 
 
 

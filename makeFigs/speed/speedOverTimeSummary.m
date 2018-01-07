@@ -11,7 +11,7 @@ function speedOverTimeSummary(mice)
 % !!! right now if a session is not included it assumes the two adjacent sessions are on two adjacent days, when in fact they are separated by a day... should fix this...
 
 % user settings
-sessionsToPlot = 12;
+sessionsToPlot = 7;
 lightVsNoLightSessions = 3; % for the plot comparing light vs no light speed, only take the most recent lightVsNoLightSessions for each mouse
 obsPrePost = [.6 .25]; % plot this much before and after the obstacle reaches the mouse
 posRes = .001; % resolution of x axis, in meters

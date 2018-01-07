@@ -27,8 +27,8 @@ rawIm = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
 set(rawAxis, 'visible', 'off', 'units', 'pixels',...
     'position', [0 0 vid.Width*vidSizeScaling vid.Height*vidSizeScaling]);
-% circSizes = circSize * ones(1,length(anchorPts));
-circSizes = linspace(100,500,4);
+circSizes = circSize * ones(1,length(anchorPts));
+% circSizes = linspace(100,500,4);
 
 lines = cell(4,1);
 if exist('lineLocations', 'var')
@@ -42,7 +42,7 @@ if showPotentialLocations
     scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'white', 'filled', 'linewidth', 2);
 end
 scatterLocations = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
-    circSizes, cmap, 'linewidth', 3); hold on
+    circSizes, cmap, 'filled', 'linewidth', 3); hold on
 scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
                  [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
                  circSizes, cmap, 'filled', 'linewidth', 3);     % show anchor points
