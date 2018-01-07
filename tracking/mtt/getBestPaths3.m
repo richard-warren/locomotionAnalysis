@@ -16,7 +16,7 @@ maxVelocity = 30;
 anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % LH, RH, LF, RF (x, y)
 
 % initializations
-frameInds = 34757:35085; % temp
+frameInds = 34757:(350851); % temp
 vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
 [gridX, gridY] = meshgrid(1:occlusionGridSpacing:vid.Width,...
                           1:occlusionGridSpacing:vid.Height);
@@ -33,7 +33,7 @@ locations.y = nan(length(potentialLocationsBot), 4);
 locationScores = cell(length(frameInds), 1);
 locationTraceBacks = cell(length(frameInds), 1);
 
-paws = [2];
+paws = 1:4;
 close all; figure; im = imagesc(randn(10));
 
 for j = paws
@@ -59,23 +59,20 @@ for j = paws
         else
             pairwise = ones(currentNum + numOccluded, 1);
             prevNum = 1;
-            invalidTransitions = true(size(pairwise));
+            invalidTransitions = false(size(pairwise));
         end
         
         % get best score for each potential location, as well as previous location that led to that score        
         scores = pairwise;
         scores(:,1:prevNum) = scores(:,1:prevNum) + repmat(unaries, 1, prevNum);
-        scores(:,1:prevNum) = scores(:,1:prevNum) + repmat(unaries, 1, prevNum);
         scores(invalidTransitions) = 0;
         scores(invalidPositions, 1:prevNum) = 0;
         
         
-        % !!! adjust getPairewisePotentials to return invalid transitions
-        
         [locationScores{i}, locationTraceBacks{i}] = max(scores, [], 2);
         if i>1 % multiply current scores by previous best scores
             locationScores{i} = locationScores{i} .* locationScores{i-1}(locationTraceBacks{i});
-%             locationScores{i} = locationScores{i} / nansum(locationScores{i});
+            locationScores{i} = locationScores{i} / nansum(locationScores{i});
         end
         
 %         set(im, 'CData', scores(1:min(10,size(scores,1)),1:min(10,size(scores,2))))
@@ -99,9 +96,8 @@ for j = paws
         if currentInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
             locations.x(frameInds(i), j) = potentialLocations(frameInds(i)).x(currentInd);
             locations.y(frameInds(i), j) = potentialLocations(frameInds(i)).y(currentInd);
-        end
-%         
-%         currentInd = locationTraceBacks{i}(currentInd);
+        end    
+        currentInd = locationTraceBacks{i}(currentInd);
     end
 end
 
