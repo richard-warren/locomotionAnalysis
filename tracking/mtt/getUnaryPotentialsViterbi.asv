@@ -1,9 +1,10 @@
 function unaryPotentials = getUnaryPotentialsViterbi(x, y, frameWidth, frameHeight, anchorX, anchorY, maxDistanceX, maxDistanceY)
 
-% takes the distance of x and y from anchor points as fraction of frame widht and height
-% then normalizes st 0 corresponds to anything >= maxDistanceX and maxDistanceY and 1 is no distance
-% finally averages xScore and yScore to get unary potentials
-%
+% computes the prior likelihood that a paw exists in a given location
+% simply computse distance of the paw to the anchorPoint (x,y)
+% the likelihood is the inverse of the distance to the anchor point
+% width and height are normalized from 0 to 1
+% 
 % inputs        x:             vector of x locations of tracks
 %               y:             vector of x locations of tracks
 %               frameHeight:   height of frame (used to normalize y from 0 to 1)
@@ -17,19 +18,8 @@ function unaryPotentials = getUnaryPotentialsViterbi(x, y, frameWidth, frameHeig
 dx = abs((x / frameWidth) - anchorX);
 dy = abs((y / frameHeight) - anchorY);
 
-xScore = dx;
-yScore = dy;
-
-xScore(xScore>maxDistanceX) = maxDistanceX;
-yScore(yScore>maxDistanceY) = maxDistanceY;
-
-xScore = (maxDistanceX - xScore) / maxDistanceX;
-yScore = (maxDistanceY - yScore) / maxDistanceY;
-
-unaryPotentials = (xScore + yScore) / 2;
-invalidPositions = xScore==0 | yScore==0;
-unaryPotentials(invalidPositions) = 0;
 
 
-
-
+unaryPotentials = sqrt(dx.^2 + dy.^2); % sqrt(2) is the maximum possible distance, eg the distance from one corner to the opposite corner
+unaryPotentials(abs(dx) > maxDistanceX) = 0;
+unaryPotentials(abs(dy) > maxDistanceY) = 0;

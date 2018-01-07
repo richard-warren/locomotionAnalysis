@@ -11,10 +11,10 @@ potentialLocations = potentialLocationsBot; clear potentialLocationsBot
 vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
 
 %% settings
-trial = 100;
+trial = 2;
 paws = [1:4];
 unaryWeight = 1;
-pairwiseWeight = .4;
+pairwiseWeight = .1;
 occludedWeight = .01;
 occlusionGridSpacing = 75;
 maxDistanceX = .5;
@@ -26,8 +26,8 @@ anchorPts = {[0 .25], [0 .75], [1 .25], [1 .75]}; % LH, RH, LF, RF (x, y)
 
 % initializations
 frameInds = find(~isnan(obsPixPositions));
-trialStartInds = find(diff(frameInds)>250);
-frameInds = frameInds(trialStartInds(trial)+1 : trialStartInds(trial+1));
+trialStartInds = find(diff(frameInds)>5);
+frameInds = frameInds(trialStartInds(trial) : trialStartInds(trial+1));
 
 [gridX, gridY] = meshgrid(1:occlusionGridSpacing:vid.Width,...
                           1:occlusionGridSpacing:vid.Height);
