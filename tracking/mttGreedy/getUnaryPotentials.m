@@ -18,6 +18,6 @@ function [unaryPotentials, invalidPositions] = getUnaryPotentials(x, y, frameWid
 dx = (x / frameWidth) - anchorX;
 dy = (y / frameHeight) - anchorY;
 unaryPotentials = sqrt(2) - sqrt(dx.^2 + dy.^2); % sqrt(2) is the maximum possible distance, eg the distance from one corner to the opposite corner
-invalidPositions = (abs(dx) > maxDistanceX) & (abs(dy) > maxDistanceY);
+invalidPositions = (abs(dx) > maxDistanceX) | (abs(dy) > maxDistanceY);
 unaryPotentials(invalidPositions) = 0;
 unaryPotentials(invalidPositions) = 0;
