@@ -6,10 +6,10 @@ session = 'markerTest2';
 load([getenv('OBSDATADIR') 'sessions/' session '/tracking/potentialLocationsBot.mat'], 'potentialLocationsBot');
 
 % user settings
-unaryWeight = 0;
-pairwiseWeight = 1;
+unaryWeight = 1;
+pairwiseWeight = .1;
 occludedWeight = .001;
-occlusionGridSpacing = 50;
+occlusionGridSpacing = 30;
 maxDistanceX = .65;
 maxDistanceY = .65;
 maxVelocity = 30;
@@ -33,8 +33,8 @@ locations.y = nan(length(potentialLocationsBot), 4);
 locationScores = cell(length(frameInds), 1);
 locationTraceBacks = cell(length(frameInds), 1);
 
-paws = [1];
-figure; im = imagesc(scores);
+paws = [2];
+close all; figure; im = imagesc(randn(10));
 
 for j = paws
     
@@ -46,33 +46,40 @@ for j = paws
         currentNum = length(potentialLocations(currentFrame).x);
         
         % get unary potentials
-        unaries = getUnaryPotentials(potentialLocations(currentFrame).x, potentialLocations(currentFrame).y, vid.Width, vid.Height,...
+        [unaries, invalidPositions] = getUnaryPotentials(potentialLocations(currentFrame).x, potentialLocations(currentFrame).y, vid.Width, vid.Height,...
             anchorPts{j}(1), anchorPts{j}(2), maxDistanceX, maxDistanceY);
         unaries = [unaries * unaryWeight; zeros(numOccluded,1)];
         
         % get pairwise potentials
         if i>1
-            pairwise = getPairwisePotentials([potentialLocations(currentFrame).x, potentialLocations(currentFrame).y],...
+            [pairwise, invalidTransitions] = getPairwisePotentials([potentialLocations(currentFrame).x, potentialLocations(currentFrame).y],...
                 [potentialLocations(currentFrame-1).x, potentialLocations(currentFrame-1).y],...
                 maxVelocity, pairwiseWeight, occludedWeight, gridPts);
             prevNum = length(potentialLocations(currentFrame-1).x);
         else
             pairwise = ones(currentNum + numOccluded, 1);
             prevNum = 1;
+            invalidTransitions = true(size(pairwise));
         end
         
         % get best score for each potential location, as well as previous location that led to that score        
         scores = pairwise;
         scores(:,1:prevNum) = scores(:,1:prevNum) + repmat(unaries, 1, prevNum);
+        scores(:,1:prevNum) = scores(:,1:prevNum) + repmat(unaries, 1, prevNum);
+        scores(invalidTransitions) = 0;
+        scores(invalidPositions, 1:prevNum) = 0;
+        
         
         % !!! adjust getPairewisePotentials to return invalid transitions
         
         [locationScores{i}, locationTraceBacks{i}] = max(scores, [], 2);
-%         if i>1 % multiply current scores by previous best scores
-%             locationScores{i} = locationScores{i} .* locationScores{i-1}(locationTraceBacks{i});
-%         end
-        set(im, 'CData', scores>0)
-        pause(1)
+        if i>1 % multiply current scores by previous best scores
+            locationScores{i} = locationScores{i} .* locationScores{i-1}(locationTraceBacks{i});
+%             locationScores{i} = locationScores{i} / nansum(locationScores{i});
+        end
+        
+%         set(im, 'CData', scores(1:min(10,size(scores,1)),1:min(10,size(scores,2))))
+%         pause(1)
         
     end
     
@@ -83,17 +90,16 @@ for j = paws
     
     for i = fliplr(1:length(frameInds))
         
-        [~, maxInd] = max(locationScores{i});
-        if maxInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
-            locations.x(frameInds(i),j) = potentialLocations(frameInds(i)).x(maxInd);
-            locations.y(frameInds(i),j) = potentialLocations(frameInds(i)).y(maxInd);
-        end
-        %
-        
-%         if currentInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
-%             locations.x(frameInds(i), j) = potentialLocations(frameInds(i)).x(currentInd);
-%             locations.y(frameInds(i), j) = potentialLocations(frameInds(i)).y(currentInd);
+%         [~, maxInd] = max(locationScores{i});
+%         if maxInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
+%             locations.x(frameInds(i),j) = potentialLocations(frameInds(i)).x(maxInd);
+%             locations.y(frameInds(i),j) = potentialLocations(frameInds(i)).y(maxInd);
 %         end
+        
+        if currentInd <= length(potentialLocationsBot(frameInds(i)).x) % if it is not occluded
+            locations.x(frameInds(i), j) = potentialLocations(frameInds(i)).x(currentInd);
+            locations.y(frameInds(i), j) = potentialLocations(frameInds(i)).y(currentInd);
+        end
 %         
 %         currentInd = locationTraceBacks{i}(currentInd);
     end

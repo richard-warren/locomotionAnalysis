@@ -1,4 +1,4 @@
-function pairwisePotentials = getPairwisePotentials(xy, xyLast, maxVelocity, velocityWeight, occludedScore, gridPts)
+function [pairwisePotentials, invalidTransitions] = getPairwisePotentials(xy, xyLast, maxVelocity, velocityWeight, occludedScore, gridPts)
 
 % given track locations in two adjacent frames, computes a matrix representing the likelihood of transitioning
 % from every location in previous frame (xyLast) to every location in current frame (xy)
@@ -26,7 +26,8 @@ distances = reshape(distances, size(xy,1), size(xyLast,1));
 
 % normalize range and set invalid transitions to 0
 transitionScores = distances;
-transitionScores(transitionScores > maxVelocity) = maxVelocity;
+invalidTransitions = transitionScores > maxVelocity;
+transitionScores(invalidTransitions) = maxVelocity;
 transitionScores = (maxVelocity - transitionScores) / maxVelocity;
 
 % weight distances by velocityWeight
