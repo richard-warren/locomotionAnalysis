@@ -26,10 +26,6 @@ locationsBot.y = nan(length(potentialLocationsBot), objectNum);
 
 for i = frameInds(1:end)
     
-    % report progress
-    disp(i/length(potentialLocationsBot))
-    
-    
     % get unary and pairwise potentials
     unaries = nan(objectNum, length(potentialLocationsBot(i).x));
     pairwise = ones(objectNum, length(potentialLocationsBot(i).x));
@@ -80,12 +76,18 @@ for i = frameInds(1:end)
     
     
     % only keep labeled locations
+    if
     for j = 1:objectNum
-        if ~isnan(labels(i,j))
+        if isnan(labels(i,j))
+            locationsBot.x(i,j) = nan;
+            locationsBot.y(i,j) = nan;
+        else
             locationsBot.x(i,j) = potentialLocationsBot(i).x(labels(i,j));
             locationsBot.y(i,j) = potentialLocationsBot(i).y(labels(i,j));
         end
     end
+    
+    disp(i/length(potentialLocationsBot))
 end
 
 
