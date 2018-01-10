@@ -56,14 +56,17 @@ for i = frameInds(1:end)
                 prevFrame = find(~isnan(labels(:,j)), 1, 'last');
                 wasOccluded(j) = 1;
             end
-
-            % get label at last dection frame
-            prevLabel = labels(prevFrame, j);
             
-            % get pairwise scores
-            pairwise(j,:) = getPairwisePotentials(potentialLocationsBot(i).x, potentialLocationsBot(i).y,...
-                potentialLocationsBot(prevFrame).x(prevLabel), potentialLocationsBot(prevFrame).y(prevLabel),...
-                frameTimeStamps(i)-frameTimeStamps(prevFrame), maxVel);
+            if ~isempty(prevFrame)
+                
+                % get label at last dection frame
+                prevLabel = labels(prevFrame, j);
+
+                % get pairwise scores
+                pairwise(j,:) = getPairwisePotentials(potentialLocationsBot(i).x, potentialLocationsBot(i).y,...
+                    potentialLocationsBot(prevFrame).x(prevLabel), potentialLocationsBot(prevFrame).y(prevLabel),...
+                    frameTimeStamps(i)-frameTimeStamps(prevFrame), maxVel);
+            end
         end
     end
     
@@ -73,7 +76,7 @@ for i = frameInds(1:end)
     
     
     % get final scores for each potential location for each paw
-    scores = unaryWeight.*unaries + pairwiseWeight.*pairwise + scoreWeight.*svmScores;
+    scores = unaryWeight.*unaries + pairwiseWeight.*pairwise;% + scoreWeight.*svmScores;
     scores(unaries==0 | pairwise==0) = 0;
     scores(scores<minScore) = 0;
 

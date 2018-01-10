@@ -1,5 +1,5 @@
-function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, subFrameSize1, subFrameSize2,...
-                                                          scoreThresh, obsPixPositions, frameInds, showTracking, locationsTop)
+function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, subFrameSize1, subFrameSize2, ...
+    scoreThresh, obsPixPositions, frameInds, showTracking, threshIntensity, locationsTop)
 
 % !!! need to document
 
@@ -45,7 +45,9 @@ for i = frameInds
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
     frame = frame - bg;
-    frame(frame>50) = 50; % a hack to limit influence of markers shining in bottom view
+    if exist('threshIntensity', 'var')
+        frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
+    end
     
     % mask obstacle
     frame = maskObs(frame, obsPixPositions(i)); % !!! should replace this with addObsToFrame

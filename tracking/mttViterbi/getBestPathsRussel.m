@@ -1,5 +1,5 @@
 
-session = 'markerTest2';
+session = '180109_002';
 
 
 % initializations
@@ -8,16 +8,16 @@ potentialLocations = potentialLocationsBot; clear potentialLocationsBot
 vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
 
 %% settings
-trial = 3;
+trial = 100;
 paws = 1:4;
 unaryWeight = 1;
-pairwiseWeight = .4;
-occludedWeight = .01;
+pairwiseWeight = .1;
+occludedWeight = .001;
 occlusionGridSpacing = 75;
 maxDistanceX = .5;
 maxDistanceY = .65;
-maxVelocity = 30;
-anchorPts = {[0 .25], [0 .75], [1 .25], [1 .75]}; % LH, RH, LF, RF (x, y)
+maxVelocity = 50;
+anchorPts = {[0 0], [0 1], [1 0], [1 1]}; % LH, RH, LF, RF (x, y)
 
 
 

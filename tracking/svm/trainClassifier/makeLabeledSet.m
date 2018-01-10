@@ -1,11 +1,11 @@
-function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws)
+function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws, threshIntensity)
 
 % !!! need to document
 
 
 % settings
 dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
-maxOverlap = .25;
+maxOverlap = .5;
 
 
 
@@ -40,7 +40,9 @@ for i = randperm(length(locations))
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
-    frame(frame>50) = 50; % a hack to limit influence of markers shining in bottom view
+    if exist('threshIntensity', 'var')
+        frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
+    end
     
     % mask obstacle
     if ~isnan(obsPixPositions(locationFrameInds(i)))

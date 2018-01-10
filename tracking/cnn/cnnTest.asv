@@ -1,0 +1,16 @@
+
+
+
+% load alexNet
+net = alexnet;
+
+% get test image
+vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\180109_002\runTop.mp4');
+frame = read(vid, 10000);
+img = imresize(frame, [227 227]);
+
+% get mouse from internet
+img = imread('C:\Users\rick\Desktop\threshTest')
+
+% classify
+label = classify(net, frameResized);

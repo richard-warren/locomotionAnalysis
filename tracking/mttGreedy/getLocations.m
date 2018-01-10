@@ -3,9 +3,12 @@
 % performs paw tracking
 
 % settings
-session = '180109_001';
+session = '180109_002';
+threshIntensity = 50;
 
 % initializations
+trackingDir = [getenv('OBSDATADIR') 'sessions\' session '\tracking'];
+if ~exist(trackingDir, 'dir'); mkdir(trackingDir); end % make tracking directory if it doesn't already exist
 xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat'];
 load(xMapping, 'xLinearMapping');
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'rewardTimes')
@@ -17,13 +20,13 @@ anchorPtsBot = {[0 0], [0 1], [1 0], [1 1]};
 %% hand label paw bot locations
 
 vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'];
-labelPawLocations(vidFile, frameInds, 50);
+labelPawLocations(vidFile, frameInds, 100);
 
 
 %% create bot labeled set, paw vs other
 
 posEgs = 400;
-negEgsPerEg = 5;
+negEgsPerEg = 20;
 subFrameSize = [45 45];
 includeLocation = false;
 paws = 1:4;
@@ -32,7 +35,7 @@ class = 'pawBot';
 makeLabeledSet(class,...
                [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
                [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
+               subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity);
 
 viewTrainingSet(class);
 
@@ -61,7 +64,7 @@ trainSecondClassifier(class); % this is saved as [class '2']
 % settings
 withXRestrictions = true; % if top was tracked with markers, use these locations to limit search for locations in bot
 scoreThresh = 0;
-showTracking = false;
+showTracking = 0;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot'];
 model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot2'];
 
@@ -75,13 +78,13 @@ vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 tic
 if withXRestrictions
     potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                     scoreThresh, obsPixPositions, frameInds, showTracking, potentialLocationsTop);
+                                                     scoreThresh, obsPixPositions, frameInds, showTracking, threshIntensity, potentialLocationsTop);
 else
     potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                     scoreThresh, obsPixPositions, frameInds, showTracking);
+                                                     scoreThresh, obsPixPositions, frameInds, showTracking, threshIntensity);
 end
                                                   
-save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
+save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBotAll.mat'], 'potentialLocationsBot');
 fprintf('potential locations bot analysis time: %i minutes\n', toc/60)
 
 
