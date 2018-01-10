@@ -40,7 +40,7 @@ for i = randperm(length(locations))
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
-    frame(frame>40) = 40; % a hack to limit influence of markers shining in bottom view
+    frame(frame>50) = 50; % a hack to limit influence of markers shining in bottom view
     
     % mask obstacle
     if ~isnan(obsPixPositions(locationFrameInds(i)))

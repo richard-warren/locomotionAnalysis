@@ -77,9 +77,18 @@ function changeFrames(~,~)
             paused = true;
             updateFrame(1);
         
+        elseif key==102                  % 'f': select frame
+            pause(.001);
+            paused = true;
+            input = inputdlg('enter frame number');
+            currentFrame = find(frameInds == str2double(input{1}));
+            updateFrame(1);
+        
         elseif key==27                  % ESCAPE: close window
+%             disp(key)
             playing = false;
             paused = false;
+        
         else                            % OTHERWISE: close window
             paused = ~paused;
         end

@@ -3,7 +3,7 @@
 % performs paw tracking
 
 % settings
-session = 'markerTest2';
+session = '180109_001';
 
 % initializations
 xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat'];

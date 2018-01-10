@@ -2,17 +2,14 @@
 session = 'markerTest2';
 
 
-% temp
-frameInds = 36120:36499;
-
 % initializations
 load([getenv('OBSDATADIR') 'sessions/' session '/tracking/potentialLocationsBot.mat'], 'potentialLocationsBot');
 potentialLocations = potentialLocationsBot; clear potentialLocationsBot
 vid = VideoReader([getenv('OBSDATADIR') 'sessions/' session '/runBot.mp4']);
 
 %% settings
-trial = 100;
-paws = [1:4];
+trial = 3;
+paws = 1:4;
 unaryWeight = 1;
 pairwiseWeight = .4;
 occludedWeight = .01;

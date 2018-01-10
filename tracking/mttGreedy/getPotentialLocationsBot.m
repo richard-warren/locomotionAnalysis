@@ -45,7 +45,7 @@ for i = frameInds
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
     frame = frame - bg;
-    frame(frame>40) = 40; % a hack to limit influence of markers shining in bottom view
+    frame(frame>50) = 50; % a hack to limit influence of markers shining in bottom view
     
     % mask obstacle
     frame = maskObs(frame, obsPixPositions(i)); % !!! should replace this with addObsToFrame
@@ -54,14 +54,16 @@ for i = frameInds
     frameFiltered = -(conv2(double(frame)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);
     
     % mask st only x locations close to x locations tracked in top view remain
-    mask = zeros(size(frame));
-    for j = 1:length(locationsTop(i).x)
-        x = round(locationsTop(i).x(j));
-        startInd = max(1, x - xNearness);
-        endInd = min(vid.Width, x + xNearness);
-        mask(:, startInd:endInd) = 1;
+    if exist('locationsTop', 'var')
+        mask = zeros(size(frame));
+        for j = 1:length(locationsTop(i).x)
+            x = round(locationsTop(i).x(j));
+            startInd = max(1, x - xNearness);
+            endInd = min(vid.Width, x + xNearness);
+            mask(:, startInd:endInd) = 1;
+        end
+        frameFiltered = frameFiltered .* mask;
     end
-    frameFiltered = frameFiltered .* mask;
     
     
     frameFiltered(frameFiltered < scoreThresh) = scoreThresh;

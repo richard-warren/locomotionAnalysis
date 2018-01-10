@@ -3,7 +3,7 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 miceToPlot = {'run6', 'run7', 'run8'};
-vidTrialProportion = .5;
+vidTrialProportion = .15;
 %
 parfor i = 1:length(sessionDirs)
     
@@ -16,18 +16,17 @@ end
 % delete(gcp); % delete parallel pool
 
 % generate plots
-disp('making plots')
 % baselineAnalysis('run6')
 % baselineAnalysis('run7')
 % baselineAnalysis('run8')
 % obsAvoidanceLearning('run6', {'obsBr'})
 % obsAvoidanceLearning('run7', {'obsBr'})
 % obsAvoidanceLearning('run8', {'obsBr'})
-obsAvoidanceLearningSummary(miceToPlot)
-speedOverTimeSummary(miceToPlot)
+% obsAvoidanceLearningSummary(miceToPlot)
+% speedOverTimeSummary(miceToPlot)
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data
