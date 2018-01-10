@@ -1,19 +1,57 @@
 
 
 
-% load alexNet
+% settings
+trainingData = 'pawBot';
+targetSize = [227 227];
+trainingPortion = .7;
+
+% initializations
+load([getenv('OBSDATADIR') 'svm\trainingData\' trainingData '\labeledFeatures.mat'], ...
+    'features', 'subFrameSize', 'labels');
+featuresN = prepareTrainingData(features, subFrameSize, targetSize); % restructure features
+trainingBins = rand(1, length(labels)) < trainingPortion;
+featuresTrain
+
+%% load alexNet
 net = alexnet;
 
-%% rick mouse
-vid = VideoReader('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\180109_002\runTop.mp4');
-img = read(vid, 10000);
+%% retrain alexNet on my data, omg
 
-%% mouse
-img = imread('C:\Users\rick\Desktop\mouse.jpg');
 
-%% cat
-img = imread('C:\Users\rick\Desktop\cat.jpg');
+% get alexNet conv layers, and add new fully connected layers
+layersTransfer = net.Layers(1:end-3);
+numClasses = numel(length(unique(labels)));
+layers = [layersTransfer
+          fullyConnectedLayer(numClasses, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          softmaxLayer
+          classificationLayer];
 
-%% classify
-imgResized = imresize(img, [227 227]);
-label = classify(net, imgResized)
+      
+% set training parameters
+miniBatchSize = 10;
+numIterationsPerEpoch = floor(length(layers) / miniBatchSize);
+options = trainingOptions('sgdm',...
+    'MiniBatchSize', miniBatchSize,...
+    'MaxEpochs', 4,...
+    'InitialLearnRate', 1e-4,...
+    'Verbose', false,...
+    'Plots', 'training-progress',...
+    'ValidationData', validationImages,...
+    'ValidationFrequency', numIterationsPerEpoch);
+
+% train!
+netTransfer = trainNetwork(featuresN, labels, layers, options);
+
+
+%% extract features
+
+layer = 'fc7';
+extractedFeatures = activations(net, featuresN, layer);
+
+
+
+
+
+
+
