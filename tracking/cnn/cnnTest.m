@@ -9,9 +9,9 @@ trainingPortion = .7;
 % initializations
 load([getenv('OBSDATADIR') 'svm\trainingData\' trainingData '\labeledFeatures.mat'], ...
     'features', 'subFrameSize', 'labels');
-featuresN = prepareTrainingData(features, subFrameSize, targetSize); % restructure features
+features = prepareTrainingData(features, subFrameSize, targetSize); % restructure features
 trainingBins = rand(1, length(labels)) < trainingPortion;
-featuresTrain
+featuresTrain = features(:,:,:,trainingBins);
 
 %% load alexNet
 net = alexnet;
