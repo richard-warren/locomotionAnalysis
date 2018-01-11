@@ -1,23 +1,45 @@
-function featuresReshaped = prepareTrainingData(features, subFrameSize, targetSize)
+function prepareTrainingData(trainingData, targetSize)
 
-% !!! needs documentation, but generally restructures 2D feature matrix for grayscale images, where each col is training eg and each row is feature into 4D tensor for use in convolutional neural net
-% dimensions of featuresReshaped are [imageHeight x imageWidth x 3 x numberOfExamples]
-% the third dimension is redundant because there is no color dimension in the original gray images, but this dimension is added so data are properly structured for existing CNNs
+% !!! need to document
 
 
-% featuresReshaped = reshape(features, [subFrameSize(1), subFrameSize(1), size(features, 2)]);
-% featuresReshaped = cat(4, featuresReshaped, featuresReshaped, featuresReshaped);
-% featuresReshaped = permute(featuresReshaped, [1 2 4 3]);
+% load features
+featureDir = [getenv('OBSDATADIR') 'svm\trainingData\' trainingData '\'];
+load([featureDir 'labeledFeatures.mat'],...
+    'features', 'labels', 'subFrameSize')
+
+egNum = size(features, 2);
+categories = unique(labels);
 
 
-egs = size(features, 2);
-featuresReshaped = nan(targetSize(1), targetSize(2), 3, egs);
+% make category folders
+for i = 1:length(categories)
+    newDir = [featureDir num2str(categories(i))];
+    if ~exist(newDir, 'dir'); mkdir(newDir); end
+end
 
-% !!! should try implementing this without a for loop, but with multidimensional interpolation...
-for i = 1:egs
+
+% make training images
+for i = 1:egNum
     
     im = reshape(features(:,i), subFrameSize(1), subFrameSize(2));
-    im = imresize(im, targetSize);
-    featuresReshaped(:,:,:,i) = repmat(im,1,1,3);
+    im = uint8(imresize(im, 'outputsize', targetSize));
+    imwrite(im, [featureDir num2str(labels(i)) '\img' num2str(i) '.png'])
     
 end
+
+
+
+
+
+% featuresReshaped = nan(targetSize(1), targetSize(2), 3, egs);
+% 
+% % !!! should try implementing this without a for loop, but with multidimensional interpolation...
+% for i = 1:egs
+%     
+%     im = reshape(features(:,i), subFrameSize(1), subFrameSize(2));
+%     im = imresize(im, targetSize);
+%     featuresReshaped(:,:,:,i) = repmat(im,1,1,3);
+%     
+% end
+

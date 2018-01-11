@@ -7,10 +7,9 @@ targetSize = [227 227];
 trainingPortion = .7;
 
 % initializations
-load([getenv('OBSDATADIR') 'svm\trainingData\' trainingData '\labeledFeatures.mat'], ...
-    'features', 'subFrameSize', 'labels');
-features = prepareTrainingData(features, subFrameSize, targetSize); % restructure features
-trainingBins = rand(1, size(features,4)) < trainingPortion;
+% prepareTrainingData(trainingData); % restructure features
+imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' trainingData],...
+    'IncludeSubfolders', true, 'FileExtensions', '.png', 'LabelSource', 'foldernames');
 featuresTrain = features(:,:,:,trainingBins);
 featuresValidate = features(:,:,:,~trainingBins);
 
