@@ -1,4 +1,4 @@
-function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model, subFrameSize, scoreThresh, frameInds, paws, showTracking)
+function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model1, model2, subFrameSize, scoreThresh, frameInds, paws, showTracking)
 
 % !!! need to document
 
@@ -14,7 +14,7 @@ xMaskWidth = 40;
 xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
-kernel = reshape(model.Beta, subFrameSize(1), subFrameSize(2));
+kernel = reshape(model1.Beta, subFrameSize(1), subFrameSize(2));
 wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
 bg = getBgImage(vid, 1000, false);
 
@@ -79,11 +79,14 @@ for i = frameInds
     
     
     % filter with svm and apply non-maxima suppression
-    frameFiltered = -(conv2(double(frameMasked)/model.KernelParameters.Scale, kernel, 'same') + model.Bias);
+    frameFiltered = -(conv2(double(frameMasked)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);
     frameFiltered(frameFiltered < scoreThresh) = 0;
 %     frameFiltered(1:yMin,:) = 0;
 %     frameFiltered = frameFiltered .* wheelMask;
     [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize, overlapThresh);
+    
+    
+    % pass through neural network!!!
         
     
     % store data

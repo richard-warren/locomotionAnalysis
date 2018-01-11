@@ -115,6 +115,7 @@ for i = frameInds
     
     
     % perform second round of classification (cnn)
+    try
     dims = model2.Layers(1).InputSize;
     frameFeatures = nan(dims(1), dims(2), 3, length(x));
     for j = 1:length(x)
@@ -124,8 +125,9 @@ for i = frameInds
         frameFeatures(:,:,:,j) = img;
     end
     
-    classes = classify(model2, frameFeatures);
-    isPaw = (uint8(classes)==1);
+    classes = predict(model2, frameFeatures);
+    isPaw = (classes==1);
+    catch; keyboard; end
     
     
     % store data

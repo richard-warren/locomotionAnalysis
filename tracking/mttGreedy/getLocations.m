@@ -3,8 +3,8 @@
 % performs paw tracking
 
 % settings
-session = '180109_002';
-threshIntensity = 50;
+session = '171202_000';
+threshIntensity = 255; % this is to make sure paw markers are not too bright, eg they remain gray
 
 % initializations
 trackingDir = [getenv('OBSDATADIR') 'sessions\' session '\tracking'];
@@ -26,7 +26,7 @@ labelPawLocations(vidFile, frameInds, 100);
 %% create bot labeled set, paw vs other
 
 posEgs = 400;
-negEgsPerEg = 20;
+negEgsPerEg = 10;
 subFrameSize = [45 45];
 includeLocation = false;
 paws = 1:4;
@@ -62,17 +62,23 @@ trainSecondClassifier(class); % this is saved as [class '2']
 
 
 % settings
-withXRestrictions = true; % if top was tracked with markers, use these locations to limit search for locations in bot
+withXRestrictions = 0; % if top was tracked with markers, use these locations to limit search for locations in bot
 scoreThresh = 0;
 showTracking = 0;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot'];
-model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot2'];
+% model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot2'];
 
 % initializations
 load(model1, 'model', 'subFrameSize');
 model1 = model; subFrameSize1 = subFrameSize;
-load(model2, 'model', 'subFrameSize');
-model2 = model; subFrameSize2 = subFrameSize;
+% load(model2, 'model', 'subFrameSize');
+% model2 = model; subFrameSize2 = subFrameSize;
+
+% temp for cnn second stage
+load([getenv('OBSDATADIR') 'svm\classifiers\pawBotCnn'], 'netTransfer');
+model2 = netTransfer; clear netTransfer;
+subFrameSize2 = subFrameSize1;
+
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
 tic

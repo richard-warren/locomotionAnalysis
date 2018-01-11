@@ -13,15 +13,21 @@ egNum = size(features, 2);
 categories = unique(labels);
 
 
-% make category folders
+% make category folders (or overwrite if already exist)
 for i = 1:length(categories)
     newDir = [featureDir num2str(categories(i))];
-    if ~exist(newDir, 'dir'); mkdir(newDir); end
+    if ~exist(newDir, 'dir')
+        mkdir(newDir)
+    else
+        rmdir(newDir)
+    end
 end
 
 
 % make training images
 for i = 1:egNum
+    
+    disp(i/egNum)
     
     im = reshape(features(:,i), subFrameSize(1), subFrameSize(2));
     im = uint8(imresize(im, 'outputsize', targetSize));
