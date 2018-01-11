@@ -10,8 +10,7 @@ trainingPortion = .7;
 % prepareTrainingData(trainingData); % restructure features
 imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' trainingData],...
     'IncludeSubfolders', true, 'FileExtensions', '.png', 'LabelSource', 'foldernames');
-featuresTrain = features(:,:,:,trainingBins);
-featuresValidate = features(:,:,:,~trainingBins);
+[trainingImages, testImages] = splitEachLabel(imgs, trainingPortion, 'randomized');
 
 %% load alexNet
 net = alexnet;
@@ -21,7 +20,7 @@ net = alexnet;
 
 % get alexNet conv layers, and add new fully connected layers
 layersTransfer = net.Layers(1:end-3);
-numClasses = numel(length(unique(labels)));
+numClasses = numel(categories(trainingImages.Labels));
 layers = [layersTransfer
           fullyConnectedLayer(numClasses, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
           softmaxLayer
@@ -30,18 +29,18 @@ layers = [layersTransfer
       
 % set training parameters
 miniBatchSize = 10;
-numIterationsPerEpoch = floor(length(layers) / miniBatchSize);
+numIterationsPerEpoch = floor(numel(trainingImages.Labels)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
     'MaxEpochs', 4,...
     'InitialLearnRate', 1e-4,...
     'Verbose', false,...
     'Plots', 'training-progress',...
-    'ValidationData', validationImages,...
+    'ValidationData', testImages,...
     'ValidationFrequency', numIterationsPerEpoch);
 
 % train!
-netTransfer = trainNetwork(featuresN, labels, layers, options);
+netTransfer = trainNetwork(trainingImages, layers, options);
 
 
 %% extract features
