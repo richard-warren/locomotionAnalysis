@@ -1,6 +1,7 @@
 function prepareTrainingData(trainingData, targetSize)
 
-% !!! need to document
+% !!! need to document, but generally takes features matrix with columns as egs and rows as features and converts into image file in dft folders for each category
+% this format can be used by matlabd imageDatastore function
 
 
 % load features
@@ -24,22 +25,8 @@ for i = 1:egNum
     
     im = reshape(features(:,i), subFrameSize(1), subFrameSize(2));
     im = uint8(imresize(im, 'outputsize', targetSize));
-    imwrite(im, [featureDir num2str(labels(i)) '\img' num2str(i) '.png'])
+    im = repmat(im, 1, 1, 3);
+    imwrite(im, [featureDir num2str(labels(i)) '\img' num2str(i) '.tif'])
     
 end
-
-
-
-
-
-% featuresReshaped = nan(targetSize(1), targetSize(2), 3, egs);
-% 
-% % !!! should try implementing this without a for loop, but with multidimensional interpolation...
-% for i = 1:egs
-%     
-%     im = reshape(features(:,i), subFrameSize(1), subFrameSize(2));
-%     im = imresize(im, targetSize);
-%     featuresReshaped(:,:,:,i) = repmat(im,1,1,3);
-%     
-% end
 

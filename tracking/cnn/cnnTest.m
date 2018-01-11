@@ -7,9 +7,9 @@ targetSize = [227 227];
 trainingPortion = .7;
 
 % initializations
-% prepareTrainingData(trainingData); % restructure features
+% prepareTrainingData(trainingData, targetSize); % restructure features
 imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' trainingData],...
-    'IncludeSubfolders', true, 'FileExtensions', '.png', 'LabelSource', 'foldernames');
+    'IncludeSubfolders', true, 'FileExtensions', '.tif', 'LabelSource', 'foldernames');
 [trainingImages, testImages] = splitEachLabel(imgs, trainingPortion, 'randomized');
 
 %% load alexNet
@@ -41,6 +41,12 @@ options = trainingOptions('sgdm',...
 
 % train!
 netTransfer = trainNetwork(trainingImages, layers, options);
+
+
+%% classify
+
+predictedLabels = classify(netTransfer, testImages);
+fprintf('test accuracy: %f\n', mean(predictedLabels == testImages.Labels));
 
 
 %% extract features
