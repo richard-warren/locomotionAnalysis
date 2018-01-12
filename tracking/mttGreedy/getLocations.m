@@ -27,6 +27,8 @@ labelPawLocations(vidFile, frameInds, 100);
 
 posEgs = 400;
 negEgsPerEg = 10;
+jitterNum = 8;
+jitterPixels = 4;
 subFrameSize = [45 45];
 includeLocation = false;
 paws = 1:4;
@@ -35,7 +37,8 @@ class = 'pawBot';
 makeLabeledSet(class,...
                [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
                [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity);
+               subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
+               jitterPixels, jitterNum);
 
 viewTrainingSet(class);
 

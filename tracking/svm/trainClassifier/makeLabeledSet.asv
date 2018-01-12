@@ -5,8 +5,8 @@ function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize,...
 
 
 % settings
-dataDir = [getenv('OBSDATDIR') 'svm\trainingData\'];
-maxOverlap = .25;
+dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
+maxOverlap = .5;
 
 
 
@@ -34,9 +34,8 @@ bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 % iterate through frames of all examples (locations)
 
-totalEgs = size(locations,2) * negEgsPerEg * jitterNum;
-features = nan(pixPerSub, totalEgs);
-labels = nan(1, totalEgs);
+features = nan(pixPerSub, size(locations,2));
+labels = nan(1, size(locations,2));
 
 for i = randperm(length(locations))
     
@@ -98,7 +97,7 @@ for i = randperm(length(locations))
                 
                 for k = 1:jitterNum
                     
-                    xy = xy + jitterDirections(offsetInds(k), :);
+                    xy = xy + jitterDirections(offsetInds(k));
                     [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
                     
                     if ~isPadded
