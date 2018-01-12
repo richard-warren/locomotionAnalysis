@@ -5,7 +5,7 @@ function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize,...
 
 
 % settings
-dataDir = [getenv('OBSDATDIR') 'svm\trainingData\'];
+dataDir = [getenv('OBSDATADIR') 'svm\trainingData\'];
 maxOverlap = .25;
 
 
@@ -67,7 +67,7 @@ for i = randperm(length(locations))
     % save positive and create negative examples
     for j = 1:egsPerFrame
         
-        if posEgsCount < posEgs
+        if posEgsCount < posEgs * (1+jitterNum)
             
             xy = round(locations(1:2, i, j));
             [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
@@ -98,13 +98,13 @@ for i = randperm(length(locations))
                 
                 for k = 1:jitterNum
                     
-                    xy = xy + jitterDirections(offsetInds(k), :);
-                    [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
+                    xyJittered = xy + jitterDirections(offsetInds(k), :);
+                    [img, isPadded] = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
                     
                     if ~isPadded
                         
                         if includeLocations
-                            img(end, end-1:end) = xy;
+                            img(end, end-1:end) = xyJittered;
                         end
 
                         features(:, imNumberInd) = img(:);
@@ -169,20 +169,6 @@ labels = labels(validInds);
 
 
 save([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
-
-end
-
-
-
-
-% adds frame to feature set
-function addFrame(xy)
-
-    
-
-end
-
-
 
 
 
