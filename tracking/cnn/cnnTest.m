@@ -2,15 +2,15 @@
 
 
 % settings
-trainingData = 'pawBot';
+class = 'pawBot2';
 targetSize = [227 227];
 trainTestValPortions = [.6 .2 .2];
 
 % initializations
-prepareTrainingData(trainingData, targetSize); % restructure features
-imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' trainingData],...
+imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' class],...
     'IncludeSubfolders', true, 'FileExtensions', '.tif', 'LabelSource', 'foldernames');
-[trainingImages, testImages, validationImages] = splitEachLabel(imgs, trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
+[trainingImages, testImages, validationImages] = splitEachLabel(imgs, ...
+    trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
 
 %% retrain alexnet on my data
 
@@ -44,18 +44,12 @@ options = trainingOptions('sgdm',...
 
 % train!
 netTransfer = trainNetwork(trainingImages, layers, options);
-save([getenv('OBSDATADIR') 'svm\classifiers\' trainingData 'Cnn.mat'], 'netTransfer')
+save([getenv('OBSDATADIR') 'svm\classifiers\' class 'Cnn.mat'], 'netTransfer')
 
 
 % classify
 predictedLabels = classify(netTransfer, testImages);
 fprintf('test accuracy: %f\n', mean(predictedLabels == testImages.Labels));
-
-
-%% extract features
-
-layer = 'fc7';
-extractedFeatures = activations(net, featuresN, layer);
 
 
 

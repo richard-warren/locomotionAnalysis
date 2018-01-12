@@ -1,12 +1,11 @@
 function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize,...
-    obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws, threshIntensity, jitterPixels, jitterNum)
+    obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws, threshIntensity, jitterPixels, jitterNum, maxOverlap)
 
 % !!! need to document
 
 
 % settings
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
-maxOverlap = .5;
+dataDir = [getenv('OBSDATADIR') 'svm\trainingData\'];
 
 
 
@@ -34,8 +33,9 @@ bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 % iterate through frames of all examples (locations)
 
-features = nan(pixPerSub, size(locations,2));
-labels = nan(1, size(locations,2));
+totalEgs = size(locations,2) * negEgsPerEg * jitterNum;
+features = nan(pixPerSub, totalEgs);
+labels = nan(1, totalEgs);
 
 for i = randperm(length(locations))
     
@@ -66,58 +66,55 @@ for i = randperm(length(locations))
     % save positive and create negative examples
     for j = 1:egsPerFrame
         
-        if posEgsCount < posEgs
+        if posEgsCount < posEgs * (1+jitterNum)
             
             xy = round(locations(1:2, i, j));
-            [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
+            img = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
 
-            if ~isPadded % if image falls fully within bounds of frame
 
-                if includeLocations
-                    img(end, end-1:end) = xy;
-                end
-                
-                features(:, imNumberInd) = img(:);
-                
-                if ismember(j, paws)
-                    labels(imNumberInd) = 1;
-                    posEgsCount = posEgsCount+1;
-                    fprintf('positive eg #%i\n', posEgsCount);
-                else
-                    labels(imNumberInd) = 2;
-                end
-                
-                imNumberInd = imNumberInd+1;
-                
-                
-                
-                % get jitered positive examples
-                offsetInds = randperm(8);
-                offsetInds = offsetInds(1:jitterNum);
-                
-                for k = 1:jitterNum
-                    
-                    xy = xy + jitterDirections(offsetInds(k));
-                    [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
-                    
-                    if ~isPadded
-                        
-                        if includeLocations
-                            img(end, end-1:end) = xy;
-                        end
+            if includeLocations
+                img(end, end-1:end) = xy;
+            end
 
-                        features(:, imNumberInd) = img(:);
+            features(:, imNumberInd) = img(:);
 
-                        if ismember(j, paws)
-                            labels(imNumberInd) = 1;
-                            posEgsCount = posEgsCount+1;
-                            fprintf('positive eg #%i\n', posEgsCount);
-                        else
-                            labels(imNumberInd) = 2;
-                        end
+            if ismember(j, paws)
+                labels(imNumberInd) = 1;
+                posEgsCount = posEgsCount+1;
+                fprintf('positive eg #%i\n', posEgsCount);
+            else
+                labels(imNumberInd) = 2;
+            end
 
-                        imNumberInd = imNumberInd+1;
+            imNumberInd = imNumberInd+1;
+
+
+
+            % get jitered positive examples
+            offsetInds = randperm(8);
+            offsetInds = offsetInds(1:jitterNum);
+
+            for k = 1:jitterNum
+
+                xyJittered = xy + jitterDirections(offsetInds(k), :);
+                img = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
+
+
+                    if includeLocations
+                        img(end, end-1:end) = xyJittered;
                     end
+
+                    features(:, imNumberInd) = img(:);
+
+                    if ismember(j, paws)
+                        labels(imNumberInd) = 1;
+                        posEgsCount = posEgsCount+1;
+                        fprintf('positive eg #%i\n', posEgsCount);
+                    else
+                        labels(imNumberInd) = 2;
+                    end
+
+                    imNumberInd = imNumberInd+1;
                 end
                 
                 
@@ -137,13 +134,12 @@ for i = randperm(length(locations))
                         pixelsOverlap = sum(temp(:));
                         [img, isPadded] = getSubFrame(frame, pos, subFrameSize);
                         
-                        if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:)) && ~isPadded
+                        if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:))% && ~isPadded
                             acceptableImage = true;
                         end
                     end
 
                     % store negative example
-                    
                     if includeLocations
                         img(end, end-1:end) = fliplr(pos);
                     end
@@ -152,7 +148,7 @@ for i = randperm(length(locations))
                     labels(imNumberInd) = 2;
                     imNumberInd = imNumberInd+1;
                 end    
-            end
+%             end
         end
     end
     
@@ -168,20 +164,6 @@ labels = labels(validInds);
 
 
 save([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
-
-end
-
-
-
-
-% adds frame to feature set
-function addFrame(xy)
-
-    
-
-end
-
-
 
 
 

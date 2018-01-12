@@ -1,12 +1,11 @@
-function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize,...
-    obsPixPositions, posEgs, negEgsPerEg, includeLocations, paws, threshIntensity, jitterPixels, jitterNum)
+function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg,...
+    includeLocations, paws, threshIntensity, jitterPixels, jitterNum, maxOverlap, minBrightness)
 
 % !!! need to document
 
 
 % settings
 dataDir = [getenv('OBSDATADIR') 'svm\trainingData\'];
-maxOverlap = .25;
 
 
 
@@ -40,6 +39,7 @@ labels = nan(1, totalEgs);
 
 for i = randperm(length(locations))
     
+    
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
@@ -47,11 +47,13 @@ for i = randperm(length(locations))
         frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
     end
     
+    
     % mask obstacle
     if ~isnan(obsPixPositions(locationFrameInds(i)))
         frame = maskObs(frame, obsPixPositions(locationFrameInds(i)));
     end
-        
+    
+    
     % create mask of locations of positive examples
     egsMask = zeros(size(frame,1), size(frame,2));
 
@@ -66,20 +68,47 @@ for i = randperm(length(locations))
 
     % save positive and create negative examples
     for j = 1:egsPerFrame
-        
         if posEgsCount < posEgs * (1+jitterNum)
             
+            % get positive examples
             xy = round(locations(1:2, i, j));
-            [img, isPadded] = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
+            img = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
 
-            if ~isPadded % if image falls fully within bounds of frame
+
+            if includeLocations
+                img(end, end-1:end) = xy;
+            end
+
+            features(:, imNumberInd) = img(:);
+
+            if ismember(j, paws)
+                labels(imNumberInd) = 1;
+                posEgsCount = posEgsCount+1;
+                fprintf('positive eg #%i\n', posEgsCount);
+            else
+                labels(imNumberInd) = 2;
+            end
+
+            imNumberInd = imNumberInd+1;
+
+
+
+            % get jitered positive examples
+            offsetInds = randperm(8);
+            offsetInds = offsetInds(1:jitterNum);
+
+            for k = 1:jitterNum
+
+                xyJittered = xy + jitterDirections(offsetInds(k), :);
+                img = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
+
 
                 if includeLocations
-                    img(end, end-1:end) = xy;
+                    img(end, end-1:end) = xyJittered;
                 end
-                
+
                 features(:, imNumberInd) = img(:);
-                
+
                 if ismember(j, paws)
                     labels(imNumberInd) = 1;
                     posEgsCount = posEgsCount+1;
@@ -87,78 +116,45 @@ for i = randperm(length(locations))
                 else
                     labels(imNumberInd) = 2;
                 end
-                
+
                 imNumberInd = imNumberInd+1;
+            end
                 
                 
                 
-                % get jitered positive examples
-                offsetInds = randperm(8);
-                offsetInds = offsetInds(1:jitterNum);
-                
-                for k = 1:jitterNum
+
+            % get negative examples
+            for k = 1:negEgsPerEg
+
+                % find a frame that doesn't overlap with positive examples
+                acceptableImage = false;
+
+                while ~acceptableImage 
+
+                    pos = [randi([centPad(1)+1 size(frame,1)-centPad(1)-1])...
+                           randi([centPad(2)+1 size(frame,2)-centPad(2)-1])]; % y,x
+                    temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
+                    pixelsOverlap = sum(temp(:));
+                    img = getSubFrame(frame, pos, subFrameSize);
+
+%                     disp(mean(frame(:)))
                     
-                    xyJittered = xy + jitterDirections(offsetInds(k), :);
-                    [img, isPadded] = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
-                    
-                    if ~isPadded
-                        
-                        if includeLocations
-                            img(end, end-1:end) = xyJittered;
-                        end
-
-                        features(:, imNumberInd) = img(:);
-
-                        if ismember(j, paws)
-                            labels(imNumberInd) = 1;
-                            posEgsCount = posEgsCount+1;
-                            fprintf('positive eg #%i\n', posEgsCount);
-                        else
-                            labels(imNumberInd) = 2;
-                        end
-
-                        imNumberInd = imNumberInd+1;
+                    if (pixelsOverlap/pixPerSub) < maxOverlap &&...
+                       mean(img(:)) > (mean(frame(:))*minBrightness)
+                        acceptableImage = true;
                     end
                 end
-                
-                
-                
 
-                % create/save negative examples for every positive example
-                for k = 1:negEgsPerEg
+                % store negative example
+                if includeLocations
+                    img(end, end-1:end) = fliplr(pos);
+                end
 
-                    % find a frame that doesn't overlap with positive examples
-                    acceptableImage = false;
-
-                    while ~acceptableImage 
-
-                        pos = [randi([centPad(1)+1 size(frame,1)-centPad(1)-1])...
-                               randi([centPad(2)+1 size(frame,2)-centPad(2)-1])]; % y,x
-                        temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
-                        pixelsOverlap = sum(temp(:));
-                        [img, isPadded] = getSubFrame(frame, pos, subFrameSize);
-                        
-                        if (pixelsOverlap/pixPerSub)<maxOverlap && mean(img(:))>mean(frame(:)) && ~isPadded
-                            acceptableImage = true;
-                        end
-                    end
-
-                    % store negative example
-                    
-                    if includeLocations
-                        img(end, end-1:end) = fliplr(pos);
-                    end
-                    
-                    features(:, imNumberInd) = img(:);
-                    labels(imNumberInd) = 2;
-                    imNumberInd = imNumberInd+1;
-                end    
+                features(:, imNumberInd) = img(:);
+                labels(imNumberInd) = 2;
+                imNumberInd = imNumberInd+1;
             end
         end
-    end
-    
-    if posEgsCount==posEgs
-        break;
     end
 end
 

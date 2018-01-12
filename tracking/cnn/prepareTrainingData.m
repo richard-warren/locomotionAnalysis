@@ -18,11 +18,8 @@ for i = 1:length(categories)
     newDir = [featureDir num2str(categories(i))];
     if ~exist(newDir, 'dir')
         mkdir(newDir)
-    else
-        rmdir(newDir)
     end
 end
-
 
 % make training images
 for i = 1:egNum
