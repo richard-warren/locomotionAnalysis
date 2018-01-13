@@ -1,4 +1,5 @@
-function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping, model1, model2, subFrameSize, scoreThresh, frameInds, paws, showTracking)
+function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping,...
+    model1, model2, subFrameSize1, subFrameSize2, scoreThresh, frameInds, paws, showTracking)
 
 % !!! need to document
 
@@ -14,9 +15,9 @@ xMaskWidth = 40;
 xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
-kernel = reshape(model1.Beta, subFrameSize(1), subFrameSize(2));
+kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
-bg = getBgImage(vid, 1000, false);
+bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 
 % !!! fix x alignment for bottom view
@@ -28,14 +29,16 @@ locationsBot.x = round(locationsBot.x*xLinearMapping(1) + xLinearMapping(2)) + 8
 % prepare figure
 if showTracking
 
-    figure; imagesc(-kernel);
+%     figure; imagesc(-kernel);
     
     figure('position', [680 144 698 834], 'menubar', 'none', 'color', 'black'); colormap gray
 
     rawAxis = subaxis(3,1,1, 'spacing', 0, 'margin', 0);
     rawIm = image(sampleFrame, 'parent', rawAxis, 'CDataMapping', 'scaled');
     set(gca, 'visible', 'off');
-    hold on; scatterPtsAll = scatter(rawAxis, 0, 0, 100, 'filled', 'red');
+    hold on;
+    hold on; scatter1 = scatter(rawAxis, 0, 0, 50, [1 1 1], 'filled');
+    hold on; scatter2 = scatter(rawAxis, 0, 0, 150, [1 0 0], 'linewidth', 3);
     
     maskAxis = subaxis(3,1,2, 'spacing', 0, 'margin', 0);
     maskIm = image(sampleFrame, 'parent', maskAxis, 'CDataMapping', 'scaled');
@@ -57,25 +60,26 @@ for i = frameInds
     frame = rgb2gray(read(vid,i));
     frame = frame - bg;
     frame = getFeatures(frame);
+%     frameMasked = frame;
     frameMasked = frame .* wheelMask; % mask wheel
     frameMasked(1:yMin,:) = 0;        % make top of frame
     
     % make x positions out of range
-    xMask = uint8(zeros(size(frame)));
-    
-    for j = paws%1:4
-        if ~isnan(locationsBot.x(i,j))
-            
-            % get mask indices for single paw
-            inds = locationsBot.x(i,j)-xMaskHalfWidth : locationsBot.x(i,j)+xMaskHalfWidth;
-            inds(inds<1) = 1;
-            inds(inds>vid.Width) = vid.Width;
-            
-            % incorporate paw mask into mask
-            xMask(:,inds) = 1;
-        end
-    end
-    frameMasked = frameMasked .* xMask;
+%     xMask = uint8(zeros(size(frame)));
+%     
+%     for j = paws%1:4
+%         if ~isnan(locationsBot.x(i,j))
+%             
+%             % get mask indices for single paw
+%             inds = locationsBot.x(i,j)-xMaskHalfWidth : locationsBot.x(i,j)+xMaskHalfWidth;
+%             inds(inds<1) = 1;
+%             inds(inds>vid.Width) = vid.Width;
+%             
+%             % incorporate paw mask into mask
+%             xMask(:,inds) = 1;
+%         end
+%     end
+%     frameMasked = frameMasked .* xMask;
     
     
     % filter with svm and apply non-maxima suppression
@@ -83,16 +87,28 @@ for i = frameInds
     frameFiltered(frameFiltered < scoreThresh) = 0;
 %     frameFiltered(1:yMin,:) = 0;
 %     frameFiltered = frameFiltered .* wheelMask;
-    [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize, overlapThresh);
+    [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
     
     
-    % pass through neural network!!!
+    
+    % perform second round of classification (cnn)
+    dims = model2.Layers(1).InputSize;
+    frameFeatures = nan(dims(1), dims(2), 3, length(x));
+    for j = 1:length(x)
+        img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
+        img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
+        img = repmat(img, 1, 1, 3);
+        frameFeatures(:,:,:,j) = img;
+    end
+    
+    classes = classify(model2, frameFeatures);
+    isPaw = (uint8(classes)==1);
         
     
     % store data
-    potentialLocationsTop(i).x = x;
-    potentialLocationsTop(i).y = y;
-    potentialLocationsTop(i).scores = scores;
+    potentialLocationsTop(i).x = x(isPaw);
+    potentialLocationsTop(i).y = y(isPaw);
+    potentialLocationsTop(i).scores = scores(isPaw);
     
     
     if showTracking
@@ -108,7 +124,8 @@ for i = frameInds
         set(rawIm, 'CData', frame);
         set(maskIm, 'CData', frameMasked);
         set(predictIm, 'CData', frameFiltered)
-        set(scatterPtsAll, 'XData', x, 'YData', y);
+        set(scatter1, 'XData', x, 'YData', y);
+        set(scatter2, 'XData', x(isPaw), 'YData', y(isPaw));
         
         % pause to reflcet on the little things...
         pause(.2);

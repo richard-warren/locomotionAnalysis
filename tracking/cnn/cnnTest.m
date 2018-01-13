@@ -2,7 +2,7 @@
 
 
 % settings
-class = 'pawBot2';
+class = 'pawTop2';
 targetSize = [227 227];
 trainTestValPortions = [.6 .2 .2];
 

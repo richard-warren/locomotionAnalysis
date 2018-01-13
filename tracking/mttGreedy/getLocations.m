@@ -133,7 +133,7 @@ showPotentialLocations = true;
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
 locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
-showLocations(vidBot, frameInds, potentialLocationsBot, (locationsBot), showPotentialLocations, .02, anchorPtsBot);
+showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locationsBot');
 
 
@@ -145,26 +145,53 @@ vid = VideoReader(vidFile);
 labelPawLocations(vidFile, frameInds, 200);
 
 
-%% create top labeled set, paw vs other
+%% create top labeled set, svm
 
 posEgs = 400;
-negEgsPerEg = 5;
-subFrameSize = [40 40];
+negEgsPerEg = 10;
+jitterNum = 0;
+jitterPixels = 2;
+subFrameSize1 = [40 40];
 includeLocation = false;
 paws = 1:4;
-class = 'pawTop';
+class = 'pawTop1';
+maxOverlap = .5;
+minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
 
 makeLabeledSet(class,...
                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat', ...
                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4',...
-               subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws)
-
+               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
+               jitterPixels, jitterNum, maxOverlap, minBrightness);
 viewTrainingSet(class);
 
 
+%% create top labeled set, cnn
+
+posEgs = 400;
+negEgsPerEg = 10;
+jitterNum = 8;
+jitterPixels = 3;
+subFrameSize2 = [40 40];
+includeLocation = false;
+paws = 1:4;
+class = 'pawTop2';
+maxOverlap = .5;
+targetSize = [227 227];
+minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
+
+makeLabeledSet(class,...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat', ...
+               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4',...
+               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
+               jitterPixels, jitterNum, maxOverlap, minBrightness);
+viewTrainingSet(class);
+
+% prepareTrainingData(class, targetSize); % restructure features
+
 %% train top svm1
 
-class = 'pawTop';
+class = 'pawTop1';
 
 % train bot svm and reload
 trainSVM(class);
@@ -173,22 +200,30 @@ load([getenv('OBSDATADIR') 'svm\classifiers\' class], 'model', 'subFrameSize');
 close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)))
 
 
-%% get potential locations for top (SVM)
+%% get potential locations for top (svm)
 
 % settings
 scoreThresh = 0;
-showTracking = true;
-model = [getenv('OBSDATADIR') 'svm\classifiers\pawTop'];
-paws = [2 4];
+showTracking = 0;
+model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawTop1'];
+model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawTop2Cnn'];
+paws = 1:4;
 
 % initializations
-load(model, 'model', 'subFrameSize');
+load(model1, 'model', 'subFrameSize');
+model1 = model; clear model;
+subFrameSize1 = subFrameSize; clear subFrameSize;
+load(model2, 'netTransfer')
+model2 = netTransfer; clear netTransfer;
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
-tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model, subFrameSize, scoreThresh,...
-                                                      frameInds, paws, showTracking);
-save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
+%
+tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model1, model2, ...
+    subFrameSize1, subFrameSize2, scoreThresh, frameInds, paws, showTracking);
 fprintf('potential locations top analysis time: %i minutes\n', toc/60)
+
+save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
+
 
 
 %% get potential locations for top (markers)
@@ -209,11 +244,11 @@ fprintf('potential locations top analysis time: %i minutes\n', toc/60)
 
 % settings
 showPotentialLocations = true;
-paws = [2 4];
+paws = 1:4;
 fs = 250;
 
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, paws, fs);
-showLocations(vidTop, frameInds, potentialLocationsTop, (locationsTop), showPotentialLocations, .02, anchorPtsBot);
+showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop), showPotentialLocations, .02, anchorPtsBot);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 %% get locations for top (markers)
