@@ -46,26 +46,17 @@ wheelVel = getVelocity(obsPixPositions, velTime, fs);
 
 
 
-% get paw locations for stance periods
+% get periods of stance
 for i = paws
     
-    % get epoches where wheel vel and paw x vel are similar to one another
     matchedVelBins = abs(wheelVel - locationsBot.xVel(:,i)) < stanceVelDif;
-    startInds = find(diff(matchedVelBins) == 1) + 1;
-    endInds = find(diff(matchedVelBins) == -1) + 1;
-
-    % ensure that the first event is the beginning of an epoch and the last is the end of an epoch
-    startInds = startInds(startInds<endInds(end));
-    endInds = endInds(endInds>startInds(1));
     
-    % only keep epochs that are long enough
-    validStances = (frameTimeStamps(endInds) - frameTimeStamps(endInds)) > stanceMin;
-    startInds = startInds(validStances);
-    endInds = endInds(validStances);
+    startBins = find(diff(matchedVelBins) == 1) + 1;
+    endBins = find(diff(matchedVelBins) == -1) + 1;
     
+    startTimes = frameTimeStams(startBins
     
-    % store the coordinates of each paw during stance
-    
+    validStarts = 
     
     
 end

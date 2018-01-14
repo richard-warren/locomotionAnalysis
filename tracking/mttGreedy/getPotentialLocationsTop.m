@@ -5,7 +5,7 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLi
 
 
 % settings
-overlapThresh = .5;
+overlapThresh = .6;
 yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
 circRoiPts = [36 172; 224 122; 386 157];
 xMaskWidth = 40;
@@ -16,7 +16,7 @@ xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
-wheelMask = getWheelMask(circRoiPts, [vid.Height vid.Width]);
+wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 
@@ -60,12 +60,19 @@ for i = frameInds
     frame = rgb2gray(read(vid,i));
     frame = frame - bg;
     frame = getFeatures(frame);
-%     frameMasked = frame;
-    frameMasked = frame .* wheelMask; % mask wheel
-    frameMasked(1:yMin,:) = 0;        % make top of frame
+
     
-    % make x positions out of range
-%     xMask = uint8(zeros(size(frame)));
+   
+    
+    
+    % filter with svm and apply non-maxima suppression
+    frameFiltered = -(conv2(double(frame)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);
+    frameFiltered(frameFiltered < scoreThresh) = 0;
+    frameFiltered(1:yMin,:) = 0;
+    frameFiltered = frameFiltered .* wheelMask;
+    
+     % mask x positions out of range
+%     xMask = double(zeros(size(frame)));
 %     
 %     for j = paws%1:4
 %         if ~isnan(locationsBot.x(i,j))
@@ -79,14 +86,8 @@ for i = frameInds
 %             xMask(:,inds) = 1;
 %         end
 %     end
-%     frameMasked = frameMasked .* xMask;
-    
-    
-    % filter with svm and apply non-maxima suppression
-    frameFiltered = -(conv2(double(frameMasked)/model1.KernelParameters.Scale, kernel, 'same') + model1.Bias);
-    frameFiltered(frameFiltered < scoreThresh) = 0;
-%     frameFiltered(1:yMin,:) = 0;
-%     frameFiltered = frameFiltered .* wheelMask;
+%     frameFiltered = frameFiltered .* xMask;
+%     
     [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
     
     
@@ -101,8 +102,10 @@ for i = frameInds
         frameFeatures(:,:,:,j) = img;
     end
     
+    try
     classes = classify(model2, frameFeatures);
     isPaw = (uint8(classes)==1);
+    catch; keyboard; end
         
     
     % store data
@@ -122,7 +125,7 @@ for i = frameInds
         
         % update figure
         set(rawIm, 'CData', frame);
-        set(maskIm, 'CData', frameMasked);
+%         set(maskIm, 'CData', frameMasked);
         set(predictIm, 'CData', frameFiltered)
         set(scatter1, 'XData', x, 'YData', y);
         set(scatter2, 'XData', x(isPaw), 'YData', y(isPaw));
