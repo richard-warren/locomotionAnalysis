@@ -248,7 +248,7 @@ paws = 1:4;
 fs = 250;
 
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, paws, fs);
-showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop), showPotentialLocations, .02, anchorPtsBot);
+showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop), showPotentialLocations, .08, anchorPtsBot);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 %% get locations for top (markers)

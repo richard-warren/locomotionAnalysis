@@ -91,27 +91,27 @@ for i = frameInds
     [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
     
     
+    if ~isempty(x)
     
-    % perform second round of classification (cnn)
-    dims = model2.Layers(1).InputSize;
-    frameFeatures = nan(dims(1), dims(2), 3, length(x));
-    for j = 1:length(x)
-        img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-        img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
-        img = repmat(img, 1, 1, 3);
-        frameFeatures(:,:,:,j) = img;
-    end
-    
-    try
-    classes = classify(model2, frameFeatures);
-    isPaw = (uint8(classes)==1);
-    catch; keyboard; end
+        % perform second round of classification (cnn)
+        dims = model2.Layers(1).InputSize;
+        frameFeatures = nan(dims(1), dims(2), 3, length(x));
+        for j = 1:length(x)
+            img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
+            img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
+            img = repmat(img, 1, 1, 3);
+            frameFeatures(:,:,:,j) = img;
+        end
+
+        classes = classify(model2, frameFeatures);
+        isPaw = (uint8(classes)==1);
+
         
-    
-    % store data
-    potentialLocationsTop(i).x = x(isPaw);
-    potentialLocationsTop(i).y = y(isPaw);
-    potentialLocationsTop(i).scores = scores(isPaw);
+        % store data
+        potentialLocationsTop(i).x = x(isPaw);
+        potentialLocationsTop(i).y = y(isPaw);
+        potentialLocationsTop(i).scores = scores(isPaw);
+    end
     
     
     if showTracking
