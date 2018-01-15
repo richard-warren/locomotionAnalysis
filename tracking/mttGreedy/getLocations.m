@@ -247,8 +247,18 @@ showPotentialLocations = true;
 paws = 1:4;
 fs = 250;
 
-locationsTop = getLocationsTop(potentialLocationsTop, locationsBot, xLinearMapping, frameInds, obsPixPositions, frameTimeStamps, paws, fs);
-showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop), showPotentialLocations, .08, anchorPtsBot);
+% initializations
+vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+
+% fix x alignment for bottom view
+locationsBotFixed = fixTracking(locationsBot);
+locationsBotFixed.x = locationsBotFixed.x*xLinearMapping(1) + xLinearMapping(2);
+
+
+locationsTop = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
+    frameInds, obsPixPositions, frameTimeStamps, paws, fs);
+showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
+    showPotentialLocations, .08, anchorPtsBot, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 %% get locations for top (markers)
@@ -260,8 +270,6 @@ foreOffset = 5;
 % initializations
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 locationsBotFixed = fixTracking(locationsBot);
-locationsBotFixed.x(:, [1 2]) = locationsBotFixed.x(:, [1 2]) + hindOffset;
-locationsBotFixed.x(:, [3 4]) = locationsBotFixed.x(:, [3 4]) + foreOffset;
 
 locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBotFixed, frameTimeStamps, xLinearMapping, frameInds);
 showLocations(vidTop, frameInds(), potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot, locationsBotFixed);

@@ -42,7 +42,7 @@ if showPotentialLocations
     scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'white', 'filled', 'linewidth', 2);
 end
 scatterLocations = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
-    circSizes, cmap, 'filled', 'linewidth', 3); hold on
+    circSizes, cmap, 'linewidth', 5); hold on
 scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
                  [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
                  circSizes, cmap, 'filled', 'linewidth', 3);     % show anchor points
@@ -131,7 +131,7 @@ function updateFrame(frameStep)
     set(scatterLocations, 'XData', locations.x(frameInds(currentFrame),:), 'YData', locations.(dim2)((frameInds(currentFrame)),:), 'visible', 'on');
 
     if showPotentialLocations
-        set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).y);
+        set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).(dim2));
     end
     
     % pause to reflcet on the little things...

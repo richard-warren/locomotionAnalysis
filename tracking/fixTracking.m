@@ -5,7 +5,7 @@ function locationsFixed = fixTracking(locations)
 % user settings
 samplesToFill = 5;
 smoothSamples = 3;
-interpMethod = 'spline';
+interpMethod = 'linear';
 
 % initializations
 fields = fieldnames(locations);

@@ -15,8 +15,7 @@ locationsTop = fixTracking(locationsTop);
 
 % fix x alignment for bottom view
 load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
-% locationsBot.x = locationsBot.x*xLinearMapping(1) + xLinearMapping(2);
-locationsTop.x = locationsBot.x;% * xLinearMapping(1) + xLinearMapping(2); % replace top x values with those from bottom, which are more reliable
+% locationsTop.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2); % replace top x values with those from bottom, which are more reliable
 
 vidTop = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runTop.mp4']);
 vidBot = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runBot.mp4']);

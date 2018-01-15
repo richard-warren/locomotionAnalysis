@@ -1,4 +1,4 @@
-function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
+function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot, xLinearMapping,...
     model1, model2, subFrameSize1, subFrameSize2, scoreThresh, frameInds, paws, showTracking)
 
 % !!! need to document
@@ -7,9 +7,9 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
 % settings
 overlapThresh = .6;
 yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
-circRoiPts = [36 174; 224 125; 386 157];
+circRoiPts = [36 172; 224 122; 386 157];
 xMaskWidth = 40;
-circOffset = 8; % offset the wheel mask by this amount to occluded paws in stance, whose z positions are detected automatically based on correlation by wheel and x vel
+circOffset = 8; % offset the whe
 
 
 % initializations
@@ -17,9 +17,13 @@ xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
-wheelMask = double(getWheelMask(circRoiPts - repmat([0 circOffset],3,1), [vid.Height vid.Width]));
+wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
+
+% !!! fix x alignment for bottom view
+locationsBot = fixTracking(locationsBot);
+locationsBot.x = round(locationsBot.x*xLinearMapping(1) + xLinearMapping(2)) + 8; % !!! + 5 is a hack!!!, only temporary
 
 
 
@@ -119,7 +123,7 @@ for i = frameInds
         end
         
         % update figure
-        set(rawIm, 'CData', frame .* uint8(wheelMask));
+        set(rawIm, 'CData', frame);
 %         set(maskIm, 'CData', frameMasked);
         set(predictIm, 'CData', frameFiltered)
         set(scatter1, 'XData', x, 'YData', y);
@@ -127,7 +131,6 @@ for i = frameInds
         
         % pause to reflcet on the little things...
         pause(.2);
-        if i==22187; keyboard; end
 %         keyboard
     end
 end
