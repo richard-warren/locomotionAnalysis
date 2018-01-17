@@ -9,7 +9,6 @@ overlapThresh = .6;
 yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
 circRoiPts = [36 174; 224 125; 386 157];
 xMaskWidth = 40;
-circOffset = 8; % offset the wheel mask by this amount to occluded paws in stance, whose z positions are detected automatically based on correlation by wheel and x vel
 
 
 % initializations
@@ -17,7 +16,7 @@ xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
-wheelMask = double(getWheelMask(circRoiPts - repmat([0 circOffset],3,1), [vid.Height vid.Width]));
+wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 
@@ -85,21 +84,21 @@ for i = frameInds
 %     
     [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
     
-    
+    isPaw = true(size(x)); % !!! temp
     if ~isempty(x)
-    
+        
         % perform second round of classification (cnn)
-        dims = model2.Layers(1).InputSize;
-        frameFeatures = nan(dims(1), dims(2), 3, length(x));
-        for j = 1:length(x)
-            img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-            img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
-            img = repmat(img, 1, 1, 3);
-            frameFeatures(:,:,:,j) = img;
-        end
-
-        classes = classify(model2, frameFeatures);
-        isPaw = (uint8(classes)==1);
+%         dims = model2.Layers(1).InputSize;
+%         frameFeatures = nan(dims(1), dims(2), 3, length(x));
+%         for j = 1:length(x)
+%             img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
+%             img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
+%             img = repmat(img, 1, 1, 3);
+%             frameFeatures(:,:,:,j) = img;
+%         end
+% 
+%         classes = classify(model2, frameFeatures);
+%         isPaw = (uint8(classes)==1);
 
         
         % store data
@@ -127,8 +126,6 @@ for i = frameInds
         
         % pause to reflcet on the little things...
         pause(.2);
-        if i==22187; keyboard; end
-%         keyboard
     end
 end
 

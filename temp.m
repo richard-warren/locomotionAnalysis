@@ -1,17 +1,22 @@
 
 
+load('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocationsObsFrames.mat')
+locationFrameIndsTemp = locationFrameInds;
+locationsTemp = locations;
 
-% get x velocities for bottom view tracking
-locationsBot.xVel = nan(size(locationsBot.x));
-locationsBotFixed = fixTracking(locationsBot);
+load('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocationsObsOnFrames.mat')
+locationFrameIndsTemp = [locationFrameIndsTemp locationFrameInds];
+locationsTemp = cat(2, locationsTemp, locations);
 
-for i = paws
-    locationsBot.xVel(:,i) = getVelocity(locationsBotFixed.x(:,i), .025, fs);
-end
+nanBins = isnan(locationFrameIndsTemp);
+locations = locationsTemp(~nanBins);
+locationFrameInds = locationFrameIndsTemp(~nanBins);
 
-% get wheel velocity
-wheelVel = getVelocity(obsPixPositions, .025, fs);
+clear locationFrameIndsTemp locationsTemp nanBins
+save('C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat',...
+    'locations', 'locationFrameInds')
 
+%%
 
-%% plot paw and wheel velocities
-close all; figure; plot(locationsBot.xVel(:,1)); hold on; plot(wheelVel); pimpFig
+I = eye(max(labels));
+labelsHotOne = I(labels,:)';

@@ -52,17 +52,17 @@ negEgsPerEg = 10;
 jitterNum = 8;
 jitterPixels = 4;
 subFrameSize2 = [45 45];
-includeLocation = false;
-paws = 1:4;
+includeLocation = 1;
+paws = [1 4; 2 3]; % every row is a class // all paws in a row belong to that class (hind vs fore paws, for examlpe)
 class = 'pawBot2';
 maxOverlap = .5;
-targetSize = [227 227];
+% targetSize = [227 227];
 minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
 
 makeLabeledSet(class,...
                [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
                [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
+               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 
 viewTrainingSet(class);
@@ -95,7 +95,7 @@ close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)
 % settings
 withXRestrictions = 0; % if top was tracked with markers, use these locations to limit search for locations in bot
 scoreThresh = 0;
-showTracking = 0;
+showTracking = 1;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot1'];
 % model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot2'];
 
@@ -106,8 +106,8 @@ model1 = model; subFrameSize1 = subFrameSize;
 % model2 = model; subFrameSize2 = subFrameSize;
 
 % temp for cnn second stage
-load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Cnn'], 'netTransfer');
-model2 = netTransfer; clear netTransfer;
+load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Nn'], 'net');
+model2 = net; clear net;
 
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
@@ -140,9 +140,10 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'l
 
 %% hand label top locations
 
-vidFile = 'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4';
-vid = VideoReader(vidFile);
-labelPawLocations(vidFile, frameInds, 200);
+vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4'];
+vidTop = VideoReader(vidFile);
+obsFrameInds = find(obsPixPositions>10 & obsPixPositions<vidTop.Width);
+labelPawLocations(vidFile, obsFrameInds, 200);
 
 
 %% create top labeled set, svm
@@ -218,7 +219,7 @@ model2 = netTransfer; clear netTransfer;
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 %
-tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, xLinearMapping, model1, model2, ...
+tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, model1, model2, ...
     subFrameSize1, subFrameSize2, scoreThresh, frameInds, paws, showTracking);
 fprintf('potential locations top analysis time: %i minutes\n', toc/60)
 

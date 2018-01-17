@@ -20,8 +20,8 @@ minHgt = 6;          % only consider potential locations that are this many pixe
 
 
 unaryWeight = .5;
-pairwiseWeight = 0;
-highnessWeight = 1;
+pairwiseWeight = .5;
+highnessWeight = .5;
 
 
 % initializations

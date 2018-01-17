@@ -8,7 +8,7 @@ figSize = [1000, 1800]; % h,w
 colormap gray
 load([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
 
-for i = 1:2
+for i = unique(labels)
     
     % determine figure dimensions
     rows = floor(figSize(1) / subFrameSize(1));

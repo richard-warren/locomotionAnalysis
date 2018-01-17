@@ -17,6 +17,7 @@ locationFrameInds = locationFrameInds(~nanInds);
 centPad = floor(subFrameSize / 2); % y,x
 posEgsCount = 0;
 jitterDirections = [1 1; 1 0; 1 -1; 0 1; 0 -1; -1 1; -1 0; -1 -1] * jitterPixels;
+numClasses = size(paws,1) + 1; % add one for the not paw class // otherwise, every row in the paws matrix is a class
 
 % sort chronologically (this may make reading video frames faster)
 [locationFrameInds, sortInds] = sort(locationFrameInds);
@@ -82,11 +83,12 @@ for i = randperm(length(locations))
             features(:, imNumberInd) = img(:);
 
             if ismember(j, paws)
-                labels(imNumberInd) = 1;
+                [row, ~] = ind2sub(size(paws), find(paws==j));
+                labels(imNumberInd) = row;
                 posEgsCount = posEgsCount+1;
                 fprintf('positive eg #%i\n', posEgsCount);
             else
-                labels(imNumberInd) = 2;
+                labels(imNumberInd) = numClasses;
             end
 
             imNumberInd = imNumberInd+1;
@@ -99,7 +101,7 @@ for i = randperm(length(locations))
 
             for k = 1:jitterNum
 
-                xyJittered = xy + jitterDirections(offsetInds(k), :);
+                xyJittered = xy + jitterDirections(offsetInds(k), :)';
                 img = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
 
 
@@ -110,11 +112,12 @@ for i = randperm(length(locations))
                 features(:, imNumberInd) = img(:);
 
                 if ismember(j, paws)
-                    labels(imNumberInd) = 1;
+                    [row, ~] = ind2sub(size(paws), find(paws==j));
+                    labels(imNumberInd) = row;
                     posEgsCount = posEgsCount+1;
                     fprintf('positive eg #%i\n', posEgsCount);
                 else
-                    labels(imNumberInd) = 2;
+                    labels(imNumberInd) = numClasses;
                 end
 
                 imNumberInd = imNumberInd+1;
@@ -151,7 +154,7 @@ for i = randperm(length(locations))
                 end
 
                 features(:, imNumberInd) = img(:);
-                labels(imNumberInd) = 2;
+                labels(imNumberInd) = numClasses;
                 imNumberInd = imNumberInd+1;
             end
         end
