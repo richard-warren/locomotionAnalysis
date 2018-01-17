@@ -1,4 +1,4 @@
-function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, frameWid, frameHgt, frameInds)
+function locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot, frameWid, frameHgt, frameInds)
 
 % !!! need to document
 
@@ -100,18 +100,19 @@ for i = frameInds(1:end)
 %                xFore>overlapZone(1) && xFore<overlapZone(2)
             if abs(xHind - xFore) < pawCheckXProximity % if paws are very close to eachother
                 
-%                 frame = rgb2gray(read(vidBot, i));
+                frame = read(vidBot, frameInds(i));
                 
                 yHind = potentialLocationsBot(i).y(labels(i, pawPairs{j}(1)));
                 yFore = potentialLocationsBot(i).y(labels(i, pawPairs{j}(2)));
                 
-%                 hindFrame = getSubFrame(frame, [yHind xHind], subFrameSize);
-%                 foreFrame = getSubFrame(frame, [yFore xFore], subFrameSize);
-%                 brightnessHind = mean(hindFrame(:));
-%                 brightnessFore = mean(foreFrame(:));
+                hindFrame = getSubFrame(frame, [vid.Height-yHind xHind], subFrameSize);
+                foreFrame = getSubFrame(frame, [vid.Height-yFore xFore], subFrameSize);
+                brightnessHind = mean(hindFrame(:));
+                brightnessFore = mean(foreFrame(:));
 
-                if (abs(yFore-yMid) - abs(yHind-yMid)) > pawCheckYDistance % if the y locations are separated by at least pawCheckYDistance pixels
-%                 if brightnessFore > brightnessHind
+%                 if (abs(yFore-yMid) - abs(yHind-yMid)) > pawCheckYDistance % if the y locations are separated by at least pawCheckYDistance pixels
+                if brightnessFore > brightnessHind
+                    keyboard
                     labels(i, pawPairs{j}) = labels(i, fliplr(pawPairs{j}));
                     pawSwaps = pawSwaps + 1;
                     fprintf('paw swap #%i\n', pawSwaps)
