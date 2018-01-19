@@ -77,10 +77,10 @@
     </VisualizerSettings>
   </DialogSettings>
   <DialogSettings>
-    <Visible>false</Visible>
+    <Visible>true</Visible>
     <Location>
-      <X>833</X>
-      <Y>236</Y>
+      <X>1244</X>
+      <Y>325</Y>
     </Location>
     <Size>
       <Width>336</Width>
@@ -95,8 +95,8 @@
   <DialogSettings>
     <Visible>true</Visible>
     <Location>
-      <X>1239</X>
-      <Y>325</Y>
+      <X>1569</X>
+      <Y>324</Y>
     </Location>
     <Size>
       <Width>336</Width>
@@ -111,7 +111,7 @@
   <DialogSettings>
     <Visible>true</Visible>
     <Location>
-      <X>1236</X>
+      <X>1570</X>
       <Y>605</Y>
     </Location>
     <Size>
@@ -125,16 +125,20 @@
     </VisualizerSettings>
   </DialogSettings>
   <DialogSettings>
-    <Visible>false</Visible>
+    <Visible>true</Visible>
     <Location>
-      <X>0</X>
-      <Y>0</Y>
+      <X>1242</X>
+      <Y>603</Y>
     </Location>
     <Size>
-      <Width>0</Width>
-      <Height>0</Height>
+      <Width>336</Width>
+      <Height>279</Height>
     </Size>
     <WindowState>Normal</WindowState>
+    <VisualizerTypeName>Bonsai.Vision.Design.ConnectedComponentVisualizer</VisualizerTypeName>
+    <VisualizerSettings>
+      <ConnectedComponentVisualizer />
+    </VisualizerSettings>
   </DialogSettings>
   <DialogSettings>
     <Visible>true</Visible>
