@@ -6,8 +6,8 @@
 experiments = {'obsBr', 'obsWiskMrk', 'obsCompareOn', 'obsCompareOnOff'};
 obsPos = 0.3820; % obsPos at which obs is at center of wheel
 posRange = .06; % computer vel between obsPos plus or minus posRange
-allTrialsDataRaw = getAllSessionTrialSpeeds(experiments, obsPos, posRange);
-allTrialsData = allTrialsDataRaw(~[allTrialsDataRaw.lightOn]);
+allTrialsData = getAllSessionTrialSpeeds(experiments, obsPos, posRange);
+all
 
 %% make videos in dft speed bins with no pauses
 
@@ -16,6 +16,8 @@ allTrialsData = allTrialsDataRaw(~[allTrialsDataRaw.lightOn]);
 trialNum = 10;
 binLims = [.15 .65];
 binSeparation = .1;
+
+
 
 bins = (binLims(1) : binSeparation : binLims(2)-binSeparation)';
 bins = cat(2, bins, bins+binSeparation);

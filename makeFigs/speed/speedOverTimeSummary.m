@@ -36,52 +36,6 @@ data = struct(); % stores trial data for all sessions
 % collect data
 for i = 1:size(sessions,1)
 
-%     % load session data
-%     load([getenv('OBSDATADIR') 'sessions\' sessions.session{i} '\runAnalyzed.mat'],...
-%             'obsPositions', 'obsTimes',...
-%             'obsOnTimes', 'obsOffTimes',...
-%             'obsLightOnTimes', 'obsLightOffTimes',...
-%             'wheelPositions', 'wheelTimes', 'targetFs');
-%     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
-%     
-%     % compute velocity
-%     vel = getVelocity(wheelPositions, .5, targetFs);
-%     
-%     
-%     % iterate over all trials
-%     sessionVels = nan(length(obsOnTimes), length(posInterp));
-%     isLightOn = false(length(obsOnTimes), 1);
-%     obsOnPositions = nan(length(obsOnTimes), 1);
-%     
-%     for j = 1:length(obsOnTimes)
-%         
-%         % locate trial
-%         obsOnPos = obsPositions( find(obsTimes >= obsOnTimes(j), 1, 'first') );
-%         obsTime  = obsTimes(find( obsTimes >= obsOnTimes(j) & obsPositions >= obsPos, 1, 'first')); % time at which obstacle reaches obsPos
-%         obsWheelPos = wheelPositions(find(wheelTimes>=obsTime, 1, 'first')); % position of wheel at moment obstacle reaches obsPos
-% 
-%         % get trial positions and velocities
-%         trialInds = (wheelPositions > obsWheelPos-obsPrePost(1)) & (wheelPositions < obsWheelPos+obsPrePost(2));
-%         trialPos = wheelPositions(trialInds);
-%         trialPos = trialPos - obsWheelPos; % normalize s.t. 0 corresponds to the position at which the obstacle is directly over the wheel
-%         trialVel = vel(trialInds);
-% 
-%         % remove duplicate positional values
-%         [trialPos, uniqueInds] = unique(trialPos, 'stable');
-%         trialVel = trialVel(uniqueInds);
-% 
-%         % interpolate velocities across positional grid and store results
-%         trialVelInterp = interp1(trialPos, trialVel, posInterp, 'linear');
-%         sessionVels(j,:) = trialVelInterp;
-%         
-%         % find whether light was on
-%         isLightOn(j) = min(abs(obsOnTimes(j) - obsLightOnTimes)) < 1; % did the light turn on near whether the obstacle turned on
-%         
-%         % record position at which obstacle turned on
-%         obsOnPositions(j) = obsPos - obsOnPos;
-%         
-%     end
-
     [sessionVels, isLightOn, obsOnPositions] = getSessionSpeedInfo(sessions.session{i}, posInterp, obsPos);
     
     data(i).mouse = sessions.mouse{i};
@@ -133,17 +87,14 @@ for i = 1:3
         
         inds = nan(lightVsNoLightSessions * length(mice), 1);
 
-        keyboard
         for j = 1:length(mice)
             indInds = (j-1)*lightVsNoLightSessions+1 : j*lightVsNoLightSessions;
             inds(indInds) = find(strcmp(mice{j}, {data.mouse}), lightVsNoLightSessions, 'last');
         end
         
         for j = 1:2
-    
             allVels = reshape([data(inds).(fields{j})], length(posInterp), length(inds))';
             plot(posInterp, nanmean(allVels,1), 'color', condColors(j,:), 'linewidth', 3); hold on
-
         end
     end
     
