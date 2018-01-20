@@ -91,6 +91,7 @@ for i = 1:size(sessions,1)
     
 end
 
+keyboard
 % determine which sessions to include (get the first sessionsToPlot sessions with the wheel break)
 for i = 1:length(mice)
     
@@ -133,9 +134,8 @@ for i = 1:3
         
         inds = nan(lightVsNoLightSessions * length(mice), 1);
 
-        keyboard
         for j = 1:length(mice)
-            indInds = (j-1)*lightVsNoLightSessions+1 : j*lightVsNoLightSessions;
+            indInds = (j-1)*length(mice)+1 : j*length(mice)+1;
             inds(indInds) = find(strcmp(mice{j}, {data.mouse}), lightVsNoLightSessions, 'last');
         end
         
