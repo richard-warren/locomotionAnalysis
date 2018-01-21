@@ -9,7 +9,7 @@ parfor i = 1:length(sessionDirs)
     
     % spike analysis
     nameInd = find(sessionDirs{i}=='\',1,'last');
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), 'wiskTouchSignal');
     
 end
 
@@ -49,7 +49,7 @@ for j = 1:length(sessionDirs)
     end
 
 %     makeVidWisk(session, [.25 .445], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
-    makeVid(session, [.25 .445], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
+    makeVidWisk(session, [.25 .445], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
 end
 
 
