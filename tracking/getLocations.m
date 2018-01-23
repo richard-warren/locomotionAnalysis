@@ -3,8 +3,7 @@
 % performs paw tracking
 
 % settings
-session = '171202_000';
-threshIntensity = 255; % this is to make sure paw markers are not too bright, eg they remain gray
+session = '180122_001';
 
 % initializations
 trackingDir = [getenv('OBSDATADIR') 'sessions\' session '\tracking'];

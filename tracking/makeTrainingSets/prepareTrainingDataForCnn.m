@@ -1,4 +1,4 @@
-function prepareTrainingData(trainingData, targetSize)
+function prepareTrainingDataForCnn(trainingData, targetSize)
 
 % !!! need to document, but generally takes features matrix with columns as egs and rows as features and converts into image file in dft folders for each category
 % this format can be used by matlabd imageDatastore function

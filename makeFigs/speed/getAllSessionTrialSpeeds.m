@@ -1,9 +1,8 @@
-function data = getAllSessionTrialSpeeds(experiments, obsPos, posRange)
+function data = getAllSessionTrialSpeeds(experiments, posRange)
 
 % make a data structure for all sessions in experiments where each row is a trial, and compute whether light was on and the velocity of the trial
 % vel is computed from position whether obs is center above the wheel (obsPos) plus and minus posRange
-% obsPos: position at which obstacle is in the center of the wheel
-% posRange: compute speed bewteen obsPos and osbPos - posRange (so it is some position before it reaches mouse to when it is directly at center of wheel)
+% posRange: compute speed bewteen posRange(1) and posRange(2)
 
 
 % initializations
@@ -26,8 +25,8 @@ for i = 1:height(sessions)
     for j = 1:length(obsOnTimes)-1
         
         % get trial velocity
-        startInd = find(obsTimes>obsOnTimes(j) & obsPositions>(obsPos-posRange), 1, 'first');
-        endInd = find(obsTimes>obsOnTimes(j) & obsPositions>(obsPos), 1, 'first');
+        startInd = find(obsTimes>obsOnTimes(j) & obsPositions>posRange(1), 1, 'first');
+        endInd = find(obsTimes>obsOnTimes(j) & obsPositions>posRange(2), 1, 'first');
         trialVel = (obsPositions(endInd) - obsPositions(startInd)) / (obsTimes(endInd) - obsTimes(startInd));
         
         % determine whether light was on in trial
@@ -39,7 +38,7 @@ for i = 1:height(sessions)
         data(dataInd).mouse = sessions.mouse{i};
         data(dataInd).vel = trialVel;
         data(dataInd).lightOn = isLightOn;
-        data(dataInd).videoRecorded = exist([getenv('OBSDATADIR') 'sessions\' sessions.session{i} '\runTop.mp4'], 'file');
+        data(dataInd).videoRecorded = exist([getenv('OBSDATADIR') 'sessions\' sessions.session{i} '\runTop.mp4'], 'file')==2;
         data(dataInd).trialNum = j;
         
         dataInd = dataInd + 1;

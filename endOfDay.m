@@ -24,9 +24,11 @@ end
 % obsAvoidanceLearning('run8', {'obsBr'})
 % obsAvoidanceLearningSummary(miceToPlot)
 % speedOverTimeSummary(miceToPlot)
+% plotAllSessionSpeeds({'obsBr', 'obsCompareOnOff', 'obsCompareOff', 'obsWiskMrk'}, [-.08 .08] + 0.3820)
+plotAllSessionSpeeds({'obsWisk'}, [-.08 .08] + 0.3820)
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data
