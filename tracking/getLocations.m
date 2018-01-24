@@ -6,7 +6,7 @@ minVel = .4;
 obsPrePost = [.2 .2];
 velPositions = [-.08 .08] + 0.3820;
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
-colors = [1 76 153; 1 153 1; 255 255 51; 255 1 255] / 255; % bluee, green, yellow, purple
+colors = hsv(4); % red green blue purple
 
 % initializations
 trackingDir = [getenv('OBSDATADIR') 'sessions\' session '\tracking'];
@@ -108,33 +108,27 @@ trainSVM2(class); % this is saved as [class '2']
 
 
 % settings
-withXRestrictions = 0; % if top was tracked with markers, use these locations to limit search for locations in bot
 scoreThresh = 0;
-showTracking = 0;
+showTracking = 1;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot1'];
-% model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot2'];
+classNum = 2; % not included not paw class
 
 % svm1
 load(model1, 'model', 'subFrameSize');
 model1 = model; subFrameSize1 = subFrameSize;
 
 % svm2
-% load(model2, 'model', 'subFrameSize');
-% model2 = model; subFrameSize2 = subFrameSize;
+load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2'], 'model', 'subFrameSize');
+model2 = model; subFrameSize2 = subFrameSize;
 
 % cnn
-load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Cnn'], 'netTransfer');
-model2 = netTransfer; clear netTransfer;
+% load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Cnn'], 'netTransfer');
+% model2 = netTransfer; clear netTransfer;
 
 
 tic
-if withXRestrictions
-    potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                     scoreThresh, obsPixPositions, frameInds, showTracking, potentialLocationsTop);
-else
-    potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                     scoreThresh, obsPixPositions, frameInds, showTracking);
-end
+potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, classNum, ...
+    subFrameSize1, subFrameSize2, scoreThresh, obsPixPositions, frameInds, showTracking);
                                                   
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBotAll.mat'], 'potentialLocationsBot');
 fprintf('potential locations bot analysis time: %i minutes\n', toc/60)

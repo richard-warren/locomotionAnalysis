@@ -9,12 +9,12 @@ dataDir = [getenv('OBSDATADIR') 'svm\'];
 load([dataDir '\trainingData\' className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
 
 
-% train second classifier (old, single class)
+% train second SVM classifier (old, single class)
 % model = fitcsvm(features', labels, 'KernelFunction', 'Gaussian', 'KernelScale', sqrt(size(features,1)), 'Standardize', true);
 % modelCrossVal = crossval(model);
 % fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
 
-% new, multiclass
+% train second SVM classifier (new, multiclass)
 template = templateSVM(...
     'KernelFunction', 'polynomial', ...
     'PolynomialOrder', 3, ...
@@ -28,8 +28,8 @@ model = fitcecoc(...
     'Learners', template, ...
     'Coding', 'onevsone', ...
     'ClassNames', (1:length(unique(labels)))');
-
-keyboard
+modelCrossVal = crossval(model);
+fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
 
 % save model
 uisave ({'model', 'subFrameSize'}, [dataDir 'classifiers\' className]);

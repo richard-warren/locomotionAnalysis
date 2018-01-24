@@ -13,7 +13,7 @@ sampleFrame = rgb2gray(read(vid,1));
 totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
-cmap = hsv(classNum);
+cmap = jet(classNum);
 
 
 % prepare figure
@@ -28,10 +28,10 @@ if showTracking
     set(gca, 'visible', 'off', 'CLim', [0 255]);
     hold on; scatterAll = scatter(rawAxis, 0, 0, 50, [1 1 1], 'filled'); % shows results of svm1
     
-    scatterPaws = cell(1, classNum); % shows results of second round of classification
+    sca
     for i = 1:classNum
-        hold on; scatterPaws{i} = scatter(rawAxis, 0, 0, 150, cmap(i,:), 'linewidth', 3);
-    end
+    hold on; scatter2 = scatter(rawAxis, 0, 0, 150, [1 0 0], 'linewidth', 3);
+%     hold on; scatter3 = scatter(rawAxis, 0, 0, 100, [0 1 0], 'linewidth', 3);
 
     predictAxis = subaxis(2,1,2, 'spacing', 0.01, 'margin', .01);
     predictIm = image(sampleFrame, 'parent', predictAxis, 'CDataMapping', 'scaled');
@@ -127,7 +127,9 @@ for i = frameInds
         frameFeatures(:,j) = img(:);
     end
     
+    keyboard
     classes = predict(model2, frameFeatures');
+    isPaw = (classes==1);
     
     
     
@@ -149,13 +151,9 @@ for i = frameInds
     
     
     % store data
-    try
-    pawBins = classes<=classNum;
-    potentialLocationsBot(i).x = x(pawBins);
-    potentialLocationsBot(i).y = y(pawBins);
-    potentialLocationsBot(i).scores = scores(pawBins);
-    potentialLocationsBot(i).class = classes(pawBins);
-    catch; keyboard; end
+    potentialLocationsBot(i).x = x(isPaw);
+    potentialLocationsBot(i).y = y(isPaw);
+    potentialLocationsBot(i).scores = scores(isPaw);
     
     
     if showTracking
@@ -164,10 +162,8 @@ for i = frameInds
         set(rawIm, 'CData', frame);
         set(predictIm, 'CData', frameFiltered)
         set(scatterAll, 'XData', x, 'YData', y);
-        
-        for j=1:classNum
-            set(scatterPaws{j}, 'XData', x(classes==j), 'YData', y(classes==j));
-        end
+        set(scatter2, 'XData', x(isPaw), 'YData', y(isPaw));
+%         set(scatter3, 'XData', x(isFore), 'YData', y(isFore));
         
         % pause to reflcet on the little things...
         pause(.001);
