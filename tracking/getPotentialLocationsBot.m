@@ -1,5 +1,5 @@
 function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, subFrameSize1, subFrameSize2, ...
-    scoreThresh, obsPixPositions, frameInds, showTracking, threshIntensity, locationsTop)
+    scoreThresh, obsPixPositions, frameInds, showTracking, locationsTop)
 
 % !!! need to document
 
@@ -28,7 +28,7 @@ if showTracking
     set(gca, 'visible', 'off', 'CLim', [0 255]);
     hold on; scatter1 = scatter(rawAxis, 0, 0, 50, [1 1 1], 'filled');
     hold on; scatter2 = scatter(rawAxis, 0, 0, 150, [1 0 0], 'linewidth', 3);
-    hold on; scatter3 = scatter(rawAxis, 0, 0, 100, [0 1 0], 'linewidth', 3);
+%     hold on; scatter3 = scatter(rawAxis, 0, 0, 100, [0 1 0], 'linewidth', 3);
 
     predictAxis = subaxis(2,1,2, 'spacing', 0.01, 'margin', .01);
     predictIm = image(sampleFrame, 'parent', predictAxis, 'CDataMapping', 'scaled');
@@ -46,9 +46,9 @@ for i = frameInds
     frame = rgb2gray(read(vid,i));
     frame = getFeatures(frame);
     frame = frame - bg;
-    if exist('threshIntensity', 'var')
-        frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
-    end
+%     if exist('threshIntensity', 'var')
+%         frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
+%     end
     
     % mask obstacle
     frame = maskObs(frame, obsPixPositions(i)); % !!! should replace this with addObsToFrame
@@ -103,7 +103,7 @@ for i = frameInds
     
     
     
-    % perform second round of classification (svm)
+    % perform second round of classification (svm2)
 %     frameFeatures = nan(prod(subFrameSize2), length(x));
 %     for j = 1:length(x)
 %         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
@@ -116,25 +116,25 @@ for i = frameInds
     
     
     % perform second round of classification (cnn)
-%     dims = model2.Layers(1).InputSize;
-%     frameFeatures = nan(dims(1), dims(2), 3, length(x));
-    frameFeatures = nan(model2.inputs{1}.size, length(x));
+    dims = model2.Layers(1).InputSize;
+    frameFeatures = nan(dims(1), dims(2), 3, length(x));
+%     frameFeatures = nan(model2.inputs{1}.size, length(x));
     
     for j = 1:length(x)
         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-%         img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
-%         img = repmat(img, 1, 1, 3);
-%         frameFeatures(:,:,:,j) = img;
+        img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
+        img = repmat(img, 1, 1, 3);
+        frameFeatures(:,:,:,j) = img;
 
-        img(end, end-1:end) = [x(j) y(j)];
-        frameFeatures(:,j) = img(:);
+%         img(end, end-1:end) = [x(j) y(j)];
+%         frameFeatures(:,j) = img(:);
     end
     
-%     classes = classify(model2, frameFeatures);
-    [~, classes] = max(model2(frameFeatures), [], 1);
-    isPaw  = (classes==3);
-    isHind = (classes==1);
-    isFore = (classes==2);
+    isPaw = uint8(classify(model2, frameFeatures))==1;
+%     [~, classes] = max(model2(frameFeatures), [], 1);
+%     isPaw  = (classes==3);
+%     isHind = (classes==1);
+%     isFore = (classes==2);
     
     
     % store data
@@ -149,8 +149,8 @@ for i = frameInds
         set(rawIm, 'CData', frame);
         set(predictIm, 'CData', frameFiltered)
         set(scatter1, 'XData', x, 'YData', y);
-        set(scatter2, 'XData', x(isHind), 'YData', y(isHind));
-        set(scatter3, 'XData', x(isFore), 'YData', y(isFore));
+        set(scatter2, 'XData', x(isPaw), 'YData', y(isPaw));
+%         set(scatter3, 'XData', x(isFore), 'YData', y(isFore));
         
         % pause to reflcet on the little things...
         pause(.001);

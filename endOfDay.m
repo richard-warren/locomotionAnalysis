@@ -4,12 +4,12 @@
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 miceToPlot = {'run6', 'run7', 'run8'};
 vidTrialProportion = .15;
-%
+
 parfor i = 1:length(sessionDirs)
     
     % spike analysis
     nameInd = find(sessionDirs{i}=='\',1,'last');
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), 'wiskTouchSignal');
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
     
 end
 
@@ -28,7 +28,7 @@ end
 plotAllSessionSpeeds({'obsWisk'}, [-.08 .08] + 0.3820)
 
 
-% make video with trials labelled by condition
+%% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data

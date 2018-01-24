@@ -2,9 +2,14 @@
 
 
 % settings
-class = 'pawTop2';
+class = 'pawBot2';
 targetSize = [227 227];
 trainTestValPortions = [.6 .2 .2];
+
+% prepare data for cnn
+prepareTrainingDataForCnn(class, targetSize);
+
+
 
 % initializations
 imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' class],...

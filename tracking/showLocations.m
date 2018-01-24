@@ -1,5 +1,5 @@
 function showLocations(vid, frameInds, potentialLocations, locations,...
-    showPotentialLocations, vidDelay, anchorPts, lineLocations)
+    showPotentialLocations, vidDelay, anchorPts, cmap, lineLocations)
     
 % settings
 circSize = 200;
@@ -10,8 +10,6 @@ vidSizeScaling = 1.5;
 % initializations
 currentFrame = 1;
 sampleFrame = rgb2gray(read(vid,currentFrame));
-% cmap = winter(length(anchorPts));
-cmap = [1 76 153; 1 153 1; 255 255 51; 255 1 255] / 255;
 fields = fieldnames(locations);
 dim2 = fields{2};
 

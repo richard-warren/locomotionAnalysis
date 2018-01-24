@@ -1,4 +1,6 @@
-% PERFORM PAW TRACKING
+
+
+% performs paw tracking
 
 % settings
 session = '180122_001';
@@ -33,7 +35,7 @@ vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'];
 labelPawLocations(vidFile, frameInds, 100, anchorPtsBot, colors);
 
 
-%% create bot labeled set, svm1
+%% create bot labeled set, svm
 
 posEgs = 400;
 negEgsPerEg = 10;
@@ -41,7 +43,7 @@ jitterNum = 0;
 jitterPixels = 4;
 subFrameSize1 = [45 45];
 includeLocation = false;
-paws = 1:4;
+paws = 1;
 class = 'pawBot1';
 maxOverlap = .5;
 minBrightness = 2; % negative examples need to be minBrightness times the mean brightness of the current frame
@@ -55,12 +57,12 @@ makeLabeledSet(class,...
 viewTrainingSet(class);
 
 
-%% create bot labeled set, second classifier
+%% create bot labeled set, cnn
 
 posEgs = 400;
 negEgsPerEg = 10;
 jitterNum = 8;
-jitterPixels = 2;
+jitterPixels = 4;
 subFrameSize2 = [45 45];
 includeLocation = 1;
 paws = [1 4; 2 3]; % every row is a class // all paws in a row belong to that class (hind vs fore paws, for examlpe)
@@ -72,14 +74,14 @@ minBrightness = 2.5; % negative examples need to be minBrightness times the mean
 makeLabeledSet(class,...
                [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
                [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws,...
+               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 
 viewTrainingSet(class);
 
 % prepareTrainingData(class, targetSize); % restructure features
 
-
+	
 
 %% train bot svm1
 
@@ -93,15 +95,10 @@ close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)
 
 %% train bot svm2
 
-class = 'pawBot2';
+% class = 'pawBot';
 
-% train bot svm2
-trainSVM2(class); % this is saved as [class '2']
-
-%% train cnn
-
-% !!! use the script cnnTest to retrain alexnet on my data...
-
+% train bot svm and reload
+% trainSecondClassifier(class); % this is saved as [class '2']
 
 
 %% get bot potential locations
@@ -110,30 +107,29 @@ trainSVM2(class); % this is saved as [class '2']
 % settings
 withXRestrictions = 0; % if top was tracked with markers, use these locations to limit search for locations in bot
 scoreThresh = 0;
-showTracking = 0;
+showTracking = 1;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot1'];
 % model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot2'];
 
-% svm1
+% initializations
 load(model1, 'model', 'subFrameSize');
 model1 = model; subFrameSize1 = subFrameSize;
-
-% svm2
 % load(model2, 'model', 'subFrameSize');
 % model2 = model; subFrameSize2 = subFrameSize;
 
-% cnn
-load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Cnn'], 'netTransfer');
-model2 = netTransfer; clear netTransfer;
+% temp for cnn second stage
+load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Nn'], 'net');
+model2 = net; clear net;
 
+vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
 tic
 if withXRestrictions
     potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                     scoreThresh, obsPixPositions, frameInds, showTracking, potentialLocationsTop);
+                                                     scoreThresh, obsPixPositions, frameInds, showTracking, threshIntensity, potentialLocationsTop);
 else
     potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, subFrameSize1, subFrameSize2,...
-                                                     scoreThresh, obsPixPositions, frameInds, showTracking);
+                                                     scoreThresh, obsPixPositions, frameInds, showTracking, threshIntensity);
 end
                                                   
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBotAll.mat'], 'potentialLocationsBot');
@@ -148,8 +144,8 @@ showPotentialLocations = true;
 % initializations
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
-locationsBot = getLocationsBot(potentialLocationsBot, anchorPtsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
-showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot, colors);
+locationsBot = getLocationsBot(potentialLocationsBot, frameTimeStamps, vidBot.Width, vidBot.Height, frameInds);
+showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locationsBot');
 
 
@@ -157,6 +153,7 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'l
 %% hand label top locations
 
 vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4'];
+vidTop = VideoReader(vidFile);
 obsFrameInds = find(obsPixPositions>10 & obsPixPositions<vidTop.Width);
 labelPawLocations(vidFile, obsFrameInds, 200);
 
@@ -274,7 +271,7 @@ locationsBotFixed.x = locationsBotFixed.x*xLinearMapping(1) + xLinearMapping(2);
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
     frameInds, obsPixPositions, frameTimeStamps, paws, fs);
 showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
-    showPotentialLocations, .08, anchorPtsBot, colors, locationsBotFixed);
+    showPotentialLocations, .08, anchorPtsBot, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 %% get locations for top (markers)

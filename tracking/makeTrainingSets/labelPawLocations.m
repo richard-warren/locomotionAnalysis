@@ -1,11 +1,10 @@
-function labelPawLocations(vidFile, frameInds, totalEgs)
+function labelPawLocations(vidFile, frameInds, totalEgs, anchorPts, colors)
 
 % !!! need to document
 
 
 % settings
 objectNum = 4;
-colors = [1 76 153; 1 153 1; 255 255 51; 255 1 255] / 255;
 figSize = 2;
 
 % initializations
@@ -21,8 +20,14 @@ frameInd = [];
 % prepare figure
 fig = figure('units', 'pixels', 'outerposition', [300 300 vid.Width*figSize vid.Height*figSize],...
              'color', [0 0 0], 'menubar', 'none', 'keypressfcn', @keypress);
-imPreview = image(getFeatures(frame));
-hold on; scatter([1, vid.Width, vid.Width, 1], [1, 1, vid.Height, vid.Height], 200, colors, 'filled');
+imPreview = image(getFeatures(frame));hold on;
+
+scatter([anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
+    [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
+    200, colors, 'filled');     % show anchor points
+
+
+% scatter([1, vid.Width, vid.Width, 1], [1, 1, vid.Height, vid.Height], 200, colors, 'filled');
 set(gca, 'units', 'normalized', 'position', [0 0 1 1])
 getNewFrame;
 

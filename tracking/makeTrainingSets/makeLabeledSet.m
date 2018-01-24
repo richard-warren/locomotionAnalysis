@@ -1,5 +1,5 @@
 function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg,...
-    includeLocations, paws, threshIntensity, jitterPixels, jitterNum, maxOverlap, minBrightness)
+    includeLocations, paws, jitterPixels, jitterNum, maxOverlap, minBrightness)
 
 % !!! need to document
 
@@ -44,9 +44,9 @@ for i = randperm(length(locations))
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
-    if exist('threshIntensity', 'var')
-        frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
-    end
+%     if exist('threshIntensity', 'var')
+%         frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
+%     end
     
     
     % mask obstacle
