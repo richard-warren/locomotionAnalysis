@@ -25,7 +25,7 @@ locations = locations(:, sortInds, :);
 
 egsPerFrame = size(locations,3);
 imNumberInd = 1;
-pixPerSub = prod(subFrameSize);
+featureLength = length(getSubFrameFeatures(zeros(subFrameSize), [0 0], includeLocations));
 
 % load video and sample frame
 vid = VideoReader(vidFile);
@@ -35,7 +35,7 @@ bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 % iterate through frames of all examples (locations)
 
 totalEgs = size(locations,2) * negEgsPerEg * jitterNum;
-features = nan(pixPerSub, totalEgs);
+features = nan(featureLength, totalEgs);
 labels = nan(1, totalEgs);
 
 for i = randperm(length(locations))
@@ -74,13 +74,7 @@ for i = randperm(length(locations))
             % get positive examples
             xy = round(locations(1:2, i, j));
             img = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
-
-
-            if includeLocations
-                img(end, end-1:end) = xy;
-            end
-
-            features(:, imNumberInd) = img(:);
+            features(:, imNumberInd) = getSubFrameFeatures(img, xy, includeLocations);
 
             if ismember(j, paws)
                 [row, ~] = ind2sub(size(paws), find(paws==j));
@@ -103,13 +97,7 @@ for i = randperm(length(locations))
 
                 xyJittered = xy + jitterDirections(offsetInds(k), :)';
                 img = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
-
-
-                if includeLocations
-                    img(end, end-1:end) = xyJittered;
-                end
-
-                features(:, imNumberInd) = img(:);
+                features(:, imNumberInd) = getSubFrameFeatures(img, xyJittered, includeLocations);
 
                 if ismember(j, paws)
                     [row, ~] = ind2sub(size(paws), find(paws==j));
@@ -139,21 +127,15 @@ for i = randperm(length(locations))
                     temp = egsMask(pos(1)-centPad(1):pos(1)+centPad(1)-1, pos(2)-centPad(2):pos(2)+centPad(2)-1);
                     pixelsOverlap = sum(temp(:));
                     img = getSubFrame(frame, pos, subFrameSize);
-
-%                     disp(mean(frame(:)))
                     
-                    if (pixelsOverlap/pixPerSub) < maxOverlap &&...
+                    if (pixelsOverlap/featureLength) < maxOverlap &&...
                        mean(img(:)) > (mean(frame(:))*minBrightness)
                         acceptableImage = true;
                     end
                 end
 
                 % store negative example
-                if includeLocations
-                    img(end, end-1:end) = fliplr(pos);
-                end
-
-                features(:, imNumberInd) = img(:);
+                features(:, imNumberInd) = getSubFrameFeatures(img, fliplr(pos), includeLocations);
                 labels(imNumberInd) = numClasses;
                 imNumberInd = imNumberInd+1;
             end

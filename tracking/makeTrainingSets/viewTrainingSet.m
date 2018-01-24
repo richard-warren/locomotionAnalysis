@@ -1,7 +1,7 @@
 function viewTrainingSet(className)
 
 % user settings
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\';
+dataDir = [getenv('OBSDATADIR') '\svm\trainingData\'];
 figSize = [1000, 1800]; % h,w
 
 % initializations
@@ -24,8 +24,9 @@ for i = unique(labels)
     for j = 1:rows
         for k = 1:cols
             if currentInd<=length(inds)
+                
                 % get random image
-                img = features(:, inds(currentInd));
+                img = features(1:prod(subFrameSize), inds(currentInd));
                 img = reshape(img, subFrameSize(1), subFrameSize(2));
 
                 % incorporate image into collage

@@ -14,6 +14,7 @@ totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 cmap = hsv(classNum);
+featureLength = length(getSubFrameFeatures(zeros(subFrameSize2), [0 0], 1));
 
 
 % prepare figure
@@ -47,7 +48,6 @@ for i = frameInds
     
     % get frame and subframes
     frame = rgb2gray(read(vid,i));
-    frame = getFeatures(frame);
     frame = frame - bg;
 %     if exist('threshIntensity', 'var')
 %         frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
@@ -107,7 +107,7 @@ for i = frameInds
     
     
     % perform second round of classification (svm2, single class)
-%     frameFeatures = nan(prod(subFrameSize2), length(x));
+%     frameFeatures = nan(featureLength, length(x));
 %     for j = 1:length(x)
 %         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
 %         frameFeatures(:,j) = img(:);
@@ -119,43 +119,52 @@ for i = frameInds
 
 
     % perform second round of classification (svm2, multi class, with locations)
-    frameFeatures = nan(prod(subFrameSize2), length(x));
-    
-    for j = 1:length(x)
-        img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-        img(end, end-1:end) = [x(j) y(j)];
-        frameFeatures(:,j) = img(:);
-    end
-    
-    classes = predict(model2, frameFeatures');
+%     frameFeatures = nan(featureLength, length(x));
+%     
+%     for j = 1:length(x)
+%         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
+%         frameFeatures(:,j) = getSubFrameFeatures(img, [x(j) y(j)], 1);
+%     end
+%     
+%     classes = predict(model2, frameFeatures');
     
     
     
     % perform second round of classification (cnn)
-%     dims = model2.Layers(1).InputSize;
-%     frameFeatures = nan(dims(1), dims(2), 3, length(x));
+    dims = model2.Layers(1).InputSize;
+    frameFeatures = nan(dims(1), dims(2), 3, length(x));
+    
+    for j = 1:length(x)
+        img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
+        img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
+        img = repmat(img, 1, 1, 3);
+        frameFeatures(:,:,:,j) = img;
+    end
+    
+    classes = uint8(classify(model2, frameFeatures));
+
+
+
+    % perform second round of classification (nn)
+%     frameFeatures = nan(featureLength, length(x));
 %     
 %     for j = 1:length(x)
 %         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-%         img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
-%         img = repmat(img, 1, 1, 3);
-%         frameFeatures(:,:,:,j) = img;
-% 
+%         frameFeatures(:,j) = getSubFrameFeatures(img, [x(j) y(j)], 1);
 %     end
 %     
-%     isPaw = uint8(classify(model2, frameFeatures))==1;
+%     nnScores = model2(frameFeatures);
+%     [~, classes] = max(nnScores, [], 1);
 
 
     
     
     % store data
-    try
     pawBins = classes<=classNum;
     potentialLocationsBot(i).x = x(pawBins);
     potentialLocationsBot(i).y = y(pawBins);
     potentialLocationsBot(i).scores = scores(pawBins);
     potentialLocationsBot(i).class = classes(pawBins);
-    catch; keyboard; end
     
     
     if showTracking

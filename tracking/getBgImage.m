@@ -49,7 +49,7 @@ function bgImage = getBgImage(vid, meanFrameNum, skipTime, diffThresh, showImage
         currentFrame = currentFrame + 1;
     end
     close(w)
-    meanFrame = getFeatures(meanFrame);
+%     meanFrame = getFeatures(meanFrame);
     bgImage = uint8(meanFrame);
     
     if showImage; figure('color', [0 0 0]); imshow(uint8(meanFrame)); set(gca, 'visible', 'off'); end

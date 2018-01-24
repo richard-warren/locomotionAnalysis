@@ -26,7 +26,7 @@ for i = 1:egNum
     
     disp(i/egNum)
     
-    im = reshape(features(:,i), subFrameSize(1), subFrameSize(2));
+    im = reshape(features(1:prod(subFrameSize),i), subFrameSize(1), subFrameSize(2));
     im = uint8(imresize(im, 'outputsize', targetSize));
     im = repmat(im, 1, 1, 3);
     imwrite(im, [featureDir num2str(labels(i)) '\img' num2str(i) '.tif'])

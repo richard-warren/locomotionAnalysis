@@ -28,7 +28,7 @@ end
 plotAllSessionSpeeds({'obsWisk'}, [-.08 .08] + 0.3820)
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data

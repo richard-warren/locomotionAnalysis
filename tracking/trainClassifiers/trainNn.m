@@ -7,7 +7,7 @@
 %   features - input data.
 %   labelsHotOne - target data.
 
-load('C:\Users\rick\Google Drive\columbia\obstacleData\svm\trainingData\pawBot2\labeledFeatures.mat', 'features', 'labels')
+load([getenv('OBSDATADIR') 'svm\trainingData\pawBot2\labeledFeatures.mat'], 'features', 'labels')
 x = features;
 I = eye(max(labels));
 t = I(labels,:)';
@@ -52,5 +52,5 @@ view(net)
 %figure, plotconfusion(t,y)
 %figure, plotroc(t,y)
 
-save('C:\Users\rick\Google Drive\columbia\obstacleData\svm\classifiers\pawBot2Nn', 'net')
+save([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Nn'], 'net')
 

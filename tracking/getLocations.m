@@ -64,9 +64,9 @@ jitterPixels = 2;
 subFrameSize2 = [45 45];
 includeLocation = 1;
 paws = [1 4; 2 3]; % every row is a class // all paws in a row belong to that class (hind vs fore paws, for examlpe)
+% paws = [1 2 3 4];
 class = 'pawBot2';
 maxOverlap = .5;
-% targetSize = [227 227];
 minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
 
 makeLabeledSet(class,...
@@ -98,9 +98,9 @@ class = 'pawBot2';
 % train bot svm2
 trainSVM2(class); % this is saved as [class '2']
 
-%% train cnn
+%% train cnn OR train nn
 
-% !!! use the script cnnTest to retrain alexnet on my data...
+% !!! use the script cnnTest to retrain alexnet on my data..., or trainNn
 
 
 
@@ -111,19 +111,23 @@ trainSVM2(class); % this is saved as [class '2']
 scoreThresh = 0;
 showTracking = 1;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot1'];
-classNum = 2; % not included not paw class
+classNum = size(paws,1); % not included not paw class
 
 % svm1
 load(model1, 'model', 'subFrameSize');
 model1 = model; subFrameSize1 = subFrameSize;
 
 % svm2
-load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2'], 'model', 'subFrameSize');
-model2 = model; subFrameSize2 = subFrameSize;
+% load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2'], 'model', 'subFrameSize');
+% model2 = model; subFrameSize2 = subFrameSize;
+
+% nn
+% load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Nn'], 'net');
+% model2 = net; clear net;
 
 % cnn
-% load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Cnn'], 'netTransfer');
-% model2 = netTransfer; clear netTransfer;
+load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2Cnn'], 'netTransfer');
+model2 = netTransfer; clear netTransfer;
 
 
 tic
