@@ -1,4 +1,4 @@
-function [featureVector, imageVector] = getSubFrameFeatures(subFrame, location, featureSetting, neuralNetwork)
+function [featureVector, imageVector] = getSubFrameFeatures(subFrame, location, featureSetting)
     
     % given a subFrame and location of subFrame, returns feature vector (column)
     % this could in principle be an arbitrary transformation, but for now just flattens subFrame and tacks location to the end
@@ -14,9 +14,6 @@ function [featureVector, imageVector] = getSubFrameFeatures(subFrame, location, 
         
         case 'imageWithLocation'
             featureVector = cat(1, imageVector, location(:));
-            
-        case 'netFeaturesWithLocation'
-            % !!!
             
     end
 end

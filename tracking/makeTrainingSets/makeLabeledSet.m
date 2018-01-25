@@ -1,15 +1,15 @@
 function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg,...
     featureSetting, paws, jitterPixels, jitterNum, maxOverlap, minBrightness)
 
-% !!! need to document
-
-
-% settings
-dataDir = [getenv('OBSDATADIR') 'svm\trainingData\'];
+% !!! need to document, but generally takes hand labeled paw locations and creates features for classifier training
+% this is done by taking subframes at paw locations of subFrameSize, and extracting features with getSubFrameFeatures
+% it also automatically grabs negative examples in same frames by randomly taking subframes that don't overlap too much with positive examples
+% can also create more positive examples by jittering paw locations
 
 
 
 % initializations
+dataDir = [getenv('OBSDATADIR') 'svm\trainingData\'];
 load(labeledDataFile, 'locations', 'locationFrameInds');
 nanInds = isnan(locationFrameInds);
 locations = locations(:,~nanInds,:);
@@ -45,9 +45,6 @@ for i = randperm(length(locations))
     % get frame
     frame = rgb2gray(read(vid, locationFrameInds(i)));
     frame = frame - bg;
-%     if exist('threshIntensity', 'var')
-%         frame(frame>threshIntensity) = threshIntensity; % a hack to limit influence of markers shining in bottom view
-%     end
     
     
     % mask obstacle

@@ -6,7 +6,6 @@ function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, c
 
 % settings
 overlapThresh = .7; % used for non-maxima suppression // higher numbers = more tightly packed
-% featureSetting = 'alexNetNoLocations';
 % xNearness = 30;
 
 % initializations
@@ -15,7 +14,7 @@ totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 cmap = hsv(classNum);
-% featureLength = length(getSubFrameFeatures(zeros(subFrameSize2), [0 0], featureSetting));
+featureLength = length(getSubFrameFeatures(zeros(subFrameSize2), [0 0], 1));
 
 
 % prepare figure
@@ -125,29 +124,19 @@ for i = frameInds
 %     end
 %     
 %     classes = predict(model2, frameFeatures');
-
-
-
-    % perform second round of classification (svm trained on alexNet extracted features)
-%     frameFeatures = nan(featureLength, length(x));
-%     
-%     for j = 1:length(x)
-%         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-%         frameFeatures(:,j) = getSubFrameFeatures(img, [x(j) y(j)], 'alexNetFeaturesWithLocation');
-%     end
-%     
-%     classes = predict(model2, frameFeatures');
     
     
-    % perform second round of classification (cnn)
+    
+    % perform second round of classification (alexnet, cnn)
     dims = model2.Layers(1).InputSize;
     frameFeatures = nan(dims(1), dims(2), 3, length(x));
     
     for j = 1:length(x)
         img = getSubFrame(frame, [y(j) x(j)], subFrameSize2);
-        img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
-        img = repmat(img, 1, 1, 3);
-        frameFeatures(:,:,:,j) = img;
+%         img = uint8(imresize(img, 'outputsize', model2.Layers(1).InputSize(1:2)));
+%         img = repmat(img, 1, 1, 3);
+%         frameFeatures(:,:,:,j) = img;
+        img = 
     end
     
     classes = uint8(classify(model2, frameFeatures));
