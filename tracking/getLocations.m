@@ -40,7 +40,7 @@ negEgsPerEg = 10;
 jitterNum = 0;
 jitterPixels = 4;
 subFrameSize1 = [45 45];
-includeLocation = false;
+featureSetting = 'imageOnly';
 paws = 1:4;
 class = 'pawBot1';
 maxOverlap = .5;
@@ -49,7 +49,7 @@ minBrightness = 2; % negative examples need to be minBrightness times the mean b
 makeLabeledSet(class,...
                [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
                [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws,...
+               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws,...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 
 viewTrainingSet(class);
@@ -62,9 +62,8 @@ negEgsPerEg = 10;
 jitterNum = 8;
 jitterPixels = 2;
 subFrameSize2 = [45 45];
-includeLocation = 1;
+featureSetting = 'imageWithLocation';
 paws = [1 4; 2 3]; % every row is a class // all paws in a row belong to that class (hind vs fore paws, for examlpe)
-% paws = [1 2 3 4];
 class = 'pawBot2';
 maxOverlap = .5;
 minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
@@ -72,7 +71,7 @@ minBrightness = 2.5; % negative examples need to be minBrightness times the mean
 makeLabeledSet(class,...
                [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
                [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws,...
+               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws,...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 
 viewTrainingSet(class);
@@ -166,7 +165,7 @@ negEgsPerEg = 10;
 jitterNum = 0;
 jitterPixels = 2;
 subFrameSize1 = [40 40];
-includeLocation = false;
+featureSetting = false;
 paws = 1:4;
 class = 'pawTop1';
 maxOverlap = .5;
@@ -175,7 +174,7 @@ minBrightness = 2.5; % negative examples need to be minBrightness times the mean
 makeLabeledSet(class,...
                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat', ...
                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4',...
-               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
+               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws, threshIntensity, ...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 viewTrainingSet(class);
 
@@ -187,7 +186,7 @@ negEgsPerEg = 10;
 jitterNum = 8;
 jitterPixels = 3;
 subFrameSize2 = [40 40];
-includeLocation = false;
+featureSetting = false;
 paws = 1:4;
 class = 'pawTop2';
 maxOverlap = .5;
@@ -197,7 +196,7 @@ minBrightness = 2.5; % negative examples need to be minBrightness times the mean
 makeLabeledSet(class,...
                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat', ...
                'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4',...
-               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, includeLocation, paws, threshIntensity, ...
+               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws, threshIntensity, ...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 viewTrainingSet(class);
 

@@ -5,8 +5,8 @@ dataDir = [getenv('OBSDATADIR') '\svm\trainingData\'];
 figSize = [1000, 1800]; % h,w
 
 % initializations
-colormap gray
-load([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
+load([dataDir className '\labeledFeatures.mat'], 'images', 'labels', 'subFrameSize')
+
 
 for i = unique(labels)
     
@@ -26,7 +26,7 @@ for i = unique(labels)
             if currentInd<=length(inds)
                 
                 % get random image
-                img = features(1:prod(subFrameSize), inds(currentInd));
+                img = images(1:prod(subFrameSize), inds(currentInd));
                 img = reshape(img, subFrameSize(1), subFrameSize(2));
 
                 % incorporate image into collage
@@ -40,8 +40,8 @@ for i = unique(labels)
     end
     
     % show collage
-    colormap gray
-    image(collage, 'CDataMapping', 'scaled');
+    colormap gray;
+    image(gca, collage, 'CDataMapping', 'scaled');
     set(gca, 'units', 'normalized', 'position', [0 0 1 1], 'CLim', [0 255])
 end
 

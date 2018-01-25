@@ -1,5 +1,5 @@
 function makeLabeledSet(className, labeledDataFile, vidFile, subFrameSize, obsPixPositions, posEgs, negEgsPerEg,...
-    includeLocations, paws, jitterPixels, jitterNum, maxOverlap, minBrightness)
+    featureSetting, paws, jitterPixels, jitterNum, maxOverlap, minBrightness)
 
 % !!! need to document
 
@@ -25,7 +25,7 @@ locations = locations(:, sortInds, :);
 
 egsPerFrame = size(locations,3);
 imNumberInd = 1;
-featureLength = length(getSubFrameFeatures(zeros(subFrameSize), [0 0], includeLocations));
+featureLength = length(getSubFrameFeatures(zeros(subFrameSize), [0 0], featureSetting));
 
 % load video and sample frame
 vid = VideoReader(vidFile);
@@ -36,6 +36,7 @@ bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 
 totalEgs = size(locations,2) * negEgsPerEg * jitterNum;
 features = nan(featureLength, totalEgs);
+images = nan(prod(subFrameSize), totalEgs); % stores all images in a matrix, so subframes can be viewed prior to feature extraction
 labels = nan(1, totalEgs);
 
 for i = randperm(length(locations))
@@ -74,7 +75,7 @@ for i = randperm(length(locations))
             % get positive examples
             xy = round(locations(1:2, i, j));
             img = getSubFrame(frame, flipud(xy), subFrameSize); % get subframe
-            features(:, imNumberInd) = getSubFrameFeatures(img, xy, includeLocations);
+            [features(:, imNumberInd), images(:, imNumberInd)] = getSubFrameFeatures(img, xy, featureSetting);
 
             if ismember(j, paws)
                 [row, ~] = ind2sub(size(paws), find(paws==j));
@@ -97,7 +98,7 @@ for i = randperm(length(locations))
 
                 xyJittered = xy + jitterDirections(offsetInds(k), :)';
                 img = getSubFrame(frame, flipud(xyJittered), subFrameSize); % get subframe
-                features(:, imNumberInd) = getSubFrameFeatures(img, xyJittered, includeLocations);
+                [features(:, imNumberInd), images(:, imNumberInd)] = getSubFrameFeatures(img, xyJittered, featureSetting);
 
                 if ismember(j, paws)
                     [row, ~] = ind2sub(size(paws), find(paws==j));
@@ -135,7 +136,7 @@ for i = randperm(length(locations))
                 end
 
                 % store negative example
-                features(:, imNumberInd) = getSubFrameFeatures(img, fliplr(pos), includeLocations);
+                [features(:, imNumberInd), images(:, imNumberInd)] = getSubFrameFeatures(img, fliplr(pos), featureSetting);
                 labels(imNumberInd) = numClasses;
                 imNumberInd = imNumberInd+1;
             end
@@ -145,11 +146,12 @@ end
 
 % remove nan values
 validInds = ~isnan(labels);
-features = features(:,validInds,:);
+features = features(:,validInds);
+images = images(:,validInds);
 labels = labels(validInds);
 
 
-save([dataDir className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
+save([dataDir className '\labeledFeatures.mat'], 'features', 'images', 'labels', 'subFrameSize')
 
 
 
