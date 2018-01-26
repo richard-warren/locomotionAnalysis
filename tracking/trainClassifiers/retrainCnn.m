@@ -11,7 +11,7 @@ imgs = imageDatastore([getenv('OBSDATADIR') 'svm\trainingData\' class],...
     'IncludeSubfolders', true, 'FileExtensions', '.tif', 'LabelSource', 'foldernames');
 [trainImages, testImages, valImages] = splitEachLabel(imgs, ...
     trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
-
+load([getenv('OBSDATADIR') 'svm\trainingData\' class '\labeledFeatures.mat'], 'subFrameSize')
 
 
 switch network
@@ -42,7 +42,7 @@ switch network
 
         % train!
         convNetwork = trainNetwork(trainImages, layers, options);
-        save([getenv('OBSDATADIR') 'svm\classifiers\' class 'AlexNet.mat'], 'convNetwork')
+        save([getenv('OBSDATADIR') 'svm\classifiers\' class 'AlexNet.mat'], 'convNetwork', 'subFrameSize')
 
         % classify
         predictedLabels = classify(convNetwork, testImages);
@@ -75,7 +75,7 @@ switch network
             'ValidationFrequency',3);
         
         convNetwork = trainNetwork(trainImages,lgraph,options);
-        save([getenv('OBSDATADIR') 'svm\classifiers\' class 'GoogleNet.mat'], 'convNetwork')
+        save([getenv('OBSDATADIR') 'svm\classifiers\' class 'GoogleNet.mat'], 'convNetwork', 'subFrameSize')
         
         predictedLabels = classify(convNetwork, testImages);
         fprintf('test accuracy: %f\n', mean(predictedLabels == testImages.Labels));

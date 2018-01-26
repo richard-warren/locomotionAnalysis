@@ -4,7 +4,7 @@ function trainSVM(className)
 
 
 % user settings
-dataDir = 'C:\Users\rick\Google Drive\columbia\obstacleData\svm\';
+dataDir = [getenv('OBSDATADIR') 'svm\'];
 
 
 % initializations

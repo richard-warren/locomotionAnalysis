@@ -10,6 +10,7 @@ maxDistanceY = .65;
 maxVel = 30 / .004;    % pixels / sec
 pawCheckXProximity = 40; % if x locations of paws are within this value of one another, ensure forepaw is more medial than hind paw
 pawCheckYDistance = 10;
+classes = [1 2 2 1]; % paws 1 and 4 below to class 1 (hind paws) and 2 and 3 belong to class 2 (forepaws)
 
 unaryWeight = 2;
 pairwiseWeight = 1;
@@ -73,9 +74,13 @@ for i = frameInds(1:end)
     % get svm scores for potential locations
     svmScores = repmat(potentialLocationsBot(i).scores', objectNum, 1);
     
-    
     % get final scores for each potential location for each paw
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise;% + scoreWeight.*svmScores;
+    
+    % only allow paws to be assigned to potential locations assigned to paws' class
+    invalidBins = repmat(potentialLocationsBot(i).class', 4, 1) ~= repmat(classes', 1, length(potentialLocationsBot(i).class));
+    scores(invalidBins) = 0;
+    
     scores(unaries==0 | pairwise==0) = 0;
     scores(scores<minScore) = 0;
 

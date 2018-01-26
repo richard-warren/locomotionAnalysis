@@ -60,8 +60,8 @@ viewTrainingSet(class);
 posEgs = 400;
 negEgsPerEg = 10;
 jitterNum = 8;
-jitterPixels = 2;
-subFrameSize2 = [50 50];
+jitterPixels = 3;
+subFrameSize2 = [45 45];
 featureSetting = 'imageOnly';  % !!!
 
 paws = [1 4; 2 3]; % every row is a class // all paws in a row belong to that class (hind vs fore paws, for examlpe)
@@ -99,7 +99,7 @@ trainSVM2(class); % this is saved as [class '2']
 class = 'pawBot2';
 trainNn(class);
 
-%% train alexnet cnn (transfer learning)
+%% train alexnet cnn for top (transfer learning)
 
 % settings
 class = 'pawBot2';
@@ -112,8 +112,9 @@ retrainCnn(class, network);
 
 
 % settings
-scoreThresh = 0;
-showTracking = 0;
+close all;
+scoreThresh = -1;
+showTracking = 1;
 model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawBot1'];
 classNum = size(paws,1); % not included not paw class
 
@@ -166,28 +167,28 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'l
 
 vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4'];
 obsFrameInds = find(obsPixPositions>10 & obsPixPositions<vidTop.Width);
-labelPawLocations(vidFile, obsFrameInds, 200);
-
+labelPawLocations(vidFile, obsFrameInds, 100, anchorPtsBot, colors);
 
 %% create top labeled set, svm
 
 posEgs = 400;
 negEgsPerEg = 10;
 jitterNum = 0;
-jitterPixels = 2;
-subFrameSize1 = [40 40];
-featureSetting = false;
+jitterPixels = 0;
+subFrameSize1 = [35 35];
+featureSetting = 'imageOnly';
 paws = 1:4;
 class = 'pawTop1';
 maxOverlap = .5;
 minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
 
 makeLabeledSet(class,...
-               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat', ...
-               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4',...
-               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws, threshIntensity, ...
+               [getenv('OBSDATADIR') 'sessions\' session '\tracking\runTopHandLabeledLocations.mat'], ...
+               [getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4'],...
+               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws, ...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 viewTrainingSet(class);
+
 
 
 %% create top labeled set, cnn
@@ -195,9 +196,9 @@ viewTrainingSet(class);
 posEgs = 400;
 negEgsPerEg = 10;
 jitterNum = 8;
-jitterPixels = 3;
-subFrameSize2 = [40 40];
-featureSetting = false;
+jitterPixels = 2;
+subFrameSize2 = [35 35];
+featureSetting = 'imageOnly';
 paws = 1:4;
 class = 'pawTop2';
 maxOverlap = .5;
@@ -205,13 +206,13 @@ targetSize = [227 227];
 minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
 
 makeLabeledSet(class,...
-               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\tracking\runTopHandLabeledLocations.mat', ...
-               'C:\Users\rick\Google Drive\columbia\obstacleData\sessions\171202_000\runTop.mp4',...
-               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws, threshIntensity, ...
+               [getenv('OBSDATADIR') 'sessions\' session '\tracking\runTopHandLabeledLocations.mat'], ...
+               [getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4'],...
+               subFrameSize2, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws, ...
                jitterPixels, jitterNum, maxOverlap, minBrightness);
 viewTrainingSet(class);
 
-% prepareTrainingData(class, targetSize); % restructure features
+
 
 %% train top svm1
 
@@ -224,24 +225,27 @@ load([getenv('OBSDATADIR') 'svm\classifiers\' class], 'model', 'subFrameSize');
 close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)))
 
 
+%% train alexnet cnn for top (transfer learning)
+
+% settings
+class = 'pawTop2';
+network = 'alexNet';
+% targetSize = [227 227]; prepareTrainingDataForCnn(class, targetSize); % uncomment to convert labeledFeatures.mat into folders containing images, a format appropriate for AlexNet
+retrainCnn(class, network);
+
 %% get potential locations for top (svm)
 
 % settings
-scoreThresh = 0;
+scoreThresh = -1;
 showTracking = 0;
-model1 = [getenv('OBSDATADIR') 'svm\classifiers\pawTop1'];
-model2 = [getenv('OBSDATADIR') 'svm\classifiers\pawTop2Cnn'];
-paws = 1:4;
 
 % initializations
-load(model1, 'model', 'subFrameSize');
-model1 = model; clear model;
-subFrameSize1 = subFrameSize; clear subFrameSize;
-load(model2, 'netTransfer')
-model2 = netTransfer; clear netTransfer;
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+load([getenv('OBSDATADIR') 'svm\classifiers\pawTop1'], 'model', 'subFrameSize');
+model1 = model; clear model; subFrameSize1 = subFrameSize; clear subFrameSize;
+load([getenv('OBSDATADIR') 'svm\classifiers\pawTop2AlexNet'], 'convNNetwork', 'subFrameSize')
+model2 = convNetwork; clear convNetwork; subFrameSize2 = subFrameSize;
 
-%
+
 tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, model1, model2, ...
     subFrameSize1, subFrameSize2, scoreThresh, frameInds, paws, showTracking);
 fprintf('potential locations top analysis time: %i minutes\n', toc/60)
@@ -250,29 +254,13 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.
 
 
 
-%% get potential locations for top (markers)
-
-% settings
-markerThresh = 150;
-showTracking = false;
-
-% initializations
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
-
-tic; potentialLocationsTop = getPotentialLocationsTopMarkers(vidTop, frameInds, markerThresh, showTracking);
-save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
-fprintf('potential locations top analysis time: %i minutes\n', toc/60)
-
-
-%% get locations for top (SVM)
+%% get locations for top
 
 % settings
 showPotentialLocations = true;
 paws = 1:4;
 fs = 250;
 
-% initializations
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % fix x alignment for bottom view
 locationsBotFixed = fixTracking(locationsBot);
@@ -283,20 +271,6 @@ locationsTop = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
     frameInds, obsPixPositions, frameTimeStamps, paws, fs);
 showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
     showPotentialLocations, .08, anchorPtsBot, colors, locationsBotFixed);
-save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
-
-%% get locations for top (markers)
-
-% settings
-hindOffset = -5;      % markers on hind legs are more anterior that foot pad that is tracked on the bot view, so bot view x values are shifted to the left by hindOffset
-foreOffset = 5;
-
-% initializations
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
-locationsBotFixed = fixTracking(locationsBot);
-
-locationsTop = getLocationsTopMarkers(potentialLocationsTop, locationsBotFixed, frameTimeStamps, xLinearMapping, frameInds);
-showLocations(vidTop, frameInds(), potentialLocationsTop, (locationsTop), false, .02, anchorPtsBot, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
 
 

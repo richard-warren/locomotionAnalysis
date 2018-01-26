@@ -105,7 +105,7 @@ function updateFrame(frameStep)
     % get frame and sub-frames
     frame = rgb2gray(read(vid,frameInds(currentFrame)));
     frame = imadjust(uint8(frame), [.05 1], [0 1]);
-    frame = getFeatures(frame);
+%     frame = getFeatures(frame);
     
     
     % add vertical lines
