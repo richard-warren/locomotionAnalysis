@@ -16,7 +16,7 @@ xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat']
 load(xMapping, 'xLinearMapping');
 
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
-    'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping')
+    'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes')
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
 
 [frameInds, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
@@ -29,7 +29,7 @@ vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 obsPixBins = ~isnan(obsPixPositions); % bins for frame in which obs pix position is known
 obsPixNoNans = obsPixPositions(obsPixBins); % obsPixPositions without nans
 wheelPosInterp = interp1(wheelTimes, wheelPositions, frameTimeStamps(obsPixBins)); % wheel positions (in meters) at frames whether obs pix positions are known
-mapping = polyfit(obsPixNoNans, wheelPosInterp', 1);
+mapping = polyfit(obsPixNoNans, wheelPosInter);
 
 
 

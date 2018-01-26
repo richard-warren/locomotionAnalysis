@@ -14,6 +14,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     %         getting wisk frame time stamps
     %         getting webcam time stamps
     %         video tracking of obstacle in bottom view
+    %         for each track, gets linear mapping of obsPosition (m) to obsPixPosition (pixels), which can be used to subsequently determine mapping between pixels and meters
     %         get times of wisk contact, and pixels at which wisk contact occurs within wisk vid
     %
     % for each session, loads existing runAnalyzed.mat
@@ -345,7 +346,8 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
 
     % track the pixel positions of the obstacle in bot
-    if analyzeVar('obsPixPositions', varNames, varsToOverWrite)
+    if analyzeVar('obsPixPositions', varNames, varsToOverWrite) || ...
+       analyzeVar('mToPixMapping', varNames, varsToOverWrite)
 
         if ~isempty('obsOntimes') && ...
            any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
@@ -362,12 +364,13 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
             obsMinThickness = 10;
 
             % track obstacle in bottom view
-            obsPixPositions = trackObstacles(vidBot, varStruct.obsOnTimes, varStruct.obsOffTimes,...
+            [obsPixPositions, mappings] = trackObstacles(vidBot, varStruct.obsOnTimes, varStruct.obsOffTimes,...
                 varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
                 xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
 
             % save
             varStruct.obsPixPositions = obsPixPositions;
+            varStruct.mToPixMapping = mappings;
             anythingAnalyzed = true;
         end
     end
@@ -377,7 +380,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     
     % get wisk contact times and pixels at which contacts occur
     if analyzeVar('wiskTouchPixels', varNames, varsToOverWrite) ||...
-        analyzeVar('wiskTouchSignal', varNames, varsToOverWrite)
+       analyzeVar('wiskTouchSignal', varNames, varsToOverWrite)
         
         if ~isempty('obsOntimes') && exist([sessionDir 'runWisk.mp4'], 'file')  %!!! probably needs more checks here
             

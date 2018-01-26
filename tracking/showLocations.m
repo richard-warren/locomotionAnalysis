@@ -31,7 +31,7 @@ circSizes = circSize * ones(1,length(anchorPts));
 lines = cell(4,1);
 if exist('lineLocations', 'var')
     for i = 1:4
-        lines{i} = line([0 0], [1 vid.Height], 'color', cmap(i,:));
+        lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', cmap(i,:));
     end
 end
     

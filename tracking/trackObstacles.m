@@ -1,4 +1,4 @@
-function obsPixPositions = trackObstacles(vid, obsOnTimes, obsOffTimes, frameTimeStamps, obsPositions, obsTimes,...
+function [obsPixPositions, mappings] = trackObstacles(vid, obsOnTimes, obsOffTimes, frameTimeStamps, obsPositions, obsTimes,...
                                           xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking)
 
 % !!! need to document
@@ -31,6 +31,7 @@ end
 
 % iternate through all obstacle on epochs
 obsPixPositions = nan(1, totalFrames);
+mappings = nan(length(obsOnTimes), 2); % stores linear mappings from obsPositions (meters) to obsPixPositions(pixels)
 
 
 for i = 1:length(obsOnTimes)
@@ -83,6 +84,7 @@ for i = 1:length(obsOnTimes)
     trialObsPositions = interp1(obsTimes, obsPositions, frameTimeStamps(frameInds)); % get position of obstacle for all frames
     validInds = ~isnan(trialObsPixPositions);
     mapping = polyfit(trialObsPositions(validInds), trialObsPixPositions(validInds), 1);
+    mappings(i,:) = mapping;
     
     % recreate obsPixPositions for trial by mapping from obsPositions to obsPixPositions
     % (this effectively smooths the obstacle position, and more importantly ensures that the obstacles is tracked even at the very edges of the frame)

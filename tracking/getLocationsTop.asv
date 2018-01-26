@@ -37,11 +37,9 @@ for i = paws
     locationsBot.xVel(:,i) = getVelocity(locationsBot.x(:,i), velTime, fs);
 end
 
-% get mapping from meters to pixels
-obsPosInterp = interp1(wheelTimes, wheelPositions, obsPixPositions);
-
+% get wheel (in this case obs) velocities
 wheelVel = getVelocity(obsPixPositions, velTime, fs); % !!! need to change this to wheel speed...
-keyboard
+
 
 
 
