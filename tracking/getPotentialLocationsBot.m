@@ -41,6 +41,8 @@ if showTracking
 end
 
 
+w = waitbar(0, 'getting potentialLocationsBot...', 'position', [1500 50 270 56.2500]);
+wInd = 0;
 potentialLocationsBot(max(frameInds)) = struct();
 
 for i = frameInds
@@ -150,7 +152,7 @@ for i = frameInds
         frameFeatures(:,:,:,j) = img;
     end
     
-    classes = uint8(classify(model2, frameFeatures));
+    classes = uint8(classify(model2, frameFeatures, 'ExecutionEnvironment', 'gpu'));
 
 
 
@@ -190,6 +192,11 @@ for i = frameInds
         % pause to reflcet on the little things...
         pause(.001);
     end
+    
+    wInd = wInd+1;
+    waitbar(wInd / length(frameInds))
 end
+
+close(w)
 
 

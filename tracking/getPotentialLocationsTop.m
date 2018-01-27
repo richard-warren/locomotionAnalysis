@@ -52,6 +52,8 @@ end
 
 
 potentialLocationsTop(max(frameInds)) = struct();
+w = waitbar(0, 'getting potentialLocationsTop...', 'position', [1500 50 270 56.2500]);
+wInd = 0;
 
 for i = frameInds
     
@@ -135,9 +137,12 @@ for i = frameInds
         % pause to reflcet on the little things...
         pause(.2);
     end
+    
+    wInd = wInd+1;
+    waitbar(wInd / length(frameInds))
 end
 
-close all
+close(w)
 
 
 

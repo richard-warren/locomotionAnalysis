@@ -50,7 +50,7 @@ load([getenv('OBSDATADIR') 'svm\classifiers\pawBot2AlexNet.mat'], 'convNetwork',
 model2 = convNetwork; clear convNetwork; subFrameSize2 = subFrameSize; clear subFrameSize;
 classNum = model2.Layers(end).OutputSize - 1; % not including NOT PAW class
 
-tic
+tic;
 potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, classNum, ...
     subFrameSize1, subFrameSize2, scoreThresh, obsPixPositions, frameInds, showTracking);
                                                   
@@ -86,10 +86,11 @@ model2 = convNetwork; clear convNetwork; subFrameSize2 = subFrameSize;
 classNum = model2.Layers(end).OutputSize - 1; % not including NOT PAW class
 
 
-tic; potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, model1, model2, ...
+tic;
+potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, model1, model2, ...
     classNum, subFrameSize1, subFrameSize2, scoreThresh, frameInds, 1:4, showTracking);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
-fprintf('%s: potentialLocationsTop analyzed in %.2f minutes\n', session, toc/60)
+fprintf('%s: potentialLocationsTop analyzed in %.1f minutes\n', session, toc/60)
 
 %% get locations for top
 
