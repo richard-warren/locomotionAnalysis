@@ -13,7 +13,7 @@ parfor i = 1:length(sessionDirs)
     
 end
 
-% delete(gcp); % delete parallel pool
+%% delete(gcp); % delete parallel pool
 
 % generate plots
 % baselineAnalysis('run6')

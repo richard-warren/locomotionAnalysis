@@ -45,7 +45,7 @@ potentialLocationsBot(max(frameInds)) = struct();
 
 for i = frameInds
     
-    disp(i/totalFrames)
+%     disp(i/totalFrames)
     
     % get frame and subframes
     frame = rgb2gray(read(vid,i));

@@ -32,7 +32,7 @@ pawSwaps = 0;
 for i = frameInds(1:end)
     
     % report progress
-    disp(i/length(potentialLocationsBot))
+%     disp(i/length(potentialLocationsBot))
     
     
     % get unary and pairwise potentials
@@ -107,7 +107,7 @@ for i = frameInds(1:end)
                 if (abs(yFore-yMid) - abs(yHind-yMid)) > pawCheckYDistance % if the y locations are separated by at least pawCheckYDistance pixels
                     labels(i, pawPairs{j}) = labels(i, fliplr(pawPairs{j}));
                     pawSwaps = pawSwaps + 1;
-                    fprintf('paw swap #%i\n', pawSwaps)
+%                     fprintf('paw swap #%i\n', pawSwaps)
                 end
             end
         end
@@ -124,7 +124,7 @@ for i = frameInds(1:end)
     end
 end
 
-fprintf('total paw swaps: %i\n', pawSwaps)
+% fprintf('total paw swaps: %i\n', pawSwaps)
 
 
 

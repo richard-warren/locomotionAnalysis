@@ -15,7 +15,7 @@ locationsTop = fixTracking(locationsTop);
 
 % fix x alignment for bottom view
 load('xAlignment\xLinearMapping.mat', 'xLinearMapping');
-% locationsTop.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2); % replace top x values with those from bottom, which are more reliable
+locationsTop.x = locationsBot.x * xLinearMapping(1) + xLinearMapping(2); % replace top x values with those from bottom, which are more reliable
 
 vidTop = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runTop.mp4']);
 vidBot = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runBot.mp4']);
@@ -25,14 +25,13 @@ frameBot = read(vidBot,1);
 
 % initializations
 vidWrite = VideoWriter([getenv('OBSDATADIR') '\editedVid\' session 'trackingSample.mp4'], 'MPEG-4');
-set(vidWrite, 'FrameRate', fps);
+set(vidWrite, 'FrameRate', fps, 'Quality', 50);
 open(vidWrite);
 colors = winter(4);
 
 
 % set up figure
-close all
-mainFig = figure('color', [0 0 0], 'position', [1925, 50, vidTop.width, (vidBot.Height + vidTop.Height)], 'menubar', 'none');
+mainFig = figure('name', session, 'color', [0 0 0], 'position', [1925, 50, vidTop.width, (vidBot.Height + vidTop.Height)], 'menubar', 'none');
 
 topAxis = subplot(2,1,1, 'units', 'pixels');
 colormap gray
@@ -59,12 +58,11 @@ for i = frameInds
     frameTop = imadjust(squeeze(frameTop(:,:,1)), [.1 1], [0 1]);
     set(topImshow, 'CData', frameTop);
     set(txt, 'String', ['f = ' num2str(i)])
-%     keyboard
 
     % plot bot frame
     frameBot = read(vidBot,i);
     frameBot = imadjust(squeeze(frameBot(:,:,1)), [.1 1], [0 1]);
-    frameBot = medfilt2(frameBot, [4 8], 'symmetric');
+%     frameBot = medfilt2(frameBot, [4 8], 'symmetric');
     set(botImshow, 'CData', frameBot);
 
     % update circles
