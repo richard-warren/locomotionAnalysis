@@ -7,7 +7,6 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
 % settings
 overlapThresh = .6;
 yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
-circRoiPts = [36 155; 212 103; 374 132];
 xMaskWidth = 40;
 
 

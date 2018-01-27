@@ -1,5 +1,5 @@
 function locationsTop = getLocationsTop(potentialLocationsTop, locationsBot,...
-    frameInds, wheelPositions, wheelTimes, wheelFs, mToPixFactor, obsPixPositions, frameTimeStamps, paws, fs)
+    frameInds, wheelPositions, wheelTimes, wheelFs, mToPixFactor, obsPixPositions, frameTimeStamps, paws, fs, wheelPoints)
 
 % !!! need to document and make not shitty
 
@@ -9,8 +9,8 @@ objectNum = 4;
 maxVel = 25 / .004;   % max velocity (pixels / sec)
 maxXDistance = 30;    % max distance of x position in top from x position in bottom view
 xOccludeBuffer = 25;  % if paws in bottom view have x values within xOccludeBuffer of one another, the paw further away from the camera is treated as occluded
-stanceHgt = 6;        % paws in stance (negative x velocity in bottom view) are assigned z values stanceHgt pixels above wheel (wheel defined by circRoiPts)
-circRoiPts = [36 155; 212 103; 374 132];
+stanceHgt = 4;        % paws in stance (negative x velocity in bottom view) are assigned z values stanceHgt pixels above wheel (wheel defined by circRoiPts)
+% circRoiPts = [36 155; 212 103; 374 132];
 stanceVelDif = 1000;   % if paws paw is within this many pix/sec of wheel velocity (actually obs vel for now) then it is considered to be in stance IF length of this period exceeds stanceMin
 stanceMin = .02;      % (s)
 obsProximity = 60;    % if paw is within obsProximity pixels of obstacle, stance is no longer assumed when velocity is less than stanceVel
@@ -27,7 +27,7 @@ highnessWeight = .5;
 % initializations
 locationsTop.x = nan(length(potentialLocationsTop), objectNum);
 locationsTop.z = nan(length(potentialLocationsTop), objectNum);
-[wheelRadius, wheelCenter] = fitCircle(circRoiPts);
+[wheelRadius, wheelCenter] = fitCircle(wheelPoints);
 wheelCenterOffset = wheelCenter - [0; stanceHgt]; % this guy is shifted up a little bit
 
 

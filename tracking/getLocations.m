@@ -4,7 +4,6 @@ function getLocations(session, makeVid)
 % if makeVid is true, it also automatically makes a video of the tracking
 
 % settings
-% session = '180122_000';
 minVel = .6; % use .4
 obsPrePost = [.2 .2]; % include this many meters before and after obs turns on
 velPositions = [-.08 .08] + 0.3820; % compute trials velocity between these obstacle positions
@@ -32,6 +31,7 @@ mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
 
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+wheelPoints = getWheelPoints(vidTop);
 
 
 
@@ -104,7 +104,7 @@ locationsBotFixed.x = locationsBotFixed.x*xLinearMapping(1) + xLinearMapping(2);
 
 
 locationsTop = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
-    frameInds, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, 1:4, fs);
+    frameInds, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, 1:4, fs, wheelPoints);
 % showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
 %     showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
 save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
