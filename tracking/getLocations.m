@@ -1,10 +1,10 @@
-function getLocations(session, makeVid)
+% function getLocations(session, makeVid)
 
 % performs paw tracking for a single session!
 % if makeVid is true, it also automatically makes a video of the tracking
 
 % settings
-minVel = .6; % use .4
+minVel = .4; % use .4
 obsPrePost = [.2 .2]; % include this many meters before and after obs turns on
 velPositions = [-.08 .08] + 0.3820; % compute trials velocity between these obstacle positions
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
