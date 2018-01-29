@@ -3,12 +3,9 @@ function trainSVM(className)
 % !!! need to document
 
 
-% user settings
-dataDir = [getenv('OBSDATADIR') 'svm\'];
-
 
 % initializations
-load([dataDir '\trainingData\' className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
+load([getenv('OBSDATADIR') 'tracking\trainingData\' className '\labeledFeatures.mat'], 'features', 'labels', 'subFrameSize')
 
 
 % train svm
@@ -19,7 +16,7 @@ fprintf('generalization loss: %f\n', kfoldLoss(modelCrossVal));
 
 
 % save model
-uisave ({'model', 'subFrameSize'}, [dataDir 'classifiers\' className '.mat']);
+uisave ({'model', 'subFrameSize'}, [getenv('OBSDATADIR') 'tracking\classifiers\' className '.mat']);
 
 
 

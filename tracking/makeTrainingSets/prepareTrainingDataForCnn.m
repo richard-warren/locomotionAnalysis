@@ -5,7 +5,7 @@ function prepareTrainingDataForCnn(trainingData, targetSize)
 
 
 % load features
-featureDir = [getenv('OBSDATADIR') 'svm\trainingData\' trainingData '\'];
+featureDir = [getenv('OBSDATADIR') 'tracking\trainingData\' trainingData '\'];
 load([featureDir 'labeledFeatures.mat'],...
     'features', 'labels', 'subFrameSize')
 

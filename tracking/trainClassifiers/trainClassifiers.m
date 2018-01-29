@@ -35,7 +35,7 @@ jitterPixels = 0;
 flipBot = false;
 subFrameSize1 = [45 45];
 featureSetting = 'imageOnly';
-paws = [1 2 3 4];
+paws = [1; 2; 3; 4];
 class = 'pawBot1';
 maxOverlap = .5;
 minBrightness = 2; % negative examples need to be minBrightness times the mean brightness of the current frame
@@ -64,7 +64,7 @@ maxOverlap = .5;
 minBrightness = 2.5; % negative examples need to be minBrightness times the mean brightness of the current frame
 
 makeLabeledSet(class, labeledDataSessions, view,...
-               subFrameSize1, posEgs, negEgsPerEg, featureSetting, paws,...
+               subFrameSize2, posEgs, negEgsPerEg, featureSetting, paws,...
                jitterPixels, jitterNum, maxOverlap, minBrightness, flipBot);
 
 viewTrainingSet(class);
@@ -75,18 +75,18 @@ class = 'pawBot1';
 
 % train bot svm and reload
 trainSVM(class);
-load([getenv('OBSDATADIR') 'svm\classifiers\' class], 'model', 'subFrameSize');
+load([getenv('OBSDATADIR') 'tracking\classifiers\' class], 'model', 'subFrameSize');
 
 close all; figure; imagesc(reshape(-model.Beta, subFrameSize(1), subFrameSize(2)))
 
-% %% train bot svm2
-% 
+%% train bot svm2
+
 % class = 'pawBot2';
 % trainSVM2(class); % this is saved as [class '2']
-% 
-% 
-% %% train nn
-% 
+
+
+%% train nn
+
 % class = 'pawBot2';
 % trainNn(class);
 
@@ -101,9 +101,8 @@ retrainCnn(class, network);
 
 %% hand label top locations
 
-vidFile = [getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4'];
 obsFrameInds = find(obsPixPositions>10 & obsPixPositions<vidTop.Width);
-labelPawLocations(vidFile, obsFrameInds, 100, anchorPtsBot, colors);
+labelPawLocations(session, 'Top', obsFrameInds, 100, anchorPtsBot, colors);
 
 %% create top labeled set, svm
 
