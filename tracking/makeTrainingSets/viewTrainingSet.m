@@ -1,11 +1,11 @@
 function viewTrainingSet(className)
 
-% user settings
-dataDir = [getenv('OBSDATADIR') '\svm\trainingData\'];
+
+% settings
 figSize = [1000, 1800]; % h,w
 
 % initializations
-load([dataDir className '\labeledFeatures.mat'], 'images', 'labels', 'subFrameSize')
+load([getenv('OBSDATADIR') 'tracking\trainingData\' className '\labeledFeatures.mat'], 'images', 'labels', 'subFrameSize')
 
 
 for i = unique(labels)

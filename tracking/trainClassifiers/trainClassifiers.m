@@ -1,10 +1,11 @@
 % TRAIN CLASSIFIERS
 
+
 % settings
 session = '180122_001';
 minVel = .4;
-obsPrePost = [.2 .2];
-velPositions = [-.08 .08] + 0.3820;
+obsPrePost = [0 0]; % how many m before and after obs on should be included in frameInds
+velPositions = [-.08 .08] + 0.3820; % between what obs positions should trial velocity be computed
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
 colors = hsv(4); % red green blue purple
 
@@ -25,22 +26,24 @@ labelPawLocations(vidFile, frameInds, 100, anchorPtsBot, colors);
 
 %% create bot labeled set, svm1
 
-posEgs = 400;
+labeledDataSessions = {'171202_000', '180122_001'};
+% labeledDataSessions = {};
+view = 'Bot'; % 'Bot' or 'Top'
+posEgs = 2000; % these positive egs are spread agross the classes in paws // this is a maximum
 negEgsPerEg = 10;
 jitterNum = 0;
 jitterPixels = 0;
+flipBot = true;
 subFrameSize1 = [45 45];
 featureSetting = 'imageOnly';
-paws = 1:4;
+paws = [1; 2; 3; 4];
 class = 'pawBot1';
 maxOverlap = .5;
 minBrightness = 2; % negative examples need to be minBrightness times the mean brightness of the current frame
 
-makeLabeledSet(class,...
-               [getenv('OBSDATADIR') 'sessions\' session '\tracking\runBotHandLabeledLocations.mat'], ...
-               [getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4'],...
-               subFrameSize1, obsPixPositions, posEgs, negEgsPerEg, featureSetting, paws,...
-               jitterPixels, jitterNum, maxOverlap, minBrightness);
+makeLabeledSet(class, labeledDataSessions, view,...
+               subFrameSize1, posEgs, negEgsPerEg, featureSetting, paws,...
+               jitterPixels, jitterNum, maxOverlap, minBrightness, flipBot);
 
 viewTrainingSet(class);
 

@@ -54,7 +54,6 @@ featureLength = length(getSubFrameFeatures(zeros(subFrameSize), [0 0], featureSe
 % !!! randomly select indices from entire batch
 
 % iterate through frames of all examples (locations)
-keyboard
 posEgsPerFrame = size(locations,3) * (1 + flipBot + jitterNum);
 posEgs = min(posEgs, size(locations,2) * posEgsPerFrame);
 totalFrames = floor(posEgs / posEgsPerFrame);
