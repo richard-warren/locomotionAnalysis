@@ -54,17 +54,17 @@ featureLength = length(getSubFrameFeatures(zeros(subFrameSize), [0 0], featureSe
 % !!! randomly select indices from entire batch
 
 % iterate through frames of all examples (locations)
-keyboard
 posEgsPerFrame = size(locations,3) * (1 + flipBot + jitterNum);
 posEgs = min(posEgs, size(locations,2) * posEgsPerFrame);
 totalFrames = floor(posEgs / posEgsPerFrame);
-totalEgs = size(locations,2) * size(locations,3) * (1 + jitterNum + negEgsPerEg + flipBot); % for each pawframe, you have four paws
+totalEgs = totalFrames * size(locations,3) * (1 + jitterNum + negEgsPerEg + flipBot); % for each pawframe, you have four paws
 features = nan(featureLength, totalEgs);
 images = nan(prod(subFrameSize), totalEgs); % stores all images in a matrix, so subframes can be viewed prior to feature extraction
 labels = nan(1, totalEgs);
 
 locationInds = randperm(size(locations,2), totalFrames);
 locationInds = sort(locationInds);
+
 
 for i = locationInds
     
@@ -186,7 +186,7 @@ for i = locationInds
 end
 
 % remove nan values
-if any(isnan(labels)); disp('THERE ARE NANS IN THE LABELS, WTF!!!'); end
+if any(isnan(labels)); disp('THERE ARE NANS IN THE LABELS, WTF!!!'); keyboard; end
 % validInds = ~isnan(labels);
 % features = features(:,validInds);
 % images = images(:,validInds);
