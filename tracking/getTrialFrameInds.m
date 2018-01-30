@@ -1,10 +1,11 @@
-function [frameInds, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
+function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes)
 
 % returns vector containing frameInds for all trials // only includes trials where mouse is running faster than minVel
 % minVel is calculated between velPositions, which should be the start and end positions of the mouse running over obs
 % frameInds include all frameInds while obstacle is on, but also obsPrePost(1) meters before the obs turns on
 % and obsprePost(1) meters after the obs turns off // setting this to [0 0] means only inds with obs on are included
+% also saves trialIdentities, which for each frameInd records the trial number
 
 % temp
 % session = '180122_001';
@@ -16,7 +17,9 @@ function [frameInds, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPosit
 % velPositions = [-.08 .08] + 0.3820;
 
 frameInds = [];
+trialIdentities = [];
 trialVels = nan(1, length(obsOnTimes));
+
 
 for i = 1:length(obsOnTimes)
     
@@ -41,6 +44,9 @@ for i = 1:length(obsOnTimes)
 
         % getFrameInds
         frameInds = [frameInds find(frameTimeStamps>=startTime & frameTimeStamps<=endTime)'];
+        
+        % store trial identities
+        trialIdentities = [trialIdentities ones(1,length(frameInds))*i];
         
     end
     

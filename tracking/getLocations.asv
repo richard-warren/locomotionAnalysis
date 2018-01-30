@@ -38,6 +38,8 @@ wheelPoints = getWheelPoints(vidTop);
 if any(strcmp('bot', views))
     
     % get bot potential locations
+
+    % settings
     scoreThresh = 0;
     showTracking = 0;
 
@@ -74,7 +76,8 @@ end
 if any(strcmp('top', views))
     
     % get potential locations for top (svm)
-    % !!! need to load locationsBot and other info if not analyzed directly above
+
+    % settings
     scoreThresh = 0;
     showTracking = 0;
 

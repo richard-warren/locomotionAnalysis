@@ -1,5 +1,5 @@
 function potentialLocationsBot = getPotentialLocationsBot(vid, model1, model2, classNum, subFrameSize1, subFrameSize2, ...
-    scoreThresh, obsPixPositions, frameInds, showTracking)
+    scoreThresh, obsPixPositions, frameInds, trialIdentities, showTracking)
 
 % !!! need to document
 
@@ -40,9 +40,23 @@ if showTracking
 end
 
 
+
 w = waitbar(0, 'getting potentialLocationsBot...', 'position', [1500 50 270 56.2500]);
 wInd = 0;
-potentialLocationsBot(max(frameInds)) = struct();
+totalFrames = vid.NumberOfFrames;
+potentialLocationsBot(totalFrames) = struct();
+
+% create isAnalyzed field (records which frames were analyzed)
+temp = false(1,totalFrames);
+temp(frameInds) = true;
+temp = mat2cell(temp, 1, ones(totalFrames,1));
+[potentialLocationsBot.isAnalyzed] = temp{:};
+
+% save trial identities
+temp = nan(1,totalFrames);
+temp(frameInds) = trialIdentities;
+temp = mat2cell(temp, 1, ones(totalFrames,1));
+[potentialLocationsBot.trialIdentities] = temp{:};
 
 for i = frameInds
     

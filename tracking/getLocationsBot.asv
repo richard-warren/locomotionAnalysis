@@ -119,10 +119,11 @@ for i = frameInds(1:end)
     end
 end
 
-% copy isAnalyzed and trialIdentities to locationsBot
-locationsBot.isAnalyzed = [potentialLocationsBot.isAnalyzed]';
-locationsBot.trialIdentities = [potentialLocationsBot.trialIdentities]';
+% copy 
+locations.isAnalyzed = potentialLocationsBot.isAnalyzed;
+locations.trialIdentities = 
 
+keyboard
 % fprintf('total paw swaps: %i\n', pawSwaps)
 
 
