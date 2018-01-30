@@ -1,38 +1,17 @@
-function correctTracking(vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
-
-
+function showLocations(vid, frameInds, potentialLocations, locations,...
+    showPotentialLocations, vidDelay, anchorPts, cmap, lineLocations)
+    
 % settings
 circSize = 200;
 vidSizeScaling = 1.5;
-colors = hsv(4);
+% lineMaskWid = 15;
 
 
 % initializations
-playing = true;
-paused = false;
-currentFrameInd = frameInds(1);
-sampleFrame = rgb2gray(read(vid,currentFrameInd));
-fields = fieldnames(locations);
+currentFrame = 1;
+sampleFrame = rgb2gray(read(vid,currentFrame));
+fields = fieldnames(potentialLocations);
 dim2 = fields{2};
-
-
-% initialize fields for manual corrections (if they do not already exist)
-if ~isfield(locations, 'xCorrections'); locations.xCorrections = nan(size(locations.x)); end
-if ~isfield(locations, 'yCorrections'); locations.yCorrections = nan(size(locations.y)); end
-
-% initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
-for i = unique(locations.trialIdentities)
-    
-    trialInds = locations.trialIdentities==i;
-    
-    for field = 1:2
-        for paw = 1:4
-            trialLocations = locations.(fields{field})(trialInds, paw);
-            correctedInds = ~isnan(locations.);
-        end
-    end
-    
-end
 
 
 % prepare figure
@@ -40,29 +19,34 @@ close all;
 fig = figure('units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
-preview = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
+
+
+rawIm = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
 set(rawAxis, 'visible', 'off', 'units', 'pixels',...
     'position', [0 0 vid.Width*vidSizeScaling vid.Height*vidSizeScaling]);
 circSizes = circSize * ones(1,length(anchorPts));
+% circSizes = linspace(100,500,4);
 
-
-% prepare lines showing x locations of bottom tracked paws
 lines = cell(4,1);
 if exist('lineLocations', 'var')
     for i = 1:4
         lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', cmap(i,:));
     end
 end
+    
 
-
-% prepare impoints, draggable markers used to show / adjust tracking
-for i = 1:4
-    impoints{i} = impoint(gca, [10 10]*i);
-    setColor(impoints{i}, colors(i,:));
+if showPotentialLocations
+    scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'white', 'filled', 'linewidth', 2);
 end
+scatterLocations = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
+    circSizes, cmap, 'linewidth', 5); hold on
+scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
+                 [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
+                 circSizes, cmap, 'filled', 'linewidth', 3);     % show anchor points
 
-
+playing = true;
+paused = false;
 
 
 % main loop
@@ -73,9 +57,6 @@ end
 close(fig)
 
 
-% ---------
-% FUNCTIONS
-% ---------
 
 % keypress controls
 function changeFrames(~,~)
@@ -98,11 +79,11 @@ function changeFrames(~,~)
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
-            currentFrameInd = find(frameInds == str2double(input{1}));
+            currentFrame = find(frameInds == str2double(input{1}));
             updateFrame(1);
         
         elseif key==27                  % ESCAPE: close window
-            % !!! save results here!!!
+%             disp(key)
             playing = false;
             paused = false;
         
@@ -117,37 +98,41 @@ end
 % update frame preview
 function updateFrame(frameStep)
     
-    currentFrameInd = currentFrameInd + frameStep;
-    if currentFrameInd > length(frameInds); currentFrameInd = 1;
-    elseif currentFrameInd < 1; currentFrameInd = length(frameInds); end
+    currentFrame = currentFrame + frameStep;
+    if currentFrame > length(frameInds); currentFrame = 1;
+    elseif currentFrame < 1; currentFrame = length(frameInds); end
     
     % get frame and sub-frames
-    frame = rgb2gray(read(vid, frameInds(currentFrameInd)));
+    frame = rgb2gray(read(vid,frameInds(currentFrame)));
+    frame = imadjust(uint8(frame), [.05 1], [0 1]);
+%     frame = getFeatures(frame);
     
     
     % add vertical lines
     if exist('lineLocations', 'var')
-        inds = lineLocations.x(frameInds(currentFrameInd),:);
+        inds = lineLocations.x(frameInds(currentFrame),:);
         for j = 1:4
             set(lines{j}, 'XData', [inds(j) inds(j)])
         end
+%         inds = round(inds(~isnan(inds)));
+%         frame(:, inds) = 255;
     end
     
     
     % add frame number
-    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(frameInds(currentFrameInd)),...
+    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(frameInds(currentFrame)),...
                                'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
-    set(preview, 'CData', frame);
-    
-    
-    % !!! update positions of pointers
-    for j = 1:4
-        setPosition(impoints{j}, locations.x(frameInds(currentFrameInd), j), locations.y(frameInds(currentFrameInd), j));
-    end
+    set(rawIm, 'CData', frame);
 
     
+    set(scatterLocations, 'XData', squeeze(locations(frameInds(currentFrame),1,:)), ...
+        'YData', squeeze(locations((frameInds(currentFrame)),2,:)), 'visible', 'on');
+
+    if showPotentialLocations
+        set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).(dim2));
+    end
     
     % pause to reflcet on the little things...
     pause(vidDelay);
@@ -155,16 +140,3 @@ end
 
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-

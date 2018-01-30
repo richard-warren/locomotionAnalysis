@@ -20,8 +20,7 @@ scoreWeight = 0;
 
 % initializations
 labels = nan(length(potentialLocationsBot), objectNum);
-locationsBot.x = nan(length(potentialLocationsBot), objectNum);
-locationsBot.y = nan(length(potentialLocationsBot), objectNum);
+locationsBot.locationsRaw = nan(length(potentialLocationsBot), 2, objectNum);
 yMid = frameHgt / 2;
 pawPairs = {[1,2], [4,3]}; % left paws (hind, fore), right paws (hind, fore)
 pawSwaps = 0;
@@ -113,8 +112,8 @@ for i = frameInds(1:end)
     % only keep labeled locations
     for j = 1:objectNum
         if ~isnan(labels(i,j))
-            locationsBot.x(i,j) = potentialLocationsBot(i).x(labels(i,j));
-            locationsBot.y(i,j) = potentialLocationsBot(i).y(labels(i,j));
+            locationsBot.locationsRaw(i,1,j) = potentialLocationsBot(i).x(labels(i,j));
+            locationsBot.locationsRaw(i,2,j) = potentialLocationsBot(i).y(labels(i,j));
         end
     end
 end

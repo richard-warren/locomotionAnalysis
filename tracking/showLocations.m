@@ -10,8 +10,7 @@ vidSizeScaling = 1.5;
 % initializations
 currentFrame = 1;
 sampleFrame = rgb2gray(read(vid,currentFrame));
-fields = fieldnames(locations);
-dim2 = fields{2};
+if any(cellfun(@(x) strcmp(x, 'y'), fieldnames(potentialLocations))); dim2 = 'y'; else; dim2 = 'z'; end % figure out whether second dimension is y or z
 
 
 % prepare figure
@@ -126,7 +125,9 @@ function updateFrame(frameStep)
     % update figure
     set(rawIm, 'CData', frame);
 
-    set(scatterLocations, 'XData', locations.x(frameInds(currentFrame),:), 'YData', locations.(dim2)((frameInds(currentFrame)),:), 'visible', 'on');
+    
+    set(scatterLocations, 'XData', locations(frameInds(currentFrame),1,:), ...
+        'YData', locations((frameInds(currentFrame)),2,:), 'visible', 'on');
 
     if showPotentialLocations
         set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).(dim2));
