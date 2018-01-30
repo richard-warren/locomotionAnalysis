@@ -43,11 +43,18 @@ for i = 1:length(obsOnTimes)
         endTime = wheelTimes(find(wheelPositions>=endWheelPos, 1, 'first'));
 
         % getFrameInds
-        frameInds = [frameInds find(frameTimeStamps>=startTime & frameTimeStamps<=endTime)'];
+        newFrames = find(frameTimeStamps>=startTime & frameTimeStamps<=endTime)';
+        frameInds = [frameInds newFrames];
         
         % store trial identities
-        trialIdentities = [trialIdentities ones(1,length(frameInds))*i];
+        trialIdentities = [trialIdentities ones(1,length(newFrames))*i];
         
     end
-    
 end
+
+
+
+
+
+
+
