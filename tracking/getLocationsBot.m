@@ -78,8 +78,8 @@ for i = frameInds(1:end)
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise;% + scoreWeight.*svmScores;
     
     % only allow paws to be assigned to potential locations assigned to paws' class
-    invalidBins = repmat(potentialLocationsBot(i).class', 4, 1) ~= repmat(classes', 1, length(potentialLocationsBot(i).class));
-    scores(invalidBins) = 0;
+%     invalidBins = repmat(potentialLocationsBot(i).class', 4, 1) ~= repmat(classes', 1, length(potentialLocationsBot(i).class));
+%     scores(invalidBins) = 0;
     
     scores(unaries==0 | pairwise==0) = 0;
     scores(scores<minScore) = 0;

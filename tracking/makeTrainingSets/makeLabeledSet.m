@@ -136,6 +136,7 @@ for i = locationInds
         offsetInds = randperm(8);
         offsetInds = offsetInds(1:jitterNum);
 
+        
         for k = 1:jitterNum
 
             xyJittered = xy + jitterDirections(offsetInds(k), :)';

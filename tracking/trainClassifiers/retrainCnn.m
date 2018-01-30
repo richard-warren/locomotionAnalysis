@@ -3,11 +3,11 @@ function retrainCnn(class, network)
 
 % settings
 trainTestValPortions = [.6 .2 .2];
-
+imgDir = 'C:\Users\rick\Desktop\trainingExamples\';
 
 
 % initializations
-imgs = imageDatastore([getenv('OBSDATADIR') 'tracking\trainingData\' class],...
+imgs = imageDatastore([imgDir class],...
     'IncludeSubfolders', true, 'FileExtensions', '.tif', 'LabelSource', 'foldernames');
 [trainImages, testImages, valImages] = splitEachLabel(imgs, ...
     trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');

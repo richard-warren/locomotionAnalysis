@@ -11,7 +11,6 @@ overlapThresh = .7; % used for non-maxima suppression // higher numbers = more t
 
 % initializations
 sampleFrame = rgb2gray(read(vid,1));
-totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 cmap = hsv(classNum);
@@ -46,8 +45,6 @@ wInd = 0;
 potentialLocationsBot(max(frameInds)) = struct();
 
 for i = frameInds
-    
-%     disp(i/totalFrames)
     
     % get frame and subframes
     frame = rgb2gray(read(vid,i));

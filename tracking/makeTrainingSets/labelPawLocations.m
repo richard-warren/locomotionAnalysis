@@ -4,10 +4,15 @@ function labelPawLocations(session, view, frameInds, totalEgs, anchorPts, colors
 
 
 % settings
-objectNum = 4;
 figSize = 2;
 
 % initializations
+switch view
+    case 'Bot'
+        objectNum = 4;
+    case 'Top'
+        objectNum = 2;
+end
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4']);
 frame = read(vid,1);
 egInd = 1;
@@ -105,7 +110,7 @@ function getNewFrame
 end
 
 function saveData
-    save([getenv('OBSDATADIR') 'tracking\trainingData\handLabeledSets\' view 'HandLabeledLocations' session '.mat'], ...
+    save([getenv('OBSDATADIR') 'tracking\trainingData\handLabeledSets\run' view 'HandLabeledLocations' session '.mat'], ...
         'locations', 'locationFrameInds');
 end
 
