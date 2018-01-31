@@ -3,7 +3,7 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 views = {'bot'};
-minVel = .6;
+minVel = .4;
 %%
 
 for i = 1:length(sessionDirs)
