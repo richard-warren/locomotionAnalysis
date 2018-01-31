@@ -3,8 +3,7 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 views = {'bot'};
-minVel = .5;
-%%
+minVel = .4;
 
 for i = 1:length(sessionDirs)
     
@@ -19,7 +18,7 @@ for i = 1:length(sessionDirs)
 end
 
 
-%% correctTracking
+%% correct tracking
 
 % settings
 session = '180122_000';

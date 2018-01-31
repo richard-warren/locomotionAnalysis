@@ -2,10 +2,10 @@ function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchor
 
 
 % settings
-% 52988
 circSize = 200;
 vidSizeScaling = 1.5;
 colors = hsv(4);
+maxCorrectionInterpolation = 100; % max number of frames that can be interpolated between locationCorrections
 
 
 % initializations
@@ -13,6 +13,7 @@ playing = true;
 paused = false;
 frameUpdating = true;
 currentFrameInd = 1;
+lastCorrectedPaw = [];
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
 
@@ -66,7 +67,7 @@ hold on; scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) ancho
 for i = 1:4
     impoints{i} = impoint(gca, [10 10]*i);
     setColor(impoints{i}, colors(i,:));
-    addNewPositionCallback(impoints{i}, @(x) dispYaYaYa(i));
+    addNewPositionCallback(impoints{i}, @(x) addCorrection(i));
 end
 
 
@@ -97,13 +98,13 @@ function changeFrames(~,~)
             updateFrame(-1);
         
         % RIGHT: move frame forward
-        case 29                  
+        case 29
             pause(.001);
             paused = true;
             updateFrame(1);
         
         % 'f': select frame
-        case 102                  
+        case 102
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
@@ -111,25 +112,47 @@ function changeFrames(~,~)
             updateFrame(1);
         
         % ESCAPE: close window
-        case 27                  
+        case 27
             playing = false;
             paused = false;
             
         % 's': save current progress
-        case 115                 
+        case 115
             save(outputFile, 'locations')
             m = msgbox('saving!!!'); pause(.5); close(m)
             
         % 'c': go to latest corrected frame
-        case 99                  
+        case 99
             pause(.001);
             paused = true;
             currentFrameInd = find(frameInds == find(locations.isCorrected,1,'last'));
             msgbox('moved to latest corrected frame');
             updateFrame(0);
+            
+        % 'i': for last corrected paw, interpolate between last two corrected values
+        case 105
+            
+            % find last two corrected inds for lastCorrectedPaw
+            lastTwoCorrectedInds = find(~isnan(locations.locationCorrections(1:frameInds(currentFrameInd),1,lastCorrectedPaw)), 2, 'last');
+            
+            interpolatedTrials = locations.trialIdentities(lastTwoCorrectedInds);
+            
+            if diff(interpolatedTrials)==0 && diff(lastTwoCorrectedInds)<maxCorrectionInterpolation % if inds belong to the same trial and they arenot too far apart
+            
+                inds = lastTwoCorrectedInds(1):lastTwoCorrectedInds(2);
+                
+                % interpolate x and y valuesinds = lastTwoCorrectedInds(1):lastTwoCorrectedInds(2); between last two corrected points and store in locationsCorrected
+                for j = 1:2
+                    xInterp = fillmissing((locations.locationCorrections(inds,j,lastCorrectedPaw)), 'linear');
+                    locations.locationCorrections(inds,j,lastCorrectedPaw) = xInterp;
+                end
+
+                % recorrect and interpolate the trial for lastCorrectedPaw
+                mergeCorrectionsAndInterpolate(interpolatedTrials(1), lastCorrectedPaw)
+            end
         
         % SPACEBAR: pause playback
-        case 32                  
+        case 32
             paused = ~paused;
     end
 end
@@ -219,12 +242,13 @@ function mergeCorrectionsAndInterpolate(trial, paws)
 end
 
 
-function dispYaYaYa(paw)
+function addCorrection(paw)
     
     if ~frameUpdating
         trial = locations.trialIdentities(frameInds(currentFrameInd));
         locations.locationCorrections(frameInds(currentFrameInd), :, paw) = getPosition(impoints{paw});
         mergeCorrectionsAndInterpolate(trial, paw);
+        lastCorrectedPaw = paw;
     end
 end
     
