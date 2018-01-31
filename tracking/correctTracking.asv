@@ -1,4 +1,4 @@
-function correctTracking(vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
+function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
 
 
 % settings
@@ -10,12 +10,15 @@ colors = hsv(4);
 % initializations
 playing = true;
 paused = false;
+frameUpdating = true;
 currentFrameInd = frameInds(1);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 
 
+
 % initialize fields for manual corrections (if they do not already exist)
 if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
+if ~isfield(locations, 'locationsCorrected'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
 
 % initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
 for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'
@@ -28,6 +31,7 @@ end
 close all;
 fig = figure('units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
+
 colormap gray
 preview = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
@@ -40,20 +44,14 @@ circSizes = circSize * ones(1,length(anchorPts));
 lines = cell(4,1);
 if exist('lineLocations', 'var')
     for i = 1:4
-        lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', cmap(i,:));
+        lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', colors(i,:));
     end
 end
 
 
-% prepare impoints, draggable markers used to show / adjust tracking
-for i = 1:4
-    impoints{i} = impoint(gca, [10 10]*i);
-    setColor(impoints{i}, colors(i,:));
-end
-
-
-% prepare circles showing when 
-
+% prepare circles showing locationsRaw
+scatterRaw = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
+    circSizes, colors, 'linewidth', 2.5); hold on
 
 
 % prepare colored circles in the corner to tell you which paw goes where
@@ -61,7 +59,12 @@ hold on; scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) ancho
                  [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
                  circSizes, colors, 'filled', 'linewidth', 3);     % show anchor points
 
-
+% prepare impoints, draggable markers used to show / adjust tracking
+for i = 1:4
+    impoints{i} = impoint(gca, [10 10]*i);
+    setColor(impoints{i}, colors(i,:));
+    addNewPositionCallback(impoints{i}, @(x) dispYaYaYa(i));
+end
 
 
 % main loop
@@ -101,9 +104,11 @@ function changeFrames(~,~)
             updateFrame(1);
         
         elseif key==27                  % ESCAPE: close window
-            % !!! save results here!!!
             playing = false;
             paused = false;
+            
+        elseif key==115                 % 's': save current progress
+            save(outputFile, 'locations')
         
         else                            % OTHERWISE: close window
             paused = ~paused;
@@ -142,12 +147,17 @@ function updateFrame(frameStep)
     set(preview, 'CData', frame);
     
     
-    % !!! update positions of pointers
+    % update point locations to locationsCorrected
+    frameUpdating = true;
     for j = 1:4
         setPosition(impoints{j}, locations.locationsCorrected(frameInds(currentFrameInd),1,j), ...
             locations.locationsCorrected(frameInds(currentFrameInd),2,j));
     end
-
+    frameUpdating = false;
+    
+    % update circles to locationsRaw
+    set(scatterRaw, 'XData', locations.locationsRaw(frameInds(currentFrameInd),1,:), ...
+        'YData', locations.locationsRaw((frameInds(currentFrameInd)),2,:), 'visible', 'on');
     
     
     % pause to reflcet on the little things...
@@ -178,6 +188,16 @@ function mergeCorrectionsAndInterpolate(trial, paws)
             trialLocations = fillmissing(trialLocations, 'linear', 'endvalues', 'extrap');
             locations.locationsCorrected(trialInds, dimension, paw) = trialLocations;
         end
+    end
+end
+
+
+function dispYaYaYa(paw)
+    
+    if ~frameUpdating
+        trial = locations.trialIdentities(frameInds(currentFrameInd));
+        locations.locationCorrections(frameInds(currentFrameInd), :, paw) = getPosition(impoints{paw});
+        mergeCorrectionsAndInterpolate(trial, paw);
     end
 end
     

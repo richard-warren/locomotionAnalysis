@@ -1,4 +1,4 @@
-function correctTracking(vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
+function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
 
 
 % settings
@@ -10,12 +10,16 @@ colors = hsv(4);
 % initializations
 playing = true;
 paused = false;
+frameUpdating = true;
 currentFrameInd = frameInds(1);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 
 
+
 % initialize fields for manual corrections (if they do not already exist)
-if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
+if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); disp('ya'); end
+if ~isfield(locations, 'locationsCorrected'); locations.locationsCorrected = nan(size(locations.locationsRaw));  disp('ya'); end
+if ~isfield(locations, 'isCorrected'); locations.isCorrected = false(length(locations.isAnalyzed),1); disp('ya'); end
 
 % initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
 for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'
@@ -28,6 +32,7 @@ end
 close all;
 fig = figure('units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
+
 colormap gray
 preview = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
@@ -59,7 +64,7 @@ hold on; scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) ancho
 for i = 1:4
     impoints{i} = impoint(gca, [10 10]*i);
     setColor(impoints{i}, colors(i,:));
-    addNewPositionCallback(impoints{i}, @dispYaYaYa);
+    addNewPositionCallback(impoints{i}, @(x) dispYaYaYa(i));
 end
 
 
@@ -100,9 +105,11 @@ function changeFrames(~,~)
             updateFrame(1);
         
         elseif key==27                  % ESCAPE: close window
-            % !!! save results here!!!
             playing = false;
             paused = false;
+            
+        elseif key==115                 % 's': save current progress
+            save(outputFile, 'locations')
         
         else                            % OTHERWISE: close window
             paused = ~paused;
@@ -118,6 +125,9 @@ function updateFrame(frameStep)
     currentFrameInd = currentFrameInd + frameStep;
     if currentFrameInd > length(frameInds); currentFrameInd = 1;
     elseif currentFrameInd < 1; currentFrameInd = length(frameInds); end
+    
+    % record that this frame has been corrected (somebody looked at it and verified it was correct or corrected it manually)
+    locations.isCorrected(frameInds(currentFrameInd)) = true;
     
     % get frame and sub-frames
     frame = rgb2gray(read(vid, frameInds(currentFrameInd)));
@@ -142,15 +152,16 @@ function updateFrame(frameStep)
     
     
     % update point locations to locationsCorrected
+    frameUpdating = true;
     for j = 1:4
         setPosition(impoints{j}, locations.locationsCorrected(frameInds(currentFrameInd),1,j), ...
             locations.locationsCorrected(frameInds(currentFrameInd),2,j));
     end
+    frameUpdating = false;
     
     % update circles to locationsRaw
     set(scatterRaw, 'XData', locations.locationsRaw(frameInds(currentFrameInd),1,:), ...
         'YData', locations.locationsRaw((frameInds(currentFrameInd)),2,:), 'visible', 'on');
-    
     
     % pause to reflcet on the little things...
     pause(vidDelay);
@@ -184,8 +195,13 @@ function mergeCorrectionsAndInterpolate(trial, paws)
 end
 
 
-function dispYaYaYa(pos)
-    disp('yayaya')
+function dispYaYaYa(paw)
+    
+    if ~frameUpdating
+        trial = locations.trialIdentities(frameInds(currentFrameInd));
+        locations.locationCorrections(frameInds(currentFrameInd), :, paw) = getPosition(impoints{paw});
+        mergeCorrectionsAndInterpolate(trial, paw);
+    end
 end
     
     

@@ -21,14 +21,17 @@ end
 
 %% test correctTracking
 
+% settings
 session = '180122_000';
 view = 'Bot';
-load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'], ['locations' view])
+
+outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'];
+load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'], 'locations')
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4']);
-frameInds = find(locationsBot.isAnalyzed);
+frameInds = find(locations.isAnalyzed);
 anchorPts = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH
 
-correctTracking(vid, eval(['locations' view]), frameInds, .04, anchorPts);
+correctTracking(outputFile, vid, locations, frameInds, .04, anchorPts);
 
 
 %% rando tests
