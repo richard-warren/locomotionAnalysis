@@ -12,27 +12,16 @@ playing = true;
 paused = false;
 currentFrameInd = frameInds(1);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
-fields = fieldnames(locations);
-dim2 = fields{2};
 
 
 % initialize fields for manual corrections (if they do not already exist)
-if ~isfield(locations, 'xCorrections'); locations.xCorrections = nan(size(locations.x)); end
-if ~isfield(locations, 'yCorrections'); locations.yCorrections = nan(size(locations.y)); end
+if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
 
 % initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
-for i = unique(locations.trialIdentities)
-    
-    trialInds = locations.trialIdentities==i;
-    
-    for field = 1:2
-        for paw = 1:4
-            trialLocations = locations.(fields{field})(trialInds, paw);
-            correctedInds = ~isnan(locations.);
-        end
-    end
-    
+for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'
+    mergeCorrectionsAndInterpolate(i, 1:4);
 end
+
 
 
 % prepare figure
@@ -51,18 +40,27 @@ circSizes = circSize * ones(1,length(anchorPts));
 lines = cell(4,1);
 if exist('lineLocations', 'var')
     for i = 1:4
-        lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', cmap(i,:));
+        lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', colors(i,:));
     end
 end
 
+
+% prepare circles showing locationsRaw
+scatterRaw = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
+    circSizes, colors, 'linewidth', 2.5); hold on
+
+
+% prepare colored circles in the corner to tell you which paw goes where
+hold on; scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
+                 [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
+                 circSizes, colors, 'filled', 'linewidth', 3);     % show anchor points
 
 % prepare impoints, draggable markers used to show / adjust tracking
 for i = 1:4
     impoints{i} = impoint(gca, [10 10]*i);
     setColor(impoints{i}, colors(i,:));
+    addNewPositionCallback(impoints{i}, @dispYaYaYa);
 end
-
-
 
 
 % main loop
@@ -135,18 +133,23 @@ function updateFrame(frameStep)
     
     
     % add frame number
-    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(frameInds(currentFrameInd)),...
-                               'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+    frame = insertText(frame, [size(frame,2) size(frame,1)], ...
+        sprintf('trial %i, frame %i', locations.trialIdentities(frameInds(currentFrameInd)), frameInds(currentFrameInd)),...
+	    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
     set(preview, 'CData', frame);
     
     
-    % !!! update positions of pointers
+    % update point locations to locationsCorrected
     for j = 1:4
-        setPosition(impoints{j}, locations.x(frameInds(currentFrameInd), j), locations.y(frameInds(currentFrameInd), j));
+        setPosition(impoints{j}, locations.locationsCorrected(frameInds(currentFrameInd),1,j), ...
+            locations.locationsCorrected(frameInds(currentFrameInd),2,j));
     end
-
+    
+    % update circles to locationsRaw
+    set(scatterRaw, 'XData', locations.locationsRaw(frameInds(currentFrameInd),1,:), ...
+        'YData', locations.locationsRaw((frameInds(currentFrameInd)),2,:), 'visible', 'on');
     
     
     % pause to reflcet on the little things...
@@ -154,6 +157,38 @@ function updateFrame(frameStep)
 end
 
 
+
+
+
+% adds corrected values to raw values for a trial, and interpolates missing values
+function mergeCorrectionsAndInterpolate(trial, paws)
+    
+    trialInds = ([locations.trialIdentities]==trial);
+    
+    for dimension = 1:2
+        for paw = paws
+            
+            % extract locations for a single trial, paw, and dimension (x, y, or z)
+            trialLocations = squeeze(locations.locationsRaw(trialInds, dimension, paw));
+            trialCorrections = squeeze(locations.locationCorrections(trialInds, dimension, paw));
+            
+            % if there are any manually corrected values, incorporate them
+            correctedInds = ~isnan(trialCorrections);
+            if ~isempty(correctedInds); trialLocations(correctedInds) = trialCorrections(correctedInds); end
+            
+            % fill in missing values and store in locationsCorrected field
+            trialLocations = fillmissing(trialLocations, 'linear', 'endvalues', 'extrap');
+            locations.locationsCorrected(trialInds, dimension, paw) = trialLocations;
+        end
+    end
+end
+
+
+function dispYaYaYa(pos)
+    disp('yayaya')
+end
+    
+    
 end
 
 

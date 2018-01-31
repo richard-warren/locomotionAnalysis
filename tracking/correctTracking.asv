@@ -1,4 +1,4 @@
-function correctTracking(session, view, frameInds, vidDelay, anchorPts, lineLocations)
+function correctTracking(vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
 
 
 % settings
@@ -10,15 +10,16 @@ colors = hsv(4);
 % initializations
 playing = true;
 paused = false;
-
-vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4']);
 currentFrameInd = frameInds(1);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 
 
-for i = 1:4
-    impoints{i} = impoint(gca, [10 10]*i);
-    setColor(impoints{i}, colors(i,:));
+% initialize fields for manual corrections (if they do not already exist)
+if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
+
+% initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
+for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'
+    mergeCorrectionsAndInterpolate(i, 1:4);
 end
 
 
@@ -44,12 +45,23 @@ if exist('lineLocations', 'var')
 end
 
 
-% load data
-load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'], ['locations' view]);
-fields = fieldnames(eval());
-dim2 = fields{2};
+% prepare impoints, draggable markers used to show / adjust tracking
+for i = 1:4
+    impoints{i} = impoint(gca, [10 10]*i);
+    setColor(impoints{i}, colors(i,:));
+end
 
-keyboard
+
+% prepare circles showing when 
+
+
+
+% prepare colored circles in the corner to tell you which paw goes where
+hold on; scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
+                 [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
+                 circSizes, colors, 'filled', 'linewidth', 3);     % show anchor points
+
+
 
 
 % main loop
@@ -110,7 +122,6 @@ function updateFrame(frameStep)
     
     % get frame and sub-frames
     frame = rgb2gray(read(vid, frameInds(currentFrameInd)));
-%     frame = imadjust(uint8(frame), [.05 1], [0 1]);
     
     
     % add vertical lines
@@ -123,14 +134,19 @@ function updateFrame(frameStep)
     
     
     % add frame number
-    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(frameInds(currentFrameInd)),...
-                               'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+    frame = insertText(frame, [size(frame,2) size(frame,1)], ...
+        sprintf('trial %i, frame %i', locations.trialIdentities(frameInds(currentFrameInd)), frameInds(currentFrameInd)),...
+	    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
     set(preview, 'CData', frame);
     
     
     % !!! update positions of pointers
+    for j = 1:4
+        setPosition(impoints{j}, locations.locationsCorrected(frameInds(currentFrameInd),1,j), ...
+            locations.locationsCorrected(frameInds(currentFrameInd),2,j));
+    end
 
     
     
@@ -139,6 +155,33 @@ function updateFrame(frameStep)
 end
 
 
+
+
+
+% adds corrected values to raw values for a trial, and interpolates missing values
+function mergeCorrectionsAndInterpolate(trial, paws)
+    
+    trialInds = ([locations.trialIdentities]==trial);
+    
+    for dimension = 1:2
+        for paw = paws
+            
+            % extract locations for a single trial, paw, and dimension (x, y, or z)
+            trialLocations = squeeze(locations.locationsRaw(trialInds, dimension, paw));
+            trialCorrections = squeeze(locations.locationCorrections(trialInds, dimension, paw));
+            
+            % if there are any manually corrected values, incorporate them
+            correctedInds = ~isnan(trialCorrections);
+            if ~isempty(correctedInds); trialLocations(correctedInds) = trialCorrections(correctedInds); end
+            
+            % fill in missing values and store in locationsCorrected field
+            trialLocations = fillmissing(trialLocations, 'linear', 'endvalues', 'extrap');
+            locations.locationsCorrected(trialInds, dimension, paw) = trialLocations;
+        end
+    end
+end
+    
+    
 end
 
 
