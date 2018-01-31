@@ -3,7 +3,7 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 views = {'bot'};
-minVel = .4;
+minVel = .5;
 %%
 
 for i = 1:length(sessionDirs)
@@ -19,11 +19,12 @@ for i = 1:length(sessionDirs)
 end
 
 
-%% test correctTracking
+%% correctTracking
 
 % settings
 session = '180122_000';
 view = 'Bot';
+frameDelay = .03;
 
 outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'];
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'], 'locations')
@@ -31,7 +32,8 @@ vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4'])
 frameInds = find(locations.isAnalyzed);
 anchorPts = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH
 
-correctTracking(outputFile, vid, locations, frameInds, .04, anchorPts);
+correctTracking(outputFile, vid, locations, frameInds, frameDelay, anchorPts);
+
 
 
 

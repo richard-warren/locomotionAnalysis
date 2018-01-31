@@ -63,9 +63,9 @@ if any(strcmp('bot', views))
     % initializations
     % vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
-    locationsBot = getLocationsBot(potentialLocationsBot, anchorPtsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
+    locations = getLocationsBot(potentialLocationsBot, anchorPtsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
 %     showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot, colors);
-    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locationsBot');
+    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locations');
     fprintf('%s: locationsBot analyzed\n', session)
 end
 
@@ -87,7 +87,7 @@ if any(strcmp('top', views))
 
 
     tic;
-    potentialLocationsTop = getPotentialLocationsTop(vidTop, locationsBot, model1, model2, ...
+    potentialLocationsTop = getPotentialLocationsTop(vidTop, locations, model1, model2, ...
         classNum, subFrameSize1, subFrameSize2, scoreThresh, frameInds, 1:4, showTracking);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
     fprintf('%s: potentialLocationsTop analyzed in %.1f minutes\n', session, toc/60)
@@ -102,15 +102,15 @@ if any(strcmp('top', views))
     fs = 250;
 
     % fix x alignment for bottom view
-    locationsBotFixed = fixTracking(locationsBot);
+    locationsBotFixed = fixTracking(locations);
     locationsBotFixed.x = locationsBotFixed.x*xLinearMapping(1) + xLinearMapping(2);
 
 
-    locationsTop = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
+    locations = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
         frameInds, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, 1:4, fs, wheelPoints);
     % showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
     %     showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
-    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locationsTop');
+    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)
 end
 

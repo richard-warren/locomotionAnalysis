@@ -2,6 +2,7 @@ function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchor
 
 
 % settings
+% 52988
 circSize = 200;
 vidSizeScaling = 1.5;
 colors = hsv(4);
@@ -11,8 +12,9 @@ colors = hsv(4);
 playing = true;
 paused = false;
 frameUpdating = true;
-currentFrameInd = frameInds(1);
+currentFrameInd = 1;
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
+w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
 
 
 
@@ -30,8 +32,7 @@ end
 
 
 % prepare figure
-close all;
-fig = figure('units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
+fig = figure('name', outputFile, 'units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 
 colormap gray
@@ -75,7 +76,7 @@ while playing
     updateFrame(1);
 end
 close(fig)
-
+close(w)
 
 % ---------
 % FUNCTIONS
@@ -86,35 +87,50 @@ function changeFrames(~,~)
     
     key = double(get(fig, 'currentcharacter'));
     
-    if ~isempty(key) && isnumeric(key)
+    switch key
+%     if ~isempty(key) && isnumeric(key)
         
-        if key==28                      % LEFT: move frame backward
+        % LEFT: move frame backward
+        case 28
             pause(.001);
             paused = true;
             updateFrame(-1);
         
-        elseif key==29                  % RIGHT: move frame forward
+        % RIGHT: move frame forward
+        case 29                  
             pause(.001);
             paused = true;
             updateFrame(1);
         
-        elseif key==102                  % 'f': select frame
+        % 'f': select frame
+        case 102                  
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
             currentFrameInd = find(frameInds == str2double(input{1}));
             updateFrame(1);
         
-        elseif key==27                  % ESCAPE: close window
+        % ESCAPE: close window
+        case 27                  
             playing = false;
             paused = false;
             
-        elseif key==115                 % 's': save current progress
+        % 's': save current progress
+        case 115                 
             save(outputFile, 'locations')
+            m = msgbox('saving!!!'); pause(.5); close(m)
+            
+        % 'c': go to latest corrected frame
+        case 99                  
+            pause(.001);
+            paused = true;
+            currentFrameInd = find(frameInds == find(locations.isCorrected,1,'last'));
+            msgbox('moved to latest corrected frame');
+            updateFrame(0);
         
-        else                            % OTHERWISE: close window
+        % SPACEBAR: pause playback
+        case 32                  
             paused = ~paused;
-        end
     end
 end
 
@@ -162,15 +178,17 @@ function updateFrame(frameStep)
     
     % update circles to locationsRaw
     frameLocations = locations.locationsRaw(frameInds(currentFrameInd),:,:);
-    frameLocationsCorrected = locations.locationsCorrected(frameInds(currentFrameInd),:,:);
-    correctedBins = ~isnan(frameLocationsCorrected);
-    frameLocations(correctedBins) = frameLocationsCorrected(correctedBins);
+    frameLocationCorrections = locations.locationCorrections(frameInds(currentFrameInd),:,:);
+    correctedBins = ~isnan(frameLocationCorrections);
+    frameLocations(correctedBins) = frameLocationCorrections(correctedBins);
     frameLocations = squeeze(frameLocations);
     
     set(scatterRaw, 'XData', frameLocations(1,:), 'YData', frameLocations(2,:), 'visible', 'on');
     
     % pause to reflcet on the little things...
     pause(vidDelay);
+    
+    waitbar(currentFrameInd / length(frameInds))
 end
 
 
