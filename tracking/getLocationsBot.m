@@ -1,4 +1,4 @@
-function locationsBot = getLocationsBot(potentialLocationsBot, anchorPts, frameTimeStamps, frameWid, frameHgt)
+function locations = getLocationsBot(potentialLocationsBot, anchorPts, frameTimeStamps, frameWid, frameHgt)
 
 % !!! need to document
 
@@ -20,7 +20,7 @@ scoreWeight = 0;
 
 % initializations
 labels = nan(length(potentialLocationsBot), objectNum);
-locationsBot.locationsRaw = nan(length(potentialLocationsBot), 2, objectNum);
+locations.locationsRaw = nan(length(potentialLocationsBot), 2, objectNum);
 yMid = frameHgt / 2;
 pawPairs = {[1,2], [4,3]}; % left paws (hind, fore), right paws (hind, fore)
 pawSwaps = 0;
@@ -112,15 +112,15 @@ for i = frameInds(1:end)
     % only keep labeled locations
     for j = 1:objectNum
         if ~isnan(labels(i,j))
-            locationsBot.locationsRaw(i,1,j) = potentialLocationsBot(i).x(labels(i,j));
-            locationsBot.locationsRaw(i,2,j) = potentialLocationsBot(i).y(labels(i,j));
+            locations.locationsRaw(i,1,j) = potentialLocationsBot(i).x(labels(i,j));
+            locations.locationsRaw(i,2,j) = potentialLocationsBot(i).y(labels(i,j));
         end
     end
 end
 
 % copy isAnalyzed and trialIdentities to locationsBot
-locationsBot.isAnalyzed = [potentialLocationsBot.isAnalyzed]';
-locationsBot.trialIdentities = [potentialLocationsBot.trialIdentities]';
+locations.isAnalyzed = [potentialLocationsBot.isAnalyzed]';
+locations.trialIdentities = [potentialLocationsBot.trialIdentities]';
 
 % fprintf('total paw swaps: %i\n', pawSwaps)
 

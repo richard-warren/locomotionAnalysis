@@ -17,9 +17,10 @@ sampleFrame = rgb2gray(read(vid,currentFrameInd));
 
 
 % initialize fields for manual corrections (if they do not already exist)
-if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); disp('ya'); end
-if ~isfield(locations, 'locationsCorrected'); locations.locationsCorrected = nan(size(locations.locationsRaw));  disp('ya'); end
-if ~isfield(locations, 'isCorrected'); locations.isCorrected = false(length(locations.isAnalyzed),1); disp('ya'); end
+if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
+if ~isfield(locations, 'locationsCorrected'); locations.locationsCorrected = nan(size(locations.locationsRaw)); end
+if ~isfield(locations, 'isCorrected'); locations.isCorrected = false(length(locations.isAnalyzed),1); end
+if ~isfield(locations, 'isInterped'); locations.isInterped = false(length(locations.isAnalyzed),1); end
 
 % initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
 for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'
@@ -160,8 +161,13 @@ function updateFrame(frameStep)
     frameUpdating = false;
     
     % update circles to locationsRaw
-    set(scatterRaw, 'XData', locations.locationsRaw(frameInds(currentFrameInd),1,:), ...
-        'YData', locations.locationsRaw((frameInds(currentFrameInd)),2,:), 'visible', 'on');
+    frameLocations = locations.locationsRaw(frameInds(currentFrameInd),:,:);
+    frameLocationsCorrected = locations.locationsCorrected(frameInds(currentFrameInd),:,:);
+    correctedBins = ~isnan(frameLocationsCorrected);
+    frameLocations(correctedBins) = frameLocationsCorrected(correctedBins);
+    frameLocations = squeeze(frameLocations);
+    
+    set(scatterRaw, 'XData', frameLocations(1,:), 'YData', frameLocations(2,:), 'visible', 'on');
     
     % pause to reflcet on the little things...
     pause(vidDelay);
