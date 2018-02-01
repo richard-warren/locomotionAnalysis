@@ -3,12 +3,13 @@ function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchor
 
 % settings
 circSize = 200;
-vidSizeScaling = 1.5;
+vidSizeScaling = 1.25;
 colors = hsv(4);
 maxCorrectionInterpolation = 100; % max number of frames that can be interpolated between locationCorrections
 
 
 % initializations
+pawPair = [4 3];
 playing = true;
 paused = false;
 frameUpdating = true;
@@ -23,7 +24,6 @@ w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
 if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
 if ~isfield(locations, 'locationsCorrected'); locations.locationsCorrected = nan(size(locations.locationsRaw)); end
 if ~isfield(locations, 'isCorrected'); locations.isCorrected = false(length(locations.isAnalyzed),1); end
-if ~isfield(locations, 'isInterped'); locations.isInterped = false(length(locations.isAnalyzed),1); end
 
 % initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
 for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'
@@ -89,7 +89,6 @@ function changeFrames(~,~)
     key = double(get(fig, 'currentcharacter'));
     
     switch key
-%     if ~isempty(key) && isnumeric(key)
         
         % LEFT: move frame backward
         case 28
@@ -149,7 +148,31 @@ function changeFrames(~,~)
 
                 % recorrect and interpolate the trial for lastCorrectedPaw
                 mergeCorrectionsAndInterpolate(interpolatedTrials(1), lastCorrectedPaw)
+                
+                % rewind to first interpolated frame
+                for j = 1 : ((frameInds(currentFrameInd) - lastTwoCorrectedInds(1)) + 5)
+                    updateFrame(-1)
+                    pause(vidDelay)
+                end
             end
+            
+        % 'p': user enters the paw pair to be swapped
+        case 112
+            pause(.001);
+            paused = true;
+            input = inputdlg('enter paw pair number');
+            pawPair(1) = str2num(input{1}(1));
+            pawPair(2) = str2num(input{1}(2));
+            
+        % open bracket: flip pawPair
+        case 91
+            pause(.001);
+            paused = true;
+            locations.locationCorrections(frameInds(currentFrameInd),:,pawPair) = ...
+                locations.locationsCorrected(frameInds(currentFrameInd), :, fliplr(pawPair));
+            mergeCorrectionsAndInterpolate(locations.trialIdentities(frameInds(currentFrameInd)), pawPair);
+            updateFrame(0);
+            
         
         % SPACEBAR: pause playback
         case 32
@@ -163,8 +186,8 @@ end
 function updateFrame(frameStep)
     
     currentFrameInd = currentFrameInd + frameStep;
-    if currentFrameInd > length(frameInds); currentFrameInd = 1;
-    elseif currentFrameInd < 1; currentFrameInd = length(frameInds); end
+    if currentFrameInd > length(frameInds); currentFrameInd = length(frameInds);
+    elseif currentFrameInd < 1; currentFrameInd = 1; end
     
     % record that this frame has been corrected (somebody looked at it and verified it was correct or corrected it manually)
     locations.isCorrected(frameInds(currentFrameInd)) = true;
@@ -249,6 +272,7 @@ function addCorrection(paw)
         locations.locationCorrections(frameInds(currentFrameInd), :, paw) = getPosition(impoints{paw});
         mergeCorrectionsAndInterpolate(trial, paw);
         lastCorrectedPaw = paw;
+        updateFrame(0);
     end
 end
     

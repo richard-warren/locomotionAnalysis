@@ -87,26 +87,26 @@ for i = frameInds(1:end)
     
     
     % if paws on same side (left or right) or both in the middle of frame, make sure the forepaw has the more medial label!
-    for j = 1:length(pawPairs) % left paws (hind, fore), right paws (hind, fore)
-        
-        if ~any(isnan(labels(i, pawPairs{j}))) % if both paws on the side have labels
-        
-            xHind = potentialLocationsBot(i).x(labels(i, pawPairs{j}(1)));
-            xFore = potentialLocationsBot(i).x(labels(i, pawPairs{j}(2)));
-
-            if abs(xHind - xFore) < pawCheckXProximity % if paws are very close to eachother
-                
-                yHind = potentialLocationsBot(i).y(labels(i, pawPairs{j}(1)));
-                yFore = potentialLocationsBot(i).y(labels(i, pawPairs{j}(2)));
-
-                if (abs(yFore-yMid) - abs(yHind-yMid)) > pawCheckYDistance % if the y locations are separated by at least pawCheckYDistance pixels
-                    labels(i, pawPairs{j}) = labels(i, fliplr(pawPairs{j}));
-                    pawSwaps = pawSwaps + 1;
-%                     fprintf('paw swap #%i\n', pawSwaps)
-                end
-            end
-        end
-    end
+%     for j = 1:length(pawPairs) % left paws (hind, fore), right paws (hind, fore)
+%         
+%         if ~any(isnan(labels(i, pawPairs{j}))) % if both paws on the side have labels
+%         
+%             xHind = potentialLocationsBot(i).x(labels(i, pawPairs{j}(1)));
+%             xFore = potentialLocationsBot(i).x(labels(i, pawPairs{j}(2)));
+% 
+%             if abs(xHind - xFore) < pawCheckXProximity % if paws are very close to eachother
+%                 
+%                 yHind = potentialLocationsBot(i).y(labels(i, pawPairs{j}(1)));
+%                 yFore = potentialLocationsBot(i).y(labels(i, pawPairs{j}(2)));
+% 
+%                 if (abs(yFore-yMid) - abs(yHind-yMid)) > pawCheckYDistance % if the y locations are separated by at least pawCheckYDistance pixels
+%                     labels(i, pawPairs{j}) = labels(i, fliplr(pawPairs{j}));
+%                     pawSwaps = pawSwaps + 1;
+% %                     fprintf('paw swap #%i\n', pawSwaps)
+%                 end
+%             end
+%         end
+%     end
     
     
     % only keep labeled locations
