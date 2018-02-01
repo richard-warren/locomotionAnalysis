@@ -25,7 +25,7 @@ session = '180122_001';
 view = 'Bot';
 frameDelay = .03;
 
-outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'];
+outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view 'Corrected.mat'];
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'], 'locations')
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4']);
 frameInds = find(locations.isAnalyzed);

@@ -39,15 +39,16 @@ if any(strcmp('bot', views))
     
     % get bot potential locations
     scoreThresh = 0;
-    showTracking = 0;
+    showTracking = 1;
+    
 
     % svm1
     load([getenv('OBSDATADIR') 'tracking\classifiers\pawBot1'], 'model', 'subFrameSize');
     model1 = model; clear model; subFrameSize1 = subFrameSize; clear subFrameSize;
-    load([getenv('OBSDATADIR') 'tracking\classifiers\pawBot2AlexNet.mat'], 'convNetwork', 'subFrameSize');
+    load([getenv('OBSDATADIR') 'tracking\classifiers\pawBot2AlexNet (fore vs hind).mat'], 'convNetwork', 'subFrameSize');
     model2 = convNetwork; clear convNetwork; subFrameSize2 = subFrameSize; clear subFrameSize;
     classNum = model2.Layers(end).OutputSize - 1; % not including NOT PAW class
-
+    
     tic;
     potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, classNum, ...
         subFrameSize1, subFrameSize2, scoreThresh, obsPixPositions, frameInds, trialIdentities, showTracking);
