@@ -19,18 +19,22 @@ end
 
 %% test getLocations on single session
 
-session = '180122_002';
-steps = {'potBot', 'bot'};
+session = '180122_001';
+steps = {'bot'};
 minVel = .6;
 getLocations(session, steps, minVel, false);
 
-% show tracking for session
+%% show tracking for session
+
+session = '180122_001';
+
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'])
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'])
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
+locationsFixed = fixTracking(locations);
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
 showLocations(vidBot, find(locations.isAnalyzed), ...
-        potentialLocationsBot, locations.locationsRaw, 1, .02, anchorPtsBot, hsv(4));
+        potentialLocationsBot, locationsFixed.locationsRaw, 1, .02, anchorPtsBot, hsv(4));
 
 %% correct tracking
 

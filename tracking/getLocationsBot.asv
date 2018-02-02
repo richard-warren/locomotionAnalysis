@@ -5,7 +5,7 @@ function locations = getLocationsBot(potentialLocationsBot, anchorPts, frameTime
 
 % settings
 objectNum = 4;
-maxDistanceX = .7;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
+maxDistanceX = .65;    % x coordinates can only be this far away from the x anchor points (expressed as percentage of frame width)
 maxDistanceY = .65;
 maxVel = 30 / .004;    % pixels / sec
 pawCheckXProximity = 40; % if x locations of paws are within this value of one another, ensure forepaw is more medial than hind paw
@@ -73,15 +73,13 @@ for i = frameInds(1:end)
     scores = unaryWeight.*unaries + pairwiseWeight.*pairwise;% + scoreWeight.*svmScores;
     
     % only allow paws to be assigned to potential locations assigned to paws' class
+    keyboard
     invalidBins = repmat(potentialLocationsBot(i).class', 4, 1) ~= repmat(classes', 1, length(potentialLocationsBot(i).class));
-    
+    invalidBins([1,4], :) = repmat(potentialLocationsBot(i).x' < maxDistanceX*frameWid, 2, 1);
+    invalidBins([2,3], :) = repmat(potentialLocationsBot(i).x' < maxDistanceX*frameWid, 2, 1);
+    invalidBins
+    keyboard
     % allow paws to violate class restriction if they are out of x range of other class
-    % (in other words, if potential location is too far from back of frame to be labeled hind paw, no longer require that the location is
-    % classified by network as forepaw, because this is the only possibility)
-    areHindsFarBack = potentialLocationsBot(i).x' < (1-maxDistanceX)*frameWid;
-    areForesFarForward = potentialLocationsBot(i).x' > maxDistanceX*frameWid;
-    invalidBins([1,4], areHindsFarBack) = 0;
-    invalidBins([2,3], areForesFarForward) = 0;
     scores(invalidBins) = 0;
     
     

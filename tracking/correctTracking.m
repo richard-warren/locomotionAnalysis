@@ -258,7 +258,7 @@ function mergeCorrectionsAndInterpolate(trial, paws)
             if ~isempty(correctedInds); trialLocations(correctedInds) = trialCorrections(correctedInds); end
             
             % fill in missing values and store in locationsCorrected field
-            trialLocations = fillmissing(trialLocations, 'linear', 'endvalues', 'extrap');
+            trialLocations = fillmissing(trialLocations, 'spline', 'endvalues', 'extrap');
             locations.locationsCorrected(trialInds, dimension, paw) = trialLocations;
         end
     end
