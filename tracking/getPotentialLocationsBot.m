@@ -164,6 +164,8 @@ for i = frameInds
     end
     
     classes = uint8(classify(model2, frameFeatures, 'ExecutionEnvironment', 'gpu'));
+    classProbs = predict(model2, frameFeatures);
+    % !!!
 
 
 
@@ -187,6 +189,7 @@ for i = frameInds
     potentialLocationsBot(i).y = y(pawBins);
     potentialLocationsBot(i).scores = scores(pawBins);
     potentialLocationsBot(i).class = classes(pawBins);
+    potentialLocationsBot(i).classPredictions = classProbs;
     
     
     if showTracking

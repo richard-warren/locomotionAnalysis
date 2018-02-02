@@ -34,13 +34,14 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 wheelPoints = getWheelPoints(vidTop);
 
 
-% get bot potential locations
+% bot tracking
 if any(strcmp('potBot', steps))
     
-    % settings
+    % get bot potential locations
     scoreThresh = 0;
-    showTracking = 0;
+    showTracking = 1;
     
+
     % svm1
     load([getenv('OBSDATADIR') 'tracking\classifiers\pawBot1'], 'model', 'subFrameSize');
     model1 = model; clear model; subFrameSize1 = subFrameSize; clear subFrameSize;
@@ -48,33 +49,26 @@ if any(strcmp('potBot', steps))
     model2 = convNetwork; clear convNetwork; subFrameSize2 = subFrameSize; clear subFrameSize;
     classNum = model2.Layers(end).OutputSize - 1; % not including NOT PAW class
     
-    % find paws
-    tic; potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, classNum, ...
+    tic;
+    potentialLocationsBot = getPotentialLocationsBot(vidBot, model1, model2, classNum, ...
         subFrameSize1, subFrameSize2, scoreThresh, obsPixPositions, frameInds, trialIdentities, showTracking);
 
-    % save results
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\velocityInfo.mat'], 'trialVels', 'minVel', 'velPositions');
     fprintf('%s: potentialLocationsBot analyzed in %.1f minutes\n', session, (toc/60))
-end
-
-if any(strcmp('bot', steps))
+    
+    
     
     % get bot locations
     showPotentialLocations = 1;
-    
+
     % initializations
-    if ~exist('potentialLocationsBot', 'var') % load potentialLocations if it was not already computed above
-        load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'])
-    end
-    
+    % vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 
     locations = getLocationsBot(potentialLocationsBot, anchorPtsBot, frameTimeStamps, vidBot.Width, vidBot.Height);
+%     showLocations(vidBot, frameInds, potentialLocationsBot, fixTracking(locationsBot), showPotentialLocations, .02, anchorPtsBot, colors);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locations');
     fprintf('%s: locationsBot analyzed\n', session)
-    
-%     showLocations(vidBot, locations.isAnalyzed, ...
-%         potentialLocationsBot, find(locations.locationsRaw), showPotentialLocations, .02, anchorPtsBot, colors);
 end
 
 
