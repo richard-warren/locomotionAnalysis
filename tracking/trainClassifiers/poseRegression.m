@@ -4,13 +4,9 @@
 trainTestValPortions = [.6 .2 .2];
 imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
 
-
 % initializations
-% imgs = imageDatastore([imgDir 'imgs'],...
-%     'IncludeSubfolders', true, 'FileExtensions', '.tif');
-% [trainImages, testImages, valImages] = splitEachLabel(imgs, ...
-%     trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
 load([imgDir 'pawLocations.mat'], 'features', 'locations')
+
 %%
 
 net = alexnet; % load alexNet
@@ -41,7 +37,7 @@ options = trainingOptions('sgdm',...
     'Plots', 'training-progress');
 
 % train!
-convNetwork = trainNetwork(features, locations, layers, options);
+convNetwork = trainNetwork(features, layers, options);
 save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNetwork')
 
 % classify

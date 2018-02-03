@@ -48,7 +48,7 @@ locations = reshape(locations, totalEgs, 8);
 
 % initialize features table
 imgNames = cell(totalEgs,1);
-for i = 1:totalEgs; imgNames{i} = [writeDir '\imgs\img' num2str(i)]; end
+for i = 1:totalEgs; imgNames{i} = [writeDir 'imgs\img' num2str(i) '.tif']; end
 x1 = nan(totalEgs,1); y1 = nan(totalEgs,1);
 x2 = nan(totalEgs,1); y2 = nan(totalEgs,1);
 x3 = nan(totalEgs,1); y3 = nan(totalEgs,1);
