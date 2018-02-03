@@ -23,7 +23,7 @@ layers = [layersTransfer
           regressionLayer];
 
 % set training parameters
-miniBatchSize = 10;
+miniBatchSize = 64;
 numIterationsPerEpoch = floor(size(locations,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
@@ -33,7 +33,7 @@ options = trainingOptions('sgdm',...
     'Plots', 'training-progress');
 
 % train!
-convNetwork = trainNetwork(trainImages, locations, layers, options);
+convNetwork = trainNetwork(features, locations, layers, options);
 save([getenv('OBSDATADIR') 'tracking\classifiers\' class 'PoseRegressor.mat'], 'convNetwork', 'subFrameSize')
 
 % classify

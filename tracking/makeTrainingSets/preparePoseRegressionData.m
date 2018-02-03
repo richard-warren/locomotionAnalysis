@@ -26,7 +26,7 @@ for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\locationsBotCorrected.mat'], 'locations');
     
     % remove nan entries
-    frameInds = find(locations.isAnalyzed)';
+    frameInds = find(~isnan(sum(squeeze(locations.locationsCorrected(:,1,:)),2)))'; % only keep locations where all paws have a non-nan entry
     locations = locations.locationsCorrected(frameInds,:,:);
     
     % store
