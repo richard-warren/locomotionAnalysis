@@ -1,4 +1,4 @@
-function showLocations(vid, frameInds, potentialLocations, locations,...
+function showLocations(vid, frameInds, potentialLocations, locations, trialIdentities, ...
     showPotentialLocations, vidDelay, anchorPts, cmap, lineLocations)
     
 % settings
@@ -118,16 +118,15 @@ function updateFrame(frameStep)
     
     
     % add frame number
-    frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(frameInds(currentFrame)),...
-                               'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+    frame = insertText(frame, [size(frame,2) size(frame,1)], ...
+        sprintf('trial %i, frame %i', trialIdentities(frameInds(currentFrame)), frameInds(currentFrame)),...
+        'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
     set(rawIm, 'CData', frame);
 
-    try
     set(scatterLocations, 'XData', locations(frameInds(currentFrame),1,:), ...
         'YData', locations((frameInds(currentFrame)),2,:), 'visible', 'on');
-    catch; keyboard; end
 
     if showPotentialLocations
         set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).(dim2));

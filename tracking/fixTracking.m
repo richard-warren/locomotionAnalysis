@@ -1,4 +1,4 @@
-function locationsFixed = fixTracking(locations)
+function locationsFixed = fixTracking(locations, trialIdentities)
 
 % !!! need to document // this is just post-processing for raw tracking values // interpolates short epochs of missing values and smooths! omg!
 
@@ -6,18 +6,18 @@ function locationsFixed = fixTracking(locations)
 interpMethod = 'spline';
 
 % initializations
-trials = unique(locations.trialIdentities(~isnan(locations.trialIdentities)));
+trials = unique(trialIdentities(~isnan(trialIdentities)));
 locationsFixed = locations;
 
 
 for i = trials'
     
-    trialInds = find(locationsFixed.trialIdentities==i);
+    trialInds = find(trialIdentities==i);
     
     for dimension = 1:2
         for paw = 1:4
-            locationsFixed.locationsRaw(trialInds, dimension, paw) = ...
-                fillmissing(locationsFixed.locationsRaw(trialInds, dimension, paw), interpMethod, 'endvalues', 'none');
+            locationsFixed(trialInds, dimension, paw) = ...
+                fillmissing(locationsFixed(trialInds, dimension, paw), interpMethod, 'endvalues', 'none');
         end
     end
 end
