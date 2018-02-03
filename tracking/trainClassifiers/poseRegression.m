@@ -16,14 +16,21 @@ load([imgDir 'pawLocations.mat'], 'features', 'locations')
 net = alexnet; % load alexNet
 
 % get alexNet conv layers, and add new fully connected layers
-layersTransfer = net.Layers(1:end-3);
+layersTransfer = net.Layers(1:16);
 numOutputs = size(locations,2);
 layers = [layersTransfer
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          reluLayer
+          dropoutLayer(.5)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          reluLayer
+          dropoutLayer(.5)
           fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
           regressionLayer];
 
+
 % set training parameters
-miniBatchSize = 64;
+miniBatchSize = 32;
 numIterationsPerEpoch = floor(size(locations,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
@@ -34,7 +41,7 @@ options = trainingOptions('sgdm',...
 
 % train!
 convNetwork = trainNetwork(features, locations, layers, options);
-save([getenv('OBSDATADIR') 'tracking\classifiers\' class 'PoseRegressor.mat'], 'convNetwork', 'subFrameSize')
+save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNetwork')
 
 % classify
 predictedLabels = classify(convNetwork, testImages);
