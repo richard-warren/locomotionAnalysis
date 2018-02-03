@@ -1,47 +1,87 @@
 
 
 % settings
-trainTestValPortions = [.6 .2 .2];
+trainPortion = .9;
 imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
 
 % initializations
-load([imgDir 'pawLocations.mat'], 'features', 'locations')
+originalImSize = [230 396];
+load([imgDir 'pawLocations.mat'], 'features')
+m = height(features);
+allInds = randperm(m);
+trainData = features(allInds(1:floor(m*trainPortion)),:);
+valData = features(allInds(floor(m*trainPortion)+1:end),:);
 
 %%
 
 net = alexnet; % load alexNet
 
 % get alexNet conv layers, and add new fully connected layers
-layersTransfer = net.Layers(1:16);
-numOutputs = size(locations,2);
-learningRateFactor = 10;
+% layersTransfer = net.Layers(1:16);
+% numOutputs = size(locations,2);
+% learningRateFactor = 10;
+% layers = [layersTransfer
+%           fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
+%           reluLayer
+%           dropoutLayer(.5)
+%           fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
+%           reluLayer
+%           dropoutLayer(.5)
+%           fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
+%           regressionLayer];
+
+layersTransfer = net.Layers(1:end-3);
+numOutputs = size(trainData,2)-1;
+learningRateFactor = 20;
 layers = [layersTransfer
-          fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
-          reluLayer
-          dropoutLayer(.5)
-          fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
-          reluLayer
-          dropoutLayer(.5)
           fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
           regressionLayer];
 
 
 % set training parameters
-miniBatchSize = 32;
-numIterationsPerEpoch = floor(size(locations,1)/miniBatchSize);
+miniBatchSize = 16;
+numIterationsPerEpoch = floor(size(trainData,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
     'MaxEpochs', 4,...
     'InitialLearnRate', 1e-4,...
     'Verbose', true,...
-    'Plots', 'training-progress');
+    'Plots', 'training-progress', ...
+    'ValidationData', valData,...
+    'ValidationFrequency', numIterationsPerEpoch);
 
 % train!
-convNetwork = trainNetwork(features, layers, options);
+convNetwork = trainNetwork(trainData, layers, options);
 save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNetwork')
 
 % classify
-predictedLabels = classify(convNetwork, testImages);
+predictedLabels = predict(convNetwork, testImages);
 fprintf('test accuracy: %f\n', mean(predictedLabels == testImages.Labels));
+
+%% test on image
+
+for imNum = randperm(height(features), 10)
+
+    % get image and make predictions!
+    img = imread(['C:\Users\rick\Desktop\trainingExamples\poseRegression\imgs\img' num2str(imNum) '.tif']);
+    predictedLocations = predict(convNetwork, img);
+    imgResized = imresize(img, 'outputSize', originalImSize);
+
+    % show results
+    close all; figure('position', [1286 66 570 323]);
+    imshow(imgResized);
+
+    hold on; scatter(predictedLocations([1 3 5 7])*originalImSize(2), predictedLocations([2 4 6 8])*originalImSize(1))
+    pause(1)
+end
+
+
+
+
+
+
+
+
+
 
 

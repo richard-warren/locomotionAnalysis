@@ -42,18 +42,9 @@ end
 locationInds = randperm(size(locationsAll,1), totalEgs);
 locationInds = sort(locationInds);
 
-% restructure locations into feature matrix
+% restructure locations into feature matrix, and normalize range
 locations = locationsAll(locationInds,:,:);
 locations = reshape(locations, totalEgs, 8);
-
-% initialize features table
-imgNames = cell(totalEgs,1);
-for i = 1:totalEgs; imgNames{i} = [writeDir 'imgs\img' num2str(i) '.tif']; end
-x1 = nan(totalEgs,1); y1 = nan(totalEgs,1);
-x2 = nan(totalEgs,1); y2 = nan(totalEgs,1);
-x3 = nan(totalEgs,1); y3 = nan(totalEgs,1);
-x4 = nan(totalEgs,1); y4 = nan(totalEgs,1);
-features = table(imgNames, x1,y1,x2,y2,x3,y3,x4,y4);
 
 
 for i = locationInds
@@ -82,20 +73,29 @@ for i = locationInds
     img = repmat(img, 1, 1, 3);
     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
     
-%     features(:,:,:,imgInd) = img;
-    
     % report progress
     disp(imgInd/totalEgs)
     imgInd = imgInd +  1;
 end
 
 % store data in features table
+imgNames = cell(totalEgs,1);
+for i = 1:totalEgs; imgNames{i} = [writeDir 'imgs\img' num2str(i) '.tif']; end
+x1 = nan(totalEgs,1); y1 = nan(totalEgs,1);
+x2 = nan(totalEgs,1); y2 = nan(totalEgs,1);
+x3 = nan(totalEgs,1); y3 = nan(totalEgs,1);
+x4 = nan(totalEgs,1); y4 = nan(totalEgs,1);
+features = table(imgNames, x1,y1,x2,y2,x3,y3,x4,y4);
+
+% normalize feature range
+locations(:,[1 3 5 7]) = locations(:,[1 3 5 7]) / size(frame,2);
+locations(:,[2 4 6 8]) = locations(:,[2 4 6 8]) / size(frame,1);
 for i = 1:8; features(:,i+1) = mat2cell(locations(:,i), ones(1,totalEgs), 1); end
 
-% save results
-save([writeDir 'pawLocations.mat'], 'features', 'locations')
-csvwrite([writeDir 'locations.csv'], locations)
 
+% save results
+save([writeDir 'pawLocations.mat'], 'features', 'locations', 'sessions', 'sessionFrameInds', 'sessionInds')
+csvwrite([writeDir 'locations.csv'], locations)
 
 
 

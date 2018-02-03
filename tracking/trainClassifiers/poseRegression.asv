@@ -1,44 +1,75 @@
 
 
 % settings
-trainTestValPortions = [.6 .2 .2];
+trainPortion = .9;
 imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
 
-
 % initializations
-% imgs = imageDatastore([imgDir 'imgs'],...
-%     'IncludeSubfolders', true, 'FileExtensions', '.tif');
-% [trainImages, testImages, valImages] = splitEachLabel(imgs, ...
-%     trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
 load([imgDir 'pawLocations.mat'], 'features', 'locations')
+m = height(features);
+allInds = randperm(m);
+trainData = features(allInds(1:floor(m*trainPortion)),:);
+valData = features(allInds(ceil(m*trainPortion):end),:);
+
 %%
 
 net = alexnet; % load alexNet
 
 % get alexNet conv layers, and add new fully connected layers
-layersTransfer = net.Layers(1:end-3);
-retrainLayers = 
+layersTransfer = net.Layers(1:16);
 numOutputs = size(locations,2);
+learningRateFactor = 10;
 layers = [layersTransfer
-          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
+          reluLayer
+          dropoutLayer(.5)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
+          reluLayer
+          dropoutLayer(.5)
+          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
           regressionLayer];
 
+
 % set training parameters
-miniBatchSize = 32;
+miniBatchSize = 10;
 numIterationsPerEpoch = floor(size(locations,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
     'MaxEpochs', 4,...
     'InitialLearnRate', 1e-4,...
-    'Verbose', false,...
+    'Verbose', true,...
     'Plots', 'training-progress');
 
 % train!
-convNetwork = trainNetwork(features, locations, layers, options);
+convNetwork = trainNetwork(features, layers, options);
 save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNetwork')
 
 % classify
-predictedLabels = classify(convNetwork, testImages);
+predictedLabels = predict(convNetwork, testImages);
 fprintf('test accuracy: %f\n', mean(predictedLabels == testImages.Labels));
+
+%% test on image
+
+% settings
+imNum = 150;
+
+% get image and make predictions!
+img = imread(['C:\Users\rick\Desktop\trainingExamples\poseRegression\imgs\img' num2str(imNum) '.tif']);
+img = imresize(img, 'outputSize', [230 396]);
+predictedLocations = predict(convNetwork, img);
+
+% show results
+close all; figure;
+imshow(img)
+
+
+
+
+
+
+
+
+
+
 
 
