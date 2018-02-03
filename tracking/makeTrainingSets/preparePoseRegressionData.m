@@ -13,8 +13,8 @@ if ~exist(writeDir, 'dir'); mkdir(writeDir); end
 if ~exist([writeDir '\imgs'], 'dir'); mkdir([writeDir '\imgs']); end
 lastSessionInd = 0;
 imgInd = 1;
-% features = nan(targetSize(1), targetSize(2), 3, totalEgs);
-features = table({'img', 'x1','y1','x2','y2','x3','y3','x4','y4'});
+
+
 
 % concatinate all labeled data sets
 sessionInds = []; % stores the session identity for each saved location
@@ -46,6 +46,16 @@ locationInds = sort(locationInds);
 locations = locationsAll(locationInds,:,:);
 locations = reshape(locations, totalEgs, 8);
 
+% initialize features table
+imgNames = cell(totalEgs,1);
+for i = 1:totalEgs; imgNames{i} = [writeDir '\imgs\img' num2str(i)]; end
+x1 = nan(totalEgs,1); y1 = nan(totalEgs,1);
+x2 = nan(totalEgs,1); y2 = nan(totalEgs,1);
+x3 = nan(totalEgs,1); y3 = nan(totalEgs,1);
+x4 = nan(totalEgs,1); y4 = nan(totalEgs,1);
+features = table(imgNames, x1,y1,x2,y2,x3,y3,x4,y4);
+
+
 for i = locationInds
     
     % load new video if you have reached the next session
@@ -67,6 +77,7 @@ for i = locationInds
     end
     
     % save image
+%     imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
     img = uint8(imresize(frame, 'outputsize', targetSize));
     img = repmat(img, 1, 1, 3);
     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
@@ -78,7 +89,15 @@ for i = locationInds
     imgInd = imgInd +  1;
 end
 
+% store data in features table
+for i = 1:8; features(:,i+1) = mat2cell(locations(:,i), ones(1,totalEgs), 1); end
+
+% save results
 save([writeDir 'pawLocations.mat'], 'features', 'locations')
+csvwrite([writeDir 'locations.csv'], locations)
+
+
+
 
 
 % % sanity check pltting to see ifthings worked correctly

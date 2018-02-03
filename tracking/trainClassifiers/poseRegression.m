@@ -20,13 +20,13 @@ layersTransfer = net.Layers(1:16);
 numOutputs = size(locations,2);
 learningRateFactor = 10;
 layers = [layersTransfer
-          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', learningRateFactor)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
           reluLayer
           dropoutLayer(.5)
-          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', learningRateFactor)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
           reluLayer
           dropoutLayer(.5)
-          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', learningRateFactor)
+          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
           regressionLayer];
 
 
