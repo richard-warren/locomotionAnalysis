@@ -6,33 +6,31 @@ imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
 
 
 % initializations
-imgs = imageDatastore([imgDir 'imgs'],...
-    'IncludeSubfolders', true, 'FileExtensions', '.tif');
-[trainImages, testImages, valImages] = splitEachLabel(imgs, ...
-    trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
-load([imgDir 'pawLocations.mat'], 'locations')
+% imgs = imageDatastore([imgDir 'imgs'],...
+%     'IncludeSubfolders', true, 'FileExtensions', '.tif');
+% [trainImages, testImages, valImages] = splitEachLabel(imgs, ...
+%     trainTestValPortions(1), trainTestValPortions(2), trainTestValPortions(3), 'randomized');
+load([imgDir 'pawLocations.mat'], 'features', 'locations')
 %%
 
 net = alexnet; % load alexNet
 
 % get alexNet conv layers, and add new fully connected layers
 layersTransfer = net.Layers(1:end-3);
-numClasses = numel(categories(trainImages.Labels));
+numOutputs = size(locations,2);
 layers = [layersTransfer
-          fullyConnectedLayer(numClasses, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
           regressionLayer];
 
 % set training parameters
 miniBatchSize = 10;
-numIterationsPerEpoch = floor(numel(trainImages.Labels)/miniBatchSize);
+numIterationsPerEpoch = floor(size(locations,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
     'MaxEpochs', 4,...
     'InitialLearnRate', 1e-4,...
     'Verbose', false,...
-    'Plots', 'training-progress',...
-    'ValidationData', valImages,...
-    'ValidationFrequency', numIterationsPerEpoch);
+    'Plots', 'training-progress');
 
 % train!
 convNetwork = trainNetwork(trainImages, locations, layers, options);
