@@ -51,7 +51,7 @@ lastSessionInd = 0;
 featureLength = length(getSubFrameFeatures(zeros(subFrameSize), [0 0], featureSetting));
 
 
-% !!! randomly select indices from entire batch
+% randomly select indices from entire batch
 
 % iterate through frames of all examples (locations)
 posEgsPerFrame = size(locations,3) * (1 + flipBot + jitterNum);
