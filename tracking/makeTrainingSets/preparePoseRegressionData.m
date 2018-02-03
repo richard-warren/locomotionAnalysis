@@ -13,7 +13,7 @@ if ~exist(writeDir, 'dir'); mkdir(writeDir); end
 if ~exist([writeDir '\imgs'], 'dir'); mkdir([writeDir '\imgs']); end
 lastSessionInd = 0;
 imgInd = 1;
-
+features = nan(targetSize(1), targetSize(2), 3, totalEgs);
 
 % concatinate all labeled data sets
 sessionInds = []; % stores the session identity for each saved location
@@ -69,11 +69,15 @@ for i = locationInds
     img = uint8(imresize(frame, 'outputsize', targetSize));
     img = repmat(img, 1, 1, 3);
     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
+    
+    features(:,:,:,imgInd) = img;
+    
+    % report progress
     disp(imgInd/totalEgs)
     imgInd = imgInd +  1;
 end
 
-save([writeDir 'pawLocations.mat'], 'locations')
+save([writeDir 'pawLocations.mat'], 'features', 'locations')
 
 
 % % sanity check pltting to see ifthings worked correctly
