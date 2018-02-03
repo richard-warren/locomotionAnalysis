@@ -18,14 +18,15 @@ net = alexnet; % load alexNet
 % get alexNet conv layers, and add new fully connected layers
 layersTransfer = net.Layers(1:16);
 numOutputs = size(locations,2);
+learningRateFactor = 10;
 layers = [layersTransfer
-          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', learningRateFactor)
           reluLayer
           dropoutLayer(.5)
-          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          fullyConnectedLayer(4096, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', learningRateFactor)
           reluLayer
           dropoutLayer(.5)
-          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', 20)
+          fullyConnectedLayer(numOutputs, 'WeightLearnRateFactor', 20, 'BiasLearnRateFactor', learningRateFactor)
           regressionLayer];
 
 
@@ -36,7 +37,7 @@ options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
     'MaxEpochs', 4,...
     'InitialLearnRate', 1e-4,...
-    'Verbose', false,...
+    'Verbose', true,...
     'Plots', 'training-progress');
 
 % train!
