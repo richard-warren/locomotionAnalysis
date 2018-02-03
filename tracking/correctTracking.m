@@ -24,6 +24,7 @@ w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
 if ~isfield(locations, 'locationCorrections'); locations.locationCorrections = nan(size(locations.locationsRaw)); end
 if ~isfield(locations, 'locationsCorrected'); locations.locationsCorrected = nan(size(locations.locationsRaw)); end
 if ~isfield(locations, 'isCorrected'); locations.isCorrected = false(length(locations.isAnalyzed),1); end
+if ~isfield(locations, 'excludeTrial'); locations.isExcluded = false(length(locations.isAnalyzed),1); end
 
 % initialize corrected data (for every trial, replace x and y entries with non-nan entries in xCorrections and yCorrections // then interpolate on a trial by trial basis)
 for i = unique(locations.trialIdentities(~isnan(locations.trialIdentities)))'

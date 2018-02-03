@@ -2,8 +2,8 @@ function showLocations(vid, frameInds, potentialLocations, locations, trialIdent
     showPotentialLocations, vidDelay, anchorPts, cmap, lineLocations)
     
 % settings
-circSize = 200;
-vidSizeScaling = 1.5;
+circSize = 150;
+vidSizeScaling = 1.25;
 % lineMaskWid = 15;
 
 
@@ -39,7 +39,7 @@ if showPotentialLocations
     scatterPotentialLocations = scatter(rawAxis, 0, 0, 50, 'white', 'filled', 'linewidth', 2);
 end
 scatterLocations = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
-    circSizes, cmap, 'linewidth', 5); hold on
+    circSizes, cmap, 'linewidth', 3); hold on
 scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
                  [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
                  circSizes, cmap, 'filled', 'linewidth', 3);     % show anchor points
@@ -82,7 +82,6 @@ function changeFrames(~,~)
             updateFrame(1);
         
         elseif key==27                  % ESCAPE: close window
-%             disp(key)
             playing = false;
             paused = false;
         
