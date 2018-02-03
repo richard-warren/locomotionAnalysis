@@ -14,12 +14,16 @@ valData = features(allInds(floor(m*trainPortion)+1:end),:);
 
 %%
 
+% settings
+learningRateFactor = 5;
+miniBatchSize = 32;
+
 net = alexnet; % load alexNet
 
 % get alexNet conv layers, and add new fully connected layers
 layersTransfer = net.Layers(1:16);
 numOutputs = size(trainData,2)-1;
-learningRateFactor = 10;
+
 layers = [layersTransfer
           fullyConnectedLayer(4096, 'WeightLearnRateFactor', learningRateFactor, 'BiasLearnRateFactor', learningRateFactor)
           reluLayer
@@ -38,13 +42,13 @@ layers = [layersTransfer
 
 
 % set training parameters
-miniBatchSize = 64;
 numIterationsPerEpoch = floor(size(trainData,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
-    'MaxEpochs', 4,...
+    'MaxEpochs', 20,...
     'InitialLearnRate', 1e-5,... % was originally 1e-4
     'Verbose', true,...
+    'VerboseFrequency', 20,...
     'Plots', 'training-progress', ...
     'ValidationData', valData,...
     'ValidationFrequency', numIterationsPerEpoch);
