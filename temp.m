@@ -2,7 +2,7 @@
 % perform paw tracking for multiple sessions
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
-steps = {'bot'};
+steps = {'potBot', 'bot'};
 minVel = .4;
 
 for i = 1:length(sessionDirs)
@@ -18,11 +18,11 @@ for i = 1:length(sessionDirs)
 end
 
 %% test getLocations on single session
-
 session = '180122_000';
 steps = {'potTop'};
-minVel = .6;
-getLocations(session, steps, minVel, false);
+showTracking = false;
+minVel = .4; % minVel only applies to potentialLocationsBot analysis // subsequent stages analyze whatever has already been analyzed in potentialLocationsBot
+getLocations(session, steps, minVel, showTracking);
 
 %% show tracking for session
 
@@ -60,7 +60,7 @@ save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.
 %% correct tracking
 
 % settings
-session = '180122_002';
+session = '180122_003';
 view = 'Bot';
 frameDelay = .025;
 

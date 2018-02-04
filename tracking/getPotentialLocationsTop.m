@@ -6,15 +6,13 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
 
 % settings
 overlapThresh = .6;
-% yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
-% xMaskWidth = 40;
+xMaskWidth = 40;
 
 
 % initializations
-% xMaskHalfWidth = floor(xMaskWidth/2);
+xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
-% wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 cmap = hsv(classNum);
 frameInds = find(locationsBot.isAnalyzed)';
@@ -69,27 +67,28 @@ for i = frameInds
     
     frameFiltered(frameFiltered < scoreThresh) = scoreThresh;
     frameFiltered = frameFiltered - scoreThresh;
-%     frameFiltered(1:yMin,:) = 0;
-%     frameFiltered = frameFiltered .* wheelMask;
     
-     % mask x positions out of range
-%     xMask = double(zeros(size(frame)));
-%     
-%     for j = paws%1:4
-%         if ~isnan(locationsBot.x(i,j))
-%             
-%             % get mask indices for single paw
-%             inds = locationsBot.x(i,j)-xMaskHalfWidth : locationsBot.x(i,j)+xMaskHalfWidth;
-%             inds(inds<1) = 1;
-%             inds(inds>vid.Width) = vid.Width;
-%             
-%             % incorporate paw mask into mask
-%             xMask(:,inds) = 1;
-%         end
-%     end
-%     frameFiltered = frameFiltered .* xMask;
-%     
+    
+    % mask x positions out of range
+    xMask = double(zeros(size(frame)));
+    
+    for j = 1:4
+        if ~isnan(locationsBot.locationsCorrected(i,1,j))
+            
+            % get mask indices for single paw
+            inds = locationsBot.locationsCorrected(i,1,j)-xMaskHalfWidth : locationsBot.locationsCorrected(i,1,j)+xMaskHalfWidth;
+            inds = round(inds);
+            inds(inds<1) = 1;
+            inds(inds>vid.Width) = vid.Width;
+            
+            % incorporate paw mask into mask
+            xMask(:,inds) = 1;
+        end
+    end
+    frameFiltered = frameFiltered .* xMask;
+    
     [x, y, scores] = nonMaximumSupress(frameFiltered, subFrameSize1, overlapThresh);
+    
     
     if ~isempty(x)
         
@@ -128,7 +127,7 @@ for i = frameInds
         
         % update figure
         set(rawIm, 'CData', frame);
-%         set(maskIm, 'CData', frameMasked);
+        set(maskIm, 'CData', frame .* uint8(xMask));
         set(predictIm, 'CData', frameFiltered)
         set(scatterAll, 'XData', x, 'YData', y);
         

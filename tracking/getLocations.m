@@ -1,4 +1,4 @@
-function getLocations(session, steps, minVel, makeVid)
+function getLocations(session, steps, minVel, showTracking)
 
 % performs paw tracking for a single session!
 % if makeVid is true, it also automatically makes a video of the tracking
@@ -26,6 +26,7 @@ obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
 
 [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+% fprintf('%s: analyzing %i sessions', session, length(unique(trialIdentities(~isnan(trialIdentities)))));
 
 mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
 
@@ -39,7 +40,6 @@ if any(strcmp('potBot', steps))
     
     % settings
     scoreThresh = 0;
-    showTracking = 0;
     
     % svm1
     load([getenv('OBSDATADIR') 'tracking\classifiers\pawBot1'], 'model', 'subFrameSize');
@@ -75,8 +75,10 @@ if any(strcmp('bot', steps))
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locations');
     fprintf('%s: locationsBot analyzed\n', session)
     
-%     showLocations(vidBot, locations.isAnalyzed, ...
-%         potentialLocationsBot, find(locations.locationsRaw), showPotentialLocations, .02, anchorPtsBot, colors);
+    if showTracking
+        showLocations(vidBot, locations.isAnalyzed, ...
+            potentialLocationsBot, find(locations.locationsRaw), showPotentialLocations, .02, anchorPtsBot, colors);
+    end
 end
 
 
@@ -85,7 +87,6 @@ if any(strcmp('potTop', steps))
     
     % get potential locations for top (svm)
     scoreThresh = 0;
-    showTracking = 0;
 
     % initializations
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
@@ -121,14 +122,11 @@ if any(strcmp('top', steps))
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)
     
-    % showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
-    %     showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
+    if showTracking
+        showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
+            showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
+    end
 end
-
-
-% make tracking vid
-if makeVid; makeTrackingVid(session, frameInds); end
-
 
 
 
