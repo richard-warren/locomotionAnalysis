@@ -2,7 +2,7 @@
 
 % settings
 trainPortion = .9;
-imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\halfRes\';
+imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\lowRes\';
 
 % initializations
 originalImSize = [230 396];
@@ -64,29 +64,53 @@ save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNe
 %% train network from scratch
 
 % settings
-miniBatchSize = 32;
-
-
+miniBatchSize = 16;
 numOutputs = size(trainData,2)-1;
-layers = [imageInputLayer([117 198])
+
+% layers = [imageInputLayer([117 198])
+%     
+%     convolution2dLayer(5,32)
+%     reluLayer
+%     maxPooling2dLayer(2)
+% 
+%     convolution2dLayer(3,64)
+%     reluLayer
+%     maxPooling2dLayer(2)
+% 
+%     convolution2dLayer(3,128)
+%     reluLayer
+%     maxPooling2dLayer(2)
+%           
+%     fullyConnectedLayer(500)
+%     reluLayer
+%     dropoutLayer(.5)
+%     
+%     fullyConnectedLayer(500)
+%     reluLayer
+%     dropoutLayer(.5)
+%     
+%     fullyConnectedLayer(numOutputs)
+%     regressionLayer];
+
+layers = [imageInputLayer([59 99 1])
     
-    convolution2dLayer(5,32)
+    convolution2dLayer(3,32)
     reluLayer
     maxPooling2dLayer(2)
-
-    convolution2dLayer(3,64)
+    
+    convolution2dLayer(2,64)
     reluLayer
     maxPooling2dLayer(2)
-
-    convolution2dLayer(3,128)
+    
+    convolution2dLayer(2,128)
     reluLayer
     maxPooling2dLayer(2)
-          
-    fullyConnectedLayer(500)
+    
+    fullyConnectedLayer(100)
     reluLayer
     dropoutLayer(.5)
     
-    fullyConnectedLayer(500)
+    fullyConnectedLayer(100)
     reluLayer
     dropoutLayer(.5)
     
@@ -97,13 +121,17 @@ layers = [imageInputLayer([117 198])
 numIterationsPerEpoch = floor(size(trainData,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
-    'MaxEpochs', 20,...
-    'InitialLearnRate', 1e-4,... % was originally 1e-4
+    'MaxEpochs', 30,...
+    'InitialLearnRate', 1e-3,... % was originally 1e-4
+    'LearnRateSchedule', 'piecewise', ...
+    'LearnRateDropFactor', 0.1, ...
+    'LearnRateDropPeriod', 2, ... % epoches per drop
     'Verbose', true,...
-    'VerboseFrequency', 20,...
+    'VerboseFrequency', 50,...
     'Plots', 'training-progress', ...
     'ValidationData', valData,...
     'ValidationFrequency', numIterationsPerEpoch);
+
 
 % train!
 convNetwork = trainNetwork(trainData, layers, options);
