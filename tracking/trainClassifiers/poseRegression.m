@@ -2,7 +2,7 @@
 
 % settings
 trainPortion = .9;
-imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
+imgDir = 'C:\Users\LindseyBuckingham\Desktop\trainingExamples\poseRegression\';
 
 % initializations
 originalImSize = [230 396];
@@ -12,7 +12,7 @@ allInds = randperm(m);
 trainData = features(allInds(1:floor(m*trainPortion)),:);
 valData = features(allInds(floor(m*trainPortion)+1:end),:);
 
-%%
+%% retrain alexnet
 
 % settings
 learningRateFactor = 5;
@@ -60,6 +60,55 @@ save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNe
 % classify
 % predictedLabels = predict(convNetwork, testImages);
 % fprintf('test accuracy: %f\n', mean(predictedLabels == testImages.Labels));
+
+%% train network from scratch
+
+% settings
+miniBatchSize = 32;
+
+
+numOutputs = size(trainData,2)-1;
+layers = [imageInputLayer([198 117])
+    
+    convolution2dLayer(5,32)
+    reluLayer
+    maxPooling2dLayer(2)
+
+    convolution2dLayer(3,64)
+    reluLayer
+    maxPooling2dLayer(2)
+
+    convolution2dLayer(3,128)
+    reluLayer
+    maxPooling2dLayer(2)
+          
+    fullyConnectedLayer(500)
+    reluLayer
+    dropoutLayer(.5)
+    
+    fullyConnectedLayer(500)
+    reluLayer
+    dropoutLayer(.5)
+    
+    fullyConnectedLayer(numOutputs)
+    regressionLayer];
+
+% set training parameters
+numIterationsPerEpoch = floor(size(trainData,1)/miniBatchSize);
+options = trainingOptions('sgdm',...
+    'MiniBatchSize', miniBatchSize,...
+    'MaxEpochs', 20,...
+    'InitialLearnRate', 1e-4,... % was originally 1e-4
+    'Verbose', true,...
+    'VerboseFrequency', 20,...
+    'Plots', 'training-progress', ...
+    'ValidationData', valData,...
+    'ValidationFrequency', numIterationsPerEpoch);
+
+% train!
+convNetwork = trainNetwork(trainData, layers, options);
+save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressorCustom.mat'], 'convNetwork')
+
 
 %% test on image
 

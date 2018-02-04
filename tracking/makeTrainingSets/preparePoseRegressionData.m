@@ -5,8 +5,9 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
-targetSize = [227 227];
+writeDir = 'C:\Users\LindseyBuckingham\Desktop\trainingExamples\poseRegression\';
+fileType = '.tif';
+% targetSize = [227 227];
 
 % initializations
 if ~exist(writeDir, 'dir'); mkdir(writeDir); end
@@ -68,10 +69,15 @@ for i = locationInds
     end
     
     % save image
-%     imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
-    img = uint8(imresize(frame, 'outputsize', targetSize));
-    img = repmat(img, 1, 1, 3);
-    imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
+%     % (original size)
+% 	imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
+%     % (alexnet)
+%     img = uint8(imresize(frame, 'outputsize', targetSize));
+%     img = repmat(img, 1, 1, 3);
+%     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
+    % gray, half size
+    img = uint8(imresize(frame, 'outputsize', size(frame)*.5));
+    imwrite(img, [writeDir 'imgs\img' num2str(imgInd) fileType])
     
     % report progress
     disp(imgInd/totalEgs)
@@ -80,7 +86,7 @@ end
 
 % store data in features table
 imgNames = cell(totalEgs,1);
-for i = 1:totalEgs; imgNames{i} = [writeDir 'imgs\img' num2str(i) '.tif']; end
+for i = 1:totalEgs; imgNames{i} = [writeDir 'imgs\img' num2str(i) fileType]; end
 x1 = nan(totalEgs,1); y1 = nan(totalEgs,1);
 x2 = nan(totalEgs,1); y2 = nan(totalEgs,1);
 x3 = nan(totalEgs,1); y3 = nan(totalEgs,1);

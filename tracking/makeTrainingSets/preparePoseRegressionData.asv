@@ -5,8 +5,8 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\';
-targetSize = [227 227];
+writeDir = 'C:\Users\LindseyBuckingham\Desktop\trainingExamples\poseRegression\';
+% targetSize = [227 227];   
 
 % initializations
 if ~exist(writeDir, 'dir'); mkdir(writeDir); end
@@ -87,19 +87,15 @@ x3 = nan(totalEgs,1); y3 = nan(totalEgs,1);
 x4 = nan(totalEgs,1); y4 = nan(totalEgs,1);
 features = table(imgNames, x1,y1,x2,y2,x3,y3,x4,y4);
 
-% normalize features range
-features(:,[2 4 6 8]) = features(:,[2 4 6 8]) / size(frame,2);
-features(:,[3 5 7 9]) = features(:,[3 5 7 9]) / size(frame,1);
-
+% normalize feature range
+locations(:,[1 3 5 7]) = locations(:,[1 3 5 7]) / size(frame,2);
+locations(:,[2 4 6 8]) = locations(:,[2 4 6 8]) / size(frame,1);
 for i = 1:8; features(:,i+1) = mat2cell(locations(:,i), ones(1,totalEgs), 1); end
 
 
 % save results
-save([writeDir 'pawLocations.mat'], 'features', 'locations', 'sessions', 'sessionFrameInds', )
+save([writeDir 'pawLocations.mat'], 'features', 'locations', 'sessions', 'sessionFrameInds', 'sessionInds')
 csvwrite([writeDir 'locations.csv'], locations)
-
-keyboard
-
 
 
 
