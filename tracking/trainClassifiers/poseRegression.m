@@ -2,7 +2,7 @@
 
 % settings
 trainPortion = .9;
-imgDir = 'C:\Users\LindseyBuckingham\Desktop\trainingExamples\poseRegression\';
+imgDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\halfRes\';
 
 % initializations
 originalImSize = [230 396];
@@ -68,7 +68,7 @@ miniBatchSize = 32;
 
 
 numOutputs = size(trainData,2)-1;
-layers = [imageInputLayer([198 117])
+layers = [imageInputLayer([117 198])
     
     convolution2dLayer(5,32)
     reluLayer
@@ -107,7 +107,7 @@ options = trainingOptions('sgdm',...
 
 % train!
 convNetwork = trainNetwork(trainData, layers, options);
-save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressorCustom.mat'], 'convNetwork')
+% save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressorCustom.mat'], 'convNetwork')
 
 
 %% test on image

@@ -5,7 +5,7 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = 'C:\Users\LindseyBuckingham\Desktop\trainingExamples\poseRegression\';
+writeDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\halfRes\';
 fileType = '.tif';
 % targetSize = [227 227];
 
