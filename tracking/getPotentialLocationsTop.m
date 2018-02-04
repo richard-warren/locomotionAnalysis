@@ -5,15 +5,15 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
 
 
 % settings
-overlapThresh = .6;
-yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
-xMaskWidth = 40;
+% overlapThresh = .6;
+% yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
+% xMaskWidth = 40;
 
 
 % initializations
-xMaskHalfWidth = floor(xMaskWidth/2);
+% xMaskHalfWidth = floor(xMaskWidth/2);
 sampleFrame = rgb2gray(read(vid,1));
-totalFrames = vid.NumberOfFrames;
+% totalFrames = vid.NumberOfFrames;
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 % wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);

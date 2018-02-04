@@ -140,10 +140,12 @@ convNetwork = trainNetwork(trainData, layers, options);
 
 %% test on image
 
+% imNum = 1;
+
 for imNum = randperm(height(features), 10)
 
     % get image and make predictions!
-    img = imread(['C:\Users\rick\Desktop\trainingExamples\poseRegression\imgs\img' num2str(imNum) '.tif']);
+    img = imread(['C:\Users\rick\Desktop\trainingExamples\poseRegression\lowRes\imgs\img' num2str(imNum) '.tif']);
     predictedLocations = predict(convNetwork, img);
 %     imgResized = imresize(img, 'outputSize', originalImSize);
 

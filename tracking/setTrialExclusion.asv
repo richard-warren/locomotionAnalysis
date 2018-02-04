@@ -1,0 +1,19 @@
+function setTrialExclusion(session, trials, excludeTrials)
+
+% given a session, creates isExcluded.mat variable in tracking folder for session with one boolean entry per frame
+
+% temp
+session = '180122_001';
+trials = [107];
+excludeTrials = [1];
+
+load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locations')
+
+isExcluded = false(length(locations.isAnalyzed), 1);
+
+for i = 1:length(trials)
+    
+    trialInds = (locations.trialIdentities==trials(i));
+    isExcluded(trialInds) = excludeTrial(i);
+    
+end

@@ -1,14 +1,20 @@
-function isExcludedNew = setTrialExclusion(isExcluded, trialIdentities, trials, excludeTrial)
+function setTrialExclusion(session, trials)
 
-% locations struct ahs isExcluded vector that keeps track of whether a frame belongs to a trial that should be excluded
-% given isExcluded vector (on index per frame in video), a vector of trial numbers, and excludeTrial vector (same length as trials),
-% this function returns new isExcluded vector in which entires corresponding to trials are set to values in ecludeTrial
+% given a session, creates isExcluded.mat variable in tracking folder for session with one boolean entry per frame
+% recording whether that frame belongs to a trial that should be excluded
+% note: if this file already exists it is overwritten! omg
 
-isExcludedNew = isExcluded;
+% temp
+% session = '180122_001';
+% trials = [107];
+% excludeTrials = [1];
+
+load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'], 'locations')
+isExcluded = false(length(locations.isAnalyzed), 1);
 
 for i = 1:length(trials)
-    
-    trialInds = (trialIdentities==trials(i));
-    isExcludedNew(trialInds) = excludeTrial(i);
-    
+    trialInds = (locations.trialIdentities==trials(i));
+    isExcluded(trialInds) = true;
 end
+
+save([getenv('OBSDATADIR') 'sessions\' session '\tracking\isExcluded.mat'], 'isExcluded')

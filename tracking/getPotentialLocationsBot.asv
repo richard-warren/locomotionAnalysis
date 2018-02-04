@@ -183,11 +183,12 @@ for i = frameInds
     
     
     % store data
-    potentialLocationsBot(i).x = x;
-    potentialLocationsBot(i).y = y;
-    potentialLocationsBot(i).scores = scores;
-    potentialLocationsBot(i).class = classes;
-    potentialLocationsBot(i).classProbabilities = classProbs;
+    pawBins = classes<=classNum;
+    potentialLocationsBot(i).x = x(pawBins);
+    potentialLocationsBot(i).y = y(pawBins);
+    potentialLocationsBot(i).scores = scores(pawBins);
+    potentialLocationsBot(i).class = classes(pawBins);
+    potentialLocationsBot(i).classPredictions = classProbs;
     
     
     if showTracking
