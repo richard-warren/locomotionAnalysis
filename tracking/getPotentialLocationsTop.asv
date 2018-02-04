@@ -5,7 +5,7 @@ function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
 
 
 % settings
-overlapThresh = .6;
+% overlapThresh = .6;
 % yMin = 55; % all pixels below yMin (at the top of the frame) are set to zero in the filtered frame
 % xMaskWidth = 40;
 
@@ -17,7 +17,7 @@ kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 % wheelMask = double(getWheelMask(circRoiPts, [vid.Height vid.Width]));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 cmap = hsv(classNum);
-frameInds = find(locationsBot.isAnalyzed)';
+frameInds = find(locationsBot.isAnalyzed);
 
 
 

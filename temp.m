@@ -19,8 +19,8 @@ end
 
 %% test getLocations on single session
 
-session = '180123_002';
-steps = {'bot'};
+session = '180122_000';
+steps = {'potTop'};
 minVel = .6;
 getLocations(session, steps, minVel, false);
 

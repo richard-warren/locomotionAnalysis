@@ -34,7 +34,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 wheelPoints = getWheelPoints(vidTop);
 
 
-% get bot potential locations
+% potential locations bot
 if any(strcmp('potBot', steps))
     
     % settings
@@ -58,6 +58,8 @@ if any(strcmp('potBot', steps))
     fprintf('%s: potentialLocationsBot analyzed in %.1f minutes\n', session, (toc/60))
 end
 
+
+% locations bot
 if any(strcmp('bot', steps))
     
     % get bot locations
@@ -78,15 +80,15 @@ if any(strcmp('bot', steps))
 end
 
 
-% top tracking
-if any(strcmp('top', steps))
+% potential locations top
+if any(strcmp('potTop', steps))
     
     % get potential locations for top (svm)
-    % !!! need to load locationsBot and other info if not analyzed directly above
     scoreThresh = 0;
     showTracking = 0;
 
     % initializations
+    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
     load([getenv('OBSDATADIR') 'tracking\classifiers\pawTop1'], 'model', 'subFrameSize');
     model1 = model; clear model; subFrameSize1 = subFrameSize; clear subFrameSize;
     load([getenv('OBSDATADIR') 'tracking\classifiers\pawTop2AlexNet'], 'convNetwork', 'subFrameSize')
@@ -96,15 +98,15 @@ if any(strcmp('top', steps))
 
     tic;
     potentialLocationsTop = getPotentialLocationsTop(vidTop, locations, model1, model2, ...
-        classNum, subFrameSize1, subFrameSize2, scoreThresh, frameInds, 1:4, showTracking);
+        classNum, subFrameSize1, subFrameSize2, scoreThresh, showTracking);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop');
     fprintf('%s: potentialLocationsTop analyzed in %.1f minutes\n', session, toc/60)
+end
 
 
-
-
-    % get locations for top
-
+% locations top
+if any(strcmp('top', steps))
+    
     % settings
     showPotentialLocations = 0;
     fs = 250;
@@ -116,10 +118,11 @@ if any(strcmp('top', steps))
 
     locations = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
         frameInds, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, 1:4, fs, wheelPoints);
-    % showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
-    %     showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)
+    
+    % showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
+    %     showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
 end
 
 
