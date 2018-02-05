@@ -7,19 +7,6 @@ imgDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\lowRes\'];
 % initializations
 originalImSize = [230 396];
 load([imgDir 'pawLocations.mat'], 'features')
-
-% change file directory name if necessary
-trainingDir = getenv('TRAININGEXAMPLESDIR');
-sampleFileName = cell2mat(features.imgNames(1));
-
-if ~strcmp(trainingDir, sampleFileName(1:length(trainingDir)))
-    for i = 1:height(features)
-        fileName = cell2mat(features.imgNames(i));
-        fileName = [trainingDir fileName(40:end)]; % the 46 in this line is a super hacky temp
-        features.imgNames(i) = {fileName};
-    end
-end
-
 m = height(features);
 allInds = randperm(m);
 trainData = features(allInds(1:floor(m*trainPortion)),:);
@@ -77,7 +64,7 @@ save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNe
 %% train network from scratch
 
 % settings
-miniBatchSize = 128;
+miniBatchSize = 16;
 numOutputs = size(trainData,2)-1;
 
 % layers = [imageInputLayer([117 198])
@@ -119,11 +106,11 @@ layers = [imageInputLayer([59 99 1])
     reluLayer
     maxPooling2dLayer(2)
     
-    fullyConnectedLayer(500)
+    fullyConnectedLayer(100)
     reluLayer
     dropoutLayer(.5)
     
-    fullyConnectedLayer(500)
+    fullyConnectedLayer(100)
     reluLayer
     dropoutLayer(.5)
     
@@ -145,7 +132,10 @@ options = trainingOptions('sgdm',...
     'ValidationData', valData,...
     'ValidationFrequency', numIterationsPerEpoch);
 
+
 % train!
+trainingDir = getenv('TRAININGEXAMPLESDIR');
+if strcmp(trainingDir, cell2mat(features.imgNames(1))(1:length(trainingDir))); end
 convNetwork = trainNetwork(trainData, layers, options);
 % save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressorCustom.mat'], 'convNetwork')
 
