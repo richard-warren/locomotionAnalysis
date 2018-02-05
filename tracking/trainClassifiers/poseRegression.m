@@ -77,33 +77,8 @@ save([getenv('OBSDATADIR') 'tracking\classifiers\botPoseRegressor.mat'], 'convNe
 %% train network from scratch
 
 % settings
-miniBatchSize = 128;
+miniBatchSize = 64;
 numOutputs = size(trainData,2)-1;
-
-% layers = [imageInputLayer([117 198])
-%     
-%     convolution2dLayer(5,32)
-%     reluLayer
-%     maxPooling2dLayer(2)
-% 
-%     convolution2dLayer(3,64)
-%     reluLayer
-%     maxPooling2dLayer(2)
-% 
-%     convolution2dLayer(3,128)
-%     reluLayer
-%     maxPooling2dLayer(2)
-%           
-%     fullyConnectedLayer(500)
-%     reluLayer
-%     dropoutLayer(.5)
-%     
-%     fullyConnectedLayer(500)
-%     reluLayer
-%     dropoutLayer(.5)
-%     
-%     fullyConnectedLayer(numOutputs)
-%     regressionLayer];
 
 layers = [imageInputLayer([59 99 1])
     
@@ -121,11 +96,11 @@ layers = [imageInputLayer([59 99 1])
     
     fullyConnectedLayer(500)
     reluLayer
-    dropoutLayer(.5)
+%     dropoutLayer(.5)
     
     fullyConnectedLayer(500)
     reluLayer
-    dropoutLayer(.5)
+%     dropoutLayer(.5)
     
     fullyConnectedLayer(numOutputs)
     regressionLayer];
@@ -135,10 +110,10 @@ numIterationsPerEpoch = floor(size(trainData,1)/miniBatchSize);
 options = trainingOptions('sgdm',...
     'MiniBatchSize', miniBatchSize,...
     'MaxEpochs', 30,...
-    'InitialLearnRate', 1e-3,... % was originally 1e-4
+    'InitialLearnRate', 1e-2,... % was originally 1e-4
     'LearnRateSchedule', 'piecewise', ...
     'LearnRateDropFactor', 0.1, ...
-    'LearnRateDropPeriod', 2, ... % epoches per drop
+    'LearnRateDropPeriod', 1, ... % epoches per drop
     'Verbose', true,...
     'VerboseFrequency', 50,...
     'Plots', 'training-progress', ...
@@ -153,21 +128,33 @@ convNetwork = trainNetwork(trainData, layers, options);
 %% test on image
 
 % imNum = 1;
+close all; figure();
+img = imread([getenv('TRAININGEXAMPLESDIR') 'poseRegression\lowRes\imgs\img1.tif']);
+preview = imshow(img);
+hold on; scatterTruth = scatter(gca, [0 0 0 0], [0 0 0 0], 100, hsv(4), 'filled');
+hold on; scatterPredict = scatter(gca, [0 0 0 0], [0 0 0 0], 200, hsv(4));
+set(gcf, 'position', [646   173   984   750]);
+
+% pimpFig;
+
 
 for imNum = randperm(height(features), 10)
+    disp(imNum)
 
     % get image and make predictions!
-    img = imread(['C:\Users\rick\Desktop\trainingExamples\poseRegression\lowRes\imgs\img' num2str(imNum) '.tif']);
+    img = imread([getenv('TRAININGEXAMPLESDIR') 'poseRegression\lowRes\imgs\img' num2str(imNum) '.tif']);
     predictedLocations = predict(convNetwork, img);
 %     imgResized = imresize(img, 'outputSize', originalImSize);
 
     % show results
-    close all; figure('position', [1286 66 570 323]);
-    imshow(img);
-
-    hold on; scatter(predictedLocations([1 3 5 7])*size(img,2), predictedLocations([2 4 6 8])*size(img,1))
-    hold on; scatter(table2array(features(imNum, [1 3 5 7]+1))*size(img,2), table2array(features(imNum, [2 4 6 8]+1))*size(img,1))
-    pause(1)
+    
+    set(preview, 'CData', img)
+    set(scatterTruth, 'XData', table2array(features(imNum, [1 3 5 7]+1))*size(img,2), ...
+        'YData', table2array(features(imNum, [2 4 6 8]+1))*size(img,1));
+    set(scatterPredict, 'XData', predictedLocations([1 3 5 7])*size(img,2), ...
+        'YData', predictedLocations([2 4 6 8])*size(img,1));
+    
+    pause(3)
 end
 
 

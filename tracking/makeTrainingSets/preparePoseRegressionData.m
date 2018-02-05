@@ -5,7 +5,7 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\fullRes\';
+writeDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\fullRes\'];
 fileType = '.tif';
 % targetSize = [227 227];
 
