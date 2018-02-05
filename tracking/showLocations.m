@@ -107,7 +107,7 @@ function updateFrame(frameStep)
     
     % add vertical lines
     if exist('lineLocations', 'var')
-        inds = lineLocations.x(frameInds(currentFrame),:);
+        inds = lineLocations(frameInds(currentFrame),1,:);
         for j = 1:4
             set(lines{j}, 'XData', [inds(j) inds(j)])
         end

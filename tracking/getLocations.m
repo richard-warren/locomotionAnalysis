@@ -76,8 +76,8 @@ if any(strcmp('bot', steps))
     fprintf('%s: locationsBot analyzed\n', session)
     
     if showTracking
-        showLocations(vidBot, locations.isAnalyzed, ...
-            potentialLocationsBot, find(locations.locationsRaw), showPotentialLocations, .02, anchorPtsBot, colors);
+        showLocations(vidBot, find(locations.isAnalyzed), potentialLocationsBot, ...
+            locations.locationsRaw, locations.trialIdentities, 0, .02, anchorPtsBot, hsv(4));
     end
 end
 
@@ -109,22 +109,28 @@ end
 if any(strcmp('top', steps))
     
     % settings
-    showPotentialLocations = 0;
+    showPotentialLocations = 1;
     fs = 250;
+    
+    % initializations
+    if ~exist('potentialLocationsTop', 'var') % load potentialLocations if it was not already computed above
+        load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'])
+    end
+    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
 
     % fix x alignment for bottom view
-    locationsBotFixed = fixTracking(locations);
-    locationsBotFixed.x = locationsBotFixed.x*xLinearMapping(1) + xLinearMapping(2);
+    locationsBot = locations.locationsCorrected;
+    locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
 
-
-    locations = getLocationsTop(potentialLocationsTop, locationsBotFixed,...
-        frameInds, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, 1:4, fs, wheelPoints);
+    locations = getLocationsTop(potentialLocationsTop, locationsBot,...
+        frameInds, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)
     
     if showTracking
-        showLocations(vidTop, frameInds, potentialLocationsTop, fixTracking(locationsTop),...
-            showPotentialLocations, .02, anchorPtsBot, colors, locationsBotFixed);
+        showLocations(vidTop, find(locations.isAnalyzed), potentialLocationsTop, ...
+            fixTracking(locations.locationsRaw, locations.trialIdentities), locations.trialIdentities, showPotentialLocations, ...
+            .04, anchorPtsBot, hsv(4), locationsBot);
     end
 end
 

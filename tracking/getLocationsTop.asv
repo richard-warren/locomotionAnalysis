@@ -10,6 +10,7 @@ maxVel = 25 / .004;   % max velocity (pixels / sec)
 maxXDistance = 30;    % max distance of x position in top from x position in bottom view
 xOccludeBuffer = 25;  % if paws in bottom view have x values within xOccludeBuffer of one another, the paw further away from the camera is treated as occluded
 stanceHgt = 5;        % paws in stance (negative x velocity in bottom view) are assigned z values stanceHgt pixels above wheel (wheel defined by circRoiPts)
+% circRoiPts = [36 155; 212 103; 374 132];
 stanceVelDif = 1000;   % if paws paw is within this many pix/sec of wheel velocity (actually obs vel for now) then it is considered to be in stance IF length of this period exceeds stanceMin
 stanceMin = .02;      % (s)
 obsProximity = 50;    % if paw is within obsProximity pixels of obstacle, stance is no longer assumed when velocity is less than stanceVel
@@ -18,9 +19,9 @@ maxHgt = 50;          % highness score are expressed as a fraction of maxHgt
 minHgt = 6;          % only consider potential locations that are this many pixels above the circle (because we are only really looking for paws in swing bro)
 
 
-unaryWeight = 1;
-pairwiseWeight = 1;
-highnessWeight = 1;
+unaryWeight = .5;
+pairwiseWeight = .5;
+highnessWeight = .5;
 
 
 % initializations
@@ -129,14 +130,14 @@ for i = 1:length(frameInds)
             % find last ind with detected paw
             lastInd = 1;
             for k = fliplr(1:i-1) % find last ind with detected frame
-                if ~isnan(locations.locationsRaw(frameInds(k),1,pawSequence(j)))
+                if ~isnan(locations.x(frameInds(k), pawSequence(j)))
                     lastInd = k;
                     break;
                 end
             end
 
-            dx = locations.locationsRaw(frameInds(lastInd),1,pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
-            dz = locations.locationsRaw(frameInds(lastInd),2,pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
+            dx = locations.x(frameInds(lastInd), pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
+            dz = locations.z(frameInds(lastInd), pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
             dt = frameTimeStamps(frameInds(i)) - frameTimeStamps(frameInds(lastInd));
             vels = sqrt(dx.^2 + dz.^2) / dt;
             isTooFast = vels > maxVel;
@@ -147,26 +148,27 @@ for i = 1:length(frameInds)
             pairwise(isnan(pairwise)) = 0;
             
             
+            
             % get highness scores
             wheelZs = wheelCenter(2) - round(sqrt(wheelRadius^2 - (potentialLocationsTop(frameInds(i)).x-wheelCenter(1)).^2)); % !!! should replace this with pre-computed lookup table
             highness = wheelZs - potentialLocationsTop(frameInds(i)).z;
             tooLow = highness<minHgt;
             highness(highness>maxHgt) = maxHgt;
             highness = highness / maxHgt;
+%             if frameInds(i) == 22188; keyboard; end
+
 
             
             % compute scores
             pawScores = (unaries * unaryWeight) + (pairwise * pairwiseWeight) + (highness * highnessWeight);
             pawScores(isTooFar | isTooFast | alreadyTaken | tooLow) = 0;
-            scores(:, potentialLocationsTop(frameInds(i)).class==2) = 0; % remove potential locations not classified by cnn as a paw
             scores(pawSequence(j), :) = pawScores;
-            
 
             [maxScore, maxInd] = max(scores(pawSequence(j), :));
 
             if maxScore>0
-                locations.locationsRaw(frameInds(i),1,pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
-                locations.locationsRaw(frameInds(i),2,pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
+                locations.x(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
+                locations.z(frameInds(i), pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
                 alreadyTaken(maxInd) = true;
             end
         end

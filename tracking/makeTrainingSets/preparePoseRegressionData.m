@@ -5,7 +5,7 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\halfRes\';
+writeDir = 'C:\Users\rick\Desktop\trainingExamples\poseRegression\fullRes\';
 fileType = '.tif';
 % targetSize = [227 227];
 
@@ -52,7 +52,7 @@ for i = locationInds
     
     % load new video if you have reached the next session
     if sessionInds(i) ~= lastSessionInd
-        fprintf('loading session %s', sessions{sessionInds(i)})
+        fprintf('loading session %s\n', sessions{sessionInds(i)})
         vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{sessionInds(i)} '\runBot.mp4']);
         bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
         load([getenv('OBSDATADIR') 'sessions\' sessions{sessionInds(i)} '\runAnalyzed.mat'], 'obsPixPositions')
@@ -76,8 +76,10 @@ for i = locationInds
 %     img = repmat(img, 1, 1, 3);
 %     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
     % gray, half size
-    img = uint8(imresize(frame, 'outputsize', size(frame)*.5));
-    imwrite(img, [writeDir 'imgs\img' num2str(imgInd) fileType])
+%     img = uint8(imresize(frame, 'outputsize', size(frame)*.5));
+%     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) fileType])
+    % gray, full size
+    imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) fileType])
     
     % report progress
     disp(imgInd/totalEgs)
