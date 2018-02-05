@@ -74,11 +74,12 @@ for i = frameInds(1:end)
     % allow paws to violate class restriction if they are out of x range of other class
     % (in other words, if potential location is too far from back of frame to be labeled hind paw, no longer require that the location is
     % classified by network as forepaw, because this is the only possibility)
+    keyboard
     areHindsFarBack = potentialLocationsBot(i).x' < (1-maxDistanceX)*frameWid;
     areForesFarForward = potentialLocationsBot(i).x' > maxDistanceX*frameWid;
     invalidBins([1,4], areHindsFarBack) = 0;
     invalidBins([2,3], areForesFarForward) = 0;
-    invalidBins(repmat(potentialLocationsBot(i).class',4,1)==3) = 1; % make sure class 3 (not paw) is always invalid
+    
     scores(invalidBins) = 0;
     
     

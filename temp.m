@@ -2,7 +2,8 @@
 % perform paw tracking for multiple sessions
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
-steps = {'potBot', 'bot'};
+%%
+steps = {'bot'};
 minVel = .4;
 
 for i = 1:length(sessionDirs)
@@ -27,7 +28,7 @@ getLocations(session, steps, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180122_002';
+session = '180123_000';
 showCorrected = 1;
 
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'])
@@ -36,7 +37,7 @@ if showCorrected
     locationsTemp = locations.locationsCorrected;
 else
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBot.mat'])
-    locationsTemp = fixTrackinn(locations.locationsRaw, locations.trialIdentities);
+    locationsTemp = fixTracking(locations.locationsRaw, locations.trialIdentities);
 end
 
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
@@ -47,20 +48,16 @@ showLocations(vidBot, find(locations.isAnalyzed), potentialLocationsBot, ...
 
 %% exclude trials
 
-session = '180122_002';
-trials = [37 58 69];
-isExcluded = [1 1 1];
+session = '180123_000';
+trials = [];
 
-load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
-locations.isExcluded = setTrialExclusion(locations.isExcluded, locations.trialIdentities, trials, isExcluded);
-save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
-
+setTrialExclusion(session, trials);
 
 
 %% correct tracking
 
 % settings
-session = '180122_003';
+session = '180123_000';
 view = 'Bot';
 frameDelay = .025;
 
