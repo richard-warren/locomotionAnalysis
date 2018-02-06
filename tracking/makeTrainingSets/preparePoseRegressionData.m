@@ -5,7 +5,7 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\lowRes\'];
+writeDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\quarterRes\'];
 fileType = '.tif';
 % targetSize = [227 227];
 
@@ -83,7 +83,7 @@ for i = 1:totalEgs % locationInds
 %     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
 
     % gray, reduced size
-    sizeReduction = .5;
+    sizeReduction = .25;
     img = uint8(imresize(frame, 'outputsize', size(frame)*sizeReduction));
     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) fileType])
     
