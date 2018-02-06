@@ -96,4 +96,39 @@ for i = 1:length(sessionDirs)
 end
 
 
+%% view pose regression training examples
+
+
+
+% initializations
+imgDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\fullRes\'];
+originalImSize = [230 396];
+load([imgDir 'pawLocations.mat'], 'features')
+
+close all; figure();
+img = imread([getenv('TRAININGEXAMPLESDIR') 'poseRegression\fullRes\imgs\img1.tif']);
+preview = imshow(img);
+hold on; scatterTruth = scatter(gca, [0 0 0 0], [0 0 0 0], 100, hsv(4), 'filled');
+% hold on; scatterPredict = scatter(gca, [0 0 0 0], [0 0 0 0], 200, hsv(4));
+set(gcf, 'position', [646   173   984   750]);
+
+% pimpFig;
+
+
+for imNum = randperm(height(features), 10)
+    disp(imNum)
+
+    % get image and make predictions!
+    img = imread([getenv('TRAININGEXAMPLESDIR') 'poseRegression\fullRes\imgs\img' num2str(imNum) '.tif']);
+
+    % show results
+    set(preview, 'CData', img)
+    set(scatterTruth, 'XData', table2array(features(imNum, [1 3 5 7]+1))*size(img,2), ...
+        'YData', table2array(features(imNum, [2 4 6 8]+1))*size(img,1));
+    
+    pause(3)
+end
+
+
+
 

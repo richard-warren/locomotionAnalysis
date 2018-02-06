@@ -5,7 +5,7 @@ function preparePoseRegressionData(sessions, totalEgs)
 % totalEgs = 500;
 
 % settings
-writeDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\lowRes\'];
+writeDir = [getenv('TRAININGEXAMPLESDIR') 'poseRegression\fullRes\'];
 fileType = '.tif';
 % targetSize = [227 227];
 
@@ -25,7 +25,8 @@ locationsAll = [];
 for i = 1:length(sessions)
     
     % get labeled locations for single session
-%     vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runBot.mp4']); vid.NumberOfFrames
+    keyboard
+    vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runBot.mp4']); vid.NumberOfFrames
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\locationsBotCorrected.mat'], 'locations');
     
     % remove nan entries
@@ -34,7 +35,7 @@ for i = 1:length(sessions)
     
     % store
     locationsAll = cat(1, locationsAll, locations);
-    sessionInds = [sessionInds i*ones(1,length(frameInds))];
+    sessionInds = [sessionInds i*ones(1,size(locationsAll,1))];
     sessionFrameInds = [sessionFrameInds frameInds];
     
 end
@@ -74,21 +75,20 @@ for i = 1:totalEgs % locationInds
     
     % save image
     
-    % (original size)
+      % (original size)
 % 	imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
 
-    % (alexnet)
+      % (alexnet)
 %     img = uint8(imresize(frame, 'outputsize', targetSize));
 %     img = repmat(img, 1, 1, 3);
 %     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) '.tif'])
 
-    % gray, reduced size
-    sizeReduction = .5;
-    img = uint8(imresize(frame, 'outputsize', size(frame)*sizeReduction));
-    imwrite(img, [writeDir 'imgs\img' num2str(imgInd) fileType])
+      % gray, half size
+%     img = uint8(imresize(frame, 'outputsize', size(frame)*.5));
+%     imwrite(img, [writeDir 'imgs\img' num2str(imgInd) fileType])
     
     % gray, full size
-%     imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) fileType])
+    imwrite(frame, [writeDir 'imgs\img' num2str(imgInd) fileType])
     
     % report progress
     disp(imgInd/totalEgs)
