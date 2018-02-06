@@ -53,7 +53,7 @@ showLocations(vid, find(locations.isAnalyzed), eval(['potentialLocations' view])
 
 %% exclude trials
 
-session = '180123_000';
+session = '180123_001';
 trials = [];
 
 setTrialExclusion(session, trials);
@@ -62,7 +62,7 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '180123_000';
+session = '180123_001';
 view = 'Bot';
 frameDelay = .025;
 
