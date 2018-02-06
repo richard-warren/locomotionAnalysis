@@ -115,7 +115,7 @@ set(gcf, 'position', [646   173   984   750]);
 % pimpFig;
 
 
-for imNum = randperm(height(features), 10)
+for imNum = randperm(height(features), 20)
     disp(imNum)
 
     % get image and make predictions!
@@ -126,7 +126,7 @@ for imNum = randperm(height(features), 10)
     set(scatterTruth, 'XData', table2array(features(imNum, [1 3 5 7]+1))*size(img,2), ...
         'YData', table2array(features(imNum, [2 4 6 8]+1))*size(img,1));
     
-    pause(3)
+    pause(2)
 end
 
 
