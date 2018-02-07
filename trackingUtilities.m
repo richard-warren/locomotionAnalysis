@@ -3,7 +3,7 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-steps = {'potTop', 'top'};
+steps = {'top'};
 minVel = .4;
 
 for i = 1:length(sessionDirs)
@@ -62,9 +62,11 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '180123_001';
-view = 'Bot';
-frameDelay = .025;
+session = '180122_000';
+view = 'Top';
+obsCenter = .382;
+obsPrePostTop = [.2 .1];
+minVel = .4; velPrePost = [.08 .08];
 
 outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view 'Corrected.mat'];
 if exist(outputFile, 'file')
@@ -77,7 +79,21 @@ vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4'])
 frameInds = find(locations.isAnalyzed);
 anchorPts = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH
 
-correctTracking(outputFile, vid, locations, frameInds, frameDelay, anchorPts);
+switch view
+    case 'Bot'
+        frameDelay = .025;
+        correctTracking(outputFile, vid, locations, frameInds, frameDelay, anchorPts);
+    case 'Top'
+        frameDelay = .1;
+        paws = [2 3];
+        load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
+            'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes')
+        obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
+        frameIndsTop = getTrialFrameInds(minVel, obsCenter, obsPrePostTop, velPrePost, frameTimeStamps,...
+            wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+
+        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts, paws);
+end
 
 %% get avg trial stats
 
@@ -128,6 +144,37 @@ for imNum = randperm(height(features), 20)
     
     pause(2)
 end
+
+%% get getFrameInds
+
+session = '180122_000';
+
+obsCenter = .382; % where obs is at center of wheel
+obsPrePostBot = [.55 .25];
+obsPrePostTop = [.2 .12];
+velPrePost = [.08 .08]; % compute trials velocity between these obstacle positions
+anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
+
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
+    'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping', 'targetFs')
+load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot')
+load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
+obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
+
+[frameIndsBot, trialIdentities] = getTrialFrameInds(minVel, obsCenter, obsPrePostBot, velPrePost, frameTimeStamps,...
+    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+frameIndsTop = getTrialFrameInds(minVel, obsCenter, obsPrePostTop, velPrePost, frameTimeStamps,...
+    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+
+
+vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
+showLocations(vid, frameIndsBot, potentialLocationsBot, ...
+    locations.locationsCorrected, locations.trialIdentities, 1, .025, anchorPtsBot, hsv(4));
+
+
+
+
+
 
 
 

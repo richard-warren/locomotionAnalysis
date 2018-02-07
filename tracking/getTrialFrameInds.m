@@ -1,4 +1,4 @@
-function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
+function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsCenter, obsPrePost, velPrePost, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes)
 
 % returns vector containing frameInds for all trials // only includes trials where mouse is running faster than minVel
@@ -7,15 +7,10 @@ function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obs
 % and obsprePost(1) meters after the obs turns off // setting this to [0 0] means only inds with obs on are included
 % also saves trialIdentities, which for each frameInd records the trial number
 
-% temp
-% session = '180122_001';
-% load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'wheelPositions',...
-%     'wheelTimes', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPositions', 'obsTimes')
-% obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
-% minVel = .4;
-% obsPrePost = [.2 .2];
-% velPositions = [-.08 .08] + 0.3820;
+% !!! now obsPrePost actually detemrines how many m before and after obs is in center of wheel to include
 
+
+% initializations
 frameInds = [];
 trialIdentities = [];
 trialVels = nan(1, length(obsOnTimes));
@@ -24,19 +19,21 @@ trialVels = nan(1, length(obsOnTimes));
 for i = 1:length(obsOnTimes)
     
     % get trial velocity
-    startInd = find(obsTimes>obsOnTimes(i) & obsPositions>velPositions(1), 1, 'first');
-    endInd = find(obsTimes>obsOnTimes(i) & obsPositions>velPositions(2), 1, 'first');
+    startInd = find(obsTimes>obsOnTimes(i) & obsPositions>(obsCenter-velPrePost(1)), 1, 'first');
+    endInd = find(obsTimes>obsOnTimes(i) & obsPositions>(velPrePost(2)+obsCenter), 1, 'first');
     trialVels(i) = (obsPositions(endInd) - obsPositions(startInd)) / (obsTimes(endInd) - obsTimes(startInd));
     
     if trialVels(i) > minVel
     
-        % get positions of wheel at moments obs turn on and off
-        startWheelPos = interp1(wheelTimes, wheelPositions, obsOnTimes(i));
-        endWheelPos = interp1(wheelTimes, wheelPositions, obsOffTimes(i));
+        % get positions of wheel at moment obs is at wheel center
+        centerTime = obsTimes(find(obsTimes>obsOnTimes(i) & obsPositions>=obsCenter, 1, 'first'));
+        wheelPos = interp1(wheelTimes, wheelPositions, centerTime);
+%         startWheelPos = interp1(wheelTimes, wheelPositions, obsOnTimes(i));
+%         endWheelPos = interp1(wheelTimes, wheelPositions, obsOffTimes(i));
 
         % add and subtract obsPrePost to these values
-        startWheelPos = startWheelPos - obsPrePost(1);
-        endWheelPos = endWheelPos + obsPrePost(2);
+        startWheelPos = wheelPos - obsPrePost(1);
+        endWheelPos = wheelPos + obsPrePost(2);
 
         % find times corresponding to these start and stop positions
         startTime = wheelTimes(find(wheelPositions>=startWheelPos, 1, 'first'));

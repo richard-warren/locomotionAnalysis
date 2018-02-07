@@ -1,4 +1,4 @@
-function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, lineLocations)
+function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, paws)
 
 
 % settings
@@ -17,7 +17,6 @@ currentFrameInd = 1;
 lastCorrectedPaw = [];
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
-
 
 
 % initialize fields for manual corrections (if they do not already exist)
@@ -44,13 +43,13 @@ set(rawAxis, 'visible', 'off', 'units', 'pixels',...
 circSizes = circSize * ones(1,length(anchorPts));
 
 
-% prepare lines showing x locations of bottom tracked paws
-lines = cell(4,1);
-if exist('lineLocations', 'var')
-    for i = 1:4
-        lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', colors(i,:));
-    end
-end
+% % prepare lines showing x locations of bottom tracked paws
+% lines = cell(4,1);
+% if exist('lineLocations', 'var')
+%     for i = 1:4
+%         lines{i} = line([0 0], [vid.Height vid.Height-50], 'color', colors(i,:));
+%     end
+% end
 
 
 % prepare circles showing locationsRaw
@@ -197,12 +196,12 @@ function updateFrame(frameStep)
     
     
     % add vertical lines
-    if exist('lineLocations', 'var')
-        inds = lineLocations.x(frameInds(currentFrameInd),:);
-        for j = 1:4
-            set(lines{j}, 'XData', [inds(j) inds(j)])
-        end
-    end
+%     if exist('lineLocations', 'var')
+%         inds = lineLocations.x(frameInds(currentFrameInd),:);
+%         for j = 1:4
+%             set(lines{j}, 'XData', [inds(j) inds(j)])
+%         end
+%     end
     
     
     % add frame number
@@ -222,7 +221,7 @@ function updateFrame(frameStep)
     end
     frameUpdating = false;
     
-    % update circles to locationsRaw
+    % update circles to locationsRaw (change this so it updates based on locationsCorrected but only when there is nan both in locationsCorrections and locationsRaw)
     frameLocations = locations.locationsRaw(frameInds(currentFrameInd),:,:);
     frameLocationCorrections = locations.locationCorrections(frameInds(currentFrameInd),:,:);
     correctedBins = ~isnan(frameLocationCorrections);
@@ -259,6 +258,7 @@ function mergeCorrectionsAndInterpolate(trial, paws)
             
             % fill in missing values and store in locationsCorrected field
             trialLocations = fillmissing(trialLocations, 'spline', 'endvalues', 'none');
+%             if exist('smoothing', 'var'), trialLocations = smooth(trialLocations, smoothing); end
             locations.locationsCorrected(trialInds, dimension, paw) = trialLocations;
         end
     end

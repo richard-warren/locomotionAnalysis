@@ -15,7 +15,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPosit
     'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping', 'targetFs')
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
 
-[frameInds, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
+frameInds = getTrialFrameInds(minVel, obsPrePost, velPositions, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
 
 

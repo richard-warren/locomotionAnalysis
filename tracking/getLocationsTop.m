@@ -166,6 +166,7 @@ for i = 1:length(frameInds)
 
             if maxScore>0
                 locations.locationsRaw(frameInds(i),1,pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
+                locations.locationsRaw(frameInds(i),1,pawSequence(j)) = locationsBot(frameInds(i),1,pawSequence(j));
                 locations.locationsRaw(frameInds(i),2,pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
                 alreadyTaken(maxInd) = true;
             end

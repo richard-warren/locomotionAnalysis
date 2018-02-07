@@ -62,10 +62,8 @@ for i = 1:totalEgs % locationInds
     end
     
     % get frame
-    try
     frame = rgb2gray(read(vid, sessionFrameInds(i)));
     frame = frame - bg;
-    catch; keyboard; end
     
     % mask obstacle
     if ~isnan(obsPixPositions(sessionFrameInds(i)))

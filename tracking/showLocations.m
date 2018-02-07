@@ -124,8 +124,10 @@ function updateFrame(frameStep)
     % update figure
     set(rawIm, 'CData', frame);
 
+    try
     set(scatterLocations, 'XData', locations(frameInds(currentFrame),1,:), ...
         'YData', locations((frameInds(currentFrame)),2,:), 'visible', 'on');
+    catch; keyboard; end
 
     if showPotentialLocations
         set(scatterPotentialLocations, 'XData', potentialLocations(frameInds(currentFrame)).x, 'YData', potentialLocations(frameInds(currentFrame)).(dim2));

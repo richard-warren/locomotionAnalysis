@@ -1,5 +1,5 @@
 function potentialLocationsTop = getPotentialLocationsTop(vid, locationsBot,...
-    model1, model2, classNum, subFrameSize1, subFrameSize2, scoreThresh, showTracking)
+    model1, model2, classNum, subFrameSize1, subFrameSize2, scoreThresh, frameInds, showTracking)
 
 % !!! need to document
 
@@ -15,8 +15,6 @@ sampleFrame = rgb2gray(read(vid,1));
 kernel = reshape(model1.Beta, subFrameSize1(1), subFrameSize1(2));
 bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
 cmap = hsv(classNum);
-frameInds = find(locationsBot.isAnalyzed)';
-
 
 
 
