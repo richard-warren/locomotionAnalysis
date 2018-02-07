@@ -62,8 +62,8 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '180122_000';
-view = 'Top';
+session = '180123_002';
+view = 'Bot';
 obsCenter = .382;
 obsPrePostTop = [.2 .1];
 minVel = .4; velPrePost = [.08 .08];
