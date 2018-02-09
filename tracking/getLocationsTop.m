@@ -1,5 +1,5 @@
 function locations = getLocationsTop(potentialLocationsTop, locationsBot, ...
-    frameInds, wheelPositions, wheelTimes, wheelFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints)
+    wheelPositions, wheelTimes, wheelFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints)
 
 % !!! need to document and make not shitty
 
@@ -26,6 +26,7 @@ highnessWeight = 1;
 % initializations
 locations.locationsRaw = nan(length(potentialLocationsTop), 2, objectNum);
 [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
+wheelCenterOffset = wheelCenter - [0; stanceHgt];
 
 
 % get x velocities for bottom view tracking
@@ -79,13 +80,15 @@ locations.locationsRaw = nan(length(potentialLocationsTop), 2, objectNum);
 
 
 % !!! need to check that this code actually works
-stanceBins = getStanceBins(locationsBot, [potentialLocationsTop.trialIdentities], fs, mToPixFactor, ...
+stanceBins = getStanceBins(squeeze(locationsBot(:,1,:)), [potentialLocationsTop.trialIdentities], fs, mToPixFactor, ...
     wheelPositions, wheelTimes, wheelFs, frameTimeStamps);
 
 for i = 1:4
-    for j = find(stanceBins(:,i))
+    for j = find(stanceBins(:,i))'
         locations.locationsRaw(j,1,i) = locationsBot(j,1,i);
+        try
         locations.locationsRaw(j,2,i) = wheelCenterOffset(2) - round(sqrt(wheelRadius^2 - (locationsBot(j,1,i)-wheelCenterOffset(1))^2));
+        catch; keyboard; end
     end
 end
 

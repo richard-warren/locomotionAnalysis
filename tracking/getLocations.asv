@@ -127,13 +127,13 @@ if any(strcmp('top', steps))
     locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
 
     locations = getLocationsTop(potentialLocationsTop, locationsBot,...
-        wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints);
+        potentialLocationsTop.!!!, wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)
     
     if showTracking
         showLocations(vidTop, find(locations.isAnalyzed), potentialLocationsTop, ...
-            locations.locationsRaw, locations.trialIdentities, showPotentialLocations, ...
+            fixTracking(locations.locationsRaw, locations.trialIdentities), locations.trialIdentities, showPotentialLocations, ...
             .04, anchorPtsBot, hsv(4), locationsBot);
     end
 end

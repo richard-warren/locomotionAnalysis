@@ -1,13 +1,18 @@
 function stanceBins = getStanceBins(xLocations, trialIdentities, fs, mToPixFactor, ...
     wheelPositions, wheelTimes, targetFs, frameTimeStamps)
 
-% !!! needs documentation, but generally returns n x 4 binary vector recording whether 4 paws are in stance
-% does this by comparing wheel and paw velocities // when they are matched for > stanceMin seconds, we call it stance
+% % temp
+% sessionDir = 'C:\Users\Rick\Google Drive\columbia\obstacleData\sessions\sharedSessions\sessions\180122_000\';
+% load([sessionDir 'tracking\locationsBotCorrected.mat'], 'locations')
+% load([sessionDir 'runAnalyzed.mat'], 'wheelPositions', 'wheelTimes', 'targetFs', 'mToPixMapping', 'frameTimeStamps', 'obsPixPositions')
+% xLocations = locations.locationsCorrected(:,1,:);
+% trialIdentities = locations.trialIdentities;
+% fs = 250;
 
 % settings
 stanceVelDif = 1000;   % if paws paw is within this many pix/sec of wheel velocity (actually obs vel for now) then it is considered to be in stance IF length of this period exceeds stanceMin
 stanceMin = .02;       % (s)
-velTime = .02;         % amount of time to compute velocity over
+velTime = .04;         % amount of time to compute velocity over
 
 
 % get x velocities for bottom view tracking
@@ -25,17 +30,13 @@ wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps)';
 % get stance bins for each trial
 stanceBins = false(size(xLocations));
 
-% !!! temp hack fix // wont need this line after potentialLocationsTop are reanalyzed st length of structure is same as number of frames in video
-trialIdentities(end+1:length(frameTimeStamps)) = nan;
-
-
 for i = unique(trialIdentities(~isnan(trialIdentities)))
     
     for j = 1:4
 
         % get epoches where wheel vel and paw x vel are similar to one another
         try
-        matchedVelBins = (abs(wheelVel - xVel(:,j)') < stanceVelDif) & ...
+        matchedVelBins = (abs(wheelVel' - xVel(:,j)) < stanceVelDif) & ...
                           trialIdentities==i;
         catch; keyboard; end
 

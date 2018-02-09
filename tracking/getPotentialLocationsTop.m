@@ -44,7 +44,7 @@ if showTracking
 end
 
 
-potentialLocationsTop(max(frameInds)) = struct();
+potentialLocationsTop(vid.NumberOfFrames) = struct();
 w = waitbar(0, 'getting potentialLocationsTop...', 'position', [1500 50 270 56.2500]);
 wInd = 0;
 
