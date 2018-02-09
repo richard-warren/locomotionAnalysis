@@ -29,57 +29,7 @@ locations.locationsRaw = nan(length(potentialLocationsTop), 2, objectNum);
 wheelCenterOffset = wheelCenter - [0; stanceHgt];
 
 
-% get x velocities for bottom view tracking
-% locationsBotXVel = nan(size(locationsBot,1), 4);
-% for i = 1:4
-%     locationsBotXVel(:,i) = getVelocity(locationsBot(:,1,i), velTime, fs);
-% end
-% 
-% 
-% % get wheel velocity IN PIXELS
-% wheelVel = getVelocity(wheelPositions * mToPixFactor, velTime, wheelFs);
-% wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps)';
-
-
-
-
 % get paw locations for stance periods
-
-% for i = 1:4
-%     
-%     % !!! should really be doing this on a trial to trial basis // i dont think this code will handle well the transitions between trials...
-%     
-%     % get epoches where wheel vel and paw x vel are similar to one another
-%     matchedVelBins = abs(wheelVel(1:length(locationsBotXVel(:,i))) - locationsBotXVel(:,i)') < stanceVelDif;
-%     
-%     % exclude from stance consideration frames in which paw is close to obstacle
-%     nearObsBins = abs(obsPixPositions' - locationsBot(:,1,i)) < obsProximity;
-%     matchedVelBins(nearObsBins) = 0;
-%     
-%     startInds = find(diff(matchedVelBins) == 1) + 1;
-%     endInds = find(diff(matchedVelBins) == -1) + 1;
-% 
-%     % ensure that the first event is the beginning of an epoch and the last is the end of an epoch
-%     if endInds(1) < startInds(1); startInds = [1 startInds]; end
-%     if startInds(end) > endInds(end); endInds = [endInds length(matchedVelBins)]; end
-%     
-%     % only keep epochs that are long enough
-%     validStances = (frameTimeStamps(endInds) - frameTimeStamps(startInds)) > stanceMin;
-%     startInds = startInds(validStances);
-%     endInds = endInds(validStances);
-%     
-%     
-%     % store the coordinates of each paw during stance
-%     for j=1:length(startInds)
-%         for k = startInds(j):endInds(j)
-%             locations.locationsRaw(k,1,i) = locationsBot(k,1,i);
-%             locations.locationsRaw(k,2,i) = wheelCenterOffset(2) - round(sqrt(wheelRadius^2 - (locationsBot(k,1,i)-wheelCenterOffset(1))^2)); % !!! should replace this with pre-computed lookup table
-%         end
-%     end
-% end
-
-
-% !!! need to check that this code actually works
 stanceBins = getStanceBins(squeeze(locationsBot(:,1,:)), [potentialLocationsTop.trialIdentities], fs, mToPixFactor, ...
     wheelPositions, wheelTimes, wheelFs, frameTimeStamps);
 
