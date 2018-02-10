@@ -18,7 +18,7 @@ for i = 1:length(sessionDirs)
     
 end
 
-%% test getLocations on single session
+%% getLocations on single session
 
 session = '180122_000';
 steps = {'top'};

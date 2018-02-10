@@ -125,8 +125,12 @@ if any(strcmp('top', steps))
     % fix x alignment for bottom view
     locationsBot = locations.locationsCorrected;
     locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
+    
+    % get stance bins
+    stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), [potentialLocationsTop.trialIdentities], ...
+        fs, mToPixFactor, wheelPositions, wheelTimes, targetFs, frameTimeStamps);
 
-    locations = getLocationsTop(potentialLocationsTop, locationsBot,...
+    locations = getLocationsTop(potentialLocationsTop, locationsBot, stanceBins, ...
         wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)

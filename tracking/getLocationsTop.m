@@ -1,4 +1,4 @@
-function locations = getLocationsTop(potentialLocationsTop, locationsBot, ...
+function locations = getLocationsTop(potentialLocationsTop, locationsBot, stanceBins, ...
     wheelPositions, wheelTimes, wheelFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints)
 
 % !!! need to document and make not shitty
@@ -30,15 +30,13 @@ wheelCenterOffset = wheelCenter - [0; stanceHgt];
 
 
 % get paw locations for stance periods
-stanceBins = getStanceBins(squeeze(locationsBot(:,1,:)), [potentialLocationsTop.trialIdentities], fs, mToPixFactor, ...
-    wheelPositions, wheelTimes, wheelFs, frameTimeStamps);
+% stanceBins = getStanceBins(squeeze(locationsBot(:,1,:)), [potentialLocationsTop.trialIdentities], fs, mToPixFactor, ...
+%     wheelPositions, wheelTimes, wheelFs, frameTimeStamps);
 
 for i = 1:4
     for j = find(stanceBins(:,i))'
         locations.locationsRaw(j,1,i) = locationsBot(j,1,i);
-        try
         locations.locationsRaw(j,2,i) = wheelCenterOffset(2) - round(sqrt(wheelRadius^2 - (locationsBot(j,1,i)-wheelCenterOffset(1))^2));
-        catch; keyboard; end
     end
 end
 
