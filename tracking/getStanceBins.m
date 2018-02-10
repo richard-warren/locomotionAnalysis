@@ -11,7 +11,7 @@ stanceMin = .02;       % (s)
 velTime = .02;         % amount of time to compute velocity over
 
 % settings for checking that foot is actually touching flor
-subFrameUpDown = [10 6];
+subFrameUpDown = [12 6];
 subFrameLeftRight = [12 12];
 stanceThresh = 80;
 
@@ -76,7 +76,7 @@ end
 
 % prepare figure is showAnalysis
 if showAnalysis
-    figure; colormap gray; pimpFig
+    figure; colormap gray; pimpFig; set(gcf, 'color', [.5 .5 .5])
     
     % raw frame preview, with rectangle showing subframe region
     subplot(2,2,1:2)
@@ -118,7 +118,7 @@ for i = find(sum(stanceBinsUncorrected,2))'
         isTouching(i,j) = ~any(intersect(leftSideRegions, rightSideRegions));
         
         
-        if showAnalysis
+        if showAnalysis && (i==32955) %  || i==23574
             set(framePreview, 'CData', frame);
             set(rawPreview, 'CData', subFrame)
             set(threshedPreview, 'CData', ~(subFrame<stanceThresh))

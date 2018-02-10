@@ -41,7 +41,8 @@ if showCorrected
     locationsTemp = locations.locationsCorrected;
 else
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view '.mat'])
-    locationsTemp = fixTracking(locations.locationsRaw, locations.trialIdentities);
+%     locationsTemp = fixTracking(locations.locationsRaw, locations.trialIdentities);
+    locationsTemp = locations.locationsRaw;
 end
 
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\run' view '.mp4']);
@@ -49,7 +50,7 @@ anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x
 
 
 showLocations(vid, find(locations.isAnalyzed), eval(['potentialLocations' view]), ...
-    locationsTemp, locations.trialIdentities, 1, frameDelay, anchorPtsBot, hsv(4));
+    locationsTemp, locations.trialIdentities, 0, frameDelay, anchorPtsBot, hsv(4));
 
 %% exclude trials
 
