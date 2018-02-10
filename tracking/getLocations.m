@@ -86,6 +86,26 @@ if any(strcmp('bot', steps))
 end
 
 
+% stance analysis
+if any(strcmp('stance', steps))
+    
+    % initializations
+    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
+    fs = 250;
+    
+    % fix x alignment for bottom view
+    locationsBot = locations.locationsCorrected;
+    locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
+    
+    % get stance bins
+    stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), locations.trialIdentities', ...
+        fs, mToPixFactor, wheelPositions, wheelTimes, targetFs, frameTimeStamps);
+    
+    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\stanceBins.mat'], 'stanceBins')
+
+end
+
+
 % potential locations top
 if any(strcmp('potTop', steps))
     
@@ -117,18 +137,13 @@ if any(strcmp('top', steps))
     fs = 250;
     
     % initializations
-    if ~exist('potentialLocationsTop', 'var') % load potentialLocations if it was not already computed above
-        load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'])
-    end
+    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop')
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
+    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stanceBins.mat'], 'stanceBins')
 
     % fix x alignment for bottom view
     locationsBot = locations.locationsCorrected;
     locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
-    
-    % get stance bins
-    stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), [potentialLocationsTop.trialIdentities], ...
-        fs, mToPixFactor, wheelPositions, wheelTimes, targetFs, frameTimeStamps);
 
     locations = getLocationsTop(potentialLocationsTop, locationsBot, stanceBins, ...
         wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints);

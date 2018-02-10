@@ -21,7 +21,7 @@ end
 %% getLocations on single session
 
 session = '180122_000';
-steps = {'top'};
+steps = {'stance'};
 
 showTracking = true;
 minVel = .4; % minVel only applies to potentialLocationsBot analysis // subsequent stages analyze whatever has already been analyzed in potentialLocationsBot

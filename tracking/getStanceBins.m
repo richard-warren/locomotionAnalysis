@@ -48,6 +48,7 @@ for i = unique(trialIdentities(~isnan(trialIdentities)))
 
         % exclude from stance consideration frames in which paw is close to obstacle
         % !!! need to check that excluding these lines of code doesn't create false stances when he is butting up against the obstacle
+        % !!! could change this so the subFrame computed below shift to the right or left if the paw is ahead of or behaind the obs, s.t. obs never sppears in subFrame...
 %         nearObsBins = abs(obsPixPositions' - locationsBot(:,1,j)) < obsProximity;
 %         matchedVelBins(nearObsBins) = 0;
 
@@ -99,7 +100,9 @@ end
 
 % for each detected stance, determine whether foot is touching wheel
 for i = find(sum(stanceBinsUncorrected,2))'
-    disp(i)
+    
+    % report progress
+    disp(i/size(stanceBins,1))
     
     frame = rgb2gray(read(vidTop, i));
     stancePaws = find(stanceBinsUncorrected(i,:));
