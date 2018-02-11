@@ -8,7 +8,7 @@ mice = {'run6', 'run7', 'run8'};
 % user settings
 sessiosnToInclude = 3; % for the plot comparing light vs no light speed, only take the most recent lightVsNoLightSessions for each mouse
 wiskTouchThresh = -.75; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
-obsNosePos = .333;
+obsNosePos = .336;
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
