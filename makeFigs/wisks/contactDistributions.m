@@ -94,12 +94,12 @@ allContactFrames = cat(3, allContactFrames{:});
 meanFrame = uint8(mean(allContactFrames,3));
 
 % convert to real world units
-histogram(allContactPositions*1000, 25, 'normalization', 'probability'); hold on
+histogram(allContactPositions*1000, 15, 'normalization', 'probability'); hold on
 
 % pimp fig
 set(gca, 'box', 'off', 'xdir', 'reverse')
 ax = gca;
-ax.YAxis.Visible = 'off'
+ax.YAxis.Visible = 'off';
 xlabel('distance from nose (mm)')
 
 %% show all contact frames
