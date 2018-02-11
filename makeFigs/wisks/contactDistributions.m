@@ -2,10 +2,10 @@
 
 
 % temp
-sessions = {'180122_000', '180122_001', '180122_002', '180122_003', ...
-            '180123_000', '180123_001', '180123_002', '180123_003', ...
-            '180124_000', '180124_001', '180124_002', '180124_003', ...
-            '180125_000', '180125_001', '180125_002', '180125_003'};
+sessions = {'180122_001', '180122_002', '180122_003', ...
+            '180123_001', '180123_002', '180123_003', ...
+            '180124_001', '180124_002', '180124_003', ...
+            '180125_001', '180125_002', '180125_003'};
 
 
 % settings
@@ -32,7 +32,6 @@ for i = 1:length(sessions)
             'obsLightOnTimes', 'obsLightOffTimes',...
             'wiskTouchSignal', 'frameTimeStampsWisk', 'mToPixMapping');
     vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runWisk.mp4']);
-    vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runTop.mp4']);
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
     
     
@@ -46,7 +45,6 @@ for i = 1:length(sessions)
     % get pix position of first contact for all trial
     contactPositions = nan(length(obsOnTimes), 1);
     data(i).contactFramesWisk = uint8(nan(vidWisk.Height, vidWisk.Width, length(obsOnTimes)));
-    data(i).contactFramesTop = uint8(nan(vidTop.Height, vidTop.Width, length(obsOnTimes)));
     
     for j = 1:length(obsOnTimes)
         
@@ -59,22 +57,16 @@ for i = 1:length(sessions)
             contactIndTop = find(abs(frameTimeStamps-contactTime)<.002);
             
             if ~isempty(contactIndTop)
-                
-                contactPositions(j) = obsPixPositions(contactIndTop);
-                
-                contactFrameWisk = rgb2gray(read(vidWisk, contactIndWisk));
-                data(i).contactFramesWisk(:,:,j) = contactFrameWisk;
-                
-                contactFrameTop = rgb2gray(read(vidTop, contactIndTop));
-                data(i).contactFramesTop(:,:,j) = contactFrameTop;
-                
+                contactPositions(j) = obsPositions(find(obsTimes>=contactTime,1,'first')); % for some reason it doesn't work if i take the pixPosition and use the linear mapping to bring that back to meters...
+                data(i).contactFramesWisk(:,:,j) = rgb2gray(read(vidWisk, contactIndWisk));
+                if contactPositions(j)<.325; contactPositions(j) = nan; end % !!! this is a super hack to correct for instances in which obsPositions are very off - i need a better system for grounding these values...
             end
         end
     end
     
     % convert to meters
-    mToPixMapping = median(mToPixMapping,1);
-    contactPositions = (contactPositions-mToPixMapping(2)) / mToPixMapping(1);
+%     mToPixMapping = median(mToPixMapping,1);
+%     contactPositions = (contactPositions-mToPixMapping(2)) / mToPixMapping(1);
     
     % subtract nose position
     contactPositions = contactPositions - obsNosePos;
@@ -90,7 +82,7 @@ end
 
 
 %% plot results
-close all; figure('color', [1 1 1]);
+close all; figure('color', [1 1 1], 'menubar', 'none');
 
 % get all contact positions
 allContactPositions = {data.contactPositions};
@@ -99,17 +91,39 @@ allContactPositions = cat(1, allContactPositions{:});
 % get average contact frame
 allContactFrames = {data.contactFramesWisk};
 allContactFrames = cat(3, allContactFrames{:});
+meanFrame = uint8(mean(allContactFrames,3));
 
 % convert to real world units
-histogram(allContactPositions, 25, 'normalization', 'probability'); hold on
+histogram(allContactPositions*1000, 25, 'normalization', 'probability'); hold on
 
 % pimp fig
-set(gca, 'box', 'off')
+set(gca, 'box', 'off', 'xdir', 'reverse')
+ax = gca;
+ax.YAxis.Visible = 'off'
+xlabel('distance from nose (mm)')
 
 %% show all contact frames
 
+% settings
+rows = 5;
+cols = 8;
 
+imPreview = nan(rows*vidWisk.Height, cols*vidWisk.Width);
+imInds = randperm(size(allContactFrames,3), rows*cols);
+imInd = 1;
 
+for i = 1:rows
+    for j = 1:cols
+        y = (i-1)*vidWisk.Height + 1;
+        x = (j-1)*vidWisk.Width + 1;
+        imPreview(y:y+vidWisk.Height-1, x:x+vidWisk.Width-1) = allContactFrames(:,:,imInds(imInd));
+        imInd = imInd+1;
+    end
+end
+
+figure;
+imshow(uint8(imPreview))
+pimpFig;
 
 
 
