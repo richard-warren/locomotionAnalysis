@@ -1,0 +1,56 @@
+% function getNosePos(vidBot)
+
+
+
+
+% settings
+minFrame = 10000;  % when getting avg frame, only look for frames beyond this frame
+threshFactor = 1.2; % 2 times the mean of the frame
+frameNum = 100;    % nu,ber of random frames to use for min projection
+noseSubFrameWidth = 5;
+
+
+% get stack of random frames
+frameInds = randperm(vidBot.NumberOfFrames-minFrame, frameNum) + minFrame;
+frameInds = sort(frameInds);
+
+frames = nan(vidBot.Height, vidBot.Width, frameNum);
+for i = 1:length(frameInds)
+    disp(i/length(frameInds))
+    frames(:,:,i) = rgb2gray(read(vidBot, frameInds(i)));
+end
+
+
+% get median frame
+medFrame = uint8(median(frames, 3));
+thresh = mean(medFrame(:)) * threshFactor;
+
+
+% threshold image and keep only connected regions that interest the bottom row of image
+
+% get nose x position (rightmost edge of largest binary region)
+threshed = medFrame > thresh;
+mouseOutlineInfo = regionprops(threshed, 'Area', 'BoundingBox', 'FilledImage');
+[~, maxInd] = max([mouseOutlineInfo.Area]);
+mouseOutlineInfo = mouseOutlineInfo(maxInd);
+noseX = floor(mouseOutlineInfo.BoundingBox(1) + mouseOutlineInfo.BoundingBox(3));
+
+% get nose y position / midline (y center of mass of largest binary region cropped to the rightmost noseSubFrameWidth pixels)
+subFrame = mouseOutlineInfo.FilledImage(:, end-noseSubFrameWidth:end);
+noseInfo = regionprops(subFrame, 'Centroid');
+noseY = noseInfo.Centroid(2) + mouseOutlineInfo.BoundingBox(2);
+
+
+% show results
+figure;
+imshow(medFrame); hold on
+line([1 vidBot.Width], [noseY noseY], 'color', 'red', 'linewidth', 2);
+line([noseX noseX], [1 vidBot.Height], 'color', 'red', 'linewidth', 2);
+pimpFig
+
+
+
+
+
+
+

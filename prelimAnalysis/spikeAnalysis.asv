@@ -352,6 +352,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
             fprintf('%s: getting nose position in bottom view\n', dataFolder)
             
+            % settings
             vidBot = VideoReader([dataDir dataFolder '\runBot.mp4']);
             
             % track obstacle in bottom view
@@ -361,6 +362,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
             % save
             varStruct.obsPixPositions = obsPixPositions;
+            varStruct.mToPixMapping = mappings;
             anythingAnalyzed = true;
     end
 
