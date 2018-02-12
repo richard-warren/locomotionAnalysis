@@ -1,0 +1,51 @@
+% function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, noseX)
+
+
+
+% temp
+session = '180122_000';
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+    'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'nosePos');
+noseX = nosePos(1);
+
+
+obsPositionsFixed = obsPositions;
+
+for i = 1:length(obsOnTimes)-1 % !!!
+    
+    % get trial pixPositions and pixTimes
+    trialFrameBins = (frameTimeStamps>=obsOnTimes(i)) & (frameTimeStamps<=obsOffTimes(i));
+    pixPositions = obsPixPositions(trialFrameBins);
+    pixTimes = frameTimeStamps(trialFrameBins);
+    
+    % get time at which pixPos cross nose
+    noseTime = interp1(pixPositions, pixTimes, noseX);
+    
+    % get corresponding onsPos (in meters)
+    obsAtNosePos = obsPositions(find(obsTimes>=noseTime,1,'first'));
+    
+    
+end
+
+
+
+
+
+
+
+
+% obsPositionsFixed = obsPositions;
+% 
+% for i = 1:length(obsOnTimes)
+%     
+%     if i<length(obsOnTimes)
+%         endTime = obsOnTimes(i+1);
+%     else
+%         endTime = max(obsTimes);
+%     end
+%     
+%     trialInds = (obsTimes>obsOnTimes(i)) & (obsTimes<=endTime);
+%     minPos = min(obsPositions(trialInds));
+%     obsPositionsFixed(trialInds) = obsPositionsFixed(trialInds) - minPos;
+%     
+% end

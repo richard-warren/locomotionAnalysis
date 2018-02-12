@@ -1,28 +1,53 @@
-function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsOnTimes)
+function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, noseX)
 
-% fixes the drift in the rotary encoder reading position of obstacle stepper motor
-% this drift could in principle result from either from lost ticks in the endoer OR belt skidding, but it is likely the former
-% for every obstacle trial, it finds the minimum position (which is reached when the platform re-zeros to the end stop after each trial)
-% it then subtracts this position for all other positions, effectively settings to 0 the lowest position in each trial
-%
-% input      obsPositions:        raw obstacle position readings (m), read from rotary decoder coupled to stepper motor shaft (actually the idler on the opposite side of the track)
-%            obsTimes:            timestamps for obsPositions
-%            obsOnTimes:          the times at which the obstacle turns on
-%
-% output     obsPositionsFixed:   obsPositions with the trial to trial signal drift removed
 
-obsPositionsFixed = obsPositions;
 
-for i = 1:length(obsOnTimes)
+% temp
+% session = '180123_001';
+% load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+%     'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'nosePos');
+% noseX = nosePos(1);
+
+
+obsPositionsFixed = nan(size(obsPositions));
+
+for i = 1:length(obsOnTimes) % !!!
     
-    if i<length(obsOnTimes)
-        endTime = obsOnTimes(i+1);
-    else
-        endTime = max(obsTimes);
-    end
+    % get trial pixPositions and pixTimes
+    trialFrameBins = (frameTimeStamps>=obsOnTimes(i)) & (frameTimeStamps<=obsOffTimes(i)) & ~isnan(obsPixPositions)';
+    pixPositions = obsPixPositions(trialFrameBins);
+    pixTimes = frameTimeStamps(trialFrameBins);
     
-    trialInds = (obsTimes>obsOnTimes(i)) & (obsTimes<=endTime);
-    minPos = min(obsPositions(trialInds));
-    obsPositionsFixed(trialInds) = obsPositionsFixed(trialInds) - minPos;
+    % get obsPos at moment obs reaches nose
+    noseTime = interp1(pixPositions, pixTimes, noseX);
+    obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
+    
+    % get trial obsPos and subtract obsAtNosePos
+    trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));
+    obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
+    
     
 end
+
+
+% close all; figure; plot(obsPositionsFixed); pimpFig
+
+
+
+
+
+% obsPositionsFixed = obsPositions;
+% 
+% for i = 1:length(obsOnTimes)
+%     
+%     if i<length(obsOnTimes)
+%         endTime = obsOnTimes(i+1);
+%     else
+%         endTime = max(obsTimes);
+%     end
+%     
+%     trialInds = (obsTimes>obsOnTimes(i)) & (obsTimes<=endTime);
+%     minPos = min(obsPositions(trialInds));
+%     obsPositionsFixed(trialInds) = obsPositionsFixed(trialInds) - minPos;
+%     
+% end
