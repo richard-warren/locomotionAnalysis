@@ -59,7 +59,7 @@ for i = 1:length(sessions)
             if ~isempty(contactIndTop)
                 contactPositions(j) = obsPositions(find(obsTimes>=contactTime,1,'first')); % for some reason it doesn't work if i take the pixPosition and use the linear mapping to bring that back to meters...
                 data(i).contactFramesWisk(:,:,j) = rgb2gray(read(vidWisk, contactIndWisk));
-                if contactPositions(j)<.325; contactPositions(j) = nan; end % !!! this is a super hack to correct for instances in which obsPositions are very 
+                if contactPositions(j)<.325; keyboard; contactPositions(j) = nan; end % !!! this is a super hack to correct for instances in which obsPositions are very off - i need a better system for grounding these values...
             end
         end
     end
@@ -82,7 +82,7 @@ end
 
 
 %% plot results
-close all; figure('color', [1 1 1]);
+close all; figure('color', [1 1 1], 'menubar', 'none');
 
 % get all contact positions
 allContactPositions = {data.contactPositions};
@@ -91,12 +91,16 @@ allContactPositions = cat(1, allContactPositions{:});
 % get average contact frame
 allContactFrames = {data.contactFramesWisk};
 allContactFrames = cat(3, allContactFrames{:});
+meanFrame = uint8(mean(allContactFrames,3));
 
 % convert to real world units
-histogram(allContactPositions, 50, 'normalization', 'probability'); hold on
+histogram(allContactPositions*1000, 15, 'normalization', 'probability'); hold on
 
 % pimp fig
-set(gca, 'box', 'off')
+set(gca, 'box', 'off', 'xdir', 'reverse')
+ax = gca;
+ax.YAxis.Visible = 'off';
+xlabel('distance from nose (mm)')
 
 %% show all contact frames
 

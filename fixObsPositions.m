@@ -13,9 +13,15 @@ function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsOnTimes)
 
 obsPositionsFixed = obsPositions;
 
-for i = 1:length(obsOnTimes)-1
+for i = 1:length(obsOnTimes)
     
-    trialInds = (obsTimes>obsOnTimes(i)) & (obsTimes<obsOnTimes(i+1));
+    if i<length(obsOnTimes)
+        endTime = obsOnTimes(i+1);
+    else
+        endTime = max(obsTimes);
+    end
+    
+    trialInds = (obsTimes>obsOnTimes(i)) & (obsTimes<=endTime);
     minPos = min(obsPositions(trialInds));
     obsPositionsFixed(trialInds) = obsPositionsFixed(trialInds) - minPos;
     
