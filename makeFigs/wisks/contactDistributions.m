@@ -108,7 +108,7 @@ histogram(allContactPositions*1000, 10, 'normalization', 'probability', 'linewid
     'facealpha', .6, 'facecolor', [244 66 66] / 255); hold on
 
 % pimp fig
-set(gca, 'box', 'off', 'xdir', 'reverse', 'ydir', 'normal')
+set(gca, 'box', 'off', 'xdir', 'reverse', 'ydir', 'normal', 'tickdir', 'out')
 set(gca, 'dataaspectratio', [(size(meanFrame,1)/size(meanFrame,2)) * (abs(diff(histoLims))/histoYMax) 1 1])
 ax = gca;
 ax.YAxis.Visible = 'off';
