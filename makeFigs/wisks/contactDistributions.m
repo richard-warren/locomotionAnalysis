@@ -10,7 +10,6 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
 
 % settings
 wiskTouchThresh = -.75; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
-obsNosePos = .336; % !!! these scripts will fail if you try to incorporate sessions in which the camera settings are different of the position of the mouse/headplate have changed
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -30,9 +29,9 @@ for i = 1:length(sessions)
             'obsPositions', 'obsTimes',...
             'obsOnTimes', 'obsOffTimes',...
             'obsLightOnTimes', 'obsLightOffTimes',...
-            'wiskTouchSignal', 'frameTimeStampsWisk', 'mToPixMapping');
+            'wiskTouchSignal', 'frameTimeStampsWisk', 'nosePos');
     vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runWisk.mp4']);
-    obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
+    obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     
     
     % convert wisk contacts to z scores
@@ -51,6 +50,7 @@ for i = 1:length(sessions)
         % get position of first contact
         contactIndWisk = find(frameTimeStampsWisk>obsOnTimes(j) & wiskTouchSignal>wiskTouchThresh, 1, 'first');
         contactTime = frameTimeStampsWisk(contactIndWisk);
+        % !!! upsample to increase resolution?
         
         if ~isempty(contactTime)
             
@@ -59,23 +59,20 @@ for i = 1:length(sessions)
             if ~isempty(contactIndTop)
                 contactPositions(j) = obsPositions(find(obsTimes>=contactTime,1,'first')); % for some reason it doesn't work if i take the pixPosition and use the linear mapping to bring that back to meters...
                 data(i).contactFramesWisk(:,:,j) = rgb2gray(read(vidWisk, contactIndWisk));
-                if contactPositions(j)<.325; contactPositions(j) = nan; end % !!! this is a super hack to correct for instances in which obsPositions are very off - i need a better system for grounding these values...
+                
+                % set to nan trials in which detected position is unreasonable
+                if contactPositions(j)>0 || contactPositions(j)<-.015
+                    contactPositions(j) = nan;
+                end
             end
         end
     end
     
-    % convert to meters
-%     mToPixMapping = median(mToPixMapping,1);
-%     contactPositions = (contactPositions-mToPixMapping(2)) / mToPixMapping(1);
-    
-    % subtract nose position
-    contactPositions = contactPositions - obsNosePos;
-    
+        
     % store data
     sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}));
     data(i).mouse = sessionInfo.mouse{sessionInfoBin};
     data(i).contactPositions = contactPositions;
-    data(i).mToPixMapping = mToPixMapping;
     
 end
 
@@ -94,7 +91,7 @@ allContactFrames = cat(3, allContactFrames{:});
 meanFrame = uint8(mean(allContactFrames,3));
 
 % convert to real world units
-histogram(allContactPositions*1000, 15, 'normalization', 'probability'); hold on
+histogram(allContactPositions*1000, 50, 'normalization', 'probability'); hold on
 
 % pimp fig
 set(gca, 'box', 'off', 'xdir', 'reverse')
