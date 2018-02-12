@@ -346,21 +346,17 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     
     
     
-    % !!!
     % get position of tip of nose
     if analyzeVar('nosePos', varNames, varsToOverWrite)
 
             fprintf('%s: getting nose position in bottom view\n', dataFolder)
             
+            % get nose position
             vidBot = VideoReader([dataDir dataFolder '\runBot.mp4']);
+            [noseX, noseY] = getNosePos(vidBot);
             
-            % track obstacle in bottom view
-            [obsPixPositions, mappings] = trackObstacles(vidBot, varStruct.obsOnTimes, varStruct.obsOffTimes,...
-                varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
-                xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
-
             % save
-            varStruct.obsPixPositions = obsPixPositions;
+            varStruct.nosePos = [noseX noseY];
             anythingAnalyzed = true;
     end
 

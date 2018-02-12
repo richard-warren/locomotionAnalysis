@@ -20,7 +20,6 @@ frameInds = sort(frameInds);
 
 frames = nan(vidBot.Height, vidBot.Width, frameNum);
 for i = 1:length(frameInds)
-    disp(i/length(frameInds))
     frames(:,:,i) = rgb2gray(read(vidBot, frameInds(i)));
 end
 
