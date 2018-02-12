@@ -1,15 +1,15 @@
 
 
-
-% temp
+% settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
             '180123_001', '180123_002', '180123_003', ...
             '180124_001', '180124_002', '180124_003', ...
             '180125_001', '180125_002', '180125_003'};
 
-
-% settings
 wiskTouchThresh = -.75; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
+nosePix = 197; % these two parameters have to be manually defined... this is a bit of a hack
+obsPix = 270;
+histoYMax = .4;
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -79,7 +79,7 @@ end
 
 
 %% plot results
-close all; figure('color', [1 1 1], 'menubar', 'none');
+close all; figure('color', [1 1 1]);
 
 % get all contact positions
 allContactPositions = {data.contactPositions};
@@ -90,11 +90,26 @@ allContactFrames = {data.contactFramesWisk};
 allContactFrames = cat(3, allContactFrames{:});
 meanFrame = uint8(mean(allContactFrames,3));
 
-% convert to real world units
-histogram(allContactPositions*1000, 50, 'normalization', 'probability'); hold on
+% trim frame
+meanFrame = meanFrame(1:220, :);
+
+% set up conversion from image to histogram x scale
+pixToMmMapping = polyfit([nosePix obsPix], [0 nanmedian(allContactPositions)], 1);
+histoXMin = 1*pixToMmMapping(1) + pixToMmMapping(2);
+histoXMax = vidWisk.Width*pixToMmMapping(1) + pixToMmMapping(2);
+histoLims = [histoXMin histoXMax] * 1000;
+
+% plot (in mm)
+% subplot(2,1,1)
+colormap(gray)
+imagesc(flipud(meanFrame(:,:)), 'XData', histoLims, 'YData', [0 histoYMax]); hold on
+% subplot(2,1,2)
+histogram(allContactPositions*1000, 10, 'normalization', 'probability', 'linewidth', 1, ...
+    'facealpha', .6, 'facecolor', [244 66 66] / 255); hold on
 
 % pimp fig
-set(gca, 'box', 'off', 'xdir', 'reverse')
+set(gca, 'box', 'off', 'xdir', 'reverse', 'ydir', 'normal')
+set(gca, 'dataaspectratio', [(size(meanFrame,1)/size(meanFrame,2)) * (abs(diff(histoLims))/histoYMax) 1 1])
 ax = gca;
 ax.YAxis.Visible = 'off';
 xlabel('distance from nose (mm)')
