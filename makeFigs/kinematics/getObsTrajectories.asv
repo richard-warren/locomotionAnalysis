@@ -9,6 +9,7 @@ sessions = {'180122_001', '180122_002', '180122_003'};%, ...
 % settings
 obsPos = -.0073;
 speedTime = .02; % compute velocity over this interval
+controlSteps = 2;
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -45,34 +46,40 @@ for i = 1:length(sessions)
     swingIdentities(stanceBins | isnan(squeeze(locations(:,1,:)))) = nan;
     
     
-    for j = 1:length(obsOnTimes)
+    for j = 1:length(obsOnTimes)-1
+        disp(j)
+        
+        % get trial bins, locations, and swingIdentities
+        trialBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions)';
+        trialLocations = locations(trialBins,:,:);
+        trialSwingIdentities = swingIdentities(trialBins,:);
+        trialTimeStamps = frameTimeStamps(trialBins);
+        trialPixPositions = obsPixPositions(trialBins);
         
         % get frame ind at which obs reaches obsPos
         obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
-        obsFrameInd = knnsearch(frameTimeStamps, obsPosTime);
+        obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
         
-        % get trial swing identities and define control and modified steps
-        (normalize each paw s.t. the 0th swing is the swing that goes over the obs)
-        trialSwingIdentities = swingIdentities;
-        isControlStep = nan(size(locations));
-        isModifiedStep = nan(size(locations));
-        for k = 1:4
-            overObsInd = find(locations(:,1,k)>obsPixPositions' & frameTimeStamps>obsOnTimes(j), 1, 'first');
-            firstSwingOverIdentity = swingIdentities(overObsInd, k);
-            trialSwingIdentities(:,k) = swingIdentities(:,k) - firstSwingOverIdentity;
-        end
+        %% get trial swing identities and define control and modified steps
+        controlStepIdentities = nan(size(trialSwingIdentities));
+        modifiedStepIdentities = nan(size(trialSwingIdentities));
         
-        
-        
-        % define control and modified swings (modified swings are those that occur during or after the frame at which obs reaches obsPos)
         for k = 1:4
             
+            overObsInd = find(trialLocations(:,1,k)>trialPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
+            swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
+            firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(obsPosInd) & 1:size(trialSwingIdentities,1)>=obsPosInd, 1, 'first'), k);
+            
+            modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & (trialSwingIdentities(:,k) <= swingOverObsIdentity);
+            controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
+            
+            modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
+            modifiedStepIdentities(~modifiedBins,k) = nan;
+            controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
+            controlStepIdentities(~controlBins,k) = nan;
+            
         end
-        
-        
-        
-        % get swing identities
-        
+        %%
         
         
         
@@ -81,7 +88,7 @@ for i = 1:length(sessions)
         data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
         data(dataInd).session = sessions{i};
         data(dataInd).vel = sessionVels(j);
-        data(dataInd).obsFrameInd = obsFrameInd;
+        data(dataInd).obsPosInd = obsPosInd;
         dataInd = dataInd + 1;
         
     end
