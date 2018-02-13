@@ -1,5 +1,5 @@
 function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPrePost, frameTimeStamps,...
-    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes)
+    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes)
 
 % returns vector containing frameInds for all trials // only includes trials where mouse is running faster than minVel
 % minVel is calculated between velPositions, which should be the start and end positions of the mouse running over obs
@@ -10,7 +10,6 @@ function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obs
 % !!! now obsPrePost actually determines how many m before and after obs is at tip of nose
 % this code assumes that obsPositions have already been normalized s.t. 0 is where obs is beneathe animal's nose
 
-keyboard
 % initializations
 frameInds = [];
 trialIdentities = [];
@@ -20,17 +19,15 @@ trialVels = nan(1, length(obsOnTimes));
 for i = 1:length(obsOnTimes)
     
     % get trial velocity
-    startInd = find(obsTimes>obsOnTimes(i) & obsPositions>(obsCenter-velPrePost(1)), 1, 'first');
-    endInd = find(obsTimes>obsOnTimes(i) & obsPositions>(velPrePost(2)+obsCenter), 1, 'first');
+    startInd = find(obsTimes>obsOnTimes(i) & obsPositions>-velPrePost(1), 1, 'first');
+    endInd = find(obsTimes>obsOnTimes(i) & obsPositions>velPrePost(2), 1, 'first');
     trialVels(i) = (obsPositions(endInd) - obsPositions(startInd)) / (obsTimes(endInd) - obsTimes(startInd));
     
     if trialVels(i) > minVel
     
         % get positions of wheel at moment obs is at wheel center
-        centerTime = obsTimes(find(obsTimes>obsOnTimes(i) & obsPositions>=obsCenter, 1, 'first'));
-        wheelPos = interp1(wheelTimes, wheelPositions, centerTime);
-%         startWheelPos = interp1(wheelTimes, wheelPositions, obsOnTimes(i));
-%         endWheelPos = interp1(wheelTimes, wheelPositions, obsOffTimes(i));
+        noseTime = obsTimes(find(obsTimes>obsOnTimes(i) & obsPositions>=0, 1, 'first'));
+        wheelPos = interp1(wheelTimes, wheelPositions, noseTime);
 
         % add and subtract obsPrePost to these values
         startWheelPos = wheelPos - obsPrePost(1);

@@ -36,8 +36,7 @@ stanceBins = false(size(xLocations));
 isTouching = false(size(xLocations));
 startEndInds = cell(1,4);
 % !!! temp hack fix // wont need this line after potentialLocationsTop are reanalyzed st length of structure is same as number of frames in video
-trialIdentities(end+1:length(frameTimeStamps)) = nan;
-
+% trialIdentities(end+1:length(frameTimeStamps)) = nan;
 
 
 for i = unique(trialIdentities(~isnan(trialIdentities)))
@@ -97,12 +96,10 @@ end
 
 
 
+w = waitbar(0, 'getting stance bins...', 'position', [1500 50 270 56.2500]);
 
 % for each detected stance, determine whether foot is touching wheel
 for i = find(sum(stanceBinsUncorrected,2))'
-    
-    % report progress
-    disp(i/size(stanceBins,1))
     
     frame = rgb2gray(read(vidTop, i));
     stancePaws = find(stanceBinsUncorrected(i,:));
@@ -115,10 +112,14 @@ for i = find(sum(stanceBinsUncorrected,2))'
         subFrame = frame(max(wheelY-subFrameUpDown(1), 1) : min(wheelY+subFrameUpDown(2), size(frame,1)), ...
                          max(pawX-subFrameLeftRight(1), 1) : min(pawX+subFrameLeftRight(2), size(frame,2)));
         
-        regions = bwlabel(subFrame<stanceThresh);
-        leftSideRegions = unique(regions(regions(:,1)~=0,1));
-        rightSideRegions = unique(regions(regions(:,end)~=0,end));
-        isTouching(i,j) = ~any(intersect(leftSideRegions, rightSideRegions));
+        if ~isempty(subFrame)
+            regions = bwlabel(subFrame<stanceThresh);
+            leftSideRegions = unique(regions(regions(:,1)~=0,1));
+            rightSideRegions = unique(regions(regions(:,end)~=0,end));
+            isTouching(i,j) = ~any(intersect(leftSideRegions, rightSideRegions));
+        else
+            fprintf('  problem with trial %i\n', i)
+        end
         
         
         if showAnalysis && (i==32955) %  || i==23574
@@ -131,6 +132,8 @@ for i = find(sum(stanceBinsUncorrected,2))'
             waitforbuttonpress
         end
     end
+    
+    waitbar(i/size(stanceBins,1))
 end
 
 
@@ -147,7 +150,6 @@ for i = 1:4
     end
 end
 
-
-
+close(w)
 
 

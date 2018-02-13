@@ -7,8 +7,8 @@ function getLocations(session, steps, minVel, showTracking)
 
 % settings
 % obsPrePost = [.2 .2]; % include this many meters before and after obs turns on
-obsPrePostBot = [.55 .25];
-obsPrePostTop = [.55 .25];
+obsPrePostBot = [.5 .2];
+obsPrePostTop = [.5 .2];
 velPrePost = [.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
 colors = hsv(4); % red green blue purple
@@ -26,9 +26,9 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPosit
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
 [frameIndsBot, trialIdentities] = getTrialFrameInds(minVel, obsPrePostBot, velPrePost, frameTimeStamps,...
-    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes);
 frameIndsTop = getTrialFrameInds(minVel, obsPrePostTop, velPrePost, frameTimeStamps,...
-    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes);
 % fprintf('%s: analyzing %i sessions', session, length(unique(trialIdentities(~isnan(trialIdentities)))));
 
 mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
@@ -97,10 +97,11 @@ if any(strcmp('stance', steps))
     locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
     
     % get stance bins
-    stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), locations.trialIdentities', ...
+    tic; stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), locations.trialIdentities', ...
         fs, mToPixFactor, wheelPositions, wheelTimes, targetFs, frameTimeStamps);
     
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\stanceBins.mat'], 'stanceBins')
+    fprintf('%s: stanceBins analyzed in %.1f minutes\n', session, (toc/60))
 
 end
 

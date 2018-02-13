@@ -9,7 +9,6 @@ sessions = {'180122_001', '180122_002', '180122_003'};%, ...
 % settings
 obsPos = -.0073;
 speedTime = .02; % compute velocity over this interval
-controlSteps = 2;
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -50,23 +49,17 @@ for i = 1:length(sessions)
         
         % get frame ind at which obs reaches obsPos
         obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
-        obsPosInd = knnsearch(frameTimeStamps, obsPosTime);
+        obsFrameInd = knnsearch(frameTimeStamps, obsPosTime);
         
         % get trial swing identities and define control and modified steps
-        controlStepIdentities = nan(size(swingIdentities));
-        modifiedStepIdentities = nan(size(swingIdentities));
-        
+        (normalize each paw s.t. the 0th swing is the swing that goes over the obs)
+        trialSwingIdentities = swingIdentities;
+        isControlStep = nan(size(locations));
+        isModifiedStep = nan(size(locations));
         for k = 1:4
             overObsInd = find(locations(:,1,k)>obsPixPositions' & frameTimeStamps>obsOnTimes(j), 1, 'first');
-            swingOverObsIdentity = swingIdentities(overObsInd, k);
-            firstModifiedIdentitiy = swingIdentities(obsPosInd, k);
-            
-            modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & (trialSwingIdentities(:,k) <= swingOverObsIdentity);
-            controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
-            
-            controlStepIdentities = swingIdentities
-            
-            trialSwingIdentities(:,k) = swingIdentities(:,k) - swingOverObsIdentity;
+            firstSwingOverIdentity = swingIdentities(overObsInd, k);
+            trialSwingIdentities(:,k) = swingIdentities(:,k) - firstSwingOverIdentity;
         end
         
         
@@ -88,7 +81,7 @@ for i = 1:length(sessions)
         data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
         data(dataInd).session = sessions{i};
         data(dataInd).vel = sessionVels(j);
-        data(dataInd).obsPosInd = obsPosInd;
+        data(dataInd).obsFrameInd = obsFrameInd;
         dataInd = dataInd + 1;
         
     end
