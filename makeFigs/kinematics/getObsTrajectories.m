@@ -50,52 +50,59 @@ for i = 1:length(sessions)
         disp(j)
         
         % get trial bins, locations, and swingIdentities
-        trialBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions)';
+        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
         trialLocations = locations(trialBins,:,:);
         trialSwingIdentities = swingIdentities(trialBins,:);
         trialTimeStamps = frameTimeStamps(trialBins);
         trialPixPositions = obsPixPositions(trialBins);
         
-        % get frame ind at which obs reaches obsPos
-        obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
-        obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
+        if any(~isnan(trialLocations(:))) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
-        %% get trial swing identities and define control and modified steps
-        controlStepIdentities = nan(size(trialSwingIdentities));
-        modifiedStepIdentities = nan(size(trialSwingIdentities));
-        
-        for k = 1:4
-            
-            overObsInd = find(trialLocations(:,1,k)>trialPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
-            swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
-            firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k))' & 1:size(trialSwingIdentities,1)>=obsPosInd, 1, 'first'), k);
-            
-            modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & (trialSwingIdentities(:,k) <= swingOverObsIdentity);
-            controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
-            
-            modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
-            modifiedStepIdentities(~modifiedBins,k) = nan;
-            controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
-            controlStepIdentities(~controlBins,k) = nan;
-            
+            % get frame ind at which obs reaches obsPos
+            obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
+            obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
+
+            % get trial swing identities and define control and modified steps
+            controlStepIdentities = nan(size(trialSwingIdentities));
+            modifiedStepIdentities = nan(size(trialSwingIdentities));
+
+            for k = 1:4
+
+                overObsInd = find(trialLocations(:,1,k)>trialPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
+                swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
+                firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k))' & 1:size(trialSwingIdentities,1)>=obsPosInd, 1, 'first'), k);
+
+                modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & (trialSwingIdentities(:,k) <= swingOverObsIdentity);
+                controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
+
+                modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
+                modifiedStepIdentities(~modifiedBins,k) = nan;
+                controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
+                controlStepIdentities(~controlBins,k) = nan;
+
+            end
+
+
+
+
+            % store results
+            sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}));
+            data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
+            data(dataInd).session = sessions{i};
+            data(dataInd).vel = sessionVels(j);
+            data(dataInd).obsPosInd = obsPosInd;
+            data(dataInd).locations = trialLocations;
+            data(dataInd).controlStepIdentities = controlStepIdentities;
+            data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
+            dataInd = dataInd + 1;
         end
-        %%
-        
-        
-        
-        % store results
-        sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}));
-        data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
-        data(dataInd).session = sessions{i};
-        data(dataInd).vel = sessionVels(j);
-        data(dataInd).obsPosInd = obsPosInd;
-        dataInd = dataInd + 1;
-        
     end
 end
 
-fprintf('--- done collecting data ---\n', sessions{i});
+fprintf('--- done collecting data ---\n');
 
+
+%% plot some thangs
 
 
 
