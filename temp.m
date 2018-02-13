@@ -1,23 +1,61 @@
-sessions = {'180122_001', '180122_002', '180122_003', ...
-            '180123_001', '180123_002', '180123_003', ...
-            '180124_001', '180124_002', '180124_003', ...
-            '180125_001', '180125_002', '180125_003'};
 
-        
-for i = 1:length(sessions)
+
+isInSwing = nan(length(data),2);
+
+for i = 1:length(data)
     
-    vidBot = VideoReader([getenv('OBSDATADIR') 'sessions/' sessions{i} '/runBot.mp4']);
+    ind = data(i).obsPosInd;
+    isLeftSwing = ~isnan(data(i).modifiedStepIdentities(ind,2));
+    isRightSwing = ~isnan(data(i).modifiedStepIdentities(ind,3));
     
-    [noseX, noseY, medianFrame] = getNosePos(vidBot);
-    
-    figure;
-    imshow(medianFrame); hold on
-    line([1 vidBot.Width], [noseY noseY], 'color', 'red', 'linewidth', 2);
-    line([noseX noseX], [1 vidBot.Height], 'color', 'red', 'linewidth', 2);
-    pimpFig
-    
+    isInSwing(i,:) = [isLeftSwing isRightSwing];
     
 end
+
+bothSwingInds = find(and(isInSwing(:,1), isInSwing(:,2)));
+bothStanceInds = find(sum(isInSwing,2)==0);
+
+%%
+oneSwingOneStance = find([data.oneSwingOneStance]);
+trial = oneSwingOneStance(10);
+
+
+ind = data(i).obsPosInd;
+close all; figure;
+colors = winter(2);
+forepaws = 2:3;
+
+for i = 1:length(forepaws)
+    
+    plot(data(trial).timeStamps, ...
+        data(trial).locations(:,1,forepaws(i)), 'linewidth', 2, 'color', colors(i,:)); hold on;
+    
+    realBins = ~isnan(data(trial).controlStepIdentities(:,forepaws(i)));
+    for j = unique(data(trial).controlStepIdentities(realBins,forepaws(i)))'
+        bins = data(trial).controlStepIdentities(:,forepaws(i)) == j;
+        plot(data(trial).timeStamps(bins), ...
+            data(trial).locations(bins,1,forepaws(i)), 'linewidth', 10, 'color', [0 0 0]); hold on;
+    end
+    
+    realBins = ~isnan(data(trial).modifiedStepIdentities(:,forepaws(i)));
+    for j = unique(data(trial).modifiedStepIdentities(realBins,forepaws(i)))'
+        bins = data(trial).modifiedStepIdentities(:,forepaws(i)) == j;
+        plot(data(trial).timeStamps(bins), ...
+            data(trial).locations(bins,1,forepaws(i)), 'linewidth', 10, 'color', colors(i,:)); hold on;
+    end
+    
+end
+
+% line([ind ind], get(gca,'ylim'))
+xlims = get(gca,'xlim');
+line(xlims, [0 0])
+line(repmat(data(trial).timeStamps(data(trial).obsPosInd),1,2), get(gca,'ylim'))
+pimpFig; set(gca,'xlim',xlims)
+
+
+
+
+
 
 
 

@@ -48,7 +48,6 @@ for i = 1:length(sessions)
     
     
     for j = 1:length(obsOnTimes)-1
-        disp(j)
         
         % get trial bins, locations, and swingIdentities
         trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
@@ -62,13 +61,6 @@ for i = 1:length(sessions)
             % get frame ind at which obs reaches obsPos
             obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
             obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
-
-            % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
-            trialLocations = trialLocations - trialObsPixPositions';           
-            
-            % convert to meters
-            trialLocations = trialLocations / abs(mToPixMapping(1));
-            keyboard
             
             % get trial swing identities and define control and modified steps
             controlStepIdentities = nan(size(trialSwingIdentities));
@@ -85,11 +77,30 @@ for i = 1:length(sessions)
 
                 modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
                 modifiedStepIdentities(~modifiedBins,k) = nan;
+                if ~any(~isnan(modifiedStepIdentities(:,k))); keyboard; end
                 controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
                 controlStepIdentities(~controlBins,k) = nan;
 
             end
-
+            
+            % determine whether left and right forepaws are in swing at obsPos moment
+            isLeftSwing = ~isnan(modifiedStepIdentities(obsPosInd,2));
+            isRightSwing = ~isnan(modifiedStepIdentities(obsPosInd,3));
+            oneSwingOneStance = xor(isLeftSwing, isRightSwing);
+            
+            % flip y values if the left fore is the swinging foot (thus making it the right paw)
+            if oneSwingOneStance && isLeftSwing
+                trialLocations(:,2,:) = -trialLocations(:,2,:);
+            end
+            
+            % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
+            trialLocations = trialLocations - trialObsPixPositions';           
+            
+            % convert to meters
+            trialLocations = trialLocations / abs(mToPixMapping(1));
+            
+            % get stance distance
+            stanceDistance = trialLocations(obsPosInd,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
 
 
 
@@ -99,9 +110,11 @@ for i = 1:length(sessions)
             data(dataInd).session = sessions{i};
             data(dataInd).vel = sessionVels(j);
             data(dataInd).obsPosInd = obsPosInd;
+            data(dataInd).timeStamps = trialTimeStamps;
             data(dataInd).locations = trialLocations;
             data(dataInd).controlStepIdentities = controlStepIdentities;
             data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
+            data(dataInd).oneSwingOneStance = oneSwingOneStance;
             dataInd = dataInd + 1;
         end
     end
@@ -111,7 +124,7 @@ fprintf('--- done collecting data ---\n');
 
 
 %% plot some thangs
-
+oneStanceOneSwingInds = ;
 
 
 
