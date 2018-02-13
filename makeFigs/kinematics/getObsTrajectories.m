@@ -89,8 +89,10 @@ for i = 1:length(sessions)
             oneSwingOneStance = xor(isLeftSwing, isRightSwing);
             
             % flip y values if the left fore is the swinging foot (thus making it the right paw)
+            isFlipped = false;
             if oneSwingOneStance && isLeftSwing
                 trialLocations(:,2,:) = -trialLocations(:,2,:);
+                isFlipped = true;
             end
             
             % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
@@ -115,6 +117,8 @@ for i = 1:length(sessions)
             data(dataInd).controlStepIdentities = controlStepIdentities;
             data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
             data(dataInd).oneSwingOneStance = oneSwingOneStance;
+            data(dataInd).stanceDistance = stanceDistance;
+            data(dataInd).isFlipped = isFlipped;
             dataInd = dataInd + 1;
         end
     end
@@ -124,7 +128,7 @@ fprintf('--- done collecting data ---\n');
 
 
 %% plot some thangs
-oneStanceOneSwingInds = ;
+
 
 
 

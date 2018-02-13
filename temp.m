@@ -17,7 +17,7 @@ bothStanceInds = find(sum(isInSwing,2)==0);
 
 %%
 oneSwingOneStance = find([data.oneSwingOneStance]);
-trial = oneSwingOneStance(10);
+trial = oneSwingOneStance(3);
 
 
 ind = data(i).obsPosInd;
