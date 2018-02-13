@@ -23,9 +23,10 @@ for i = 1:length(sessions)
     
     % load session data
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
-            'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', ...
+            'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+    mToPixMapping = median(mToPixMapping,1);
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\locationsBotCorrected.mat'], 'locations')
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stanceBins.mat'], 'stanceBins')
@@ -54,7 +55,7 @@ for i = 1:length(sessions)
         trialLocations = locations(trialBins,:,:);
         trialSwingIdentities = swingIdentities(trialBins,:);
         trialTimeStamps = frameTimeStamps(trialBins);
-        trialPixPositions = obsPixPositions(trialBins);
+        trialObsPixPositions = obsPixPositions(trialBins);
         
         if any(~isnan(trialLocations(:))) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
@@ -62,13 +63,20 @@ for i = 1:length(sessions)
             obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
             obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
 
+            % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
+            trialLocations = trialLocations - trialObsPixPositions';           
+            
+            % convert to meters
+            trialLocations = trialLocations / abs(mToPixMapping(1));
+            keyboard
+            
             % get trial swing identities and define control and modified steps
             controlStepIdentities = nan(size(trialSwingIdentities));
             modifiedStepIdentities = nan(size(trialSwingIdentities));
 
             for k = 1:4
 
-                overObsInd = find(trialLocations(:,1,k)>trialPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
+                overObsInd = find(trialLocations(:,1,k)>trialObsPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
                 swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
                 firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k))' & 1:size(trialSwingIdentities,1)>=obsPosInd, 1, 'first'), k);
 
