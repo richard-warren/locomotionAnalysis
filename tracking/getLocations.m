@@ -7,10 +7,9 @@ function getLocations(session, steps, minVel, showTracking)
 
 % settings
 % obsPrePost = [.2 .2]; % include this many meters before and after obs turns on
-obsCenter = .382; % where obs is at center of wheel
 obsPrePostBot = [.55 .25];
 obsPrePostTop = [.55 .25];
-velPrePost = [.08 .08]; % compute trials velocity between these obstacle positions
+velPrePost = [.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
 colors = hsv(4); % red green blue purple
 
@@ -22,13 +21,13 @@ if ~exist(trackingDir, 'dir'); mkdir(trackingDir); end % make tracking directory
 xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat'];
 load(xMapping, 'xLinearMapping');
 
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'nosePos', ...
     'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping', 'targetFs')
-obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
+obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
-[frameIndsBot, trialIdentities] = getTrialFrameInds(minVel, obsCenter, obsPrePostBot, velPrePost, frameTimeStamps,...
+[frameIndsBot, trialIdentities] = getTrialFrameInds(minVel, obsPrePostBot, velPrePost, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
-frameIndsTop = getTrialFrameInds(minVel, obsCenter, obsPrePostTop, velPrePost, frameTimeStamps,...
+frameIndsTop = getTrialFrameInds(minVel, obsPrePostTop, velPrePost, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
 % fprintf('%s: analyzing %i sessions', session, length(unique(trialIdentities(~isnan(trialIdentities)))));
 

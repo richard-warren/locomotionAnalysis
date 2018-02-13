@@ -1,15 +1,16 @@
-function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsCenter, obsPrePost, velPrePost, frameTimeStamps,...
+function [frameInds, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsPrePost, velPrePost, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes)
 
 % returns vector containing frameInds for all trials // only includes trials where mouse is running faster than minVel
 % minVel is calculated between velPositions, which should be the start and end positions of the mouse running over obs
 % frameInds include all frameInds while obstacle is on, but also obsPrePost(1) meters before the obs turns on
-% and obsprePost(1) meters after the obs turns off // setting this to [0 0] means only inds with obs on are included
+% and obsprePost(2) meters after the obs turns off // setting this to [0 0] means only inds with obs on are included
 % also saves trialIdentities, which for each frameInd records the trial number
 
-% !!! now obsPrePost actually detemrines how many m before and after obs is in center of wheel to include
+% !!! now obsPrePost actually determines how many m before and after obs is at tip of nose
+% this code assumes that obsPositions have already been normalized s.t. 0 is where obs is beneathe animal's nose
 
-
+keyboard
 % initializations
 frameInds = [];
 trialIdentities = [];

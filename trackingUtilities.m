@@ -3,18 +3,18 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-steps = {'top'};
+steps = {'stance'};
 minVel = .4;
 
 for i = 1:length(sessionDirs)
     
     % get locations
     nameInd = find(sessionDirs{i}=='\',1,'last');
-    try
+%     try
         getLocations(sessionDirs{i}(nameInd+1:end), steps, minVel, false);
-    catch
-        fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
-    end
+%     catch
+%         fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
+%     end
     
 end
 
