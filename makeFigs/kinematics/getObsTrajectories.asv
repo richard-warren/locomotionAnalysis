@@ -23,9 +23,10 @@ for i = 1:length(sessions)
     
     % load session data
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
-            'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', ...
+            'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+    mToPixMapping = median(mToPixMapping,1);
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\locationsBotCorrected.mat'], 'locations')
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stanceBins.mat'], 'stanceBins')
@@ -47,57 +48,128 @@ for i = 1:length(sessions)
     
     
     for j = 1:length(obsOnTimes)-1
-        disp(j)
         
         % get trial bins, locations, and swingIdentities
-        trialBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions)';
+        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
         trialLocations = locations(trialBins,:,:);
         trialSwingIdentities = swingIdentities(trialBins,:);
         trialTimeStamps = frameTimeStamps(trialBins);
-        trialPixPositions = obsPixPositions(trialBins);
+        trialObsPixPositions = obsPixPositions(trialBins);
         
-        % get frame ind at which obs reaches obsPos
-        obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
-        obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
+        if any(~isnan(trialLocations(:))) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
-        %% get trial swing identities and define control and modified steps
-        controlStepIdentities = nan(size(trialSwingIdentities));
-        modifiedStepIdentities = nan(size(trialSwingIdentities));
-        
-        for k = 1:4
+            % get frame ind at which obs reaches obsPos
+            obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
+            obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
             
-            overObsInd = find(trialLocations(:,1,k)>trialPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
-            swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
-            firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(obsPosInd) & 1:size(trialSwingIdentities,1)>=obsPosInd, 1, 'first'), k);
+            % get trial swing identities and define control and modified steps
+            controlStepIdentities = nan(size(trialSwingIdentities));
+            modifiedStepIdentities = nan(size(trialSwingIdentities));
+
+            for k = 1:4
+
+                overObsInd = find(trialLocations(:,1,k)>trialObsPixPositions' & trialTimeStamps>obsOnTimes(j), 1, 'first');
+                swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
+                firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k))' & 1:size(trialSwingIdentities,1)>=obsPosInd, 1, 'first'), k);
+
+                modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & (trialSwingIdentities(:,k) <= swingOverObsIdentity);
+                controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
+
+                modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
+                modifiedStepIdentities(~modifiedBins,k) = nan;
+                if ~any(~isnan(modifiedStepIdentities(:,k))); keyboard; end
+                controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
+                controlStepIdentities(~controlBins,k) = nan;
+
+            end
             
-            modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & (trialSwingIdentities(:,k) <= swingOverObsIdentity);
-            controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
+            % determine whether left and right forepaws are in swing at obsPos moment
+            isLeftSwing = ~isnan(modifiedStepIdentities(obsPosInd,2));
+            isRightSwing = ~isnan(modifiedStepIdentities(obsPosInd,3));
+            oneSwingOneStance = xor(isLeftSwing, isRightSwing);
             
-            modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
-            modifiedStepIdentities(~modifiedBins,k) = nan;
-            controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
-            controlStepIdentities(~controlBins,k) = nan;
+            % flip y values if the left fore is the swinging foot (thus making it the right paw)
+            isFlipped = false;
+            if oneSwingOneStance && isLeftSwing
+                trialLocations(:,2,:) = -trialLocations(:,2,:);
+                isFlipped = true;
+            end
             
+            % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
+            trialLocations(:,1,:) = trialLocations(:,1,:) - trialObsPixPositions';           
+            
+            % convert to meters
+            trialLocations = trialLocations / abs(mToPixMapping(1));
+            
+            % get stance distance
+            stanceDistance = trialLocations(obsPosInd,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
+
+
+
+            % store results
+            sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}));
+            data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
+            data(dataInd).session = sessions{i};
+            data(dataInd).vel = sessionVels(j);
+            data(dataInd).obsPosInd = obsPosInd;
+            data(dataInd).timeStamps = trialTimeStamps;
+            data(dataInd).locations = trialLocations;
+            data(dataInd).controlStepIdentities = controlStepIdentities;
+            data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
+            data(dataInd).oneSwingOneStance = oneSwingOneStance;
+            data(dataInd).stanceDistance = stanceDistance;
+            data(dataInd).isFlipped = isFlipped;
+            dataInd = dataInd + 1;
         end
-        %%
-        
-        
-        
-        % store results
-        sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}));
-        data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
-        data(dataInd).session = sessions{i};
-        data(dataInd).vel = sessionVels(j);
-        data(dataInd).obsPosInd = obsPosInd;
-        dataInd = dataInd + 1;
-        
     end
 end
 
-fprintf('--- done collecting data ---\n', sessions{i});
+fprintf('--- done collecting data ---\n');
 
 
+%% plot some thangs
 
+% settings
+distanceBins = 3;
+binLimits = prctile([data.stanceDistance], linspace(0,100,distanceBins+1));
+tracesPerPlot = 10;
+dataNew = data([data.oneSwingOneStance] & ~[data.isFlipped]);
+
+close all; figure; pimpFig
+
+dataInds = randperm(length(dataNew), tracesPerPlot);
+
+for i = dataInds
+    
+    for j = 2:3
+        
+        realInds = ~isnan(dataNew(i).modifiedStepIdentities(:,j));
+        steps = unique(dataNew(i).modifiedStepIdentities(realInds,j));
+        colors = winter(length(steps));
+        
+        for k = steps'
+            
+            % plot x and y trajectories
+            trialInds = dataNew(i).modifiedStepIdentities(:,j)==k;
+            x = dataNew(i).locations(trialInds,1,j);
+            y = dataNew(i).locations(trialInds,2,j);
+            plot(y, x, 'color', colors(k,:)); hold on
+            
+            % scatter dots at start of each swing
+            scatter(y(end), x(end), 100, colors(k,:), 'filled'); hold on
+            
+            % scatter position of swing foot at obsPos
+            if j==3
+                scatter(dataNew(i).locations(dataNew(i).obsPosInd,2,j), dataNew(i).locations(dataNew(i).obsPosInd,1,j), ...
+                    100, [0 0 0], 'x'); hold on
+            end
+            
+        end
+    end
+end
+
+set(gca, 'dataaspectratio', [1 1 1], 'box', 'off', 'tickdir', 'out');
+line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)
 
 
 

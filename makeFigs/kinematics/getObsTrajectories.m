@@ -1,9 +1,9 @@
 % function getObsTrajectories(sessions)
 
 % temp
-sessions = {'180122_001', '180122_002', '180122_003'};%, ...
-%             '180123_001', '180123_002', '180123_003', ...
-%             '180124_001', '180124_002', '180124_003'}; ...
+sessions = {'180122_001', '180122_002', '180122_003' ...
+            '180123_001', '180123_002', '180123_003', ...
+            '180124_001', '180124_002', '180124_003'};
 %             '180125_001', '180125_002', '180125_003'};
 
 % settings
@@ -96,7 +96,7 @@ for i = 1:length(sessions)
             end
             
             % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
-            trialLocations = trialLocations - trialObsPixPositions';           
+            trialLocations(:,1,:) = trialLocations(:,1,:) - trialObsPixPositions';           
             
             % convert to meters
             trialLocations = trialLocations / abs(mToPixMapping(1));
@@ -129,7 +129,66 @@ fprintf('--- done collecting data ---\n');
 
 %% plot some thangs
 
+% settings
+distanceBins = 5;
+tracesPerPlot = 20;
+yLim = [-.1 .1];
 
+% initializations
+dataNew = data([data.oneSwingOneStance] & ~[data.isFlipped]);
+binEdges = prctile([dataNew.stanceDistance], linspace(0,100,distanceBins+1));
+bins = discretize([dataNew.stanceDistance], binEdges);
+
+
+close all; figure; pimpFig
+
+
+
+
+for h = 1:distanceBins
+    
+    subplot(1,distanceBins,h);
+    binInds = find(bins==h);
+    dataInds = randperm(length(binInds), tracesPerPlot);
+    dataInds = binInds(dataInds);
+        
+    for i = dataInds
+        for j = 2:3
+
+            realInds = ~isnan(dataNew(i).modifiedStepIdentities(:,j));
+            steps = unique(dataNew(i).modifiedStepIdentities(realInds,j));
+            colors = winter(length(steps));
+
+            for k = steps'
+
+                % plot x and y trajectories
+                trialInds = dataNew(i).modifiedStepIdentities(:,j)==k;
+                x = dataNew(i).locations(trialInds,1,j);
+                y = dataNew(i).locations(trialInds,2,j);
+                plot(y, x, 'color', colors(k,:)); hold on
+
+                % scatter dots at start of each swing
+                scatter(y(end), x(end), 100, colors(k,:), 'filled'); hold on
+
+                % scatter position of swing foot at obsPos
+                if j==3
+                    scatter(dataNew(i).locations(dataNew(i).obsPosInd,2,j), dataNew(i).locations(dataNew(i).obsPosInd,1,j), ...
+                        100, [0 0 0], 'x'); hold on
+                end
+            end
+        end
+    end
+    
+    % pimp figs
+    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLim, 'box', 'off', 'tickdir', 'out');
+        line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)'
+        ax = gca; ax.YAxis.Visible = 'off';
+    if h>1
+        ax = gca;
+        ax.XAxis.Visible = 'off';
+        set(gca, 'xticklabel', [], 'yticklabel', [])
+    end
+end
 
 
 

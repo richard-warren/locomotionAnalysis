@@ -53,6 +53,12 @@ line(repmat(data(trial).timeStamps(data(trial).obsPosInd),1,2), get(gca,'ylim'))
 pimpFig; set(gca,'xlim',xlims)
 
 
+%%
+
+close all; figure;
+
+plot(data(i).locations(:,2,2)); hold on; plot(data(i).locations(:,2,3))
+
 
 
 
