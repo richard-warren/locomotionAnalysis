@@ -154,17 +154,20 @@ fprintf('--- done collecting data ---\n');
 %% plot some thangs
 
 % settings
-phaseBinNum = 5;
-speedBinNum = 2;
+phaseBinNum = 3;
+speedBinNum = 3;
 tracesPerPlot = 20;
 yLim = [-.1 .1];
 
 % initializations
 dataNew = data([data.oneSwingOneStance]);
+
 phaseBinEdges = prctile([dataNew.stanceDistance], linspace(0,100,phaseBinNum+1));
 phaseBins = discretize([dataNew.stanceDistance], phaseBinEdges);
 speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
 speedBins = discretize([dataNew.vel], speedBinEdges);
+
+
 
 
 %% sperm plots
@@ -174,7 +177,8 @@ close all; figure; pimpFig
 for g = 1:speedBinNum
     for h = 1:phaseBinNum
 
-        subaxis(speedBinNum, phaseBinNum ,sub2ind([speedBinNum phaseBinNum], g, h), ...
+        axInd = sub2ind([phaseBinNum speedBinNum], h, g);
+        subaxis(speedBinNum, phaseBinNum ,axInd, ...
             'spacing', .01, 'padding', 0, 'margin', 0);
         
         binInds = find(speedBins==g & phaseBins==h);
@@ -224,20 +228,46 @@ end
 
 
 %% histograms
+
+% settings
+xLims = [.02 .12];
+yLims = [0 .4];
+binWidth = .005;
+
 modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
 controlSwingLengths = {dataNew.controlSwingLengths}; controlSwingLengths = cat(1, controlSwingLengths{:});
 
-close all; figure; pimpFig
+figure; pimpFig
 
 for g = 1:speedBinNum
     for h = 1:phaseBinNum
-
-        subaxis(speedBinNum, phaseBinNum ,sub2ind([speedBinNum phaseBinNum], g, h), ...
-            'spacing', .01, 'padding', 0, 'margin', 0);
         
-        histogram(dataNew);
+        axInd = sub2ind([phaseBinNum speedBinNum], h, g);
+        disp(axInd)
+        ax = subaxis(speedBinNum, phaseBinNum , axInd);%, ...
+%             'spacing', .01, 'padding', 0, 'margin', 0);
+        binInds = find(speedBins==g & phaseBins==h);
         
+        h1 = histogram(modifiedSwingLengths(binInds,3)); hold on;
+        h2 = histogram(controlSwingLengths(binInds,3));
         
+        for i = {h1,h2}
+            set(i{1}, 'normalization', 'probability', 'binwidth', binWidth);
+        end
+        
+        % set apearance
+        set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
+        
+        % set first row appearance
+        if g<speedBinNum
+            set(ax, 'xticklabel', [])
+        end
+        
+        % set first col appearance
+        if h>1
+            set(ax, 'ytick', [], 'ylabel', []);
+            ax.YAxis.Visible = 'off';
+        end
 
         % pimp figs
         % !!!
