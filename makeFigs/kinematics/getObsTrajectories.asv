@@ -104,8 +104,17 @@ for i = 1:length(sessions)
             % convert to meters
             trialLocations = trialLocations / abs(mToPixMapping(1));
             
-            % get stance distance
+            % get stance distance from obs
             stanceDistance = trialLocations(obsPosInd,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
+            
+            % get control step(s) length
+            controlSwingLengths = nan(1, controlSteps);
+            for k = 1:controlSteps
+                startInd = find();
+            end
+            
+            % get first modified step length for swing foot
+            
 
 
 
@@ -133,28 +142,25 @@ fprintf('--- done collecting data ---\n');
 %% plot some thangs
 
 % settings
-phaseBinNum = 3;
+phaseBinNum = 5;
 speedBinNum = 2;
-tracesPerPlot = 5;
+tracesPerPlot = 20;
 yLim = [-.1 .1];
 
 % initializations
 dataNew = data([data.oneSwingOneStance]);
 phaseBinEdges = prctile([dataNew.stanceDistance], linspace(0,100,phaseBinNum+1));
 phaseBins = discretize([dataNew.stanceDistance], phaseBinEdges);
-speedBinEdges = prctile([dataNew.vel], linspace(0,100,phaseBinNum+1));
+speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
 speedBins = discretize([dataNew.vel], speedBinEdges);
 
 close all; figure; pimpFig
 
-
-
-
 for g = 1:speedBinNum
     for h = 1:phaseBinNum
 
-        subaxis(speedBinNum, phaseBinNum ,g*h, ...
-            'spacing', .01, 'padding', 0, );
+        subaxis(speedBinNum, phaseBinNum ,sub2ind([speedBinNum phaseBinNum], g, h), ...
+            'spacing', .01, 'padding', 0, 'margin', 0);
         
         binInds = find(speedBins==g & phaseBins==h);
         plotTraces = min(tracesPerPlot, length(binInds));
@@ -199,6 +205,17 @@ for g = 1:speedBinNum
         end
     end
 end
+
+
+% heat map
+figure;
+interp2([dataNew.stanceDistance], [dataNew.vel], V, Xq, Yq)
+
+
+
+
+
+
 
 
 

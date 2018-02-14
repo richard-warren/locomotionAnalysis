@@ -16,6 +16,8 @@ sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
 data = struct();
 dataInd = 1;
 
+
+% collect data for all trials
 for i = 1:length(sessions)
     
     % report progress
@@ -47,6 +49,7 @@ for i = 1:length(sessions)
     swingIdentities(stanceBins | isnan(squeeze(locations(:,1,:)))) = nan;
     
     
+    % collect data for all trials within session
     for j = 1:length(obsOnTimes)-1
         
         % get trial bins, locations, and swingIdentities
@@ -104,8 +107,24 @@ for i = 1:length(sessions)
             % convert to meters
             trialLocations = trialLocations / abs(mToPixMapping(1));
             
-            % get stance distance
+            % get stance distance from obs
             stanceDistance = trialLocations(obsPosInd,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
+            
+            % get control step(s) length
+            controlSwingLengths = nan(controlSteps,4);
+            for k = 1:4
+                for m = 1:controlSteps
+                    stepXLocations = trialLocations(controlStepIdentities(:,k)==m,1,k);
+                    controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
+                end
+            end
+            
+            % get first modified step length for swing foot
+            modifiedSwingLengths = nan(1,4);
+            for k = 1:4
+                stepXLocations = trialLocations(modifiedStepIdentities(:,k)==1,1,k);
+                modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
+            end
 
 
 
@@ -121,6 +140,8 @@ for i = 1:length(sessions)
             data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
             data(dataInd).oneSwingOneStance = oneSwingOneStance;
             data(dataInd).stanceDistance = stanceDistance;
+            data(dataInd).controlSwingLengths = controlSwingLengths;
+            data(dataInd).modifiedSwingLengths = modifiedSwingLengths;
             data(dataInd).isFlipped = isFlipped;
             dataInd = dataInd + 1;
         end
@@ -133,8 +154,8 @@ fprintf('--- done collecting data ---\n');
 %% plot some thangs
 
 % settings
-phaseBinNum = 3;
-speedBinNum = 3;
+phaseBinNum = 5;
+speedBinNum = 2;
 tracesPerPlot = 20;
 yLim = [-.1 .1];
 
@@ -145,10 +166,10 @@ phaseBins = discretize([dataNew.stanceDistance], phaseBinEdges);
 speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
 speedBins = discretize([dataNew.vel], speedBinEdges);
 
+
+%% sperm plots
+
 close all; figure; pimpFig
-
-
-
 
 for g = 1:speedBinNum
     for h = 1:phaseBinNum
@@ -199,6 +220,40 @@ for g = 1:speedBinNum
         end
     end
 end
+
+
+
+%% histograms
+modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+controlSwingLengths = {dataNew.controlSwingLengths}; controlSwingLengths = cat(1, controlSwingLengths{:});
+
+close all; figure; pimpFig
+
+for g = 1:speedBinNum
+    for h = 1:phaseBinNum
+
+        subaxis(speedBinNum, phaseBinNum ,sub2ind([speedBinNum phaseBinNum], g, h), ...
+            'spacing', .01, 'padding', 0, 'margin', 0);
+        
+        histogram(dataNew);
+        
+        
+
+        % pimp figs
+        % !!!
+    end
+end
+
+
+%% heat map
+figure;
+interp2([dataNew.stanceDistance], [dataNew.vel], V, Xq, Yq)
+
+
+
+
+
+
 
 
 
