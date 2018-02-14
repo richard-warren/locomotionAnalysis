@@ -1,15 +1,16 @@
 % function getObsTrajectories(sessions)
 
 % temp
-sessions = {'180122_001', '180122_002', '180122_003' ...
-            '180123_001', '180123_002', '180123_003', ...
-            '180124_001', '180124_002', '180124_003'};
+sessions = {'180122_001', '180122_002', '180122_003'};% ...
+%             '180123_001', '180123_002', '180123_003', ...
+%             '180124_001', '180124_002', '180124_003'};
 %             '180125_001', '180125_002', '180125_003'};
 
 % settings
 obsPos = -.0073;
 speedTime = .02; % compute velocity over this interval
 controlSteps = 2;
+interpSmps = 100;
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -32,6 +33,7 @@ for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\locationsBotCorrected.mat'], 'locations')
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stanceBins.mat'], 'stanceBins')
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'isExcluded')
     
     % get velocities for all trials in session
     sessionVels = getTrialSpeedsAtObsPos(obsPos, wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, speedTime, targetFs);
@@ -58,8 +60,9 @@ for i = 1:length(sessions)
         trialSwingIdentities = swingIdentities(trialBins,:);
         trialTimeStamps = frameTimeStamps(trialBins);
         trialObsPixPositions = obsPixPositions(trialBins);
+        trialIsExcluded = isExcluded(trialBins);
         
-        if any(~isnan(trialLocations(:))) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
+        if any(~isnan(trialLocations(:))) && ~any(trialIsExcluded) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
             % get frame ind at which obs reaches obsPos
             obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
@@ -125,6 +128,43 @@ for i = 1:length(sessions)
                 stepXLocations = trialLocations(modifiedStepIdentities(:,k)==1,1,k);
                 modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
             end
+            
+            % get interpolated control and modified step locations
+            leftControlLocations = cell(1,4);
+            modifiedLocations = cell(1,4);
+            modStepNum = nan(1,4);
+            for k = 1:4
+                
+                % control
+                stepNum = max(controlStepIdentities(:,k));
+                pawControlLocations = nan(stepNum, 2, interpSmps);
+                
+                for m = 1:stepNum
+                    stepInds = controlStepIdentities(:,k)==m;
+                    stepX = trialLocations(stepInds,1,k);
+                    stepY = trialLocations(stepInds,2,k);
+                    xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
+                    yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
+                    pawControlLocations(m,:,:) = cat(1,xInterp,yInterp);
+                end
+                
+                leftControlLocations{k} = pawControlLocations;
+                
+                % modified
+                modStepNum(k) = max(modifiedStepIdentities(:,k));
+                pawModifiedLocations = nan(stepNum, 2, interpSmps);
+                
+                for m = 1:modStepNum(k)
+                    stepInds = modifiedStepIdentities(:,k)==m;
+                    stepX = trialLocations(stepInds,1,k);
+                    stepY = trialLocations(stepInds,2,k);
+                    xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
+                    yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
+                    pawModifiedLocations(m,:,:) = cat(1,xInterp,yInterp);
+                end
+                
+                modifiedLocations{k} = pawModifiedLocations;
+            end
 
 
 
@@ -136,8 +176,11 @@ for i = 1:length(sessions)
             data(dataInd).obsPosInd = obsPosInd;
             data(dataInd).timeStamps = trialTimeStamps;
             data(dataInd).locations = trialLocations;
+            data(dataInd).controlLocations = leftControlLocations;
+            data(dataInd).modifiedLocations = modifiedLocations;
             data(dataInd).controlStepIdentities = controlStepIdentities;
             data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
+            data(dataInd).modStepNum = modStepNum;
             data(dataInd).oneSwingOneStance = oneSwingOneStance;
             data(dataInd).stanceDistance = stanceDistance;
             data(dataInd).controlSwingLengths = controlSwingLengths;
@@ -150,8 +193,6 @@ end
 
 fprintf('--- done collecting data ---\n');
 
-
-%% plot some thangs
 
 % settings
 phaseBinNum = 3;
@@ -300,34 +341,55 @@ xlabel('stance paw distance (m)');
 ylabel('speed (m/s)');
 
 
-%% scatter
+%% average trajectories
+
 
 % settings
 
 
 % initializations
-modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+binInds = 1:length(dataNew);
+% numModSteps = reshape([dataNew(binInds).modStepNum],length(dataNew(binInds)),4);
+numModSteps = reshape([dataNew(binInds).modStepNum],4,length(dataNew(binInds)))';
 
-controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'uniformoutput', 0);
-controlSwingLengths = cat(1, controlSwingLengths{:});
-deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
+% get left and right control locations
+controlLocations = {dataNew(binInds).controlLocations};
+leftControlLocations = cellfun(@(x) x{2}, controlLocations, 'uniformoutput', 0);
+leftControlLocations = cat(1,leftControlLocations{:});
+rightControlLocations = cellfun(@(x) x{3}, controlLocations, 'uniformoutput', 0);
+rightControlLocations = cat(1,rightControlLocations{:});
 
-validInds = deltaLength<.08;
-
-colors = hot(sum(validInds));
-[~,sortInds] = sort(deltaLength(validInds));
-
-
-figure('color', [1 1 1]);
-
-scatter([dataNew(validInds).stanceDistance], [dataNew(validInds).vel], 50, colors(sortInds,:), 'filled');
-
-xlabel('stance paw distance (m)');
-ylabel('speed (m/s)');
-
-pimpFig
+% get left and right modified lcoations
+modifiedLocations = {dataNew(binInds).modifiedLocations};
+leftInds = numModSteps(:,2)==1;
+leftModLocations = cellfun(@(x) x{2}, modifiedLocations(leftInds), 'uniformoutput', 0);
+leftModLocations = cat(1,leftModLocations{:});
 
 
+
+%%
+close all; figure('color', [1 1 1]);
+
+% plot control left
+x = squeeze(leftControlLocations(:,1,:));
+y = squeeze(leftControlLocations(:,2,:));
+plot(mean(x,1), mean(y,1)); hold on;
+
+% plot control right
+x = squeeze(rightControlLocations(:,1,:));
+y = squeeze(rightControlLocations(:,2,:));
+plot(mean(x,1), mean(y,1)); hold on;
+
+% plot mod left
+x = squeeze(leftModLocations(:,1,:));
+y = squeeze(leftModLocations(:,2,:));
+plot(mean(x,1), mean(y,1)); hold on;
+
+
+
+
+set(gca, 'dataaspectratio', [1 1 1], 'box', 'off', 'ydir', 'reverse')
+line([0 0], get(gca,'ylim'), 'color', [0 0 0], 'linewidth', 3)
 
 
 

@@ -54,8 +54,8 @@ showLocations(vid, find(locations.isAnalyzed), eval(['potentialLocations' view])
 
 %% exclude trials
 
-session = '180123_002';
-trials = [];
+session = '180125_001';
+trials = [54 63 65 73 74 88 91 95 97 98 107];
 
 setTrialExclusion(session, trials);
 

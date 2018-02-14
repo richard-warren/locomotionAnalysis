@@ -1,11 +1,7 @@
 
 
 controls = {data.controlLocations};
-controls = cellfun(@(x) x{3}, controls, 'uniformoutput', 0);
-controls = cat(1,controls{:});
-
-close all; figure; plot(mean(squeeze(controls(:,1,:)),1), mean(squeeze(controls(:,2,:)),1))
-set(gca, 'dataaspectratio', [1 1 1])
+controls = cat();
 
 
 %%
@@ -28,7 +24,6 @@ bothStanceInds = find(sum(isInSwing,2)==0);
 %%
 oneSwingOneStance = find([data.oneSwingOneStance]);
 trial = oneSwingOneStance(3);
-trial=6;
 
 
 ind = data(i).obsPosInd;
