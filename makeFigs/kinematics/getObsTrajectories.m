@@ -91,6 +91,9 @@ for i = 1:length(sessions)
             % flip y values if the left fore is the swinging foot (thus making it the right paw)
             isFlipped = false;
             if oneSwingOneStance && isLeftSwing
+                trialLocations = trialLocations(:,:,[4 3 2 1]);
+                controlStepIdentities = controlStepIdentities(:,[4 3 2 1]);
+                modifiedStepIdentities = modifiedStepIdentities(:,[4 3 2 1]);
                 trialLocations(:,2,:) = -trialLocations(:,2,:);
                 isFlipped = true;
             end
@@ -135,7 +138,8 @@ tracesPerPlot = 20;
 yLim = [-.1 .1];
 
 % initializations
-dataNew = data([data.oneSwingOneStance] & ~[data.isFlipped]);
+% dataNew = data([data.oneSwingOneStance] & ~[data.isFlipped]);
+dataNew = data([data.oneSwingOneStance]);
 binEdges = prctile([dataNew.stanceDistance], linspace(0,100,distanceBins+1));
 bins = discretize([dataNew.stanceDistance], binEdges);
 
