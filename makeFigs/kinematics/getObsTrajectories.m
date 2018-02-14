@@ -133,67 +133,72 @@ fprintf('--- done collecting data ---\n');
 %% plot some thangs
 
 % settings
-distanceBins = 5;
+phaseBinNum = 3;
+speedBinNum = 3;
 tracesPerPlot = 20;
 yLim = [-.1 .1];
 
 % initializations
-% dataNew = data([data.oneSwingOneStance] & ~[data.isFlipped]);
 dataNew = data([data.oneSwingOneStance]);
-binEdges = prctile([dataNew.stanceDistance], linspace(0,100,distanceBins+1));
-bins = discretize([dataNew.stanceDistance], binEdges);
-
+phaseBinEdges = prctile([dataNew.stanceDistance], linspace(0,100,phaseBinNum+1));
+phaseBins = discretize([dataNew.stanceDistance], phaseBinEdges);
+speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
+speedBins = discretize([dataNew.vel], speedBinEdges);
 
 close all; figure; pimpFig
 
 
 
 
-for h = 1:distanceBins
-    
-    subplot(1,distanceBins,h);
-    binInds = find(bins==h);
-    dataInds = randperm(length(binInds), tracesPerPlot);
-    dataInds = binInds(dataInds);
+for g = 1:speedBinNum
+    for h = 1:phaseBinNum
+
+        subaxis(speedBinNum, phaseBinNum ,sub2ind([speedBinNum phaseBinNum], g, h), ...
+            'spacing', .01, 'padding', 0, 'margin', 0);
         
-    for i = dataInds
-        for j = 2:3
+        binInds = find(speedBins==g & phaseBins==h);
+        plotTraces = min(tracesPerPlot, length(binInds));
+        dataInds = randperm(length(binInds), tracesPerPlot);
+        dataInds = binInds(dataInds);
 
-            realInds = ~isnan(dataNew(i).modifiedStepIdentities(:,j));
-            steps = unique(dataNew(i).modifiedStepIdentities(realInds,j));
-            colors = winter(length(steps));
+        for i = dataInds
+            for j = 2:3
 
-            for k = steps'
+                realInds = ~isnan(dataNew(i).modifiedStepIdentities(:,j));
+                steps = unique(dataNew(i).modifiedStepIdentities(realInds,j));
+                colors = winter(length(steps));
 
-                % plot x and y trajectories
-                trialInds = dataNew(i).modifiedStepIdentities(:,j)==k;
-                x = dataNew(i).locations(trialInds,1,j);
-                y = dataNew(i).locations(trialInds,2,j);
-                plot(y, x, 'color', colors(k,:)); hold on
+                for k = steps'
 
-                % scatter dots at start of each swing
-                scatter(y(end), x(end), 100, colors(k,:), 'filled'); hold on
+                    % plot x and y trajectories
+                    trialInds = dataNew(i).modifiedStepIdentities(:,j)==k;
+                    x = dataNew(i).locations(trialInds,1,j);
+                    y = dataNew(i).locations(trialInds,2,j);
+                    plot(y, x, 'color', colors(k,:)); hold on
 
-                % scatter position of swing foot at obsPos
-                if j==3
-                    scatter(dataNew(i).locations(dataNew(i).obsPosInd,2,j), dataNew(i).locations(dataNew(i).obsPosInd,1,j), ...
-                        100, [0 0 0], 'x'); hold on
+                    % scatter dots at start of each swing
+                    scatter(y(end), x(end), 100, colors(k,:), 'filled'); hold on
+
+                    % scatter position of swing foot at obsPos
+                    if j==3
+                        scatter(dataNew(i).locations(dataNew(i).obsPosInd,2,j), dataNew(i).locations(dataNew(i).obsPosInd,1,j), ...
+                            100, [0 0 0], 'x'); hold on
+                    end
                 end
             end
         end
-    end
-    
-    % pimp figs
-    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLim, 'box', 'off', 'tickdir', 'out');
-        line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)'
-        ax = gca; ax.YAxis.Visible = 'off';
-    if h>1
-        ax = gca;
-        ax.XAxis.Visible = 'off';
-        set(gca, 'xticklabel', [], 'yticklabel', [])
+
+        % pimp figs
+        set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLim, 'box', 'off', 'tickdir', 'out');
+            line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)'
+            ax = gca; ax.YAxis.Visible = 'off';
+        if h>1
+            ax = gca;
+            ax.XAxis.Visible = 'off';
+            set(gca, 'xticklabel', [], 'yticklabel', [])
+        end
     end
 end
-
 
 
 
