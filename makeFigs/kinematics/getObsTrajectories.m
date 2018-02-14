@@ -162,12 +162,22 @@ yLim = [-.1 .1];
 % initializations
 dataNew = data([data.oneSwingOneStance]);
 
+% get speed and phase bins
 phaseBinEdges = prctile([dataNew.stanceDistance], linspace(0,100,phaseBinNum+1));
 phaseBins = discretize([dataNew.stanceDistance], phaseBinEdges);
 speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
 speedBins = discretize([dataNew.vel], speedBinEdges);
 
+% create speed and phase labels
+phaseLabels = cell(1,phaseBinNum);
+for i = 1:phaseBinNum
+    phaseLabels{i} = sprintf('%.3f', mean([dataNew(phaseBins==i).stanceDistance]));
+end
 
+speedLabels = cell(1,speedBinNum);
+for i = 1:speedBinNum
+    speedLabels{i} = sprintf('%.3f', mean([dataNew(speedBins==i).vel]));
+end
 
 
 %% sperm plots
@@ -258,9 +268,15 @@ for g = 1:speedBinNum
         % set apearance
         set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
         
-        % set first row appearance
+        % set first rows appearance
         if g<speedBinNum
             set(ax, 'xticklabel', [])
+            ylabel(['speed (m/s): ' speedLabels{g}])
+        end
+        
+        % set last row appearance
+        if g==speedBinNum
+            xlabel(['stance foot distance (m): ' phaseLabels{h}])
         end
         
         % set first col appearance
