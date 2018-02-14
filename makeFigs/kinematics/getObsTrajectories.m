@@ -189,7 +189,7 @@ for g = 1:speedBinNum
 
         axInd = sub2ind([phaseBinNum speedBinNum], h, g);
         subaxis(speedBinNum, phaseBinNum ,axInd, ...
-            'spacing', .01, 'padding', 0, 'margin', 0);
+            'spacing', .01, 'padding', .05, 'margin', .01);
         
         binInds = find(speedBins==g & phaseBins==h);
         plotTraces = min(tracesPerPlot, length(binInds));
@@ -223,15 +223,16 @@ for g = 1:speedBinNum
             end
         end
 
-        % pimp figs
+        % set appearance
         set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLim, 'box', 'off', 'tickdir', 'out');
             line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)'
-            ax = gca; ax.YAxis.Visible = 'off';
-        if h>1
-            ax = gca;
-            ax.XAxis.Visible = 'off';
-            set(gca, 'xticklabel', [], 'yticklabel', [])
-        end
+%             ax = gca; ax.YAxis.Visible = 'off'; ax.XAxis.Visible = 'off';
+        
+%         set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
+        if g==speedBinNum; xlabel(['stance foot distance (m): ' phaseLabels{h}]); end
+%         if g<speedBinNum; set(ax, 'xticklabel', []); end
+        if h==1; ylabel(['speed (m/s): ' speedLabels{g}]); end
+%         if h>1; set(ax, 'ytick', [], 'ylabel', []); ax.YAxis.Visible = 'off'; end
     end
 end
 
@@ -253,7 +254,6 @@ for g = 1:speedBinNum
     for h = 1:phaseBinNum
         
         axInd = sub2ind([phaseBinNum speedBinNum], h, g);
-        disp(axInd)
         ax = subaxis(speedBinNum, phaseBinNum , axInd);%, ...
 %             'spacing', .01, 'padding', 0, 'margin', 0);
         binInds = find(speedBins==g & phaseBins==h);
@@ -267,29 +267,14 @@ for g = 1:speedBinNum
         
         % set apearance
         set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
-        
-        % set first rows appearance
-        if g<speedBinNum
-            set(ax, 'xticklabel', [])
-            ylabel(['speed (m/s): ' speedLabels{g}])
-        end
-        
-        % set last row appearance
-        if g==speedBinNum
-            xlabel(['stance foot distance (m): ' phaseLabels{h}])
-        end
-        
-        % set first col appearance
-        if h>1
-            set(ax, 'ytick', [], 'ylabel', []);
-            ax.YAxis.Visible = 'off';
-        end
-
-        % pimp figs
-        % !!!
+        if g==speedBinNum; xlabel(['stance foot distance (m): ' phaseLabels{h}]); end
+        if g<speedBinNum; set(ax, 'xticklabel', []); end
+        if h==1; ylabel(['speed (m/s): ' speedLabels{g}]); end
+        if h>1; set(ax, 'ytick', [], 'ylabel', []); ax.YAxis.Visible = 'off'; end
     end
 end
 
+legend('modified swing lengths', 'control swing lengths')
 
 %% heat map
 figure;
