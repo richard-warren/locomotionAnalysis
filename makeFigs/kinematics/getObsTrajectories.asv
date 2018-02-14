@@ -277,7 +277,7 @@ legend('modified swing lengths', 'control swing lengths')
 %% heat map
 
 % settings
-distanceLims = [-.06 -.02];
+deltaLims = [-.04 .06];
 velLims = [.2 .7];
 smps = 50;
 
@@ -290,8 +290,7 @@ controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'un
 controlSwingLengths = cat(1, controlSwingLengths{:});
 deltaLength = modifiedSwingLengths(:,3) - controlSwingLengths(:,3);
 
-interp2([dataNew.stanceDistance], [dataNew.vel], deltaLength, ...
-    linspace(distanceLims(1),distanceLims(2),smps), linspace(velLims(1),velLims(2),smps))
+interp2([dataNew.stanceDistance], [dataNew.vel], deltaLength, Xq, Yq)
 
 
 
