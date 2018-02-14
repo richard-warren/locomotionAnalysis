@@ -277,20 +277,58 @@ legend('modified swing lengths', 'control swing lengths')
 %% heat map
 
 % settings
-deltaLims = [-.04 .06];
+distanceLims = [-.06 -.02];
 velLims = [.2 .7];
-smps = 50;
+smps = 100;
 
-
-figure;
-
-
+% initializations
 modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+
 controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'uniformoutput', 0);
 controlSwingLengths = cat(1, controlSwingLengths{:});
-deltaLength = modifiedSwingLengths(:,3) - controlSwingLengths(:,3);
+deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
 
-interp2([dataNew.stanceDistance], [dataNew.vel], deltaLength, Xq, Yq)
+validInds = deltaLength<.08;
+
+[xq, yq] = meshgrid(linspace(distanceLims(1),distanceLims(2),smps), linspace(velLims(1),velLims(2),smps));
+heatMap = griddata([dataNew(validInds).stanceDistance], [dataNew(validInds).vel], deltaLength(validInds), xq, yq);
+
+figure('color', [1 1 1]);
+imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
+set(gca, 'xlim', distanceLims, 'ylim', velLims)
+xlabel('stance paw distance (m)');
+ylabel('speed (m/s)');
+
+
+%% scatter
+
+% settings
+
+
+% initializations
+modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+
+controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'uniformoutput', 0);
+controlSwingLengths = cat(1, controlSwingLengths{:});
+deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
+
+validInds = deltaLength<.08;
+
+colors = jet(sum(validInds));
+[~,sortInds] = sort(deltaLength);
+
+
+figure('color', [1 1 1]);
+
+scatter([dataNew(validInds).stanceDistance], [dataNew(validInds).vel], 20, colors());
+
+xlabel('stance paw distance (m)');
+ylabel('speed (m/s)');
+
+
+
+
+
 
 
 

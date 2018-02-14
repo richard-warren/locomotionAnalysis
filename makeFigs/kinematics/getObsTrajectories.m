@@ -314,14 +314,18 @@ deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
 
 validInds = deltaLength<.08;
 
-
+colors = hot(sum(validInds));
+[~,sortInds] = sort(deltaLength(validInds));
 
 
 figure('color', [1 1 1]);
-imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
-set(gca, 'xlim', distanceLims, 'ylim', velLims)
+
+scatter([dataNew(validInds).stanceDistance], [dataNew(validInds).vel], 50, colors(sortInds,:), 'filled');
+
 xlabel('stance paw distance (m)');
 ylabel('speed (m/s)');
+
+pimpFig
 
 
 
