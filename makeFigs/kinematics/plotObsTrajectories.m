@@ -13,14 +13,14 @@ data = getKinematicData(sessions);
 dataNew = data([data.oneSwingOneStance]);
 
 % get speed and phase bins
-phaseBinEdges = prctile([dataNew.stanceDistance], linspace(0,100,phaseBinNum+1));
-phaseBins = discretize([dataNew.stanceDistance], phaseBinEdges);
+phaseBinEdges = prctile([dataNew.swingStartDistance], linspace(0,100,phaseBinNum+1));
+phaseBins = discretize([dataNew.swingStartDistance], phaseBinEdges);
 speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
 speedBins = discretize([dataNew.vel], speedBinEdges);
 
 % create speed and phase labels
 phaseLabels = cell(1,phaseBinNum);
-for i = 1:phaseBinNum; phaseLabels{i} = sprintf('%.3f', mean([dataNew(phaseBins==i).stanceDistance])); end
+for i = 1:phaseBinNum; phaseLabels{i} = sprintf('%.3f', mean([dataNew(phaseBins==i).swingStartDistance])); end
 speedLabels = cell(1,speedBinNum);
 for i = 1:speedBinNum; speedLabels{i} = sprintf('%.3f', mean([dataNew(speedBins==i).vel])); end
 
@@ -76,7 +76,7 @@ for g = 1:speedBinNum
         set(gca, 'dataaspectratio', [1 1 1], 'xlim', xLims, 'box', 'off', 'tickdir', 'out', 'ydir', 'reverse', ...
             'xtick', [], 'ytick', []);
         line([0 0], get(gca,'ylim'), 'color', [0 0 0], 'linewidth', 3)
-        if g==speedBinNum; xlabel(['stance foot distance (m): ' phaseLabels{h}]); end
+        if g==speedBinNum; xlabel(['swing start distance (m): ' phaseLabels{h}]); end
         if h==1; ylabel(['speed (m/s): ' speedLabels{g}]); end
     end
 end
@@ -160,7 +160,7 @@ deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
 validBins = deltaLength<.08;
 
 [xq, yq] = meshgrid(linspace(distanceLims(1),distanceLims(2),smps), linspace(velLims(1),velLims(2),smps));
-heatMap = griddata([dataNew(validBins).stanceDistance], [dataNew(validBins).vel], deltaLength(validBins), xq, yq);
+heatMap = griddata([dataNew(validBins).swingStartDistance], [dataNew(validBins).vel], deltaLength(validBins), xq, yq);
 
 figure('color', [1 1 1]);
 imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
