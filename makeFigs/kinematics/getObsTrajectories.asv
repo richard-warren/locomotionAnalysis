@@ -312,6 +312,7 @@ xLims = [.02 .12];
 yLims = [0 .4];
 binWidth = .005;
 colors = winter(2);
+controlColor = [.65 .65 .65];
 
 % initializations
 numModSteps = reshape([dataNew.modStepNum],4,length(dataNew))';
@@ -325,17 +326,22 @@ for g = 1:speedBinNum
         
         axInd = sub2ind([phaseBinNum speedBinNum], h, g);
         ax = subaxis(speedBinNum, phaseBinNum , axInd);
-        bins = (speedBins==g & phaseBins==h);
+        bins = (speedBins==g & phaseBins==h)';
         oneStepBins = bins & numModSteps(:,3)==1;
         twoStepBins = bins & numModSteps(:,3)==2;
+        oneTwoRatio = sum(rightModOneStepBins) / (sum(rightModOneStepBins) + sum(rightModTwoStepBins));
         
-        h1 = histogram(modifiedSwingLengths(bins & oneStepBins,3)); hold on;
-        ifh2 = histogram(controlSwingLengths(bins & twoStepBins,3));
-        h3 = histogram(controlSwingLengths(bins,3));
-        
-        for i = {h1,h2,h3}
-            set(i{1}, 'normalization', 'probability', 'binwidth', binWidth);
+        if any(oneStepBins)
+            h1 = histogram(modifiedSwingLengths(oneStepBins,3), ...
+                'facecolor', colors(2,:), 'normalization', 'count', ...
+                'bincounts', get(i{1},'bincounts')/sum(get(i{1},'bincounts'))); hold on
         end
+        h2 = histogram(modifiedSwingLengths(twoStepBins,3), 'facecolor', colors(1,:)); hold on;
+        h3 = histogram(controlSwingLengths(bins,3), 'facecolor', controlColor); hold on;
+        
+        % normalize scales
+        if any(oneStepBins); set(h1, 'bincounts', get(h1,'bincounts') * oneTwoRatio); end
+        set(h2, 'bincounts', get(h2,'bincounts') * (1-oneTwoRatio))
         
         % set apearance
         set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
@@ -384,7 +390,7 @@ linWid = 4;
 colors = winter(2);
 
 % initializations
-close all; figure; pimpFig;
+figure; pimpFig;
 numModSteps = reshape([dataNew.modStepNum],4,length(dataNew))';
 
 
@@ -402,8 +408,9 @@ for g = 1:speedBinNum
         leftModBins = bins & numModSteps(:,2)==1;
         rightModOneStepBins = bins & (numModSteps(:,3)==1);
         rightModTwoStepBins = bins & (numModSteps(:,3)==2);
-        oneTwoRatio = sum(rightModOneStepBins) / sum(rightModTwoStepBins); % ratio of trials in which swing foot takes one large step to those in which an additional step is taken
+        oneTwoRatio = sum(rightModOneStepBins) / (sum(rightModOneStepBins) + sum(rightModTwoStepBins)); % ratio of trials in which swing foot takes one large step to those in which an additional step is taken
         oneTwoRatio = oneTwoRatio * 2 - 1; % scale from -1 to 1
+        
 
         % get left and right control locations
         controlLocations = {dataNew(controlBins).controlLocations};
