@@ -1,9 +1,9 @@
 % function getObsTrajectories(sessions)
 
 % temp
-sessions = {'180122_001', '180122_002', '180122_003'};% ...
-%             '180123_001', '180123_002', '180123_003', ...
-%             '180124_001', '180124_002', '180124_003'};
+sessions = {'180122_001', '180122_002', '180122_003', ...
+            '180123_001', '180123_002', '180123_003', ...
+            '180124_001', '180124_002', '180124_003'};
 %             '180125_001', '180125_002', '180125_003'};
 
 % settings
@@ -131,7 +131,7 @@ for i = 1:length(sessions)
             
             % get interpolated control and modified step locations
             leftControlLocations = cell(1,4);
-            modifiedLocations = cell(1,4);
+            leftModLocations = cell(1,4);
             modStepNum = nan(1,4);
             for k = 1:4
                 
@@ -152,7 +152,7 @@ for i = 1:length(sessions)
                 
                 % modified
                 modStepNum(k) = max(modifiedStepIdentities(:,k));
-                pawModifiedLocations = nan(stepNum, 2, interpSmps);
+                pawModifiedLocations = nan(modStepNum(k), 2, interpSmps);
                 
                 for m = 1:modStepNum(k)
                     stepInds = modifiedStepIdentities(:,k)==m;
@@ -163,7 +163,7 @@ for i = 1:length(sessions)
                     pawModifiedLocations(m,:,:) = cat(1,xInterp,yInterp);
                 end
                 
-                modifiedLocations{k} = pawModifiedLocations;
+                leftModLocations{k} = pawModifiedLocations;
             end
 
 
@@ -177,7 +177,7 @@ for i = 1:length(sessions)
             data(dataInd).timeStamps = trialTimeStamps;
             data(dataInd).locations = trialLocations;
             data(dataInd).controlLocations = leftControlLocations;
-            data(dataInd).modifiedLocations = modifiedLocations;
+            data(dataInd).modifiedLocations = leftModLocations;
             data(dataInd).controlStepIdentities = controlStepIdentities;
             data(dataInd).modifiedStepIdentities = modifiedStepIdentities;
             data(dataInd).modStepNum = modStepNum;
@@ -234,10 +234,10 @@ for g = 1:speedBinNum
         ax = subaxis(speedBinNum, phaseBinNum ,axInd, ...
             'spacing', .01, 'padding', .01, 'margin', .01);
         
-        binInds = find(speedBins==g & phaseBins==h);
-        plotTraces = min(tracesPerPlot, length(binInds));
-        dataInds = randperm(length(binInds), tracesPerPlot);
-        dataInds = binInds(dataInds);
+        bins = find(speedBins==g & phaseBins==h);
+        plotTraces = min(tracesPerPlot, length(bins));
+        dataInds = randperm(length(bins), tracesPerPlot);
+        dataInds = bins(dataInds);
 
         for i = dataInds
             for j = 2:3
@@ -293,12 +293,11 @@ for g = 1:speedBinNum
     for h = 1:phaseBinNum
         
         axInd = sub2ind([phaseBinNum speedBinNum], h, g);
-        ax = subaxis(speedBinNum, phaseBinNum , axInd);%, ...
-%             'spacing', .01, 'padding', 0, 'margin', 0);
-        binInds = find(speedBins==g & phaseBins==h);
+        ax = subaxis(speedBinNum, phaseBinNum , axInd);
+        bins = find(speedBins==g & phaseBins==h);
         
-        h1 = histogram(modifiedSwingLengths(binInds,3)); hold on;
-        h2 = histogram(controlSwingLengths(binInds,3));
+        h1 = histogram(modifiedSwingLengths(bins,3)); hold on;
+        h2 = histogram(controlSwingLengths(bins,3));
         
         for i = {h1,h2}
             set(i{1}, 'normalization', 'probability', 'binwidth', binWidth);
@@ -345,52 +344,91 @@ ylabel('speed (m/s)');
 
 
 % settings
-
+controlColor = [47 79 79] / 255;
+xLims = [-.1 .05];
+colors = winter(2);
 
 % initializations
-binInds = 1:length(dataNew);
-% numModSteps = reshape([dataNew(binInds).modStepNum],length(dataNew(binInds)),4);
-numModSteps = reshape([dataNew(binInds).modStepNum],4,length(dataNew(binInds)))';
-
-% get left and right control locations
-controlLocations = {dataNew(binInds).controlLocations};
-leftControlLocations = cellfun(@(x) x{2}, controlLocations, 'uniformoutput', 0);
-leftControlLocations = cat(1,leftControlLocations{:});
-rightControlLocations = cellfun(@(x) x{3}, controlLocations, 'uniformoutput', 0);
-rightControlLocations = cat(1,rightControlLocations{:});
-
-% get left and right modified lcoations
-modifiedLocations = {dataNew(binInds).modifiedLocations};
-leftInds = numModSteps(:,2)==1;
-leftModLocations = cellfun(@(x) x{2}, modifiedLocations(leftInds), 'uniformoutput', 0);
-leftModLocations = cat(1,leftModLocations{:});
+close all; figure; pimpFig;
+numModSteps = reshape([dataNew.modStepNum],4,length(dataNew))';
 
 
+for g = 1:speedBinNum
+    for h = 1:phaseBinNum
+        
+        % get subplot bins
+        axInd = sub2ind([phaseBinNum speedBinNum], h, g);
+        ax = subaxis(speedBinNum, phaseBinNum , axInd, ...
+            'spacing', .01, 'padding', .01, 'margin', .01);
+        bins = (speedBins==g & phaseBins==h)';
 
-%%
-close all; figure('color', [1 1 1]);
+        % get subplot bins for different conditions
+        controlBins = bins;
+        leftModBins = bins & numModSteps(:,2)==1;
+        rightModOneStepBins = bins & (numModSteps(:,3)==1);
+        rightModTwoStepBins = bins & (numModSteps(:,3)==2);
 
-% plot control left
-x = squeeze(leftControlLocations(:,1,:));
-y = squeeze(leftControlLocations(:,2,:));
-plot(mean(x,1), mean(y,1)); hold on;
+        % get left and right control locations
+        controlLocations = {dataNew(controlBins).controlLocations};
+        leftControlLocations = cellfun(@(x) x{2}, controlLocations, 'uniformoutput', 0);
+        leftControlLocations = cat(1,leftControlLocations{:});
+        rightControlLocations = cellfun(@(x) x{3}, controlLocations, 'uniformoutput', 0);
+        rightControlLocations = cat(1,rightControlLocations{:});
 
-% plot control right
-x = squeeze(rightControlLocations(:,1,:));
-y = squeeze(rightControlLocations(:,2,:));
-plot(mean(x,1), mean(y,1)); hold on;
+        % get left modified locations
+        leftModLocations = {dataNew(leftModBins).modifiedLocations};
+        leftModLocations = cellfun(@(x) x{2}, leftModLocations, 'uniformoutput', 0);
+        leftModLocations = cat(1,leftModLocations{:});
 
-% plot mod left
-x = squeeze(leftModLocations(:,1,:));
-y = squeeze(leftModLocations(:,2,:));
-plot(mean(x,1), mean(y,1)); hold on;
+        % get right modified (one step) locations
+        rightModOneStepLocations = {dataNew(rightModOneStepBins).modifiedLocations};
+        rightModOneStepLocations = cellfun(@(x) x{3}, rightModOneStepLocations, 'uniformoutput', 0);
+        rightModOneStepLocations = cat(1,rightModOneStepLocations{:});
+
+        % get right modified (two step) locations
+        rightModTwoStepLocations = {dataNew(rightModTwoStepBins).modifiedLocations};
+        rightModTwoStepLocations = cellfun(@(x) x{3}(1,:,:), rightModTwoStepLocations, 'uniformoutput', 0);
+        rightModTwoStepLocations = cat(1,rightModTwoStepLocations{:});
 
 
+        % plot mod left
+        x = squeeze(leftModLocations(:,1,:));
+        y = squeeze(leftModLocations(:,2,:));
+        plot(mean(x,1), mean(y,1), 'color', colors(1,:), 'linewidth', 3); hold on;
+
+        % plot mod right, one step
+        if ~isempty(rightModOneStepLocations)
+            x = squeeze(rightModOneStepLocations(:,1,:));
+            y = squeeze(rightModOneStepLocations(:,2,:));
+            plot(mean(x,1), mean(y,1), 'color', colors(2,:), 'linewidth', 3); hold on;
+        end
+
+        % plot mod right, two step
+        x = squeeze(rightModTwoStepLocations(:,1,:));
+        y = squeeze(rightModTwoStepLocations(:,2,:));
+        plot(mean(x,1), mean(y,1), 'color', colors(1,:), 'linewidth', 3); hold on;
+
+        % plot control left
+        x = squeeze(leftControlLocations(:,1,:));
+        x = x - mean(x(:,1)) + mean(squeeze(leftModLocations(:,1,1)));
+        y = squeeze(leftControlLocations(:,2,:));
+        plot(mean(x,1), mean(y,1), '--', 'color', controlColor, 'linewidth', 3); hold on;
+
+        % plot control right
+        x = squeeze(rightControlLocations(:,1,:));
+        x = x - mean(x(:,1)) + mean(squeeze(rightModTwoStepLocations(:,1,1))); % !!! make average of one and two step?
+        y = squeeze(rightControlLocations(:,2,:));
+        plot(mean(x,1), mean(y,1), '--', 'color', controlColor, 'linewidth', 3); hold on;
 
 
-set(gca, 'dataaspectratio', [1 1 1], 'box', 'off', 'ydir', 'reverse')
-line([0 0], get(gca,'ylim'), 'color', [0 0 0], 'linewidth', 3)
-
+        % set appearance
+        set(gca, 'dataaspectratio', [1 1 1], 'xlim', xLims, 'box', 'off', 'tickdir', 'out', 'ydir', 'reverse', ...
+            'xtick', [], 'ytick', []);
+        line([0 0], get(gca,'ylim'), 'color', [0 0 0], 'linewidth', 3)
+        if g==speedBinNum; xlabel(['stance foot distance (m): ' phaseLabels{h}]); end
+        if h==1; ylabel(['speed (m/s): ' speedLabels{g}]); end
+    end
+end
 
 
 
