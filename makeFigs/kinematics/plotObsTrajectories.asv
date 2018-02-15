@@ -255,14 +255,11 @@ for g = 1:speedBinNum
         plot(mean(x,1), mean(y,1), 'color', colors(1,:), 'linewidth', linWid + -oneTwoRatio*linWid); hold on;
         
         % mark avg position of obsPos
-        if any(rightModOneStepBins)
-            oneStepObsPos = round(mean(obsPosIndInterps(rightModOneStepBins,3)));
-            scatter(mean(squeeze(rightModOneStepLocations(:,1,oneStepObsPos))), ...
-                mean(squeeze(rightModOneStepLocations(:,2,oneStepObsPos))), 200, colors(2,:), 'filled'); hold on
-        end
-        twoStepObsPos = round(nanmean(obsPosIndInterps(rightModTwoStepBins,3)));
-        scatter(mean(squeeze(rightModTwoStepLocations(:,1,twoStepObsPos))), ...
-                mean(squeeze(rightModTwoStepLocations(:,2,twoStepObsPos))), 200, colors(1,:), 'filled'); hold on
+        oneStepObsPos = mean(obsPosIndInterps(rightModOneStepBins,3));
+        
+        
+        scatter(dataNew(i).locations(dataNew(i).obsPosInd,1,j), dataNew(i).locations(dataNew(i).obsPosInd,2,j), ...
+                            100, [0 0 0], 'x'); hold on
 
 
 
@@ -276,5 +273,14 @@ for g = 1:speedBinNum
 end
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\meanKinematics.png']);
+
+
+
+
+
+
+
+
+
 
 

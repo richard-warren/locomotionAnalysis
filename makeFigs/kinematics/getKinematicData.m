@@ -153,6 +153,8 @@ for i = 1:length(sessions)
             leftControlLocations = cell(1,4);
             leftModLocations = cell(1,4);
             modStepNum = nan(1,4);
+            obsPosIndInterp = nan(1,4);
+            
             for k = 1:4
                 
                 % control
@@ -160,9 +162,9 @@ for i = 1:length(sessions)
                 pawControlLocations = nan(stepNum, 2, interpSmps);
                 
                 for m = 1:stepNum
-                    stepInds = controlStepIdentities(:,k)==m;
-                    stepX = trialLocations(stepInds,1,k);
-                    stepY = trialLocations(stepInds,2,k);
+                    stepBins = controlStepIdentities(:,k)==m;
+                    stepX = trialLocations(stepBins,1,k);
+                    stepY = trialLocations(stepBins,2,k);
                     xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
                     yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
                     pawControlLocations(m,:,:) = cat(1,xInterp,yInterp);
@@ -175,15 +177,25 @@ for i = 1:length(sessions)
                 pawModifiedLocations = nan(modStepNum(k), 2, interpSmps);
                 
                 for m = 1:modStepNum(k)
-                    stepInds = modifiedStepIdentities(:,k)==m;
-                    stepX = trialLocations(stepInds,1,k);
-                    stepY = trialLocations(stepInds,2,k);
+                    stepBins = modifiedStepIdentities(:,k)==m;
+                    stepX = trialLocations(stepBins,1,k);
+                    stepY = trialLocations(stepBins,2,k);
                     xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
                     yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
                     pawModifiedLocations(m,:,:) = cat(1,xInterp,yInterp);
+                    
+                    % get ind of obs hit in interpolated coordinates
+                    if m==1
+                        stepObsPos = obsPosInd - find(stepBins,1,'first') + 1;
+                        obsPosIndInterp(k) = interp1(linspace(1,length(stepX),interpSmps), ...
+                            1:interpSmps, stepObsPos, 'nearest');
+%                     if isnan(obsPosIndInterp(k)) && k==3 && oneSwingOneStance; keyboard; end
+                    end
                 end
                 
                 leftModLocations{k} = pawModifiedLocations;
+                
+                
             end
 
 
@@ -194,6 +206,7 @@ for i = 1:length(sessions)
             data(dataInd).session = sessions{i};
             data(dataInd).vel = sessionVels(j);
             data(dataInd).obsPosInd = obsPosInd;
+            data(dataInd).obsPosIndInterp = obsPosIndInterp;
             data(dataInd).timeStamps = trialTimeStamps;
             data(dataInd).locations = trialLocations;
             data(dataInd).controlLocations = leftControlLocations;
