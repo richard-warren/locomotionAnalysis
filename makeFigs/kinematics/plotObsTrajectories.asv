@@ -146,27 +146,40 @@ saveas(gcf, [getenv('OBSDATADIR') 'figures\swingLengthHistograms.png']);
 %% heat map
 
 % settings
-distanceLims = [-.06 -.02];
-velLims = [.2 .7];
-smps = 100;
+distanceLims = [phaseBinEdges(1) phaseBinEdges(2)];
+velLims = [speedBinEdges(1) speedBinEdges(2)];
+smps = 9;
 
 % initializations
 modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
 
 controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'uniformoutput', 0);
 controlSwingLengths = cat(1, controlSwingLengths{:});
-deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
+deltaLength = modifiedSwingLengths(:,3) - controlSwingLengths(:,3);
 
-validBins = deltaLength<.08;
+% validBins = deltaLength<.08;
 
 [xq, yq] = meshgrid(linspace(distanceLims(1),distanceLims(2),smps), linspace(velLims(1),velLims(2),smps));
-heatMap = griddata([dataNew(validBins).swingStartDistance], [dataNew(validBins).vel], deltaLength(validBins), xq, yq);
+heatMap = griddata([dataNew.swingStartDistance], [dataNew.vel], ...
+    deltaLength, xq, yq);
 
-figure('color', [1 1 1]);
-imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
-set(gca, 'xlim', distanceLims, 'ylim', velLims)
-xlabel('stance paw distance (m)');
-ylabel('speed (m/s)');
+% close all; figure('color', [1 1 1]);
+% imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
+% set(gca, 'xlim', distanceLims, 'ylim', velLims)
+% xlabel('stance paw distance (m)');
+% ylabel('speed (m/s)');
+% pimpFig
+
+[~, sortInds] = sort(deltaLength);
+colors = parula(length(dataNew));
+figure; scatter([dataNew(sortInds).swingStartDistance], [dataNew(sortInds).vel], ...
+    100, colors, 'filled');
+xlabel('swing start distance')
+ylabel('speed')
+
+xLims = get(gca, 'xlim'); yLims = get(gca, 'ylim');
+for i = 1:phaseBinNum-1; line([phaseBinEdges(i+1)],yLims); end
+pimpFig
 
 
 %% average trajectories
@@ -255,11 +268,14 @@ for g = 1:speedBinNum
         plot(mean(x,1), mean(y,1), 'color', colors(1,:), 'linewidth', linWid + -oneTwoRatio*linWid); hold on;
         
         % mark avg position of obsPos
-        oneStepObsPos = mean(obsPosIndInterps(rightModOneStepBins,3));
-        
-        
-        scatter(dataNew(i).locations(dataNew(i).obsPosInd,1,j), dataNew(i).locations(dataNew(i).obsPosInd,2,j), ...
-                            100, [0 0 0], 'x'); hold on
+        if any(rightModOneStepBins)
+            oneStepObsPos = round(mean(obsPosIndInterps(rightModOneStepBins,3)));
+            scatter(mean(squeeze(rightModOneStepLocations(:,1,oneStepObsPos))), ...
+                mean(squeeze(rightModOneStepLocations(:,2,oneStepObsPos))), 200, colors(2,:), 'filled'); hold on
+        end
+        twoStepObsPos = round(nanmean(obsPosIndInterps(rightModTwoStepBins,3)));
+        scatter(mean(squeeze(rightModTwoStepLocations(:,1,twoStepObsPos))), ...
+                mean(squeeze(rightModTwoStepLocations(:,2,twoStepObsPos))), 200, colors(1,:), 'filled'); hold on
 
 
 
@@ -273,14 +289,5 @@ for g = 1:speedBinNum
 end
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\meanKinematics.png']);
-
-
-
-
-
-
-
-
-
 
 

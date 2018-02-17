@@ -143,30 +143,47 @@ legend('modified swing lengths (lengthened)', 'modified swing lengths (shortened
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\swingLengthHistograms.png']);
 
-%% heat map
+%% scatter
 
 % settings
-distanceLims = [-.06 -.02];
-velLims = [.2 .7];
-smps = 100;
+distanceLims = [phaseBinEdges(1) phaseBinEdges(2)];
+velLims = [speedBinEdges(1) speedBinEdges(2)];
+smps = 9;
 
 % initializations
 modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
 
 controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'uniformoutput', 0);
 controlSwingLengths = cat(1, controlSwingLengths{:});
-deltaLength = abs(modifiedSwingLengths(:,3) - controlSwingLengths(:,3));
+deltaLength = modifiedSwingLengths(:,3) - controlSwingLengths(:,3);
 
-validBins = deltaLength<.08;
+% validBins = deltaLength<.08;
 
 [xq, yq] = meshgrid(linspace(distanceLims(1),distanceLims(2),smps), linspace(velLims(1),velLims(2),smps));
-heatMap = griddata([dataNew(validBins).swingStartDistance], [dataNew(validBins).vel], deltaLength(validBins), xq, yq);
+heatMap = griddata([dataNew.swingStartDistance], [dataNew.vel], ...
+    deltaLength, xq, yq);
 
-figure('color', [1 1 1]);
-imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
-set(gca, 'xlim', distanceLims, 'ylim', velLims)
-xlabel('stance paw distance (m)');
-ylabel('speed (m/s)');
+% close all; figure('color', [1 1 1]);
+% imagesc('xdata', xq(1,:), 'ydata', yq(:,1), 'cdata', heatMap);
+% set(gca, 'xlim', distanceLims, 'ylim', velLims)
+% xlabel('stance paw distance (m)');
+% ylabel('speed (m/s)');
+% pimpFig
+
+[~, sortInds] = sort(deltaLength);
+colors = winter(length(dataNew));
+close all; figure; scatter([dataNew(sortInds).swingStartDistance], [dataNew(sortInds).vel], ...
+    100, colors, 'filled');
+xlabel('swing start distance')
+ylabel('speed')
+
+xLims = get(gca, 'xlim'); yLims = get(gca, 'ylim');
+for i = 2:phaseBinNum; line([phaseBinEdges(i) phaseBinEdges(i)],yLims); end
+for i = 2:speedBinNum; line(xLims,[speedBinEdges(i) speedBinEdges(i)]); end
+set(gca,'xlim',xLims,'ylim',yLims,'ydir','reverse')
+pimpFig
+
+saveas(gcf, [getenv('OBSDATADIR') 'figures\deltaSwingScatter.png']);
 
 
 %% average trajectories
