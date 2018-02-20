@@ -3,7 +3,8 @@
 % settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
             '180123_001', '180123_002', '180123_003', ...
-            '180124_001', '180124_002', '180124_003'};
+            '180124_001', '180124_002', '180124_003', ...
+            '180125_001', '180125_002', '180125_003'};
 phaseBinNum = 3;
 speedBinNum = 3;
 
@@ -29,7 +30,7 @@ for i = 1:speedBinNum; speedLabels{i} = sprintf('%.3f', mean([dataNew(speedBins=
 
 % settings
 xLims = [-.1 .1];
-tracesPerPlot = 20;
+tracesPerPlot = 15;
 
 figure; pimpFig
 
