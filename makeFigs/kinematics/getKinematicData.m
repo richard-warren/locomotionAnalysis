@@ -146,7 +146,7 @@ for i = 1:length(sessions)
                 stepXLocations = trialLocations(stepBins,1,k);
                 modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
                 stepTimes = trialTimeStamps(stepBins);
-                modifiedSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
+                modifiedSwingDurations(1,k) = stepTimes(end) - stepTimes(1);
             end
             
             % get interpolated control and modified step locations
