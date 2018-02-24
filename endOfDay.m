@@ -13,7 +13,7 @@ parfor i = 1:length(sessionDirs)
     
 end
 
-%% delete(gcp); % delete parallel pool
+% delete(gcp); % delete parallel pool
 
 % generate plots
 % baselineAnalysis('run6')
@@ -25,10 +25,10 @@ end
 % obsAvoidanceLearningSummary(miceToPlot)
 % speedOverTimeSummary(miceToPlot)
 % plotAllSessionSpeeds({'obsBr', 'obsCompareOnOff', 'obsCompareOff', 'obsWiskMrk'}, [-.08 .08] + 0.3820)
-plotAllSessionSpeeds({'obsWisk'}, [-.08 .08] + 0.3820)
+% plotAllSessionSpeeds({'obsWisk'}, [-.08 .08] + 0.3820)
 
 
-% make video with trials labelled by condition
+%% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data
@@ -50,8 +50,7 @@ for j = 1:length(sessionDirs)
         end
     end
 
-%     makeVidWisk(session, [.25 .445], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
-    makeVidWisk(session, [.25 .445], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
+    makeVidWisk(session, [-.1 .1], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
 end
 
 

@@ -68,6 +68,7 @@ for i = 1:length(obsOnTimes)
         
         % update figure if showTracking enabled
         if showTracking
+            
             threshFrame = frame .* uint8(repmat(colThreshed, size(frame,1), 1));
             colFrame = repmat(colSums, size(frame,1), 1);
             

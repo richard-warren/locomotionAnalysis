@@ -11,7 +11,7 @@ function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPosit
 
 obsPositionsFixed = nan(size(obsPositions));
 
-for i = 1:length(obsOnTimes) % !!!
+for i = 1:length(obsOnTimes)
     
     % get trial pixPositions and pixTimes
     trialFrameBins = (frameTimeStamps>=obsOnTimes(i)) & (frameTimeStamps<=obsOffTimes(i)) & ~isnan(obsPixPositions)';
@@ -19,14 +19,14 @@ for i = 1:length(obsOnTimes) % !!!
     pixTimes = frameTimeStamps(trialFrameBins);
     
     % get obsPos at moment obs reaches nose
-    noseTime = interp1(pixPositions, pixTimes, noseX);
-    obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
+    if ~isempty(pixPositions)
+        noseTime = interp1(pixPositions, pixTimes, noseX);
+        obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
     
-    % get trial obsPos and subtract obsAtNosePos
-    trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));
-    obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
-    
-    
+        % get trial obsPos and subtract obsAtNosePos
+        trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));
+        obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
+    end
 end
 
 

@@ -8,9 +8,9 @@ function [noseX, noseY, medianFrame] = getNosePos(vidBot)
 
 
 % settings
-minFrame = 10000;  % when getting avg frame, only look for frames beyond this frame
 threshFactor = 1.2; % 2 times the mean of the frame
 frameNum = 500;    % number of random frames to use for min projection
+minFrame = min(vidBot.NumberOfFrames-frameNum, 10000);  % when getting avg frame, only look for frames beyond this frame
 noseSubFrameWidth = 10;
 
 
@@ -39,4 +39,12 @@ noseX = floor(mouseOutlineInfo.BoundingBox(1) + mouseOutlineInfo.BoundingBox(3))
 % get nose y position / midline (y center of mass of largest binary region cropped to the rightmost noseSubFrameWidth pixels)
 subFrame = mouseOutlineInfo.FilledImage(:, end-noseSubFrameWidth:end);
 noseInfo = regionprops(subFrame, 'Centroid');
-noseY = noseInfo.Centroid(2) + mouseOutlineInfo.BoundingBox(2);
+noseY = noseInfo(1).Centroid(2) + mouseOutlineInfo.BoundingBox(2);
+
+if length(noseInfo)>1; disp('ERROR in getNosePos: multiple blobs detected for mouse body!!!'); end
+
+
+
+
+
+

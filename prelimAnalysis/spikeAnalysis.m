@@ -224,27 +224,29 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
 
 
     % debounce touch signal and get touch on/off times
-    if analyzeVar('touchSig', varNames, varsToOverWrite) ||...
-       analyzeVar('touchOnTimes', varNames, varsToOverWrite) ||...
-       analyzeVar('touchSigTimes', varNames, varsToOverWrite) ||...
-       analyzeVar('touchOffTimes', varNames, varsToOverWrite)
+    if exist('touch', 'var')
+        if analyzeVar('touchSig', varNames, varsToOverWrite) ||...
+           analyzeVar('touchOnTimes', varNames, varsToOverWrite) ||...
+           analyzeVar('touchSigTimes', varNames, varsToOverWrite) ||...
+           analyzeVar('touchOffTimes', varNames, varsToOverWrite)
 
-        fprintf('%s: debouncing touch signal\n', dataFolder)
-        load([sessionDir 'run.mat'], 'touch', 'breaks')
+            fprintf('%s: debouncing touch signal\n', dataFolder)
+            load([sessionDir 'run.mat'], 'touch', 'breaks')
 
-        % decode stepper motor
-        if exist('breaks', 'var')
-            [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
-        else
-            [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes);
+            % decode stepper motor
+            if exist('breaks', 'var')
+                [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
+            else
+                [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes);
+            end
+
+            % save values
+            varStruct.touchSig = touchSig;
+            varStruct.touchSigTimes = touch.times;
+            varStruct.touchOnTimes = touchOnTimes;
+            varStruct.touchOffTimes = touchOffTimes;
+            anythingAnalyzed = true;
         end
-
-        % save values
-        varStruct.touchSig = touchSig;
-        varStruct.touchSigTimes = touch.times;
-        varStruct.touchOnTimes = touchOnTimes;
-        varStruct.touchOffTimes = touchOffTimes;
-        anythingAnalyzed = true;
     end
 
 

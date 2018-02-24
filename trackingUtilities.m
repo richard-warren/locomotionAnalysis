@@ -30,10 +30,10 @@ getLocations(session, steps, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180122_000';
+session = '180123_001';
 view = 'Top';
 showCorrected = 0;
-frameDelay = .04;
+frameDelay = .01;
 
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocations' view '.mat'])
 if showCorrected

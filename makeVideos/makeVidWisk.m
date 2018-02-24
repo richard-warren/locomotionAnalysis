@@ -14,7 +14,7 @@ maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this dura
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 obsBotThickness = 15;
-wiskTouchThresh = -.75; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
+wiskTouchThresh = -.8; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
 
 
 % initializations
@@ -46,16 +46,17 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...
                                             'touchSig', 'touchSigTimes',...
-                                            'wiskTouchSignal', 'wiskTouchPixels');
+                                            'wiskTouchSignal', 'wiskTouchPixels', 'nosePos');
 
-                                        
+
 % convert wisk contacts to z scores
 realInds = ~isnan(wiskTouchSignal);
 normedReal = zscore(wiskTouchSignal(realInds));
 wiskTouchSignal = nan(size(wiskTouchSignal));
 wiskTouchSignal(realInds) = normedReal;
 
-obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
+% obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
+obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
 % get position where wisk frame should overlap with runTop frame
 topInd = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width, 1, 'first'); % find a frame where the obstacle is at the right edge, eg within the whisker camera
@@ -147,10 +148,10 @@ for i = 1 : round(1/trialProportion) : length(obsOnTimes)
             
             
             % change color of frame if touching
-            currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
-            if currentTouch
-                frame(:,:,2) = frame(:,:,1)*.15;
-            end
+%             currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
+%             if currentTouch
+%                 frame(:,:,2) = frame(:,:,1)*.15;
+%             end
             
             % make wisk view yellow if contacting obstacle
             if ~isempty(wiskFrameInd)
