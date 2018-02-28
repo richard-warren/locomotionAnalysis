@@ -3,7 +3,7 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 miceToPlot = {'run6', 'run7', 'run8'};
-vidTrialProportion = .15;
+vidTrialProportion = .25;
 
 parfor i = 1:length(sessionDirs)
     
@@ -28,7 +28,7 @@ end
 % plotAllSessionSpeeds({'obsWisk'}, [-.08 .08] + 0.3820)
 
 
-%% make video with trials labelled by condition
+% make video with trials labelled by condition
 for j = 1:length(sessionDirs)
     
     % load session data

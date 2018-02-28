@@ -6,7 +6,7 @@ fps = 15;
 sensorXWidth = .5; % seconds
 yLims = [-.3 .3];
 vidScaling = 1.5;
-smoothSmps = 10;
+smoothSmps = 1;
 
 % load session data
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
@@ -16,7 +16,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsOnTimes'
 % initializations
 trials = randperm(length(obsOnTimes), min(trials, length(obsOnTimes)));
 trials = sort(trials);
-trials = 100:105; % temp
+trials = 30:40; % temp
 vidWriter = VideoWriter(sprintf('%ssensorVid%s', editedDir, session), 'MPEG-4');
 set(vidWriter, 'FrameRate', fps)
 open(vidWriter)
