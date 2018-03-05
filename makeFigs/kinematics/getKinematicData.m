@@ -23,7 +23,7 @@ for i = 1:length(sessions)
     % load session data
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', ...
-            'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes');
+            'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixMapping = median(mToPixMapping,1);
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\locationsBotCorrected.mat'], 'locations')
@@ -34,8 +34,13 @@ for i = 1:length(sessions)
     % get velocities for all trials in session
     sessionVels = getTrialSpeedsAtObsPos(obsPos, wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, speedTime, targetFs);
     
+    % get wheel velocities
+    wheelVel = getVelocity(wheelPositions, speedTime, targetFs);
+    wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps)';
+
     % normalize y values
     locations(:,2,:) = locations(:,2,:) - nosePos(2); % subtract midline from all y values
+    
     
     % get swing identities (each swing is given a number, in ascending order)
     swingBins = ~stanceBins;
@@ -74,6 +79,7 @@ for i = 1:length(sessions)
         trialTimeStamps = frameTimeStamps(trialBins);
         trialObsPixPositions = obsPixPositions(trialBins);
         trialIsExcluded = isExcluded(trialBins);
+        trialWheelVel = wheelVel(trialBins);
         
         if ~any(isnan(trialLocations(:))) && ~any(trialIsExcluded) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
@@ -127,9 +133,10 @@ for i = 1:length(sessions)
             stanceDistance = trialLocations(obsPosInd,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
             swingStartDistance = trialLocations(find(modifiedStepIdentities(:,3)==1,1,'first'),1,3);
             
-            % get control step(s) length
+            % get control step(s) length, duration, wheel velocity
             controlSwingLengths = nan(controlSteps,4);
             controlSwingDurations = nan(controlSteps,4);
+            controlWheelVels = nan(controlSteps,4);
             for k = 1:4
                 for m = 1:controlSteps
                     stepBins = controlStepIdentities(:,k)==m;
@@ -137,18 +144,21 @@ for i = 1:length(sessions)
                     controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStamps(stepBins);
                     controlSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
+                    controlWheelVels(m,k) = mean(trialWheelVel(stepBins));
                 end
             end
             
             % get first modified step length for swing foot
             modifiedSwingLengths = nan(1,4);
             modifiedSwingDurations = nan(1,4);
+            modifiedWheelVels = nan(1,4);
             for k = 1:4
                 stepBins = modifiedStepIdentities(:,k)==1;
                 stepXLocations = trialLocations(stepBins,1,k);
                 modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
                 stepTimes = trialTimeStamps(stepBins);
                 modifiedSwingDurations(1,k) = stepTimes(end) - stepTimes(1);
+                modifiedWheelVels(k) = mean(trialWheelVel(stepBins));
             end
             
             % get interpolated and non-interpolated control and modified step locations
@@ -223,6 +233,7 @@ for i = 1:length(sessions)
             sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}));
             data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
             data(dataInd).session = sessions{i};
+            
             data(dataInd).vel = sessionVels(j);
             data(dataInd).obsPosInd = obsPosInd;
             data(dataInd).pawObsPosIndInterp = pawObsPosIndInterp;
@@ -239,11 +250,15 @@ for i = 1:length(sessions)
             data(dataInd).oneSwingOneStance = oneSwingOneStance;
             data(dataInd).stanceDistance = stanceDistance;
             data(dataInd).swingStartDistance = swingStartDistance;
+            data(dataInd).isFlipped = isFlipped;
+            
             data(dataInd).controlSwingLengths = controlSwingLengths;
             data(dataInd).modifiedSwingLengths = modifiedSwingLengths;
             data(dataInd).controlSwingDurations = controlSwingDurations;
             data(dataInd).modifiedSwingDurations = modifiedSwingDurations;
-            data(dataInd).isFlipped = isFlipped;
+            data(dataInd).controlWheelVels = controlWheelVels;
+            data(dataInd).modifiedWheelVels = modifiedWheelVels;
+            
             dataInd = dataInd + 1;
         end
     end
