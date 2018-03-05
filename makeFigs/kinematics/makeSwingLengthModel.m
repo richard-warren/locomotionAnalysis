@@ -16,17 +16,17 @@ dataNew = data([data.oneSwingOneStance]);
 %% scatter
 
 % settings
-mouse = 'run8';
+mouse = {'run8'};
 
 % initializations
-inds = strcmp({dataNew.mouse}, mouse);
+bins = ismember({dataNew.mouse}, mouse);
 
 % predictors: wheel speed, previous stride length
-lengths1 = cellfun(@(x) x(1,3), {dataNew(inds).controlSwingLengths});
-vels2 = cellfun(@(x) x(2,3), {dataNew(inds).controlWheelVels});
+lengths1 = cellfun(@(x) x(1,3), {dataNew(bins).controlSwingLengths});
+vels2 = cellfun(@(x) x(2,3), {dataNew(bins).controlWheelVels});
 
 % dependent variable: stride length
-lengths2 = cellfun(@(x) x(2,3), {dataNew(inds).controlSwingLengths});
+lengths2 = cellfun(@(x) x(2,3), {dataNew(bins).controlSwingLengths});
 
 % collect into matrix
 regData = cat(1, lengths1, vels2, lengths2)';

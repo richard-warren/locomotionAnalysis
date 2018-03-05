@@ -144,7 +144,10 @@ for i = 1:length(sessions)
                     controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStamps(stepBins);
                     controlSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
-                    controlWheelVels(m,k) = mean(trialWheelVel(stepBins));
+                    
+                    stepInds = find(stepBins);
+                    randInd = stepInds(randperm(length(stepInds),1));
+                    controlWheelVels(m,k) = trialWheelVel(randInd); %mean(trialWheelVel(stepBins));
                 end
             end
             
@@ -158,7 +161,10 @@ for i = 1:length(sessions)
                 modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
                 stepTimes = trialTimeStamps(stepBins);
                 modifiedSwingDurations(1,k) = stepTimes(end) - stepTimes(1);
-                modifiedWheelVels(k) = mean(trialWheelVel(stepBins));
+                
+                stepInds = find(stepBins);
+                randInd = stepInds(randperm(length(stepInds),1));
+                modifiedWheelVels(k) = trialWheelVel(randInd); %mean(trialWheelVel(stepBins));
             end
             
             % get interpolated and non-interpolated control and modified step locations
