@@ -332,12 +332,9 @@ for g = 1:speedBinNum
         oneTwoRatio = oneTwoRatio * 2 - 1; % scale from -1 to 1
         
         % get avg swing durations
-        controlDurations = cellfun(@(x) mean(x(:,3)), {dataNew(controlBins).controlSwingDurations}); % each element is the avg duration across all control swings in the trial
-        controlEndInd = interp1(times, 1:length(times) , mean(controlDurations), 'nearest');
-        modOneDurations = reshape([dataNew(rightModOneStepBins).modifiedSwingDurations],4,sum(rightModOneStepBins))';
-        modOneEndInd = min(interp1(times, 1:length(times) , mean(modOneDurations(:,3)), 'nearest'), length(times));
-        modTwoDurations = reshape([dataNew(rightModTwoStepBins).modifiedSwingDurations],4,sum(rightModTwoStepBins))';
-        modTwoEndInd = interp1(times, 1:length(times) , mean(modTwoDurations(:,3)), 'nearest');
+        controlDuration = reshape([dataNew(controlBins).control],4,length(dataNew))';
+        modOneDurations = 
+        modTwoDurations = 
 
         
         % get control locations
@@ -358,19 +355,20 @@ for g = 1:speedBinNum
         % plot control right
         x = squeeze(controlLocations(:,1,:));
         xMean = nanmean(x,1); xMean = xMean - xMean(1);
-        plot(times(1:controlEndInd), xMean(1:controlEndInd), 'color', controlColor, 'linewidth', linWid); hold on;
+        avgDuration = ; !!!
+        plot(times, xMean(1:length(times)), 'color', controlColor, 'linewidth', linWid); hold on;
 
         % plot mod right, one step
         if size(rightModOneStepLocations,1)>1
             x = squeeze(rightModOneStepLocations(:,1,:));
             xMean = nanmean(x,1); xMean = xMean - xMean(1);
-            plot(times(1:modOneEndInd), xMean(1:modOneEndInd), 'color', colors(2,:), 'linewidth', linWid + oneTwoRatio*linWid); hold on;
+            plot(times, xMean(1:length(times)), 'color', colors(2,:), 'linewidth', linWid + oneTwoRatio*linWid); hold on;
         end
 
         % plot mod right, two step
         x = squeeze(rightModTwoStepLocations(:,1,:));
         xMean = nanmean(x,1); xMean = xMean - xMean(1);
-        plot(times(1:modTwoEndInd), xMean(1:modTwoEndInd), 'color', colors(1,:), 'linewidth', linWid + -oneTwoRatio*linWid); hold on;
+        plot(times, xMean(1:length(times)), 'color', colors(1,:), 'linewidth', linWid + -oneTwoRatio*linWid); hold on;
         
         % mark avg position of obsPos
         meanObsInd = mean(pawObsPosInds(rightModOneStepBins | rightModTwoStepBins,3));
