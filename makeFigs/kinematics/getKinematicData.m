@@ -3,13 +3,13 @@ function data = getKinematicData(sessions)
 % settings
 obsPos = -.0073; % approximate obstacle position where it first touches whiskers
 speedTime = .02; % compute velocity over this interval
-controlSteps = 2;
 interpSmps = 100;
 swingMinLength = .005; % swings must be at least this long to be included in analysis (meters)
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
+controlSteps = 2; % !!! don't change this - currently requires this number is two
 data = struct();
 dataInd = 1;
 
@@ -145,9 +145,9 @@ for i = 1:length(sessions)
                     stepTimes = trialTimeStamps(stepBins);
                     controlSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
                     
-                    stepInds = find(stepBins);
-                    randInd = stepInds(randperm(length(stepInds),1));
-                    controlWheelVels(m,k) = trialWheelVel(randInd); %mean(trialWheelVel(stepBins));
+%                     stepInds = find(stepBins);
+%                     randInd = stepInds(randperm(length(stepInds),1));
+                    controlWheelVels(m,k) = trialWheelVel(find(stepBins,1,'first'));
                 end
             end
             
@@ -161,10 +161,8 @@ for i = 1:length(sessions)
                 modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
                 stepTimes = trialTimeStamps(stepBins);
                 modifiedSwingDurations(1,k) = stepTimes(end) - stepTimes(1);
-                
-                stepInds = find(stepBins);
-                randInd = stepInds(randperm(length(stepInds),1));
-                modifiedWheelVels(k) = trialWheelVel(randInd); %mean(trialWheelVel(stepBins));
+
+                modifiedWheelVels(k) = trialWheelVel(find(stepBins,1,'first'));
             end
             
             % get interpolated and non-interpolated control and modified step locations
@@ -270,4 +268,42 @@ for i = 1:length(sessions)
     end
 end
 
+
+% make model to predict would-be mod swing length using wheel vel and previous swing lengths as predictors
+mice = unique({data.mouse});
+models = cell(1,length(mice));
+
+for i = 1:length(mice)
+    
+    mouseBins = strcmp({data.mouse}, mice{i});
+    
+    % make predictive model
+    
+    % predictors: wheel speed, previous stride length
+    prevLengths = cellfun(@(x) x(1,3), {data(mouseBins).controlSwingLengths});
+    vel = cellfun(@(x) x(2,3), {data(mouseBins).controlWheelVels});
+
+    % dependent variable: stride length
+    lengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});
+    
+    % make linear model
+    models{i} = fitlm(cat(1,prevLengths,vel)', lengths, 'Linear', 'RobustOpts', 'on');
+    
+    % generate predictions
+    prevLengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});
+    vel = cellfun(@(x) x(1,3), {data(mouseBins).modifiedWheelVels});
+    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
+    [data(mouseBins).predictedLengths] = predictedLengths{:};
+end
+
+
 fprintf('--- done collecting data ---\n');
+
+
+
+
+
+
+
+
+
