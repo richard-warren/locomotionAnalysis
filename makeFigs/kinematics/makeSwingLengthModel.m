@@ -13,20 +13,22 @@ dataNew = data([data.oneSwingOneStance]);
 
 
 
-%% scatter
+%% distance from obs
 
-% settings
-mouse = {'run8'};
+predDist = [dataNew.predictedLengths] + [dataNew.swingStartDistance];
+deltaLength = cellfun(@(x) x(1,3), {dataNew.modifiedSwingLengths}) - [dataNew.predictedLengths];
 
-% initializations
-bins = ismember({dataNew.mouse}, mouse);
+% predicted distance from obs vs. swing length
+close all; figure;
+mice = {'run6', 'run7', 'run8'};
 
-% predictors: wheel speed, previous stride length
-lengths1 = cellfun(@(x) x(1,3), {dataNew(bins).controlSwingLengths});
-vels2 = cellfun(@(x) x(2,3), {dataNew(bins).controlWheelVels});
+for i = 1:length(mice)
+    subplot(length(mice),1,i)
+    mouseBins = strcmp({dataNew.mouse}, mice{i});
+    scatter(predDist(mouseBins), deltaLength(mouseBins))
+    set(gca, 'xlim', [-.04 .03])
+end
 
-% dependent variable: stride length
-lengths2 = cellfun(@(x) x(2,3), {dataNew(bins).controlSwingLengths});
-
-% collect into matrix
-regData = cat(1, lengths1, vels2, lengths2)';
+% speed distance from obs vs. swing length
+% figure; scatter(cellfun(@(x) x(1,3), {dataNew.modifiedWheelVels}), deltaLength)
+figure; scatter();
