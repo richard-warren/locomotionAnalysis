@@ -5,7 +5,7 @@ function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchor
 circSize = 200;
 vidSizeScaling = 1.25;
 colors = hsv(4);
-maxCorrectionInterpolation = 100; % max number of frames that can be interpolated between locationCorrections
+maxCorrectionInterpolation = 20; % max number of frames that can be interpolated between locationCorrections
 
 
 % initializations

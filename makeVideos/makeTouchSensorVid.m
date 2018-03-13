@@ -16,7 +16,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsOnTimes'
 % initializations
 trials = randperm(length(obsOnTimes), min(trials, length(obsOnTimes)));
 trials = sort(trials);
-trials = 30:40; % temp
+% trials = 30:40; % temp
 vidWriter = VideoWriter(sprintf('%ssensorVid%s', editedDir, session), 'MPEG-4');
 set(vidWriter, 'FrameRate', fps)
 open(vidWriter)

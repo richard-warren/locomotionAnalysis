@@ -30,8 +30,8 @@ getLocations(session, steps, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180123_001';
-view = 'Top';
+session = '180123_003';
+view = 'Bot';
 showCorrected = 0;
 frameDelay = .01;
 
