@@ -2,13 +2,12 @@ function data = getKinematicData(sessions)
 
 % settings
 isObsPosStatic = false; % if true, assumes wisks touch obstacle at obsPos, which can be manually set to mean of contact positions // otherwise, contact position is computed on trial to trial basis
-obsPos = -.0073;
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100;
 swingMinLength = .005; % swings must be at least this long to be included in analysis (meters)
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
 wiskTouchThresh = -.75; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
-if ~isObsPosStatic; obsPosDefault = obsPos; end % approximate obstacle position where it first touches whiskers
+if isObsPosStatic; obsPos = -.0073; end % approximate obstacle position where it first touches whiskers
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -34,7 +33,6 @@ for i = 1:length(sessions)
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stanceBins.mat'], 'stanceBins')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'isExcluded')
-    vel = getVelocity(wheelPositions, speedTime, targetFs);
     
     % convert wisk contacts to z scores
     realInds = ~isnan(wiskTouchSignal);
@@ -118,16 +116,11 @@ for i = 1:length(sessions)
                         if obsPos>0 || obsPos<-.015; obsPos = nan; end % set to nan trials in which detected position is unreasonable
                     end
                 end
-                
-                if isnan(obsPos); obsPos = obsPosDefault; end
             end
-            
-            % get vel at moment of contact
-            obsAtPosTime = obsTimes(find(obsTimes>=obsOnTimes(j) & obsPositions>=obsPos, 1, 'first'));
-            sessionVels(j) = interp1(wheelTimes, vel, obsAtPosTime);
             
             % get frame ind at which obs reaches obsPos
             obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));
+            keyboard
             obsPosInd = knnsearch(trialTimeStamps, obsPosTime);
             
             % get trial swing identities and define control and modified steps
@@ -284,6 +277,7 @@ for i = 1:length(sessions)
             data(dataInd).vel = sessionVels(j);
             data(dataInd).obsPos = obsPos;
             data(dataInd).obsPosInd = obsPosInd;
+            data(dataInd).stepObsPosInd = stepObsPosInd;
             data(dataInd).pawObsPosIndInterp = pawObsPosIndInterp;
             data(dataInd).pawObsPosInd = pawObsPosInd;
             data(dataInd).timeStamps = trialTimeStamps;

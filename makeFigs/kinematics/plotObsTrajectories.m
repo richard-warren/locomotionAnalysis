@@ -10,20 +10,20 @@ speedBinNum = 3;
 
 
 % initializations
-data = getKinematicData(sessions);
-dataNew = data([data.oneSwingOneStance]);
+dataRaw = getKinematicData(sessions);
+data = dataRaw([dataRaw.oneSwingOneStance]);
 
 % get speed and phase bins
-phaseBinEdges = prctile([dataNew.swingStartDistance], linspace(0,100,phaseBinNum+1));
-phaseBins = discretize([dataNew.swingStartDistance], phaseBinEdges);
-speedBinEdges = prctile([dataNew.vel], linspace(0,100,speedBinNum+1));
-speedBins = discretize([dataNew.vel], speedBinEdges);
+phaseBinEdges = prctile([data.swingStartDistance], linspace(0,100,phaseBinNum+1));
+phaseBins = discretize([data.swingStartDistance], phaseBinEdges);
+speedBinEdges = prctile([data.vel], linspace(0,100,speedBinNum+1));
+speedBins = discretize([data.vel], speedBinEdges);
 
 % create speed and phase labels
 phaseLabels = cell(1,phaseBinNum);
-for i = 1:phaseBinNum; phaseLabels{i} = sprintf('%.3f', mean([dataNew(phaseBins==i).swingStartDistance])); end
+for i = 1:phaseBinNum; phaseLabels{i} = sprintf('%.3f', mean([data(phaseBins==i).swingStartDistance])); end
 speedLabels = cell(1,speedBinNum);
-for i = 1:speedBinNum; speedLabels{i} = sprintf('%.3f', mean([dataNew(speedBins==i).vel])); end
+for i = 1:speedBinNum; speedLabels{i} = sprintf('%.3f', mean([data(speedBins==i).vel])); end
 
 
 %% sperm plots
@@ -49,16 +49,16 @@ for g = 1:speedBinNum
         for i = dataInds
             for j = 2:3
 
-                realInds = ~isnan(dataNew(i).modifiedStepIdentities(:,j));
-                steps = unique(dataNew(i).modifiedStepIdentities(realInds,j));
+                realInds = ~isnan(data(i).modifiedStepIdentities(:,j));
+                steps = unique(data(i).modifiedStepIdentities(realInds,j));
                 colors = winter(length(steps));
 
                 for k = steps'
 
                     % plot x and y trajectories
-                    trialInds = dataNew(i).modifiedStepIdentities(:,j)==k;
-                    x = dataNew(i).locations(trialInds,1,j);
-                    y = dataNew(i).locations(trialInds,2,j);
+                    trialInds = data(i).modifiedStepIdentities(:,j)==k;
+                    x = data(i).locations(trialInds,1,j);
+                    y = data(i).locations(trialInds,2,j);
                     plot(x, y, 'color', colors(k,:)); hold on
 
                     % scatter dots at start of each swing
@@ -66,7 +66,7 @@ for g = 1:speedBinNum
 
                     % scatter position of swing foot at obsPos
                     if j==3
-                        scatter(dataNew(i).locations(dataNew(i).obsPosInd,1,j), dataNew(i).locations(dataNew(i).obsPosInd,2,j), ...
+                        scatter(data(i).locations(data(i).obsPosInd,1,j), data(i).locations(data(i).obsPosInd,2,j), ...
                             100, [0 0 0], 'x'); hold on
                     end
                 end
@@ -95,9 +95,9 @@ colors = winter(2);
 controlColor = [.65 .65 .65];
 
 % initializations
-numModSteps = reshape([dataNew.modStepNum],4,length(dataNew))';
-modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
-controlSwingLengths = {dataNew.controlSwingLengths}; controlSwingLengths = cat(1, controlSwingLengths{:});
+numModSteps = reshape([data.modStepNum],4,length(data))';
+modifiedSwingLengths = {data.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+controlSwingLengths = {data.controlSwingLengths}; controlSwingLengths = cat(1, controlSwingLengths{:});
 
 figure; pimpFig
 
@@ -152,16 +152,16 @@ velLims = [speedBinEdges(1) speedBinEdges(2)];
 smps = 9;
 
 % initializations
-modifiedSwingLengths = {dataNew.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+modifiedSwingLengths = {data.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
 
-controlSwingLengths = cellfun(@(x) mean(x,1), {dataNew.controlSwingLengths}, 'uniformoutput', 0);
+controlSwingLengths = cellfun(@(x) mean(x,1), {data.controlSwingLengths}, 'uniformoutput', 0);
 controlSwingLengths = cat(1, controlSwingLengths{:});
 deltaLength = modifiedSwingLengths(:,3) - controlSwingLengths(:,3);
 
 % validBins = deltaLength<.08;
 
 [xq, yq] = meshgrid(linspace(distanceLims(1),distanceLims(2),smps), linspace(velLims(1),velLims(2),smps));
-heatMap = griddata([dataNew.swingStartDistance], [dataNew.vel], ...
+heatMap = griddata([data.swingStartDistance], [data.vel], ...
     deltaLength, xq, yq);
 
 % close all; figure('color', [1 1 1]);
@@ -172,8 +172,8 @@ heatMap = griddata([dataNew.swingStartDistance], [dataNew.vel], ...
 % pimpFig
 
 [~, sortInds] = sort(deltaLength);
-colors = winter(length(dataNew));
-close all; figure; scatter([dataNew(sortInds).swingStartDistance], [dataNew(sortInds).vel], ...
+colors = winter(length(data));
+close all; figure; scatter([data(sortInds).swingStartDistance], [data(sortInds).vel], ...
     100, colors, 'filled');
 xlabel('swing start distance')
 ylabel('speed')
@@ -198,8 +198,8 @@ colors = winter(2);
 
 % initializations
 figure; pimpFig;
-numModSteps = reshape([dataNew.modStepNum],4,length(dataNew))';
-obsPosIndInterps = reshape([dataNew.pawObsPosIndInterp],4,length(dataNew))';
+numModSteps = reshape([data.modStepNum],4,length(data))';
+obsPosIndInterps = reshape([data.pawObsPosIndInterp],4,length(data))';
 
 
 for g = 1:speedBinNum
@@ -221,24 +221,24 @@ for g = 1:speedBinNum
         
 
         % get left and right control locations
-        controlLocations = {dataNew(controlBins).controlLocationsInterp};
+        controlLocations = {data(controlBins).controlLocationsInterp};
         leftControlLocations = cellfun(@(x) x{2}, controlLocations, 'uniformoutput', 0);
         leftControlLocations = cat(1,leftControlLocations{:});
         rightControlLocations = cellfun(@(x) x{3}, controlLocations, 'uniformoutput', 0);
         rightControlLocations = cat(1,rightControlLocations{:});
 
         % get left modified locations
-        leftModLocations = {dataNew(leftModBins).modifiedLocationsInterp};
+        leftModLocations = {data(leftModBins).modifiedLocationsInterp};
         leftModLocations = cellfun(@(x) x{2}, leftModLocations, 'uniformoutput', 0);
         leftModLocations = cat(1,leftModLocations{:});
 
         % get right modified (one step) locations
-        rightModOneStepLocations = {dataNew(rightModOneStepBins).modifiedLocationsInterp};
+        rightModOneStepLocations = {data(rightModOneStepBins).modifiedLocationsInterp};
         rightModOneStepLocations = cellfun(@(x) x{3}, rightModOneStepLocations, 'uniformoutput', 0);
         rightModOneStepLocations = cat(1,rightModOneStepLocations{:});
 
         % get right modified (two step) locations
-        rightModTwoStepLocations = {dataNew(rightModTwoStepBins).modifiedLocationsInterp};
+        rightModTwoStepLocations = {data(rightModTwoStepBins).modifiedLocationsInterp};
         rightModTwoStepLocations = cellfun(@(x) x{3}(1,:,:), rightModTwoStepLocations, 'uniformoutput', 0);
         rightModTwoStepLocations = cat(1,rightModTwoStepLocations{:});
 
@@ -311,8 +311,8 @@ maxDistance = .1;
 % initializations
 figure; pimpFig;
 times = 0:dt:maxTime;
-numModSteps = reshape([dataNew.modStepNum],4,length(dataNew))';
-pawObsPosInds = reshape([dataNew.pawObsPosInd],4,length(dataNew))';
+numModSteps = reshape([data.modStepNum],4,length(data))';
+pawObsPosInds = reshape([data.pawObsPosInd],4,length(data))';
 
 
 for g = 1:speedBinNum
@@ -332,26 +332,26 @@ for g = 1:speedBinNum
         oneTwoRatio = oneTwoRatio * 2 - 1; % scale from -1 to 1
         
         % get avg swing durations
-        controlDurations = cellfun(@(x) mean(x(:,3)), {dataNew(controlBins).controlSwingDurations}); % each element is the avg duration across all control swings in the trial
+        controlDurations = cellfun(@(x) mean(x(:,3)), {data(controlBins).controlSwingDurations}); % each element is the avg duration across all control swings in the trial
         controlEndInd = interp1(times, 1:length(times) , mean(controlDurations), 'nearest');
-        modOneDurations = reshape([dataNew(rightModOneStepBins).modifiedSwingDurations],4,sum(rightModOneStepBins))';
+        modOneDurations = reshape([data(rightModOneStepBins).modifiedSwingDurations],4,sum(rightModOneStepBins))';
         modOneEndInd = min(interp1(times, 1:length(times) , mean(modOneDurations(:,3)), 'nearest'), length(times));
-        modTwoDurations = reshape([dataNew(rightModTwoStepBins).modifiedSwingDurations],4,sum(rightModTwoStepBins))';
+        modTwoDurations = reshape([data(rightModTwoStepBins).modifiedSwingDurations],4,sum(rightModTwoStepBins))';
         modTwoEndInd = interp1(times, 1:length(times) , mean(modTwoDurations(:,3)), 'nearest');
 
         
         % get control locations
-        controlLocations = {dataNew(controlBins).controlLocations};
+        controlLocations = {data(controlBins).controlLocations};
         controlLocations = cellfun(@(x) x{3}, controlLocations, 'uniformoutput', 0);
         controlLocations = cat(1,controlLocations{:});
 
         % get right modified (one step) locations
-        rightModOneStepLocations = {dataNew(rightModOneStepBins).modifiedLocations};
+        rightModOneStepLocations = {data(rightModOneStepBins).modifiedLocations};
         rightModOneStepLocations = cellfun(@(x) x{3}, rightModOneStepLocations, 'uniformoutput', 0);
         rightModOneStepLocations = cat(1,rightModOneStepLocations{:});
 
         % get right modified (two step) locations
-        rightModTwoStepLocations = {dataNew(rightModTwoStepBins).modifiedLocations};
+        rightModTwoStepLocations = {data(rightModTwoStepBins).modifiedLocations};
         rightModTwoStepLocations = cellfun(@(x) x{3}(1,:,:), rightModTwoStepLocations, 'uniformoutput', 0);
         rightModTwoStepLocations = cat(1,rightModTwoStepLocations{:});
 
