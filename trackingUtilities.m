@@ -18,6 +18,14 @@ for i = 1:length(sessionDirs)
     
 end
 
+%% get paw contacts with obstacles
+
+session = '180228_000';
+vidDelay = .001;
+
+getObsContacts(session, vidDelay)
+
+
 %% getLocations on single session
 
 session = '180122_000';

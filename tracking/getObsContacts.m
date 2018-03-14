@@ -11,9 +11,17 @@ vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes');
 w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
-isCorrected = zeros(1,length(frameTimeStamps));
-touchingFront = zeros(1,length(frameTimeStamps));
-touchingTop = zeros(1,length(frameTimeStamps));
+
+% load previous data if it exists
+if exist([getenv('OBSDATADIR') 'sessions\' session '\obsContacts.mat'], 'file')
+    load([getenv('OBSDATADIR') 'sessions\' session '\obsContacts.mat'], 'isCorrected', 'touchingFront', 'touchingTop')
+else
+    isCorrected = zeros(1,length(frameTimeStamps));
+    touchingFront = zeros(1,length(frameTimeStamps));
+    touchingTop = zeros(1,length(frameTimeStamps));
+end
+
+
 
 
 % get bins for trials (bins where obs is on)
@@ -85,11 +93,13 @@ function changeFrames(~,~)
         case 119
             paused = true;
             touchingFront(frameInds(currentFrameInd)) = 1;
+            touchingTop(frameInds(currentFrameInd)) = 0;
             updateFrame(1);
             
         % 'e': save frame as contacting top
         case 101
             paused = true;
+            touchingFront(frameInds(currentFrameInd)) = 0;
             touchingTop(frameInds(currentFrameInd)) = 1;
             updateFrame(1);
         
@@ -108,7 +118,7 @@ function changeFrames(~,~)
             
         % 's': save current progress
         case 115
-            save([getenv('OBSDATADIR') 'sessions\' session '\obsContacts.mat'], 'touchingFront', 'touchingTop')
+            save([getenv('OBSDATADIR') 'sessions\' session '\obsContacts.mat'], 'touchingFront', 'touchingTop', 'isCorrected')
             m = msgbox('saving!!!'); pause(.5); close(m)
             
         % 'c': go to latest corrected frame

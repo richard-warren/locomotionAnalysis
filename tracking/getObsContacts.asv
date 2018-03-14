@@ -11,9 +11,14 @@ vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes');
 w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
+
+% load previous data if it exists
+if exist([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'file')
 isCorrected = zeros(1,length(frameTimeStamps));
 touchingFront = zeros(1,length(frameTimeStamps));
 touchingTop = zeros(1,length(frameTimeStamps));
+
+
 
 
 % get bins for trials (bins where obs is on)
@@ -58,7 +63,7 @@ close(w)
 % keypress controls
 function changeFrames(~,~)
     
-    key = double(get(fig, 'currentcharacter'))
+    key = double(get(fig, 'currentcharacter'));
     
     switch key
         
@@ -76,15 +81,22 @@ function changeFrames(~,~)
         
         % 'q': save frame as not contacting
         case 113
-            touchingFront(fr) = 0;
-            touchingTop() = 0;
+            paused = true;
+            touchingFront(frameInds(currentFrameInd)) = 0;
+            touchingTop(frameInds(currentFrameInd)) = 0;
             updateFrame(1);
             
         % 'w': save frame as contacting front
         case 119
+            paused = true;
+            touchingFront(frameInds(currentFrameInd)) = 1;
+            updateFrame(1);
             
         % 'e': save frame as contacting top
         case 101
+            paused = true;
+            touchingTop(frameInds(currentFrameInd)) = 1;
+            updateFrame(1);
         
         % 'f': select frame
         case 102
@@ -101,7 +113,7 @@ function changeFrames(~,~)
             
         % 's': save current progress
         case 115
-            save([getenv('OBSDATADIR') 'sessions\' session '\obsContacts.mat'], 'touchingFront', 'touchingTop')
+            save([getenv('OBSDATADIR') 'sessions\' session '\obsContacts.mat'], 'touchingFront', 'touchingTop', 'isCorrected')
             m = msgbox('saving!!!'); pause(.5); close(m)
             
         % 'c': go to latest corrected frame
@@ -137,6 +149,10 @@ function updateFrame(frameStep)
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
         sprintf('trial %i, frame %i', trialIdentities(frameInds(currentFrameInd)), frameInds(currentFrameInd)),...
 	    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+    
+    % change frame color if touching front or top
+    if touchingFront(frameInds(currentFrameInd)); frame(:,:,3) = frame(:,:,3)*2; end
+    if touchingTop(frameInds(currentFrameInd)); frame(:,:,2) = frame(:,:,2)*2; end
     
     % update figure
     set(preview, 'CData', frame);
