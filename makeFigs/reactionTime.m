@@ -86,50 +86,29 @@ controlDifsX = squeeze(controlDifs(:,1,:,:));
 controlDifsX = reshape(permute(controlDifsX, [1 3 2]), [], length(times));
 modDifsX = squeeze(modDifs(:,1,:));
 
+% interpolate
+% controlDifsXInterp = interpWithNans(controlDifsX, times, timesInterp, 'pchip');
+% modDifsXInterp = interpWithNans(modDifsX, times, timesInterp, 'pchip');
+
 
 %% plot mean difs
 xlims = [-.01 .05];
 
 figure('color', 'white', 'menubar', 'none');
 
-shadedErrorBar(times, controlDifsX, {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
+shadedErrorBar(times*1000, controlDifsX*1000, {@nanmean, @(x) nanstd(x)}, ...
     'lineprops', {'linewidth', 3, 'color', [0 0 0]}); hold on;
-shadedErrorBar(times, modDifsX, {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
+shadedErrorBar(times*1000, modDifsX*1000, {@nanmean, @(x) nanstd(x)}, ...
     'lineprops', {'linewidth', 3, 'color', winter(1)});
+% /sqrt(size(x,1))
 
 % pimp fig
-set(gca, 'xlim', xlims)
-ylabel('kinematic change (m)')
-xlabel('time (s)')
+set(gca, 'xlim', xlims*1000)
+ylabel('\Deltax (mm)')
+xlabel('time (ms)')
+line([0 0], get(gca,'ylim'), 'color', [0 0 0])
 
-%% plot difs as function of phase
-
-% settings
-phaseBinNum = 5;
-
-% initializations
-colors = winter(phaseBinNum);
-phaseBinEdges = prctile([data.swingStartDistance], linspace(0,100,phaseBinNum+1));
-phaseBins = discretize([data.swingStartDistance], phaseBinEdges);
-phaseLabels = cell(1,phaseBinNum);
-for i = 1:phaseBinNum; phaseLabels{i} = sprintf('%.3f', mean([data(phaseBins==i).swingStartDistance])); end
-
-
-close all; figure('color', 'white', 'menubar', 'none');
-
-for i = 1:phaseBinNum    
-    shadedErrorBar(times, modDifsX(phaseBins==i,:), {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
-        'lineprops', {'linewidth', 3, 'color', colors(i,:)}); hold on;
-end
-
-shadedErrorBar(times, controlDifsX, {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
-    'lineprops', {'linewidth', 3, 'color', [.65 .65 .65]}); hold on;
-
-
-
-
-
-
+saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimes.png']);
 
 
 
