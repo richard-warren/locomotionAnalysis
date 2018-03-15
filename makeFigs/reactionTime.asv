@@ -5,7 +5,7 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
             '180123_001', '180123_002', '180123_003', ...
             '180124_001', '180124_002', '180124_003', ...
             '180125_001', '180125_002', '180125_003'};
-neighborNum = 20;
+neighborNum = 50;
 dt = .004; % 1/fps of camera
 dtInterp = .001;
 
@@ -19,9 +19,6 @@ timesInterp = times(1):dtInterp:times(end);
 
 %%
 
-% data = dataRaw([dataRaw.oneSwingOneStance]);
-% randInds = randperm(length(data), round(length(data)*.2));
-% data = data(randInds);
 
 controlVels1 = cellfun(@(x) x(1,3), {data.controlWheelVels});
 controlVels2 = cellfun(@(x) x(2,3), {data.controlWheelVels});
@@ -35,6 +32,23 @@ controlLocationsRaw2 = cellfun(@(x) x{3}(end,:,:), {data.controlLocations}, 'uni
 controlLocationsRaw2 = cat(1,controlLocationsRaw2{:});
 modLocationsRaw = cellfun(@(x) x{3}(1,:,:), {data.modifiedLocations}, 'uniformoutput', 0);
 modLocationsRaw = cat(1,modLocationsRaw{:});
+
+% !!! for each swing, fill in final NaNs with last x,y values to account for stance position
+% NOTE: this is a hack that will not work if eventually you want to use x y and z for euclidian distance
+% if would be better to store stride locations AND subsequent locations in getKinematicData, perhaps along with a thing that tells you stride duration, so you know which inds correspond to the actual stride
+% then you don't need to infer what the values WOULD have been // instead you have them directly
+for i = 1:length(data)
+    
+    nanInd = find(isnan(controlLocationsRaw1(i,1,:)),1,'first');
+    controlLocationsRaw1(i,1,nanInd:end) = controlLocationsRaw1(i,1,nanInd-1);
+    
+    nanInd = find(isnan(controlLocationsRaw2(i,1,:)),1,'first');
+    controlLocationsRaw2(i,1,nanInd:end) = controlLocationsRaw2(i,1,nanInd-1);
+    
+    nanInd = find(isnan(modLocationsRaw(i,1,:)),1,'first');
+    modLocationsRaw(i,1,nanInd:end) = modLocationsRaw(i,1,nanInd-1);
+    
+end
 
 % subtract x and y values s.t. they start at zero at the start of every trial
 controlLocationsRaw1 = controlLocationsRaw1 - repmat(controlLocationsRaw1(:,:,1), 1, 1, swingMaxSmps);
@@ -92,42 +106,93 @@ modDifsX = squeeze(modDifs(:,1,:));
 
 
 %% plot mean difs
-xlims = [-.01 .05];
+xlims = [-10 50];
+ylims = [-5 15];
+colors = winter(2);
 
-figure('color', 'white', 'menubar', 'none');
+figure('color', 'white', 'menubar', 'none', 'position', [680   215   528   763]);
+numModSteps = reshape([data.modStepNum],4,length(data))';
+fcns = {@(x) nanstd(x)/sqrt(size(x,1)), @(x) nanstd(x)};
 
-shadedErrorBar(times, controlDifsX*1000, {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
-    'lineprops', {'linewidth', 3, 'color', [0 0 0]}); hold on;
-shadedErrorBar(times, modDifsX, {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
-    'lineprops', {'linewidth', 3, 'color', winter(1)});
+for i = 1:length(fcns)
+    
+    subplot(2,1,i)
+    
+    shadedErrorBar(times*1000, controlDifsX*1000, {@nanmean, fcns{i}}, ...
+        'lineprops', {'linewidth', 3, 'color', [0 0 0]}); hold on;
+    shadedErrorBar(times*1000, modDifsX(numModSteps(:,3)>1,:)*1000, {@nanmean, fcns{i}}, ...
+        'lineprops', {'linewidth', 3, 'color', colors(1,:)});
+    shadedErrorBar(times*1000, modDifsX(numModSteps(:,3)==1,:)*1000, {@nanmean, fcns{i}}, ...
+        'lineprops', {'linewidth', 3, 'color', colors(2,:)});
+    % )
 
-% pimp fig
-set(gca, 'xlim', xlims)
-ylabel('\Deltax (mm)')
-xlabel('time (ms)')
-
-%% plot difs as function of phase
-
-% settings
-phaseBinNum = 5;
-
-% initializations
-colors = winter(phaseBinNum);
-phaseBinEdges = prctile([data.swingStartDistance], linspace(0,100,phaseBinNum+1));
-phaseBins = discretize([data.swingStartDistance], phaseBinEdges);
-phaseLabels = cell(1,phaseBinNum);
-for i = 1:phaseBinNum; phaseLabels{i} = sprintf('%.3f', mean([data(phaseBins==i).swingStartDistance])); end
-
-
-close all; figure('color', 'white', 'menubar', 'none');
-
-for i = 1:phaseBinNum    
-    shadedErrorBar(times, modDifsX(phaseBins==i,:), {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
-        'lineprops', {'linewidth', 3, 'color', colors(i,:)}); hold on;
+    % pimp fig
+    set(gca, 'xlim', xlims, 'ylim', ylims)
+    ylabel('\Deltax (mm)')
+    xlabel('time (ms)')
+    line([0 0], get(gca,'ylim'), 'color', [0 0 0])
 end
 
-shadedErrorBar(times, controlDifsX, {@nanmean, @(x) nanstd(x)/sqrt(size(x,1))}, ...
-    'lineprops', {'linewidth', 3, 'color', [.65 .65 .65]}); hold on;
+saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimes.png']);
+
+
+%% plot single trial dif from control population
+
+rows = 4;
+cols = 4;
+percentiles = [5 95];
+trialInds = randperm(length(data), (rows*cols));
+xlims = [-.1 .2];
+
+close all; figure('color', 'white');
+
+for i = 1:(rows*cols)
+    subaxis(rows, cols, i, 'spacing', .02, 'margin', .08, 'padding', 0)
+    
+    if numModSteps(trialInds(i),3)==1; colorInd=2; else; colorInd=1; end
+    plot(times, squeeze(modLocations(trialInds(i),1,:)), 'color', colors(colorInd,:), 'linewidth', 3); hold on;
+    
+    controlMean = nanmean(squeeze(controlLocations(trialInds(i),1,:,:)), 2)';
+    controlErrs = prctile(squeeze(controlLocations(trialInds(i),1,:,:))', percentiles, 1);
+    controlErrs = abs(controlErrs - repmat(controlMean,2,1));
+    shadedErrorBar(times, controlMean, controlErrs, 'lineprops', {'linewidth', 3, 'color', [0 0 0]});
+    
+    set(gca, 'box', 'off', 'ytick', [], 'xtick', [], 'xcolor', 'white', 'ycolor', 'white', 'xlim', xlims);
+    line([0 0], get(gca,'ylim'), 'color', [0 0 0])
+    
+end
+
+pimpFig
+
+saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimesTrials.png']);
+
+
+%% find and plot latency distributions
+
+latencies = 1:length(data);
+
+for i = 1:length(data)
+    
+    modTrial = squeeze(modLocations(trialInds(i),1,:));
+    controlErrs = prctile(squeeze(controlLocations(trialInds(i),1,:,:))', percentiles, 1);
+    firstDeviatedInd = find(modTrial<controlErrs(1,:) | modTrial>controlErrs(2,:), 1, 'first');
+    
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
