@@ -111,15 +111,6 @@ function changeFrames(~,~)
             input = inputdlg('enter frame number');
             currentFrameInd = find(frameInds == str2double(input{1}));
             updateFrame(1);
-            
-        % 't': select trial
-        case 116
-            pause(.001);
-            paused = true;
-            input = inputdlg('enter frame number');
-            trialInd = find(trialIdentities==str2double(input{1}),1,'first');
-            currentFrameInd = find(frameInds == trialInd);
-            updateFrame(1);
         
         % ESCAPE: close window
         case 27

@@ -20,7 +20,7 @@ end
 
 %% get paw contacts with obstacles
 
-session = '180228_000';
+session = '180225_000';
 vidDelay = .001;
 
 getObsContacts(session, vidDelay)
