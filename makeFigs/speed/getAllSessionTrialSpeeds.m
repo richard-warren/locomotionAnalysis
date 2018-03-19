@@ -25,6 +25,7 @@ for i = 1:height(sessions)
     for j = 1:length(obsOnTimes)-1
         
         % get trial velocity
+        % !!! should be doing this with wheel positions, not obs positions!!!
         startInd = find(obsTimes>obsOnTimes(j) & obsPositions>posRange(1), 1, 'first');
         endInd = find(obsTimes>obsOnTimes(j) & obsPositions>posRange(2), 1, 'first');
         trialVel = (obsPositions(endInd) - obsPositions(startInd)) / (obsTimes(endInd) - obsTimes(startInd));
