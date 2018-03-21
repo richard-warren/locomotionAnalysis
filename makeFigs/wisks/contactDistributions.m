@@ -6,7 +6,6 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
             '180124_001', '180124_002', '180124_003', ...
             '180125_001', '180125_002', '180125_003'};
 
-wiskTouchThresh = -.75; % if wiskTouchSignal surpasses wiskTouchThresh, then wiskTouchPixels are drawn on wisk frame to show points of contact
 nosePix = 197; % these two parameters have to be manually defined... this is a bit of a hack
 obsPix = 270;
 histoYMax = .4;

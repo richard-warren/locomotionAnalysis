@@ -71,7 +71,8 @@ velYLim = [0 .8];
 isSuccess = num2cell((([data.frontTouchingFrames] + [data.topTouchingFrames]) < touchThresh) & ~[data.isWheelBreak]);
 [data.isSuccess] = isSuccess{:};
 
-close all; figure('color', 'white', 'menubar', 'none');
+
+figure('color', 'white', 'menubar', 'none');
 
 
 mice = unique({data.mouse});
@@ -120,6 +121,8 @@ ylabel('velocity (m/s)')
 subplot(2,2,4)
 set(gca, 'xtick', [-.5 .5], 'xticklabel', {'no light', 'light'}, 'ylim', velYLim)
 xlabel('whiskers')
+
+saveas(gcf, [getenv('OBSDATADIR') 'figures\sensoryDependennce.png']);
 
 
 
