@@ -20,39 +20,15 @@ data(length(sessions)) = struct(); % stores trial data for all sessions
 
 for i = 1:length(sessions)
     
-    fprintf('analyzing session %s\n', sessions{i})
-    
     % load session data
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
-            'obsPixPositions', 'frameTimeStamps', 'obsPositions', 'obsTimes',...
-            'obsOnTimes', 'obsOffTimes', 'nosePos');
-    vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runWisk.mp4']);
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'wiskContactTimes', 'contactFrames')
-    obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
-    
-    
-    % get pix position of first contact for all trial
-    contactPositions = nan(length(obsOnTimes), 1);
-    data(i).contactFramesWisk = uint8(nan(vidWisk.Height, vidWisk.Width, length(obsOnTimes)));
-    
-    for j = 1:length(obsOnTimes)
-        
-        if ~isnan(wiskContactTimes(j))        
-            contactPositions(j) = interp1(obsTimes, obsPositions, wiskContactTimes(j));
-            
-            % set to nan trials in which detected position is unreasonable
-            if contactPositions(j)>0 || contactPositions(j)<-.015
-                contactPositions(j) = nan;
-            else
-                data(i).contactFramesWisk(:,:,j) = contactFrames(:,:,j);
-            end
-        end
-    end
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], ...
+        'contactTimes', 'contactPositions', 'contactFrames')
     
     % store data
     sessionInfoInd = find(strcmp(sessionInfo.session, sessions{i}),1,'first');
     data(i).mouse = sessionInfo.mouse{sessionInfoInd};
     data(i).contactPositions = contactPositions;
+    data(i).contactFrames = contactFrames;
     
 end
 
@@ -63,12 +39,12 @@ close all; figure('color', [1 1 1], 'menubar', 'none');
 
 % get all contact positions
 allContactPositions = {data.contactPositions};
-allContactPositions = cat(1, allContactPositions{:});
+allContactPositions = cat(2, allContactPositions{:});
 
 % get average contact frame
-allContactFrames = {data.contactFramesWisk};
+allContactFrames = {data.contactFrames};
 allContactFrames = cat(3, allContactFrames{:});
-meanFrame = uint8(mean(allContactFrames,3));
+meanFrame = uint8(nanmean(allContactFrames,3));
 
 % trim frame
 meanFrame = meanFrame(1:220, :);
@@ -76,7 +52,7 @@ meanFrame = meanFrame(1:220, :);
 % set up conversion from image to histogram x scale
 pixToMmMapping = polyfit([nosePix obsPix], [0 nanmedian(allContactPositions)], 1);
 histoXMin = 1*pixToMmMapping(1) + pixToMmMapping(2);
-histoXMax = vidWisk.Width*pixToMmMapping(1) + pixToMmMapping(2);
+histoXMax = size(data(1).contactFrames,2)*pixToMmMapping(1) + pixToMmMapping(2);
 histoLims = [histoXMin histoXMax] * 1000;
 
 % plot (in mm)
