@@ -1,4 +1,4 @@
-function getWiskContactTimes(sessions, thresh)
+function getWiskContactTimes(sessions, thresh, showFrames)
 
 % settings
 rows = 5;
@@ -7,6 +7,8 @@ cols = 8;
 
 
 for i = 1:length(sessions)
+    
+    fprintf('analyzing session %s\n', sessions{i})
     
     vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runWisk.mp4']);
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], ...
@@ -57,12 +59,14 @@ for i = 1:length(sessions)
         end
     end
 
-    figure('name', [sessions{i} ' preContact']);
-    imshow(uint8(preContactPreview)); pimpFig
-    figure('name', [sessions{i} ' contact']);
-    imshow(uint8(contactPreview)); pimpFig
+    if showFrames
+        figure('name', [sessions{i} ' preContact']);
+        imshow(uint8(preContactPreview)); pimpFig
+        figure('name', [sessions{i} ' contact']);
+        imshow(uint8(contactPreview)); pimpFig
+    end
     
-    save([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'wiskContactTimes');
+    save([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'wiskContactTimes', 'preContactFrames', 'contactFrames', 'thresh');
 end
 
 
