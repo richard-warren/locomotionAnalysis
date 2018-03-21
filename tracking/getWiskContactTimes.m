@@ -8,7 +8,7 @@ contactPosLimits = [-.015 0]; % larger value
 
 for i = 1:length(sessions)
     
-    fprintf('analyzing %s\n', sessions{i})
+    fprintf('%s: getting wisk contact times, positions, and frames\n', sessions{i})
     
     vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runWisk.mp4']);
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], ...

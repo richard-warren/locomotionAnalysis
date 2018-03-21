@@ -2,12 +2,10 @@ function data = getKinematicData(sessions)
 
 % settings
 isObsPosStatic = false; % if true, assumes wisks touch obstacle at obsPos, which can be manually set to mean of contact positions // otherwise, contact position is computed on trial to trial basis
-obsPos = -.0073;
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100;
 swingMinLength = .005; % swings must be at least this long to be included in analysis (meters)
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
-if ~isObsPosStatic; obsPosDefault = obsPos; end % approximate obstacle position where it first touches whiskers
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -33,12 +31,13 @@ for i = 1:length(sessions)
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stanceBins.mat'], 'stanceBins')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'isExcluded')
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'wiskContactTimes')
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'contactTimes', 'contactPositions')
     vel = getVelocity(wheelPositions, speedTime, targetFs);
     
         
     % get velocities for all trials in session
     if isObsPosStatic
+        obsPos = nanmedian(contactPositions);
         sessionVels = getTrialSpeedsAtObsPos(obsPos, wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, speedTime, targetFs);
     else
         sessionVels = nan(1,length(obsOnTimes));
@@ -97,23 +96,10 @@ for i = 1:length(sessions)
         
         if ~any(isnan(trialLocations(:))) && ~any(trialIsExcluded) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
-            % get obsPos
-            if ~isObsPosStatic
-                
-                % get position of first contact
-                if ~isnan(wiskContactTimes(j))        
-                    obsPos = interp1(obsTimes, obsPositions, wiskContactTimes(j));
-
-                    % set to nan trials in which detected position is unreasonable
-                    if obsPos>0 || obsPos<-.015; obsPos = obsPosDefault; end
-                else
-                    obsPos = obsPosDefault;
-                end
-            end
-            
             % get vel at moment of contact
-            obsAtPosTime = obsTimes(find(obsTimes>=obsOnTimes(j) & obsPositions>=obsPos, 1, 'first'));
-            sessionVels(j) = interp1(wheelTimes, vel, obsAtPosTime);
+            obsPos = contactPositions(j);
+            if isnan(obsPos); obsPos = nanmedian(contactPositions); end
+            sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
             
             % get frame ind at which obs reaches obsPos
             obsPosTime = obsTimes(find(obsPositions>=obsPos & obsTimes>obsOnTimes(j), 1, 'first'));

@@ -81,9 +81,8 @@ for i = 1:length(data)
         inds1 = knnsearch(controlVels1', controlVels2(inds2(j)), 'k', neighborNum);
         
         % get dif between average of remaining control locations and control trial
-%         indsSub = 1:neighborNum; indsSub = indsSub(indsSub~=j);
         controlMean = nanmean(controlLocationsRaw1(inds1,:,:), 1);
-        controlDifs(i,:,trialInds,j) = abs(controlLocations(i,:,trialInds,j) - controlMean);
+        controlDifs(i,:,trialInds,j) = (controlLocations(i,:,trialInds,j) - controlMean);
     end
     
     % get mod locations and dif from control
@@ -91,7 +90,7 @@ for i = 1:length(data)
     
     % get dif between average of control locations and mod locations
     controlMean = nanmean(controlLocationsRaw2(inds2,:,:), 1);
-    modDifs(i,:,trialInds) = abs(modLocations(i,:,trialInds) - controlMean);    
+    modDifs(i,:,trialInds) = (modLocations(i,:,trialInds) - controlMean);    
 end
 
 
@@ -106,11 +105,11 @@ modDifsX = squeeze(modDifs(:,1,:));
 
 
 %% plot mean difs
-xlims = [-10 50];
-ylims = [-5 15];
+xlims = [-10 100];
+ylims = [-20 30];
 colors = winter(2);
 
-figure('color', 'white', 'menubar', 'none', 'position', [680   215   528   763]);
+close all; figure('color', 'white', 'menubar', 'none', 'position', [680   215   528   763]);
 numModSteps = reshape([data.modStepNum],4,length(data))';
 fcns = {@(x) nanstd(x)/sqrt(size(x,1)), @(x) nanstd(x)};
 
@@ -124,7 +123,6 @@ for i = 1:length(fcns)
         'lineprops', {'linewidth', 3, 'color', colors(1,:)});
     shadedErrorBar(times*1000, modDifsX(numModSteps(:,3)==1,:)*1000, {@nanmean, fcns{i}}, ...
         'lineprops', {'linewidth', 3, 'color', colors(2,:)});
-    % )
 
     % pimp fig
     set(gca, 'xlim', xlims, 'ylim', ylims)
