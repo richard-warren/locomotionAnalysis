@@ -10,8 +10,9 @@ speedBinNum = 3;
 
 
 % initializations
-dataRaw = getKinematicData(sessions);
-data = dataRaw([dataRaw.oneSwingOneStance]);
+data = getKinematicData2(sessions);
+tic; save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data'); toc;
+data = data([data.oneSwingOneStance]);
 
 % get speed and phase bins
 phaseBinEdges = prctile([data.swingStartDistance], linspace(0,100,phaseBinNum+1));

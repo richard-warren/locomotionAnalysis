@@ -5,7 +5,7 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
             '180123_001', '180123_002', '180123_003', ...
             '180124_001', '180124_002', '180124_003', ...
             '180125_001', '180125_002', '180125_003'};
-neighborNum = 40;
+neighborNum = 40; % how many similar trials to use to construct control distribution
 dt = .004; % 1/fps of camera
 dtInterp = .001;
 
@@ -104,7 +104,7 @@ modDifsX = squeeze(modDifs(:,1,:));
 % modDifsXInterp = interpWithNans(modDifsX, times, timesInterp, 'pchip');
 
 
-%% plot mean difs
+% plot mean difs
 xlims = [-10 100];
 ylims = [-20 30];
 colors = winter(2);

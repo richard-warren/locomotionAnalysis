@@ -89,9 +89,8 @@ for i = 1:length(sessions)
         figure('name', [sessions{i} ' contact']);
         imshow(uint8(contactPreview)); pimpFig
     end
+    fprintf('%s: getWiskContactTimes completed\n', sessions{i})
 end
-
-disp('getWiskContactTimes completed analysis')
 
 
 

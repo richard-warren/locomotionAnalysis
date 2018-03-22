@@ -3,7 +3,7 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-steps = {'stance'};
+thingsToAnalyze = {'stance'}; % which steps of the analy
 minVel = .4;
 
 for i = 1:length(sessionDirs)
@@ -11,7 +11,7 @@ for i = 1:length(sessionDirs)
     % get locations
     nameInd = find(sessionDirs{i}=='\',1,'last');
 %     try
-        getLocations(sessionDirs{i}(nameInd+1:end), steps, minVel, false);
+        getLocations(sessionDirs{i}(nameInd+1:end), thingsToAnalyze, minVel, false);
 %     catch
 %         fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
 %     end
@@ -29,11 +29,11 @@ getObsContacts(session, vidDelay)
 %% getLocations on single session
 
 session = '180122_000';
-steps = {'top'};
+thingsToAnalyze = {'top'};
 
 showTracking = true;
 minVel = .4; % minVel only applies to potentialLocationsBot analysis // subsequent stages analyze whatever has already been analyzed in potentialLocationsBot
-getLocations(session, steps, minVel, showTracking);
+getLocations(session, thingsToAnalyze, minVel, showTracking);
 
 %% show tracking for session
 
