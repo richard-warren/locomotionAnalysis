@@ -10,7 +10,7 @@ speedBinNum = 3;
 
 
 % initializations
-data = getKinematicData2(sessions);
+data = getKinematicData(sessions);
 tic; save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data'); toc;
 data = data([data.oneSwingOneStance]);
 

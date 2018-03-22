@@ -205,8 +205,10 @@ for i = 1:length(sessions)
             end
             
             
-            % !!!
-            % get interpolated and non-interpolated control and modified step locations
+            
+            
+            
+            % GET CONTROL AND MOD PAW LOCATIONS (INTERP AND NON-INTERP)
             controlLocations = cell(1,4);
             modLocations = cell(1,4);
             controlLocationsInterp = cell(1,4);
@@ -224,14 +226,16 @@ for i = 1:length(sessions)
                 
                 for m = 1:stepNum
                     stepBins = controlStepIdentities(:,k)==m;
-                    stepBins(find(stepBins,1,'first')+swingMaxSmps:end) = 0; % make sure there are no more than swingMaxSmps true bins
+                    startInd = find(controlStepIdentities(:,k)==m, 1, 'first');
+                    stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1)); % these inds continue past the end of swing
                     
-                    stepX = trialLocations(stepBins,1,k);
-                    stepY = trialLocations(stepBins,2,k);
-                    pawControlLocations(m,:,1:length(stepX)) = cat(1,stepX',stepY');
                     
-                    xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
-                    yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
+                    stepX = trialLocations(stepIndsAll,1,k);
+                    stepY = trialLocations(stepIndsAll,2,k);
+                    pawControlLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY');
+                    
+                    xInterp = interp1(1:sum(stepBins), stepX(1:sum(stepBins)), linspace(1,sum(stepBins),interpSmps));
+                    yInterp = interp1(1:sum(stepBins), stepY(1:sum(stepBins)), linspace(1,sum(stepBins),interpSmps));
                     pawControlLocationsInterp(m,:,:) = cat(1,xInterp,yInterp);
                 end
                 
@@ -246,15 +250,18 @@ for i = 1:length(sessions)
                 
                 for m = 1:modStepNum(k)
                     stepBins = modifiedStepIdentities(:,k)==m;
-                    stepBins(find(stepBins,1,'first')+swingMaxSmps:end) = 0; % make sure there are no more than swingMaxSmps true bins
+                    startInd = find(modifiedStepIdentities(:,k)==m, 1, 'first');
+                    stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1));
                     
-                    stepX = trialLocations(stepBins,1,k);
-                    stepY = trialLocations(stepBins,2,k);
-                    pawModifiedLocations(m,:,1:length(stepX)) = cat(1,stepX',stepY');
+                    stepX = trialLocations(stepIndsAll,1,k);
+                    stepY = trialLocations(stepIndsAll,2,k);
+                    pawModifiedLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY');
                     
-                    xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
-                    yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
+                    try
+                    xInterp = interp1(1:sum(stepBins), stepX(1:sum(stepBins)), linspace(1,sum(stepBins),interpSmps));
+                    yInterp = interp1(1:sum(stepBins), stepY(1:sum(stepBins)), linspace(1,sum(stepBins),interpSmps));
                     pawModifiedLocationsInterp(m,:,:) = cat(1,xInterp,yInterp);
+                    catch; keyboard; end
                     
                     % get ind of obs hit in interpolated coordinates
                     if m==1
@@ -268,12 +275,11 @@ for i = 1:length(sessions)
                 modLocations{k} = pawModifiedLocations;
                 modLocationsInterp{k} = pawModifiedLocationsInterp;
                 
-                
             end
 
 
 
-            % store results
+            % STORE RESULTS
             sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}),1,'first');
             data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
             data(dataInd).session = sessions{i};
@@ -329,7 +335,7 @@ for i = 1:length(mice)
     lengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});
     
     % make linear model
-    models{i} = fitlm(cat(1,prevLengths,vel), lengths, 'Linear', 'RobustOpts', 'on');
+    models{i} = fitlm(cat(1,prevLengths,vel)', lengths, 'Linear', 'RobustOpts', 'on');
     
     % generate predictions
     prevLengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});

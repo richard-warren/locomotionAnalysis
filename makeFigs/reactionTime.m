@@ -11,8 +11,9 @@ dtInterp = .001;
 
 
 % initializations
-dataRaw = getKinematicData(sessions);
-data = dataRaw([dataRaw.oneSwingOneStance]);
+data = getKinematicData(sessions);
+tic; save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data'); toc;
+data = data([data.oneSwingOneStance]);
 swingMaxSmps = size(data(1).modifiedLocations{1},3); % inherits max samples for swing locations from getKinematicData
 times = linspace(-swingMaxSmps*dt, swingMaxSmps*dt, swingMaxSmps*2+1);
 timesInterp = times(1):dtInterp:times(end);
@@ -24,7 +25,6 @@ controlVels1 = cellfun(@(x) x(1,3), {data.controlWheelVels});
 controlVels2 = cellfun(@(x) x(2,3), {data.controlWheelVels});
 modVels = cellfun(@(x) x(1,3), {data.modifiedWheelVels});
 contactInds = reshape([data.pawObsPosInd]',4,length(data))'; contactInds = contactInds(:,3);
-contactInds = contactInds + 1; % !!! this is a hack - need to fix getKinematicData s.t. no inds are zero
 
 controlLocationsRaw1 = cellfun(@(x) x{3}(end,:,:), {data.controlLocations}, 'uniformoutput', 0);
 controlLocationsRaw1 = cat(1,controlLocationsRaw1{:});
@@ -33,28 +33,12 @@ controlLocationsRaw2 = cat(1,controlLocationsRaw2{:});
 modLocationsRaw = cellfun(@(x) x{3}(1,:,:), {data.modifiedLocations}, 'uniformoutput', 0);
 modLocationsRaw = cat(1,modLocationsRaw{:});
 
-% !!! for each swing, fill in final NaNs with last x,y values to account for stance position
-% NOTE: this is a hack that will not work if eventually you want to use x y and z for euclidian distance
-% if would be better to store stride locations AND subsequent locations in getKinematicData, perhaps along with a thing that tells you stride duration, so you know which inds correspond to the actual stride
-% then you don't need to infer what the values WOULD have been // instead you have them directly
-for i = 1:length(data)
-    
-    nanInd = find(isnan(controlLocationsRaw1(i,1,:)),1,'first');
-    controlLocationsRaw1(i,1,nanInd:end) = controlLocationsRaw1(i,1,nanInd-1);
-    
-    nanInd = find(isnan(controlLocationsRaw2(i,1,:)),1,'first');
-    controlLocationsRaw2(i,1,nanInd:end) = controlLocationsRaw2(i,1,nanInd-1);
-    
-    nanInd = find(isnan(modLocationsRaw(i,1,:)),1,'first');
-    modLocationsRaw(i,1,nanInd:end) = modLocationsRaw(i,1,nanInd-1);
-    
-end
+
 
 % subtract x and y values s.t. they start at zero at the start of every trial
 controlLocationsRaw1 = controlLocationsRaw1 - repmat(controlLocationsRaw1(:,:,1), 1, 1, swingMaxSmps);
 controlLocationsRaw2 = controlLocationsRaw2 - repmat(controlLocationsRaw2(:,:,1), 1, 1, swingMaxSmps);
 modLocationsRaw = modLocationsRaw - repmat(modLocationsRaw(:,:,1), 1, 1, swingMaxSmps);
-
 
 
 % initializations data containers
