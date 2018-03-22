@@ -20,7 +20,8 @@ for i = 1:length(sessions)
     % report progress
     fprintf('%s: collecting data\n', sessions{i});
     
-    % load session data
+    
+    % LOAD SESSION DATA
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs');
@@ -30,15 +31,16 @@ for i = 1:length(sessions)
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stanceBins.mat'], 'stanceBins')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'isExcluded')
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\velocityInfo.mat'], 'trialVels', 'minVel')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'contactTimes', 'contactPositions')
     vel = getVelocity(wheelPositions, speedTime, targetFs);
-    
-
-    % normalize y values
     locations(:,2,:) = locations(:,2,:) - nosePos(2); % subtract midline from all y values
     
     
-    % get swing identities (each swing is given a number, in ascending order)
+    
+    
+    % GET SWING IDENTITIES
+    % (each swing is given a number, in ascending order)
     swingBins = ~stanceBins;
     swingIdentities = nan(size(swingBins));
     
@@ -65,10 +67,30 @@ for i = 1:length(sessions)
     end
     
     
-    % collect data for all trials within session
+    
+    
+    % COLLECT DATA FOR EACH TRIAL
     sessionVels = nan(1,length(obsOnTimes));
     
     for j = 1:length(obsOnTimes)
+        
+        
+        
+        % GET TIME, OBS POSITION, AND SPEED AT MOMENT OF CONTACT
+        if isnan(contactPositions(j)) || isObsPosStatic
+            
+            % set contact position as median of contact positiosn for session
+            contactPositions(j) = nanmedian(contactPositions);
+
+            % interpolate to find time at which obsPosition==contactPosition
+            % note: this is done by finding the ind before and after threshold crossing, then interpolating between these two sample points!
+            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
+            contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+        end
+        sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
+            
+        
+        
         
         % GET TRIAL DATA (the reason i do this is because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
         
@@ -96,23 +118,9 @@ for i = 1:length(sessions)
         % convert to meters
         trialLocations = trialLocations / abs(mToPixMapping(1));
         
+        % !!! see if this is always false
+        if ~any(isnan(trialLocations(:))) && ~any(isExcluded(trialBins)) && trialVels(j)>=minVel % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
         
-        if ~any(isnan(trialLocations(:))) && ~any(isExcluded(trialBins)) % !!! this is a hack // should check that velocity criteria is met AND that the locations have in fact been analyzed for the session
-        
-            % get vel at moment of contact
-            if isnan(contactPositions(j)) || isObsPosStatic
-                
-                % set contact position as median of contact positiosn for session
-                contactPositions(j) = nanmedian(contactPositions);
-                
-                % interpolate to find time at which obsPosition==contactPosition
-                % note: this is done by finding the ind before and after threshold crossing, then interpolating between these two sample points!
-                indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
-                contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
-            end
-            sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
-            
-            
             % get trial swing identities and define control and modified steps
             controlStepIdentities = nan(size(trialSwingIdentities));
             modifiedStepIdentities = nan(size(trialSwingIdentities));
@@ -189,7 +197,7 @@ for i = 1:length(sessions)
             end
             
             
-            
+            % !!!
             % get interpolated and non-interpolated control and modified step locations
             controlLocations = cell(1,4);
             modLocations = cell(1,4);
@@ -293,6 +301,8 @@ for i = 1:length(sessions)
     end
 end
 
+
+keyboard
 
 % make model to predict would-be mod swing length using wheel vel and previous swing lengths as predictors
 mice = unique({data.mouse});
