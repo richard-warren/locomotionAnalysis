@@ -225,12 +225,12 @@ for i = 1:length(sessions)
                 pawControlLocationsInterp = nan(stepNum, 2, interpSmps);
                 
                 for m = 1:stepNum
-                    stepBins = controlStepIdentities(:,k)==m;
-                    stepBins(find(stepBins,1,'first')+swingMaxSmps:end) = 0; % make sure there are no more than swingMaxSmps true bins
+                    startInd = find(controlStepIdentities(:,k)==m, 1, 'first');
+                    stepInds = startInd:startInd+swingMaxSmps;
                     
-                    stepX = trialLocations(stepBins,1,k);
-                    stepY = trialLocations(stepBins,2,k);
-                    pawControlLocations(m,:,1:length(stepX)) = cat(1,stepX',stepY');
+                    stepX = trialLocations(stepInds,1,k);
+                    stepY = trialLocations(stepInds,2,k);
+                    pawControlLocations(m,:,:) = cat(1,stepX',stepY');
                     
                     xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
                     yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
@@ -247,12 +247,12 @@ for i = 1:length(sessions)
                 pawModifiedLocationsInterp = nan(modStepNum(k), 2, interpSmps);
                 
                 for m = 1:modStepNum(k)
-                    stepBins = modifiedStepIdentities(:,k)==m;
-                    stepBins(find(stepBins,1,'first')+swingMaxSmps:end) = 0; % make sure there are no more than swingMaxSmps true bins
+                    startInd = find(modifiedStepIdentities(:,k)==m, 1, 'first');
+                    stepInds = startInd:startInd+swingMaxSmps;
                     
-                    stepX = trialLocations(stepBins,1,k);
-                    stepY = trialLocations(stepBins,2,k);
-                    pawModifiedLocations(m,:,1:length(stepX)) = cat(1,stepX',stepY');
+                    stepX = trialLocations(stepInds,1,k);
+                    stepY = trialLocations(stepInds,2,k);
+                    pawModifiedLocations(m,:,:) = cat(1,stepX',stepY');
                     
                     xInterp = interp1(1:length(stepX), stepX, linspace(1,length(stepX),interpSmps));
                     yInterp = interp1(1:length(stepY), stepY, linspace(1,length(stepY),interpSmps));
