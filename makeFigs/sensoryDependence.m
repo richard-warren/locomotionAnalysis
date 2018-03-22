@@ -1,8 +1,8 @@
 % plot sensory dependence of obstacle avoidance
 
 % settings
-wiskSessions = {'180225_000'};
-noWiskSessions = {'180228_000'};
+wiskSessions = {'180225_000', '180225_001'};
+noWiskSessions = {'180228_000', '180228_001'};
 touchThresh = 6; % if paw contacts obs for more than touchThresh frames, trial is considered touching
 
 % initializations
@@ -26,7 +26,6 @@ for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\obsContacts.mat'], 'touchingFront', 'touchingTop');
     
     for j = 1:length(obsOnTimes)
-        
         
         % determine if light is on
         isLightOn = min(abs(obsOnTimes(j) - obsLightOnTimes)) < 1; % did the light turn on near whether the obstacle turned on
@@ -57,7 +56,10 @@ for i = 1:length(sessions)
     end
 end
 
-% plot thangs!
+
+
+
+% PLOT!
 
 % settings
 lineEdges = [-.25 .25];
