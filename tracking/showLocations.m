@@ -80,6 +80,15 @@ function changeFrames(~,~)
             input = inputdlg('enter frame number');
             currentFrame = find(frameInds == str2double(input{1}));
             updateFrame(1);
+            
+        % 't': select trial
+        elseif key==116
+            pause(.001);
+            paused = true;
+            input = inputdlg('enter frame number');
+            trialInd = find(trialIdentities==str2double(input{1}),1,'first');
+            currentFrame = find(frameInds == trialInd);
+            updateFrame(1);
         
         elseif key==27                  % ESCAPE: close window
             playing = false;

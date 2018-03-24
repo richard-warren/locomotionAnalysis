@@ -1,8 +1,8 @@
 % plot sensory dependence of obstacle avoidance
 
 % settings
-wiskSessions = {'180225_000', '180225_001'};
-noWiskSessions = {'180228_000', '180228_001'};
+wiskSessions = {'180225_000', '180225_001', '180225_002', '180226_000'};
+noWiskSessions = {'180228_000', '180228_001', '180228_002', '180301_000', '180301_001'};
 touchThresh = 6; % if paw contacts obs for more than touchThresh frames, trial is considered touching
 
 % initializations
@@ -68,6 +68,7 @@ colors = winter(2);
 circSize = 80;
 successYLims = [0 1];
 velYLim = [0 .8];
+jitterRange = .25;
 
 % determine whether trial was successful
 isSuccess = num2cell((([data.frontTouchingFrames] + [data.topTouchingFrames]) < touchThresh) & ~[data.isWheelBreak]);
@@ -84,6 +85,7 @@ for wisk = [false true]
         
         successRates = nan(1,length(mice));
         vels = nan(1,length(mice));
+        jitters = linspace(-jitterRange/2, jitterRange/2, length(mice));
         
         for mouse = 1:length(mice)
             
@@ -94,9 +96,9 @@ for wisk = [false true]
             
             % plot
             subplot(2,2,wisk+1)
-            scatter(light-.5, successRates(mouse), circSize, colors(light+1,:), 'filled'); hold on
+            scatter(light-.5 + jitters(mouse), successRates(mouse), circSize, colors(light+1,:), 'filled'); hold on
             subplot(2,2,wisk+3)
-            scatter(light-.5, vels(mouse), circSize, colors(light+1,:), 'filled'); hold on
+            scatter(light-.5 + jitters(mouse), vels(mouse), circSize, colors(light+1,:), 'filled'); hold on
         end
         
         % plot means

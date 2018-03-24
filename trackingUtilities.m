@@ -38,9 +38,9 @@ getLocations(session, thingsToAnalyze, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180123_003';
+session = '180124_002';
 view = 'Bot';
-showCorrected = 0;
+showCorrected = 1;
 frameDelay = .01;
 
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocations' view '.mat'])
@@ -62,7 +62,7 @@ showLocations(vid, find(locations.isAnalyzed), eval(['potentialLocations' view])
 
 %% exclude trials
 
-session = '180125_001';
+session = '180124_002';
 trials = [54 63 65 73 74 88 91 95 97 98 107];
 
 setTrialExclusion(session, trials);

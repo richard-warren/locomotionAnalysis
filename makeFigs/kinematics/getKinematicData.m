@@ -4,7 +4,6 @@ function data = getKinematicData(sessions)
 isObsPosStatic = false; % if true, assumes wisk contacts obstacle at median detected obsContactPosition PER SESSION
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
-swingMinLength = .005; % swings must be at least this long to be included in analysis (meters)
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
 
 % initializations
@@ -54,10 +53,6 @@ for i = 1:length(sessions)
         swingStartInds = swingStartInds(swingStartInds<swingEndInds(end));
         swingEndInds = swingEndInds(swingEndInds>swingStartInds(1));
         
-        % remove swings that are too short
-        validBins = locations(swingEndInds,1,j) - locations(swingStartInds,1,j) > swingMinLength;
-        swingStartInds = swingStartInds(validBins);
-        swingEndInds = swingEndInds(validBins);
         
         swingCount = 1;
         for k = 1:length(swingStartInds)
@@ -234,10 +229,12 @@ for i = 1:length(sessions)
                     pawControlLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY');
                     
                     % locations interp
+                    try
                     stepBins = controlStepIdentities(:,k)==m;
                     xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
                     yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
                     pawControlLocationsInterp(m,:,:) = cat(1,xInterp,yInterp);
+                    catch; keyboard; end
                 end
                 
                 controlLocations{k} = pawControlLocations;

@@ -7,7 +7,7 @@ function stanceBins = getStanceBins(vidTop, wheelPoints, xLocations, trialIdenti
 % settings
 showAnalysis = false;
 stanceVelDif = 1000;   % if paws paw is within this many pix/sec of wheel velocity (actually obs vel for now) then it is considered to be in stance IF length of this period exceeds stanceMin
-stanceMin = .02;       % (s)
+stanceSwingMin = .02;       % (s) min time for either stance or swing
 velTime = .02;         % amount of time to compute velocity over
 
 % settings for checking that foot is actually touching flor
@@ -35,8 +35,10 @@ stanceBinsUncorrected = false(size(xLocations));
 stanceBins = false(size(xLocations));
 isTouching = false(size(xLocations));
 startEndInds = cell(1,4);
-% !!! temp hack fix // wont need this line after potentialLocationsTop are reanalyzed st length of structure is same as number of frames in video
-% trialIdentities(end+1:length(frameTimeStamps)) = nan;
+
+
+
+% !!! add way to ignore excluded trials
 
 
 for i = unique(trialIdentities(~isnan(trialIdentities)))
@@ -50,25 +52,21 @@ for i = unique(trialIdentities(~isnan(trialIdentities)))
         % !!! could change this so the subFrame computed below shift to the right or left if the paw is ahead of or behaind the obs, s.t. obs never sppears in subFrame...
 %         nearObsBins = abs(obsPixPositions' - locationsBot(:,1,j)) < obsProximity;
 %         matchedVelBins(nearObsBins) = 0;
-
-        startInds = find(diff(matchedVelBins) == 1) + 1;
-        endInds = find(diff(matchedVelBins) == -1) + 1;
-
-        % ensure that the first event is the beginning of an epoch and the last is the end of an epoch
-        if endInds(1) < startInds(1); startInds = [1 startInds]; end
-        if startInds(end) > endInds(end); endInds = [endInds length(matchedVelBins)]; end
-
-        % only keep epochs that are long enough
-        validStances = (frameTimeStamps(endInds) - frameTimeStamps(startInds)) > stanceMin;
-        startInds = startInds(validStances);
-        endInds = endInds(validStances);
-
-        % store results
-        for k = 1:length(startInds)
-            stanceBinsUncorrected(startInds(k):endInds(k),j) = true;
-        end
-        startEndInds{j} = cat(2, startEndInds{j}, [startInds; endInds]);
         
+
+        stanceBinsUncorrected(matchedVelBins,j) = true;
+        switchInds = find(diff(matchedVelBins)~=0)+1;
+        
+        % remove short swing and stances
+        for k = 1:(length(switchInds)-1)
+            if ~isnan(switchInds(k)) % if switch ind hasn't been removed in previous iteration of the loop
+                if (frameTimeStamps(switchInds(k+1)) - frameTimeStamps(switchInds(k))) < stanceSwingMin
+                    inds = switchInds(k):(switchInds(k+1)-1);
+                    stanceBinsUncorrected(inds,j) = ~stanceBinsUncorrected(inds,j);
+                    switchInds(k+1) = nan;
+                end
+            end
+        end
     end
 end
 
@@ -96,9 +94,13 @@ end
 
 
 
-w = waitbar(0, 'getting stance bins...', 'position', [1500 50 270 56.2500]);
+
+
+
 
 % for each detected stance, determine whether foot is touching wheel
+w = waitbar(0, 'getting stance bins...', 'position', [1500 50 270 56.2500]);
+
 for i = find(sum(stanceBinsUncorrected,2))'
     
     frame = rgb2gray(read(vidTop, i));
@@ -119,6 +121,7 @@ for i = find(sum(stanceBinsUncorrected,2))'
             isTouching(i,j) = ~any(intersect(leftSideRegions, rightSideRegions));
         else
             fprintf('  problem with trial %i\n', i)
+            keyboard
         end
         
         
@@ -137,12 +140,19 @@ for i = find(sum(stanceBinsUncorrected,2))'
 end
 
 
+
 % fine tune stance start and end inds
 % (go through all atance start and end inds, and adjust them s.t. each stance starts with the first isTouching frame in the stance and ends with last isTouching frame)
 for i = 1:4
-    for j = 1:length(startEndInds{i})
+    
+    startInds = find(diff(stanceBinsUncorrected(:,i))==1) + 1;
+    endInds = find(diff(stanceBinsUncorrected(:,i))==-1);
+    if endInds(1)<startInds(1); endInds = endInds(2:end); end
+    if startInds(end)>endInds(end); startInds = startInds(1:end-2); end
+    
+    for j = 1:length(startInds)
         
-        currentStanceBins = 1:size(isTouching,1)>=startEndInds{i}(1,j) & 1:size(isTouching,1)<=startEndInds{i}(2,j);
+        currentStanceBins = 1:size(isTouching,1)>=startInds(j) & 1:size(isTouching,1)<=endInds(j);
         firstTouchingInd = find(isTouching(:,i)' & currentStanceBins, 1, 'first'); % first ind within uncorrected stance in which paw is touching
         lastTouchingInd = find(isTouching(:,i)' & currentStanceBins, 1, 'last'); % last ind within uncorrected stance in which paw is touching
         
