@@ -30,7 +30,7 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(predictedDistToObs(bins==i
 %% sperm plots
 
 % settings
-yLims = [-.1 .1];
+yGridLims = [-.1 .1];
 tracesPerPlot = 15;
 
 figure('color', 'white', 'menubar', 'none', 'position', [400 200 250*binNum 800]);
@@ -72,7 +72,7 @@ for h = 1:binNum
     end
 
     % set appearance
-    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLims, 'box', 'off', 'tickdir', 'out', 'xtick', [], 'ytick', []);
+    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yGridLims, 'box', 'off', 'tickdir', 'out', 'xtick', [], 'ytick', []);
     line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)
     xlabel(['predicted dist to obs (m): ' binLabels{h}]);
 end
@@ -80,67 +80,12 @@ end
 saveas(gcf, [getenv('OBSDATADIR') 'figures\trialKinematics.png']);
 
 
-%% histograms
-
-% settings
-xLims = [.02 .12];
-yLims = [0 .3];
-binWidth = .005;
-colors = winter(2);
-controlColor = [.65 .65 .65];
-
-% initializations
-numModSteps = reshape([data.modStepNum],4,length(data))';
-modifiedSwingLengths = {data.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
-controlSwingLengths = {data.controlSwingLengths}; controlSwingLengths = cat(1, controlSwingLengths{:});
-
-figure('color', 'white', 'menubar', 'none', 'position', [150 400 300*binNum 350]);
-
-for h = 1:binNum
-
-    ax = subaxis(1, binNum , h, 'spacing', .02);
-    binBins = (bins==h)';
-    oneStepBins = binBins & numModSteps(:,3)==1;
-    twoStepBins = binBins & numModSteps(:,3)==2;
-    oneTwoRatio = sum(oneStepBins) / (sum(oneStepBins) + sum(twoStepBins));
-
-    % one step histo
-    if any(oneStepBins)
-        h1 = histogram(modifiedSwingLengths(oneStepBins,3), 'binwidth', binWidth); hold on
-        counts = get(h1,'bincounts');
-        set(h1, 'facecolor', colors(2,:), 'normalization', 'count', ...
-            'bincounts', (counts/sum(counts)) * oneTwoRatio);
-    end
-
-    % two step histo
-    h2 = histogram(modifiedSwingLengths(twoStepBins,3), 'binwidth', binWidth); hold on;        
-    counts = get(h2,'bincounts');
-    set(h2, 'facecolor', colors(1,:), 'normalization', 'count', ... 
-        'bincounts', (counts/sum(counts)) * (1-oneTwoRatio));
-
-    % control histo
-    h3 = histogram(controlSwingLengths(binBins,3), 'binwidth', binWidth); hold on;
-    counts = get(h3,'bincounts');
-    set(h3, 'facecolor', controlColor, 'normalization', 'count', ...
-        'bincounts', (counts/sum(counts)));
-
-    % set apearance
-    set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
-    set(ax, 'ytick', [], 'ylabel', []); ax.YAxis.Visible = 'off';
-end
-
-legend('modified swing lengths (lengthened)', 'modified swing lengths (shortened)', 'control swing lengths')
-
-saveas(gcf, [getenv('OBSDATADIR') 'figures\swingLengthHistograms.png']);
-
-
-
 %% average interpolated trajectories
 
 
 % settings
 controlColor = [.65 .65 .65];
-yLims = [-.1 .05];
+yGridLims = [-.09 .05];
 linWid = 4;
 colors = winter(2);
 
@@ -230,11 +175,140 @@ for h = 1:binNum
 
 
     % set appearance
-    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLims, 'xlim', [-.02 .02], ...
+    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yGridLims, 'xlim', [-.02 .02], ...
         'box', 'off', 'tickdir', 'out', 'xtick', [], 'ytick', []);
     line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)
     xlabel(['predicted dist to obs (m): ' binLabels{h}]);
 end
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\meanKinematics.png']);
+
+%% histograms
+
+% settings
+xGridLims = [.02 .12];
+yGridLims = [0 .3];
+binWidth = .005;
+colors = winter(2);
+controlColor = [.65 .65 .65];
+
+% initializations
+numModSteps = reshape([data.modStepNum],4,length(data))';
+modifiedSwingLengths = {data.modifiedSwingLengths}; modifiedSwingLengths = cat(1, modifiedSwingLengths{:});
+controlSwingLengths = {data.controlSwingLengths}; controlSwingLengths = cat(1, controlSwingLengths{:});
+
+figure('color', 'white', 'menubar', 'none', 'position', [150 400 300*binNum 350]);
+
+for h = 1:binNum
+
+    ax = subaxis(1, binNum , h, 'spacing', .02);
+    binBins = (bins==h)';
+    oneStepBins = binBins & numModSteps(:,3)==1;
+    twoStepBins = binBins & numModSteps(:,3)==2;
+    oneTwoRatio = sum(oneStepBins) / (sum(oneStepBins) + sum(twoStepBins));
+
+    % one step histo
+    if any(oneStepBins)
+        h1 = histogram(modifiedSwingLengths(oneStepBins,3), 'binwidth', binWidth); hold on
+        counts = get(h1,'bincounts');
+        set(h1, 'facecolor', colors(2,:), 'normalization', 'count', ...
+            'bincounts', (counts/sum(counts)) * oneTwoRatio);
+    end
+
+    % two step histo
+    h2 = histogram(modifiedSwingLengths(twoStepBins,3), 'binwidth', binWidth); hold on;        
+    counts = get(h2,'bincounts');
+    set(h2, 'facecolor', colors(1,:), 'normalization', 'count', ... 
+        'bincounts', (counts/sum(counts)) * (1-oneTwoRatio));
+
+    % control histo
+    h3 = histogram(controlSwingLengths(binBins,3), 'binwidth', binWidth); hold on;
+    counts = get(h3,'bincounts');
+    set(h3, 'facecolor', controlColor, 'normalization', 'count', ...
+        'bincounts', (counts/sum(counts)));
+
+    % set apearance
+    set(ax, 'box', 'off', 'xlim', xGridLims, 'ylim', yGridLims, 'tickdir', 'out')
+    set(ax, 'ytick', [], 'ylabel', []); ax.YAxis.Visible = 'off';
+end
+
+legend('modified swing lengths (lengthened)', 'modified swing lengths (shortened)', 'control swing lengths')
+
+saveas(gcf, [getenv('OBSDATADIR') 'figures\swingLengthHistograms.png']);
+
+
+
+
+
+%% heat map
+
+% settings
+% (x is predicted position of paw relative to obs, y is swing length)
+
+xLims = [-.03 .015];
+yLims = [-.03 .04];
+xGridLims = [-.03 .02];
+dX = .001;
+xWindowSize = .01;
+yGridLims = [-.03 .08];
+dY = .001;
+yKernelSig = .01;
+probColor = [0 .7 1];
+
+
+% initializations
+xWindowSmps = ceil(xWindowSize/dX) - (mod(xWindowSize/dX,2)==0); % round to nearest odd number
+deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths];
+modStepNum = cellfun(@(x) x(1,3), {data.modStepNum});
+windowShift = floor(xWindowSmps/2);
+xGrid = xGridLims(1):dX:xGridLims(2);
+yGrid = yGridLims(1):dY:yGridLims(2);
+kernel = arrayfun(@(x) (1/(yKernelSig*sqrt(2*pi))) * exp(-.5*(x/yKernelSig)^2), ...
+    -yKernelSig*5:dY:yKernelSig*5);
+kernel = kernel / sum(kernel);
+
+heatMap = nan(length(yGrid), length(xGrid));
+probs = nan(1, length(xGrid));
+
+for i = 1:length(xGrid)
+    
+    % get data within bin
+    xBinLims = [xGrid(max(1,i-windowShift)) xGrid(min(length(xGrid),i+windowShift))];
+    dataInds = find(predictedDistToObs>=xBinLims(1) & predictedDistToObs<=xBinLims(2));
+    deltaLengthsSub = deltaLengths(dataInds);
+    
+    binCounts = histogram(deltaLengthsSub, [yGrid yGrid(end)+dY] - .5*dY); % last argument changes bin centers to bin edges
+    binCounts = binCounts.Values;
+    
+    histoConv = conv(binCounts, kernel, 'same');
+    histoConv = histoConv / sum(histoConv);
+    heatMap(:, i) = histoConv;
+    
+    probs(i) = sum(modStepNum(dataInds)==1) / length(dataInds);
+    
+end
+
+
+
+close all;
+figure('color', 'white', 'menubar', 'none', 'position', [1943 616 560 420])
+colormap hot
+imagesc(xGrid, yGrid, heatMap)
+line(get(gca, 'xlim'), [0 0], 'color', 'white', 'linewidth', 3, 'linestyle', ':')
+line([0 0], get(gca, 'ylim'), 'color', 'white', 'linewidth', 3, 'linestyle', ':')
+
+set(gca, 'ydir', 'normal', 'box', 'off', 'xlim', xLims, 'ylim', yLims)
+xlabel('predicted distance to obs (m)')
+ylabel('\Deltax (m)')
+
+yyaxis right
+plot(xGrid, probs, 'color', probColor, 'linewidth', 5)
+ylabel('probability of taking one big step')
+set(gca, 'ycolor', probColor)
+
+saveas(gcf, [getenv('OBSDATADIR') 'figures\deltaLengthHeatMap.png']);
+
+
+
+
 
