@@ -264,7 +264,7 @@ for i = 1:length(sessions)
                     % get ind of obs hit in interpolated coordinates
                     if m==1
                         stepObsPosInd = find(trialTimeStampsInterp==0) - find(stepBins,1,'first') + 1;
-                        pawObsPosIndInterp(k) = interp1(linspace(1,length(stepX),interpSmps), ...
+                        pawObsPosIndInterp(k) = interp1(linspace(1,sum(stepBins),interpSmps), ...
                             1:interpSmps, stepObsPosInd, 'nearest');
                         pawObsPosInd(k) = find(trialTimeStampsInterp==0) - find(stepBins,1,'first') + 1;
                     end

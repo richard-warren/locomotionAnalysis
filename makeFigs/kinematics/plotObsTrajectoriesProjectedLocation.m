@@ -1,7 +1,5 @@
 
 
-% to do: fix dot locations in avgs, and dot size?
-
 % settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
             '180123_001', '180123_002', '180123_003', ...
@@ -13,9 +11,7 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
 data = getKinematicData(sessions);
 tic; save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data'); toc;
 data = data([data.oneSwingOneStance]);
-
 %%
-
 load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
 data = data([data.oneSwingOneStance]);
 binNum = 5;
@@ -39,6 +35,7 @@ tracesPerPlot = 15;
 colors = winter(2)*.85;
 controlColor = [.65 .65 .65];
 linWid = 4;
+circSize = 150;
 scaleBarSize = .01;
 
 % initializations
@@ -125,17 +122,14 @@ text(xLims(2)-.5*scaleBarSize, yLims(1)+.005, sprintf('%i mm', scaleBarSize*1000
 saveas(gcf, [getenv('OBSDATADIR') 'figures\trialKinematics.png']);
 
 
-% average interpolated trajectories
 
 
-% settings
-yLims = [-.1 .1];
-colors = winter(2)*.85;
+% AVERAGE INTERPOLATE TRAJECTORIES
 
 % initializations
 figure('color', 'white', 'menubar', 'none', 'position', [400 200 250*binNum 700]);
 numModSteps = reshape([data.modStepNum],4,length(data))';
-obsPosIndInterps = reshape([data.pawObsPosIndInterp],4,length(data))';
+obsPosIndInterps = cellfun(@(x) x(1,3), {data.pawObsPosIndInterp});
 
 
 for h = 1:binNum
@@ -215,13 +209,13 @@ for h = 1:binNum
 
     % mark avg position of obsPos
     if any(rightModOneStepBins)
-        oneStepObsPos = round(mean(obsPosIndInterps(rightModOneStepBins,3)));
+        oneStepObsPos = round(mean(obsPosIndInterps(rightModOneStepBins)));
         scatter(mean(squeeze(rightModOneStepLocations(:,2,oneStepObsPos))), ...
-                mean(squeeze(rightModOneStepLocations(:,1,oneStepObsPos))), 200, colors(2,:), 'filled'); hold on
+                mean(squeeze(rightModOneStepLocations(:,1,oneStepObsPos))), circSize + oneTwoRatio*circSize, colors(2,:), 'filled'); hold on
     end
-    twoStepObsPos = round(nanmean(obsPosIndInterps(rightModTwoStepBins,3)));
+    twoStepObsPos = round(nanmean(obsPosIndInterps(rightModTwoStepBins)));
     scatter(mean(squeeze(rightModTwoStepLocations(:,2,twoStepObsPos))), ...
-            mean(squeeze(rightModTwoStepLocations(:,1,twoStepObsPos))), 200, colors(1,:), 'filled'); hold on
+            mean(squeeze(rightModTwoStepLocations(:,1,twoStepObsPos))), circSize + -oneTwoRatio*circSize, colors(1,:), 'filled'); hold on
 
 
 
