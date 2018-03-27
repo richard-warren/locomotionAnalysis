@@ -1,7 +1,7 @@
 % plot sensory dependence of obstacle avoidance
 
 % settings
-wiskSessions = {'171117_001', '180225_000', '180225_001', '180225_002', '180226_000', '180226_001'};
+wiskSessions = {'171117_001', '171118_001', '180225_000', '180225_001', '180225_002', '180226_000', '180226_001'};
 noWiskSessions = {'171121_000', '180228_000', '180228_001', '180228_002', '180301_000', '180301_001', '180301_002'};
 touchThresh = 6; % if paw contacts obs for more than touchThresh frames, trial is considered touching
 maxTrialNum = 130; % DON'T SET THIS HIGHER THAN 130 // only analyzes up to this trial within each session // david didn't analyze beyond 130 in some really long sessions
