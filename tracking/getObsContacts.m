@@ -8,7 +8,9 @@ playing = true;
 paused = false;
 currentFrameInd = 1;
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
+sampleFrameBot = rgb2gray(read(vidBot,currentFrameInd));
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes');
 w = waitbar(0, 'correction progress...', 'position', [1500 50 270 56.2500]);
 
@@ -38,14 +40,14 @@ trialIdentities(~trialBins) = 0;
 
 
 % prepare figure
-fig = figure('name', session, 'units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling vid.Height*vidSizeScaling],...
+fig = figure('name', session, 'units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling (vid.Height+vidBot.Height)*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 
 colormap gray
-preview = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
+preview = image([sampleFrame; sampleFrameBot], 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
 set(rawAxis, 'visible', 'off', 'units', 'pixels',...
-    'position', [0 0 vid.Width*vidSizeScaling vid.Height*vidSizeScaling]);
+    'position', [0 0 vid.Width*vidSizeScaling (vid.Height+vidBot.Height)*vidSizeScaling]);
 
 
 
@@ -159,6 +161,8 @@ function updateFrame(frameStep)
     
     % get frame and sub-frames
     frame = rgb2gray(read(vid, frameInds(currentFrameInd)));
+    frameBot = rgb2gray(read(vidBot, frameInds(currentFrameInd)));
+    frame = [frame; frameBot];
     
     % add frame number
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
