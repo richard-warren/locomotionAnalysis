@@ -1,6 +1,6 @@
 
 
-% to do: change colors on sperm // select sperm in proportion to strategy // merge interp and sperm? // fix green dots on interp plot
+% to do: fix dot locations in avgs, and dot size? // merge interp and sperm? /add scale bar
 
 % settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
@@ -15,6 +15,9 @@ tic; save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data'); toc;
 data = data([data.oneSwingOneStance]);
 
 %%
+
+load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
+data = data([data.oneSwingOneStance]);
 binNum = 5;
 
 % get prediceted distance to obs bins
@@ -30,49 +33,85 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(predictedDistToObs(bins==i
 %% sperm plots
 
 % settings
-yLims = [-.1 .1];
+yGridLims = [-.1 .1];
 tracesPerPlot = 15;
+colors = winter(2)*.85;
+controlColor = [.65 .65 .65];
+linWid = 4;
 
-figure('color', 'white', 'menubar', 'none', 'position', [400 200 250*binNum 800]);
+% initializations
+modStepNum = cellfun(@(x) x(1,3), {data.modStepNum});
+close all;
+figure('color', 'white', 'menubar', 'none', 'position', [400 200 250*binNum 700]);
 
 for h = 1:binNum
 
     ax = subaxis(1, binNum , h, 'spacing', .02, 'padding', .04, 'margin', .02);
 
-    binInds = find(bins==h);
-    plotTraces = min(tracesPerPlot, length(binInds));
-    binIndsInds = randperm(length(binInds), tracesPerPlot);
-    dataInds = binInds(binIndsInds);
-
-    for i = dataInds
+    
+    % get inds for one and two step trials within bin
+    % (making sure the number of trials of each type reflects the proportion of each type across all trials)
+    binBins = (bins==h);
+    oneStepPortion = sum(modStepNum(binBins)==1) / sum(binBins);
+    oneTwoStepTrialNums = [round(tracesPerPlot*oneStepPortion) round(tracesPerPlot*(1-oneStepPortion))];
+    
+    if oneTwoStepTrialNums(1)>0
+        oneStepInds = find(binBins & modStepNum==1);
+        oneStepInds = oneStepInds(randperm(length(oneStepInds), oneTwoStepTrialNums(1)));
+    else
+        oneStepInds = [];
+    end
+    
+    twoStepInds = find(binBins & modStepNum>1);
+    twoStepInds = twoStepInds(randperm(length(twoStepInds), oneTwoStepTrialNums(2)));
+    allInds = [oneStepInds twoStepInds];
+    colorInds = [ones(1,length(oneStepInds)) ones(1,length(twoStepInds))*2];
+    
+    
+    % plot individual trials
+    for i = [oneStepInds twoStepInds]
         for j = 2:3
 
-            realInds = ~isnan(data(i).modifiedStepIdentities(:,j));
-            steps = unique(data(i).modifiedStepIdentities(realInds,j));
-            colors = winter(length(steps));
+            % plot x and y trajectories
+            locationInds = data(i).modifiedStepIdentities(:,j)==1;
+            x = data(i).locations(locationInds,1,j);
+            y = data(i).locations(locationInds,2,j);
+            if data(i).modStepNum(1,j)~=1; colorInd=1; else; colorInd=2; end
+            plot(y, x, 'color', colors(colorInd,:)); hold on
 
-            for k = steps'
+            % scatter dots at start of each swing
+            scatter(y(end), x(end), 100, colors(colorInd,:), 'filled'); hold on
 
-                % plot x and y trajectories
-                trialInds = data(i).modifiedStepIdentities(:,j)==k;
-                x = data(i).locations(trialInds,1,j);
-                y = data(i).locations(trialInds,2,j);
-                plot(y, x, 'color', colors(k,:)); hold on
-
-                % scatter dots at start of each swing
-                scatter(y(end), x(end), 100, colors(k,:), 'filled'); hold on
-
-                % scatter position of swing foot at obsPos
-                if j==3
-                    scatter(data(i).locations(data(i).obsPosInd,2,j), data(i).locations(data(i).obsPosInd,1,j), ...
-                        100, [0 0 0], 'x'); hold on
-                end
+            % scatter position of swing foot at obsPos
+            if j==3
+                scatter(data(i).locations(data(i).obsPosInd,2,j), data(i).locations(data(i).obsPosInd,1,j), ...
+                    100, [0 0 0], 'x'); hold on
             end
         end
     end
+    
+    
+    % get right control locations
+    controlLocations = cellfun(@(x) x{3}(end,:,:), ...
+        {data(binBins).controlLocationsInterp}, 'uniformoutput', 0); % only take last control step
+    controlLocations = cat(1,controlLocations{:});
+    
+    % get x offset (mean starting x pos of modified steps)
+    modLocations = cellfun(@(x) x{3}(1,:,:), {data(binBins).modifiedLocationsInterp}, 'uniformoutput', 0);
+    modLocations = cat(1,modLocations{:});
+    xOffset = mean(squeeze(modLocations(:,1,1)));
+    
+    x = squeeze(controlLocations(:,1,:));
+    x = x - (mean(x(:,1)) - xOffset);
+    y = squeeze(controlLocations(:,2,:));
+    plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', linWid); hold on;
+    
+    
+    
 
     % set appearance
-    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLims, 'box', 'off', 'tickdir', 'out', 'xtick', [], 'ytick', []);
+    set(gca, 'dataaspectratio', [1 1 1], 'xlim', [-.02 .02], 'ylim', yGridLims);
+    axis off
     line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)
     xlabel(['predicted dist to obs (m): ' binLabels{h}]);
 end
@@ -80,17 +119,15 @@ end
 saveas(gcf, [getenv('OBSDATADIR') 'figures\trialKinematics.png']);
 
 
-%% average interpolated trajectories
+% average interpolated trajectories
 
 
 % settings
-controlColor = [.65 .65 .65];
-yLims = [-.09 .05];
-linWid = 4;
-colors = winter(2);
+yGridLims = [-.1 .1];
+colors = winter(2)*.85;
 
 % initializations
-figure('color', 'white', 'menubar', 'none', 'position', [400 200 250*binNum 800]);
+figure('color', 'white', 'menubar', 'none', 'position', [400 200 250*binNum 700]);
 numModSteps = reshape([data.modStepNum],4,length(data))';
 obsPosIndInterps = reshape([data.pawObsPosIndInterp],4,length(data))';
 
@@ -112,9 +149,9 @@ for h = 1:binNum
 
     % get left and right control locations
     controlLocations = {data(controlBins).controlLocationsInterp};
-    leftControlLocations = cellfun(@(x) x{2}, controlLocations, 'uniformoutput', 0);
+    leftControlLocations = cellfun(@(x) x{2}(end,:,:), controlLocations, 'uniformoutput', 0);
     leftControlLocations = cat(1,leftControlLocations{:});
-    rightControlLocations = cellfun(@(x) x{3}, controlLocations, 'uniformoutput', 0);
+    rightControlLocations = cellfun(@(x) x{3}(end,:,:), controlLocations, 'uniformoutput', 0);
     rightControlLocations = cat(1,rightControlLocations{:});
 
     % get left modified locations
@@ -131,17 +168,25 @@ for h = 1:binNum
     rightModTwoStepLocations = {data(rightModTwoStepBins).modifiedLocationsInterp};
     rightModTwoStepLocations = cellfun(@(x) x{3}(1,:,:), rightModTwoStepLocations, 'uniformoutput', 0);
     rightModTwoStepLocations = cat(1,rightModTwoStepLocations{:});
+    
+    % get left and right x offsets
+    modLocations = cellfun(@(x) x{2}(1,:,:), {data(binBins).modifiedLocationsInterp}, 'uniformoutput', 0);
+    modLocations = cat(1,modLocations{:});
+    xOffsetLeft = mean(squeeze(modLocations(:,1,1)));
+    modLocations = cellfun(@(x) x{3}(1,:,:), {data(binBins).modifiedLocationsInterp}, 'uniformoutput', 0);
+    modLocations = cat(1,modLocations{:});
+    xOffsetRight = mean(squeeze(modLocations(:,1,1)));
 
 
     % plot control left
     x = squeeze(leftControlLocations(:,1,:));
-    x = x - mean(x(:,1)) + mean(squeeze(leftModLocations(:,1,1)));
+    x = x - (mean(x(:,1)) - xOffsetLeft);
     y = squeeze(leftControlLocations(:,2,:));
     plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', linWid); hold on;
 
     % plot control right
     x = squeeze(rightControlLocations(:,1,:));
-    x = x - mean(x(:,1)) + mean(squeeze(rightModTwoStepLocations(:,1,1))); % !!! make average of one and two step?
+    x = x - (mean(x(:,1)) - xOffsetRight);
     y = squeeze(rightControlLocations(:,2,:));
     plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', linWid); hold on;
 
@@ -175,8 +220,8 @@ for h = 1:binNum
 
 
     % set appearance
-    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yLims, 'xlim', [-.02 .02], ...
-        'box', 'off', 'tickdir', 'out', 'xtick', [], 'ytick', []);
+    set(gca, 'dataaspectratio', [1 1 1], 'ylim', yGridLims, 'xlim', [-.02 .02]);
+    axis off
     line(get(gca,'xlim'), [0 0], 'color', [0 0 0], 'linewidth', 3)
     xlabel(['predicted dist to obs (m): ' binLabels{h}]);
 end
@@ -186,8 +231,8 @@ saveas(gcf, [getenv('OBSDATADIR') 'figures\meanKinematics.png']);
 %% histograms
 
 % settings
-xLims = [.02 .12];
-yLims = [0 .3];
+xGridLims = [.02 .12];
+yGridLims = [0 .3];
 binWidth = .005;
 colors = winter(2);
 controlColor = [.65 .65 .65];
@@ -228,7 +273,7 @@ for h = 1:binNum
         'bincounts', (counts/sum(counts)));
 
     % set apearance
-    set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out')
+    set(ax, 'box', 'off', 'xlim', xGridLims, 'ylim', yGridLims, 'tickdir', 'out')
     set(ax, 'ytick', [], 'ylabel', []); ax.YAxis.Visible = 'off';
 end
 
@@ -244,21 +289,31 @@ saveas(gcf, [getenv('OBSDATADIR') 'figures\swingLengthHistograms.png']);
 
 % settings
 % (x is predicted position of paw relative to obs, y is swing length)
-xLims = [-.03 .02];
-dX = .002;
-xWindowSmps = 5; % needs to be odd
-yLims = [-.03 .08];
+
+xLims = [-.03 .015];
+yLims = [-.03 .04];
+xGridLims = [-.03 .02];
+dX = .001;
+xWindowSize = .008;
+yGridLims = [-.03 .08];
 dY = .001;
-yKernelSig = .005;
+yKernelSig = .008;
+probColor = [0 .7 1];
+
 
 % initializations
+xWindowSmps = ceil(xWindowSize/dX) - (mod(xWindowSize/dX,2)==0); % round to nearest odd number
 deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths];
+modStepNum = cellfun(@(x) x(1,3), {data.modStepNum});
 windowShift = floor(xWindowSmps/2);
-xGrid = xLims(1):dX:xLims(2);
-yGrid = yLims(1):dY:yLims(2);
+xGrid = xGridLims(1):dX:xGridLims(2);
+yGrid = yGridLims(1):dY:yGridLims(2);
 kernel = arrayfun(@(x) (1/(yKernelSig*sqrt(2*pi))) * exp(-.5*(x/yKernelSig)^2), ...
     -yKernelSig*5:dY:yKernelSig*5);
 kernel = kernel / sum(kernel);
+
+heatMap = nan(length(yGrid), length(xGrid));
+probs = nan(1, length(xGrid));
 
 for i = 1:length(xGrid)
     
@@ -267,33 +322,36 @@ for i = 1:length(xGrid)
     dataInds = find(predictedDistToObs>=xBinLims(1) & predictedDistToObs<=xBinLims(2));
     deltaLengthsSub = deltaLengths(dataInds);
     
-    binCounts = histogram(deltaLengthsSub, yGrid);
+    binCounts = histogram(deltaLengthsSub, [yGrid yGrid(end)+dY] - .5*dY); % last argument changes bin centers to bin edges
     binCounts = binCounts.Values;
     
-    histo = conv(spikesVec, kernel, 'same');
+    histoConv = conv(binCounts, kernel, 'same');
+    histoConv = histoConv / sum(histoConv);
+    heatMap(:, i) = histoConv;
     
-    
-    
+    probs(i) = sum(modStepNum(dataInds)==1) / length(dataInds);
     
 end
 
 
 
+close all;
+figure('color', 'white', 'menubar', 'none', 'position', [1943 616 560 420])
+colormap hot
+imagesc(xGrid, yGrid, heatMap)
+line(get(gca, 'xlim'), [0 0], 'color', 'white', 'linewidth', 3, 'linestyle', ':')
+line([0 0], get(gca, 'ylim'), 'color', 'white', 'linewidth', 3, 'linestyle', ':')
 
+set(gca, 'ydir', 'normal', 'box', 'off', 'xlim', xLims, 'ylim', yLims)
+xlabel('predicted distance to obs (m)')
+ylabel('\Deltax (m)')
 
+yyaxis right
+plot(xGrid, probs, 'color', probColor, 'linewidth', 5)
+ylabel('probability of taking one big step')
+set(gca, 'ycolor', probColor)
 
-
-
-
-
-
-
-
-
-
-
-
-
+saveas(gcf, [getenv('OBSDATADIR') 'figures\deltaLengthHeatMap.png']);
 
 
 
