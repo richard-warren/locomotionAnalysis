@@ -3,18 +3,18 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-thingsToAnalyze = {'stance'}; % which steps of the analy
+thingsToAnalyze = {'potBot', 'bot'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
 minVel = .4;
 
 for i = 1:length(sessionDirs)
     
     % get locations
     nameInd = find(sessionDirs{i}=='\',1,'last');
-%     try
+    try
         getLocations(sessionDirs{i}(nameInd+1:end), thingsToAnalyze, minVel, false);
-%     catch
-%         fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
-%     end
+    catch
+        fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
+    end
     
 end
 
@@ -38,9 +38,9 @@ getLocations(session, thingsToAnalyze, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180124_002';
+session = '180225_000';
 view = 'Bot';
-showCorrected = 1;
+showCorrected = 0;
 frameDelay = .01;
 
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocations' view '.mat'])

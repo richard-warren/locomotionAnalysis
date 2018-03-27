@@ -6,7 +6,6 @@ function getLocations(session, steps, minVel, showTracking)
 
 
 % settings
-% obsPrePost = [.2 .2]; % include this many meters before and after obs turns on
 obsPrePostBot = [.5 .2];
 obsPrePostTop = [.5 .2];
 velPrePost = [.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
@@ -25,7 +24,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPosit
     'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping', 'targetFs')
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
-[frameIndsBot, trialIdentities] = getTrialFrameInds(minVel, obsPrePostBot, velPrePost, frameTimeStamps,...
+[frameIndsBot, trialIdentities, trialVels] = getTrialFrameInds(minVel, obsPrePostBot, velPrePost, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes);
 frameIndsTop = getTrialFrameInds(minVel, obsPrePostTop, velPrePost, frameTimeStamps,...
     wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes);
@@ -56,9 +55,11 @@ if any(strcmp('potBot', steps))
         subFrameSize1, subFrameSize2, scoreThresh, obsPixPositions, frameIndsBot, trialIdentities, showTracking);
 
     % save results
+    try
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
-    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\velocityInfo.mat'], 'trialVels', 'minVel', 'velPositions');
+    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\velocityInfo.mat'], 'trialVels', 'minVel', 'velPrePost');
     fprintf('%s: potentialLocationsBot analyzed in %.1f minutes\n', session, (toc/60))
+    catch; keyboard; end
 end
 
 

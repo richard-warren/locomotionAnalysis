@@ -1,10 +1,9 @@
 % plot sensory dependence of obstacle avoidance
 
 % settings
-wiskSessions = {'171117_001', '180225_000', '180225_001', '180225_002', '180226_000', '180226_001'};
-noWiskSessions = {'171121_000', '180228_000', '180228_001', '180228_002', '180301_000', '180301_001', '180301_002'};
+wiskSessions = {'180225_000', '180225_001', '180225_002', '180226_000'};
+noWiskSessions = {'180228_000', '180228_001', '180228_002', '180301_000', '180301_001', 180301_002};
 touchThresh = 6; % if paw contacts obs for more than touchThresh frames, trial is considered touching
-maxTrialNum = 130; % DON'T SET THIS HIGHER THAN 130 // only analyzes up to this trial within each session // david didn't analyze beyond 130 in some really long sessions
 
 % initializations
 sessions = cat(2, wiskSessions, noWiskSessions);
@@ -13,9 +12,8 @@ sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
 dataInd = 1;
 
 
+% frontTouchFrames, topTouchFrames
 data = struct();
-sessionTrials = nan(1,length(sessions));
-
 
 for i = 1:length(sessions)
     
@@ -48,7 +46,6 @@ for i = 1:length(sessions)
         % store results
         data(dataInd).session = sessions{i};
         data(dataInd).mouse = mouse;
-        data(dataInd).trial = j;
         data(dataInd).hasWiskers = hasWiskers(i);
         data(dataInd).isLightOn = isLightOn;
         data(dataInd).isWheelBreak = isWheelBreak;
@@ -57,8 +54,6 @@ for i = 1:length(sessions)
         data(dataInd).topTouchingFrames = topTouchingFrames;
         dataInd = dataInd + 1;
     end
-    
-    sessionTrials(i) = j;
 end
 
 
@@ -72,7 +67,7 @@ lineWidth = 3;
 colors = winter(2);
 circSize = 80;
 successYLims = [0 1];
-velYLim = [.2 .6];
+velYLim = [0 .8];
 jitterRange = .25;
 
 % determine whether trial was successful
@@ -95,13 +90,9 @@ for wisk = [false true]
         for mouse = 1:length(mice)
             
             % get session performance
-            trialBins = [data.hasWiskers]==wisk & ...
-                ([data.isLightOn]==light) & ...
-                strcmp(mice{mouse}, {data.mouse}) & ...
-                [data.trial]<=maxTrialNum;
-            trialBinsNoBreak = trialBins & ~[data.isWheelBreak];
+            trialBins = [data.hasWiskers]==wisk & ([data.isLightOn]==light) & strcmp(mice{mouse}, {data.mouse});
             successRates(mouse) = sum([data(trialBins).isSuccess]) / sum(trialBins);
-            vels(mouse) = mean([data(trialBinsNoBreak).vel]);
+            vels(mouse) = mean([data(trialBins).vel]);
             
             % plot
             subplot(2,2,wisk+1)
@@ -136,6 +127,12 @@ set(gca, 'xtick', [-.5 .5], 'xticklabel', {'no light', 'light'}, 'ylim', velYLim
 xlabel('whiskers')
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\sensoryDependennce.png']);
+
+
+
+
+
+
 
 
 
