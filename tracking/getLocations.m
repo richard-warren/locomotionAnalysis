@@ -19,7 +19,6 @@ if ~exist(trackingDir, 'dir'); mkdir(trackingDir); end % make tracking directory
 
 xMapping = [getenv('GITDIR') 'locomotionAnalysis\xAlignment\xLinearMapping.mat'];
 load(xMapping, 'xLinearMapping');
-
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps', 'nosePos', ...
     'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping', 'targetFs')
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
@@ -55,11 +54,9 @@ if any(strcmp('potBot', steps))
         subFrameSize1, subFrameSize2, scoreThresh, obsPixPositions, frameIndsBot, trialIdentities, showTracking);
 
     % save results
-    try
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot');
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\velocityInfo.mat'], 'trialVels', 'minVel', 'velPrePost');
     fprintf('%s: potentialLocationsBot analyzed in %.1f minutes\n', session, (toc/60))
-    catch; keyboard; end
 end
 
 
@@ -146,8 +143,7 @@ if any(strcmp('top', steps))
     locationsBot = locations.locationsCorrected;
     locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
 
-    locations = getLocationsTop(potentialLocationsTop, locationsBot, stanceBins, ...
-        wheelPositions, wheelTimes, targetFs, mToPixFactor, obsPixPositions, frameTimeStamps, fs, wheelPoints);
+    locations = getLocationsTop(potentialLocationsTop, locationsBot, stanceBins, frameTimeStamps, wheelPoints);
     save([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsTop.mat'], 'locations');
     fprintf('%s: locationsTop analyzed\n', session)
     

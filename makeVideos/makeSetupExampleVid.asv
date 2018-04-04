@@ -1,0 +1,39 @@
+% this make a wide vid with top view plus drawing of obs off screen, intended to explain how obs appears and is controlled by the speed of the wheel
+% should use trials in which there is variability in wheel speed, and ideally some in which mouse moves both forwards and backwards
+
+% settings
+session = '180225_000';
+trials = [3 6];
+prePostTime = [-0.5 0]; % (s) time to add to beginning and end of a trial (before and after obs is engaged)
+playbackSpee
+fps = 250;
+
+% initializations
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+    'obsPixPositions', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
+vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+frameDims = [vid.Height round(max(obsPixPositions))];
+vidWriter = VideoWriter([getenv('OBSDATADIR') 'editedVid\' sprintf('%strials%s', session, num2str(trials))], 'MPEG-4');
+open(vidWriter);
+
+
+
+for i = 1:length(trials)
+    
+    trialBins = frameTimeStamps>=(obsOnTimes(trials(i))+prePostTime(1)) & ...
+                frameTimeStamps<=(obsOffTimes(trials(i))+prePostTime(2));
+    trialInds = find(trialBins);
+    
+    for j = 1:length(trialInds)
+        disp(j)
+        
+        frame = rgb2gray(read(vid, trialInds(j)));
+        writeVideo(vidWriter, frame);
+        
+    end
+    
+end
+
+
+
+close(vidWriter)

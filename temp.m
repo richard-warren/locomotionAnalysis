@@ -1,5 +1,43 @@
 
 
+
+load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
+
+
+
+
+
+%% test arduino constant acceleration ramp
+
+a = 5.0;
+maxV = 1.5;
+% getV2 = @(v1) .5*(v1 + sqrt(4*a+v1^2));
+getV2 = @(v1) .5 * (v1 + sqrt(4*a*mPerTick + v1^2));
+
+
+% initializations
+microStepping = 16;
+motorSteps = 200;
+timingPulleyRad = 15.2789;
+mPerTick = ((2*pi*timingPulleyRad) / (1000*(motorSteps*microStepping)));
+v2 = 0;
+v = [0];
+t = [0];
+
+while v<maxV
+    
+    v1 = v2;
+    v2 = getV2(v1);
+    v(end+1) = v2;
+    t(end+1) = t(end) + (1/v2)/s;
+    disp(v2)
+    
+end
+
+% close all; scatter(t, v); pimpFig
+length(v)
+
+%%
 controls = {data.controlLocations};
 controls = cellfun(@(x) x{3}, controls, 'uniformoutput', 0);
 controls = cat(1,controls{:});

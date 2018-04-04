@@ -4,16 +4,16 @@
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 miceToPlot = {'run6', 'run7', 'run8'};
 vidTrialProportion = .25;
-
-parfor i = 1:length(sessionDirs)
+%%
+for i = 1:length(sessionDirs)
     
     % spike analysis
     nameInd = find(sessionDirs{i}=='\',1,'last');
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'mToPixMapping'});
     
 end
 
-% delete(gcp); % delete parallel pool
+%% delete(gcp); % delete parallel pool
 
 % generate plots
 % baselineAnalysis('run6')

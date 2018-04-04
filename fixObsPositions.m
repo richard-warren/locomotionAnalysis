@@ -20,8 +20,10 @@ for i = 1:length(obsOnTimes)
     
     % get obsPos at moment obs reaches nose
     if ~isempty(pixPositions)
+        try
         noseTime = interp1(pixPositions, pixTimes, noseX);
         obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
+        catch; keyboard; end
     
         % get trial obsPos and subtract obsAtNosePos
         trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));

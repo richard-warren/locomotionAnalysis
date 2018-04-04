@@ -84,7 +84,12 @@ for i = 1:length(obsOnTimes)
     % find mapping from obsPositions (from rotary encoder) to obsPixPositions for trial
     trialObsPositions = interp1(obsTimes, obsPositions, frameTimeStamps(frameInds)); % get position of obstacle for all frames
     validInds = ~isnan(trialObsPixPositions); % !!! why would this ever be nan?
-    mapping = polyfit(trialObsPositions(validInds), trialObsPixPositions(validInds), 1);
+    if any(validInds)
+        mapping = polyfit(trialObsPositions(validInds), trialObsPixPositions(validInds), 1);
+    else
+        mapping = [nan nan];
+        fprintf('  failed to track obstacle in trial: %i\n', i);
+    end
     mappings(i,:) = mapping;
     
     % recreate obsPixPositions for trial by mapping from obsPositions to obsPixPositions
