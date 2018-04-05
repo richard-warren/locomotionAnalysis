@@ -3,9 +3,9 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-thingsToAnalyze = {'potTop', 'top'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
+thingsToAnalyze = {'potBot'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
 minVel = .4;
-showTracking = false;
+showTracking = true;
 
 for i = 1:length(sessionDirs)
     
@@ -39,9 +39,9 @@ getLocations(session, thingsToAnalyze, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180225_000';
+session = '180124_001';
 view = 'Bot';
-showCorrected = 0;
+showCorrected = 1;
 frameDelay = .01;
 
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocations' view '.mat'])
@@ -72,7 +72,7 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '171117_001';
+session = '180125_001';
 view = 'Bot';
 obsPrePostTop = [.2 .1];
 minVel = .4; velPrePost = [.08 .08];

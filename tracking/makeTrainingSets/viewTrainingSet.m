@@ -2,7 +2,8 @@ function viewTrainingSet(className)
 
 
 % settings
-figSize = [1000, 1800]; % h,w
+% figSize = [1000, 1800]; % h,w
+figSize = [300, 300]*2; % h,w
 
 % initializations
 load([getenv('OBSDATADIR') 'tracking\trainingData\' className '\labeledFeatures.mat'], 'images', 'labels', 'subFrameSize')
