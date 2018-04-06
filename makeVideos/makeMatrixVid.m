@@ -1,17 +1,27 @@
-% function makeMatrixVid
+function makeMatrixVid
 % make sweet vid with mouse running at real splayback speed then going super slow mo at moment of wisk contact, and drawing kinematic traces on top of image // dope
 
 % settings
 session = '180124_001';
-trials = [5 14 43];
+trials = [4 5 10 11 14 23 41 43 63 71]; % 5 14 43
 prePostTime = [-1 .2]; % (s) time to add to beginning and end of a trial (before and after obs is engaged) // seconds are in real time
 slowSpeed = .05; % how much to slow down vid after wisk contacts obstacle
 constrastLims = [.2 1]; % pixels at these proportional values are mapped to 0 and 255
-colors = hsv(4);
-circSize = 100;
-circs = 5;
+cmap = 'hsv';
+circSize = 150;
+circs = 4;
+circSeparation = 2; % how many circs separate each frame
+trailDarkening = .5;
 
 % initializations
+circIndOffsets = -(circs-1)*circSeparation : circSeparation : 0;
+colors = eval([cmap '(4)']);
+colors = repelem(colors,circs,1);
+trailBins = logical(mod((1:4*circs),circs)~=0);
+colors(trailBins,:) = colors(trailBins,:) * trailDarkening;
+circSizes = [linspace(circSize*.1, circSize*.5, circs-1) circSize];
+circSizes = repmat(circSizes,1,4);
+
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations');
@@ -30,11 +40,11 @@ colormap gray
 topAxis = subplot(2,1,1, 'units', 'pixels');
 topIm = image(rgb2gray(read(vidTop,1)), 'parent', topAxis, 'CDataMapping', 'scaled'); hold on;
 set(topAxis, 'visible', 'off', 'CLim', [0 255])
-scatterTop = scatter(topAxis, zeros(1,4), zeros(1,4), circSize, colors, 'filled');
+scatterTop = scatter(topAxis, zeros(1,4*circs), zeros(1,4*circs), circSizes, colors, 'filled');
 
 botAxis = subplot(2,1,2, 'units', 'pixels');
 botIm = image(rgb2gray(read(vidBot,1)), 'parent', botAxis, 'CDataMapping', 'scaled'); hold on;
-scatterBot = scatter(botAxis, zeros(1,4), zeros(1,4), circSize, colors, 'filled');
+scatterBot = scatter(botAxis, zeros(1,4*circs), zeros(1,4*circs), circSizes, colors, 'filled');
 set(botAxis, 'visible', 'off', 'CLim', [0 255])
 
 set(topAxis, 'position', [0 vidBot.Height vidTop.Width vidTop.Height]);
@@ -53,7 +63,8 @@ for i = 1:length(trials)
     trialInds = fastInds(knnsearch(frameTimeStamps(fastInds), trialFrameTimes'));
     
     % reset scatter to zero
-    set(scatterBot, 'XData', zeros(1,4), 'YData', zeros(1,4));
+    set(scatterBot, 'XData', zeros(1,4*circs), 'YData', zeros(1,4*circs));
+    set(scatterTop, 'XData', zeros(1,4*circs), 'YData', zeros(1,4*circs));
     
     for j = 1:length(trialInds)
         
@@ -92,9 +103,9 @@ for i = 1:length(trials)
         set(botIm, 'CData', frameBot);
         
         % add scatter points
-        x = locations.locationsCorrected(trialInds(j),1,:);
-        y = locations.locationsCorrected(trialInds(j),2,:);
-        set(scatterBot, 'XData', x, 'YData', y);
+        x = squeeze(locations.locationsCorrected(trialInds(j)+circIndOffsets,1,:));
+        y = squeeze(locations.locationsCorrected(trialInds(j)+circIndOffsets,2,:));
+        set(scatterBot, 'XData', x(:), 'YData', y(:));
         
         % write to video
         writeVideo(vidWriter, getframe(gcf));

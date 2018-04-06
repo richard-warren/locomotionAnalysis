@@ -1,4 +1,4 @@
-function [noseX, noseY, medianFrame] = getNosePos(vidBot)
+function [noseX, noseY, medianFrame] = getNosePos(vidBot, showNosePos)
 
 % given bot vid of mouse, gets x and y positions of tip of nose
 % does this by getting median of random selection of frames, then thresholding
@@ -42,6 +42,12 @@ noseInfo = regionprops(subFrame, 'Centroid');
 noseY = noseInfo(1).Centroid(2) + mouseOutlineInfo.BoundingBox(2);
 
 if length(noseInfo)>1; disp('ERROR in getNosePos: multiple blobs detected for mouse body!!!'); end
+
+% show tracked position of nose
+if exist('showNosePos', 'var') && showNosePos
+    figure; imshow(medianFrame);
+    hold on; scatter(noseX, noseY, 'filled'); pause(.1)
+end
 
 
 
