@@ -25,7 +25,7 @@ for i = 1:length(obsOnTimes)
     
     if trialVels(i) > minVel
     
-        % get positions of wheel at moment obs is at wheel center
+        % get positions of wheel at moment obs is at mouse nose
         noseTime = obsTimes(find(obsTimes>obsOnTimes(i) & obsPositions>=0, 1, 'first'));
         wheelPos = interp1(wheelTimes, wheelPositions, noseTime);
 

@@ -1,4 +1,4 @@
-% function obsAvoidanceLearningSummary(mice)
+function obsAvoidanceLearningSummary(mice)
 
 % shows obstacle avoidance for all mice over time, with and without wheel break...
 % assumes at least noBrSessions have been collected... otherwise will behave incorrectly
@@ -101,7 +101,7 @@ end
 
 
 
-%% ---------------
+% ---------------
 % plot everything
 % ---------------
 
