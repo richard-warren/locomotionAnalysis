@@ -34,7 +34,6 @@ wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps)';
 stanceBinsUncorrected = false(size(xLocations));
 stanceBins = false(size(xLocations));
 isTouching = false(size(xLocations));
-startEndInds = cell(1,4);
 
 
 
@@ -121,7 +120,6 @@ for i = find(sum(stanceBinsUncorrected,2))'
             isTouching(i,j) = ~any(intersect(leftSideRegions, rightSideRegions));
         else
             fprintf('  problem with trial %i\n', i)
-            keyboard
         end
         
         
@@ -161,8 +159,7 @@ for i = 1:4
 end
 
 
-stanceBins(isnan(trialIdentities), :) = nan; % make sure nan values appear where things haven't been analyzed
-% !!! should really determine swing bins here as well, and make sure to set as nan any swings or stances that border the edge of a trial...
+% !!! should really determine swing bins in this function as well, and make sure to set as nan any swings or stances that border the edge of a trial...
 
 close(w)
 

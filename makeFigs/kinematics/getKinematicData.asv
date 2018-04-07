@@ -36,7 +36,32 @@ for i = 1:length(sessions)
     vel = getVelocity(wheelPositions, speedTime, targetFs);
     locations(:,2,:) = locations(:,2,:) - nosePos(2); % subtract midline from all y values
     
+    keyboard
     
+    
+%     % GET SWING IDENTITIES
+%     % (each swing is given a number, in ascending order)
+%     swingBins = ~stanceBins;
+%     swingIdentities = nan(size(swingBins));
+%     
+%     for j = 1:4
+%         
+%         % get start and end of swings
+%         swingStartInds = find([0; diff(swingBins(:,j))==1]');
+%         swingEndInds = find([diff(swingBins(:,j))==-1; 0]');
+%         
+%         % make sure first ind is a start and last ind is an end
+%         swingStartInds = swingStartInds(swingStartInds<swingEndInds(end));
+%         swingEndInds = swingEndInds(swingEndInds>swingStartInds(1));
+%         
+%         
+%         swingCount = 1;
+%         for k = 1:length(swingStartInds)
+%             swingIdentities(swingStartInds(k):swingEndInds(k),j) = swingCount;
+%             swingCount = swingCount + 1;
+%         end
+%     end
+%     
     
     
     
@@ -83,14 +108,13 @@ for i = 1:length(sessions)
             trialObsPixPositions = interp1(trialTimeStamps, obsPixPositions(trialBins), trialTimeStampsInterp);
 
 %             trialSwingIdentities = nan(sum(trialBins), size(swingIdentities,2));
-            trialControlStepIds = nan(sum(trialBins), 4);
-            trialModStepIds = nan(sum(trialBins), 4);
+            trialControlStepIdentities = nan(sum(trialBins), 4);
+            trialModStepIdentities = nan(sum(trialBins), 4);
             trialLocations = nan(sum(trialBins), size(locations,2), size(locations,3));
             trialWheelVel = interp1(wheelTimes-contactTimes(j), vel, trialTimeStampsInterp);
             
             for k = 1:4
-                trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
-                trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+                trialControlStepIdentities(:,k) = interp1(trialTimeStamps, swingIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
                 
                 for m = 1:size(locations,2)
                     trialLocations(:,m,k) = interp1(trialTimeStamps, locations(trialBins,m,k), trialTimeStampsInterp, 'linear', 'extrap');
@@ -102,17 +126,42 @@ for i = 1:length(sessions)
 
             % convert to meters
             trialLocations = trialLocations / abs(mToPixMapping(1));
+
+        
+        
+%             % get trial swing identities and define control and modified steps
+%             trialControlStepIdentities = nan(size(trialSwingIdentities));
+%             modifiedStepIdentities = nan(size(trialSwingIdentities));
+% 
+%             for k = 1:4
+% 
+%                 overObsInd = find(trialLocations(:,1,k)>=0, 1, 'first');
+%                 firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k)) & ...
+%                     trialTimeStampsInterp>=0, 1, 'first'), k);
+%                 swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
+%                 
+%                 modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & ...
+%                     (trialSwingIdentities(:,k) <= swingOverObsIdentity);
+%                 controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & ...
+%                     (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
+% 
+%                 modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
+%                 modifiedStepIdentities(~modifiedBins,k) = nan;
+%                 trialControlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
+%                 trialControlStepIdentities(~controlBins,k) = nan;
+% 
+%             end
             
             % determine whether left and right forepaws are in swing at obsPos moment
-            isLeftSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));
-            isRightSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,3));
+            isLeftSwing = ~isnan(trialModStepIdentities(trialTimeStampsInterp==0,2));
+            isRightSwing = ~isnan(trialModStepIdentities(trialTimeStampsInterp==0,3));
             oneSwingOneStance = xor(isLeftSwing, isRightSwing);
             
             % flip y values if the left fore is the swinging foot (thus making it the right paw)
             if oneSwingOneStance && isLeftSwing
                 trialLocations = trialLocations(:,:,[4 3 2 1]);
-                trialControlStepIds = trialControlStepIds(:,[4 3 2 1]);
-                trialModStepIds = trialModStepIds(:,[4 3 2 1]);
+                trialControlStepIdentities = trialControlStepIdentities(:,[4 3 2 1]);
+                trialModStepIdentities = trialModStepIdentities(:,[4 3 2 1]);
                 trialLocations(:,2,:) = -trialLocations(:,2,:);
                 isFlipped = true;
             else
@@ -122,7 +171,7 @@ for i = 1:length(sessions)
             
             % get stance distance from obs
             stanceDistance = trialLocations(trialTimeStampsInterp==0,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
-            swingStartDistance = trialLocations(find(trialModStepIds(:,3)==1,1,'first'),1,3);
+            swingStartDistance = trialLocations(find(trialModStepIdentities(:,3)==1,1,'first'),1,3);
             
             
             % get mod and control step(s) length, duration, wheel velocity
@@ -136,7 +185,7 @@ for i = 1:length(sessions)
             for k = 1:4
                 
                 % modified steps
-                stepBins = trialModStepIds(:,k)==1;
+                stepBins = trialModStepIdentities(:,k)==1;
                 stepXLocations = trialLocations(stepBins,1,k);
                 modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
                 stepTimes = trialTimeStampsInterp(stepBins);
@@ -146,7 +195,7 @@ for i = 1:length(sessions)
                 % control steps
                 for m = 1:controlSteps
                     
-                    stepBins = trialControlStepIds(:,k)==m;
+                    stepBins = trialControlStepIdentities(:,k)==m;
                     stepXLocations = trialLocations(stepBins,1,k);
                     controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStampsInterp(stepBins);
@@ -171,14 +220,14 @@ for i = 1:length(sessions)
             for k = 1:4
                 
                 % control
-                stepNum = max(trialControlStepIds(:,k));
+                stepNum = max(trialControlStepIdentities(:,k));
                 pawControlLocations = nan(stepNum, 2, swingMaxSmps);
                 pawControlLocationsInterp = nan(stepNum, 2, interpSmps);
                 
                 for m = 1:stepNum
                     
                     % locations
-                    startInd = find(trialControlStepIds(:,k)==m, 1, 'first');
+                    startInd = find(trialControlStepIdentities(:,k)==m, 1, 'first');
                     stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1)); % these inds continue past the end of swing
                     stepX = trialLocations(stepIndsAll,1,k);
                     stepY = trialLocations(stepIndsAll,2,k);
@@ -186,7 +235,7 @@ for i = 1:length(sessions)
                     
                     % locations interp
                     try
-                    stepBins = trialControlStepIds(:,k)==m;
+                    stepBins = trialControlStepIdentities(:,k)==m;
                     xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
                     yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
                     pawControlLocationsInterp(m,:,:) = cat(1,xInterp,yInterp);
@@ -198,21 +247,21 @@ for i = 1:length(sessions)
                 
                 
                 % modified
-                modStepNum(k) = max(trialModStepIds(:,k));
+                modStepNum(k) = max(trialModStepIdentities(:,k));
                 pawModifiedLocations = nan(modStepNum(k), 2, swingMaxSmps);
                 pawModifiedLocationsInterp = nan(modStepNum(k), 2, interpSmps);
                 
                 for m = 1:modStepNum(k)
                     
                     % locations
-                    startInd = find(trialModStepIds(:,k)==m, 1, 'first');
+                    startInd = find(trialModStepIdentities(:,k)==m, 1, 'first');
                     stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1));
                     stepX = trialLocations(stepIndsAll,1,k);
                     stepY = trialLocations(stepIndsAll,2,k);
                     pawModifiedLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY');
                     
                     % locations interp
-                    stepBins = trialModStepIds(:,k)==m;
+                    stepBins = trialModStepIdentities(:,k)==m;
                     xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
                     yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
                     pawModifiedLocationsInterp(m,:,:) = cat(1,xInterp,yInterp);
@@ -249,8 +298,8 @@ for i = 1:length(sessions)
             data(dataInd).modifiedLocations = modLocations;
             data(dataInd).controlLocationsInterp = controlLocationsInterp;
             data(dataInd).modifiedLocationsInterp = modLocationsInterp;
-            data(dataInd).trialControlStepIdentities = trialControlStepIds;
-            data(dataInd).modifiedStepIdentities = trialModStepIds;
+            data(dataInd).trialControlStepIdentities = trialControlStepIdentities;
+            data(dataInd).modifiedStepIdentities = trialModStepIdentities;
             data(dataInd).modStepNum = modStepNum;
             data(dataInd).oneSwingOneStance = oneSwingOneStance;
             data(dataInd).stanceDistance = stanceDistance;

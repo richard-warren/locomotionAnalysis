@@ -10,7 +10,6 @@ obsPrePostBot = [.5 .2];
 obsPrePostTop = [.5 .2];
 velPrePost = [.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
 anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
-colors = hsv(4); % red green blue purple
 
 
 % initializations
@@ -84,22 +83,26 @@ end
 
 
 % stance analysis
-if any(strcmp('stance', steps))
+if any(strcmp('stepSegmentation', steps))
     
     % initializations
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
-    fs = 250;
-    
-    % fix x alignment for bottom view
+    load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactTimes.mat'], 'contactTimes')
     locationsBot = locations.locationsCorrected;
-    locationsBot(:,1,:) = locationsBot(:,1,:)*xLinearMapping(1) + xLinearMapping(2);
+    trialIdentities = locations.trialIdentities;
+    fs = 250;
     
     % get stance bins
     tic; stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), locations.trialIdentities', ...
         fs, mToPixFactor, wheelPositions, wheelTimes, targetFs, frameTimeStamps);
     
-    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\stanceBins.mat'], 'stanceBins')
-    fprintf('%s: stanceBins analyzed in %.1f minutes\n', session, (toc/60))
+    % get trial identities
+    [controlStepIdentities, modifiedStepIdentities] = getStepIdentities(stanceBins, locationsBot, ...
+        trialIdentities, contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions);
+    
+    save([getenv('OBSDATADIR') 'sessions\' session '\tracking\stepSegmentation.mat'], ...
+        'stanceBins', 'controlStepIdentities', 'modifiedStepIdentities');
+    fprintf('%s: stepSegmentation completed in %.1f minutes\n', session, (toc/60))
 
 end
 

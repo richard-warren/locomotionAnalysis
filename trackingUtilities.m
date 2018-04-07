@@ -3,19 +3,19 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-thingsToAnalyze = {'top'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
+thingsToAnalyze = {'stepSegmentation'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
 minVel = .4;
 showTracking = true;
 
-for i = 1:length(sessionDirs)
+for i = 8:length(sessionDirs)
     
     % get locations
     nameInd = find(sessionDirs{i}=='\',1,'last');
-%     try
+    try
         getLocations(sessionDirs{i}(nameInd+1:end), thingsToAnalyze, minVel, showTracking);
-%     catch
-%         fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
-%     end
+    catch
+        fprintf('FAILED TO ANALYZE %s\n', sessionDirs{i}(nameInd+1:end));
+    end
     
 end
 
@@ -39,7 +39,7 @@ getLocations(session, thingsToAnalyze, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180124_001';
+session = '180122_002';
 view = 'Bot';
 showCorrected = 1;
 frameDelay = .01;
