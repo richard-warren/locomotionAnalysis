@@ -38,29 +38,29 @@ for i = 1:length(sessions)
     
     
     
-    % GET SWING IDENTITIES
-    % (each swing is given a number, in ascending order)
-    swingBins = ~stanceBins;
-    swingIdentities = nan(size(swingBins));
-    
-    for j = 1:4
-        
-        % get start and end of swings
-        swingStartInds = find([0; diff(swingBins(:,j))==1]');
-        swingEndInds = find([diff(swingBins(:,j))==-1; 0]');
-        
-        % make sure first ind is a start and last ind is an end
-        swingStartInds = swingStartInds(swingStartInds<swingEndInds(end));
-        swingEndInds = swingEndInds(swingEndInds>swingStartInds(1));
-        
-        
-        swingCount = 1;
-        for k = 1:length(swingStartInds)
-            swingIdentities(swingStartInds(k):swingEndInds(k),j) = swingCount;
-            swingCount = swingCount + 1;
-        end
-    end
-    
+%     % GET SWING IDENTITIES
+%     % (each swing is given a number, in ascending order)
+%     swingBins = ~stanceBins;
+%     swingIdentities = nan(size(swingBins));
+%     
+%     for j = 1:4
+%         
+%         % get start and end of swings
+%         swingStartInds = find([0; diff(swingBins(:,j))==1]');
+%         swingEndInds = find([diff(swingBins(:,j))==-1; 0]');
+%         
+%         % make sure first ind is a start and last ind is an end
+%         swingStartInds = swingStartInds(swingStartInds<swingEndInds(end));
+%         swingEndInds = swingEndInds(swingEndInds>swingStartInds(1));
+%         
+%         
+%         swingCount = 1;
+%         for k = 1:length(swingStartInds)
+%             swingIdentities(swingStartInds(k):swingEndInds(k),j) = swingCount;
+%             swingCount = swingCount + 1;
+%         end
+%     end
+%     
     
     
     
@@ -124,28 +124,28 @@ for i = 1:length(sessions)
 
         
         
-            % get trial swing identities and define control and modified steps
-            controlStepIdentities = nan(size(trialSwingIdentities));
-            modifiedStepIdentities = nan(size(trialSwingIdentities));
-
-            for k = 1:4
-
-                overObsInd = find(trialLocations(:,1,k)>=0, 1, 'first');
-                firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k)) & ...
-                    trialTimeStampsInterp>=0, 1, 'first'), k);
-                swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
-                
-                modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & ...
-                    (trialSwingIdentities(:,k) <= swingOverObsIdentity);
-                controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & ...
-                    (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
-
-                modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
-                modifiedStepIdentities(~modifiedBins,k) = nan;
-                controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
-                controlStepIdentities(~controlBins,k) = nan;
-
-            end
+%             % get trial swing identities and define control and modified steps
+%             controlStepIdentities = nan(size(trialSwingIdentities));
+%             modifiedStepIdentities = nan(size(trialSwingIdentities));
+% 
+%             for k = 1:4
+% 
+%                 overObsInd = find(trialLocations(:,1,k)>=0, 1, 'first');
+%                 firstModifiedIdentitiy = trialSwingIdentities(find(~isnan(trialSwingIdentities(:,k)) & ...
+%                     trialTimeStampsInterp>=0, 1, 'first'), k);
+%                 swingOverObsIdentity = trialSwingIdentities(overObsInd, k);
+%                 
+%                 modifiedBins = (trialSwingIdentities(:,k) >= firstModifiedIdentitiy) & ...
+%                     (trialSwingIdentities(:,k) <= swingOverObsIdentity);
+%                 controlBins = (trialSwingIdentities(:,k) >= (firstModifiedIdentitiy-controlSteps)) & ...
+%                     (trialSwingIdentities(:,k) < firstModifiedIdentitiy);
+% 
+%                 modifiedStepIdentities(:,k) = cumsum([0; diff(modifiedBins)==1]);
+%                 modifiedStepIdentities(~modifiedBins,k) = nan;
+%                 controlStepIdentities(:,k) = cumsum([0; diff(controlBins)==1]);
+%                 controlStepIdentities(~controlBins,k) = nan;
+% 
+%             end
             
             % determine whether left and right forepaws are in swing at obsPos moment
             isLeftSwing = ~isnan(modifiedStepIdentities(trialTimeStampsInterp==0,2));

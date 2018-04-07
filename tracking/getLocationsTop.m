@@ -22,10 +22,9 @@ highnessWeight = 1;
 locations.locationsRaw = nan(length(potentialLocationsTop), 2, objectNum);
 [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
 wheelCenterOffset = wheelCenter - [0; stanceHgt];
-keyboard
 
 
-% !!! what does this code do?
+% for all stanceBins frames locate the paw directly above the wheel at the x position recorded in locationsBot
 for i = 1:4
     for j = find(stanceBins(:,i))'
         locations.locationsRaw(j,1,i) = locationsBot(j,1,i);
@@ -37,12 +36,9 @@ end
 
 
 % iterate through all frameInds
+frameInds = find([potentialLocationsTop.isAnalyzed]);
 
 for i = 1:length(frameInds)
-    
-    % report progress
-%     disp(i/length(frameInds))
-    
     
     % sort paws from closest to furthest away from camera
     ys = squeeze(locationsBot(frameInds(i),2,:))';
@@ -61,8 +57,8 @@ for i = 1:length(frameInds)
         isOccluded = any(abs(locationsBot(frameInds(i),1,pawSequence(j)) - locationsBot(frameInds(i),1,:)) < xOccludeBuffer &...
             (locationsBot(frameInds(i),2,:) > locationsBot(frameInds(i),2,pawSequence(j))));
         
-        
-        if ~isOccluded && isnan(locations.locationsRaw(frameInds(i),2,pawSequence(j))) % only conduct analysis if location has not been determined by stance analysis above
+        % only conduct analysis if paw is not occluded and if location has not been determined by stance analysis above
+        if ~isOccluded && isnan(locations.locationsRaw(frameInds(i),2,pawSequence(j)))
             
             % get unary potentials
             xDistances = abs(locationsBot(frameInds(i),1,pawSequence(j)) - potentialLocationsTop(frameInds(i)).x);

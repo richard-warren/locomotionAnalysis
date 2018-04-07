@@ -1,6 +1,6 @@
 function bestLabels = getBestLabels(scores, objectNum, isOccluded)
 
-% !!! need to document
+% given the scores for each potential location being assigned to each paw, finds the set of labels that maximizes the overall score for the frame
 
 
 sequences = perms(1:objectNum);

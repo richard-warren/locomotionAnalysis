@@ -30,7 +30,7 @@ trialVels(end) = nan; % !!! this is a hack because last trial always read zero v
 
 width = dims(2)*cols;
 rows = floor( (width*aspectRatio) / dims(1));
-trials = sort(randperm(length(contactTimes)-1, rows*cols));
+trials = randperm(length(contactTimes)-1, rows*cols);
 minVel = min(trialVels(trials));
 maxVel = max(trialVels(trials));
 

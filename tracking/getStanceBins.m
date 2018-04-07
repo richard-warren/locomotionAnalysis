@@ -160,6 +160,10 @@ for i = 1:4
     end
 end
 
+
+stanceBins(isnan(trialIdentities), :) = nan; % make sure nan values appear where things haven't been analyzed
+% !!! should really determine swing bins here as well, and make sure to set as nan any swings or stances that border the edge of a trial...
+
 close(w)
 
 

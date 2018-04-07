@@ -3,7 +3,7 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-thingsToAnalyze = {'potBot'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
+thingsToAnalyze = {'top'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
 minVel = .4;
 showTracking = true;
 
@@ -72,8 +72,8 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '180125_001';
-view = 'Bot';
+session = '180122_001';
+view = 'Top';
 obsPrePostTop = [.2 .1];
 minVel = .4; velPrePost = [.08 .08];
 
@@ -96,10 +96,11 @@ switch view
         frameDelay = .1;
         paws = [2 3];
         load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
-            'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes')
-        obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
+            'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'nosePos')
+        obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+        
         frameIndsTop = getTrialFrameInds(minVel, obsPrePostTop, velPrePost, frameTimeStamps,...
-            wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
+            wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes);
 
         correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts, paws);
 end
