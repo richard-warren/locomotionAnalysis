@@ -114,9 +114,10 @@ function changeFrames(~,~)
         case 100
             pause(.001);
             paused = true;
+            trial = locations.trialIdentities(frameInds(currentFrameInd));
             locations.locationsRaw(frameInds(currentFrameInd), :, lastCorrectedPaw) = nan;
             locations.locationCorrections(frameInds(currentFrameInd), :, lastCorrectedPaw) = nan;
-            mergeCorrectionsAndInterpolate(locations.trialIdentities(frameInds(currentFrameInd)), lastCorrectedPaw);
+            mergeCorrectionsAndInterpolate(trial, paw);
             updateFrame(0);
             
         

@@ -27,25 +27,6 @@ vidDelay = .001;
 getObsContacts(session, vidDelay)
 
 
-%% recompute wisk contact times using previous threshold
-
-sessions = {'180122_001', '180122_002', '180122_003', ...
-            '180123_001', '180123_002', '180123_003', ...
-            '180124_001', '180124_002', '180124_003', ...
-            '180125_001', '180125_002', '180125_003'};
-
-for i = 1:length(sessions)
-    
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData'], 'contactPositions', 'contactTimes')
-    disp(any(isnan(contactTimes) | isnan(contactPositions)))
-%     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData'], 'thresh')
-%     getWiskContactTimes({sessions{i}}, thresh, false)
-    
-end
-
-
-
-
 %% getLocations on single session
 
 session = '180122_000';
@@ -93,7 +74,7 @@ setTrialExclusion(session, trials);
 % settings
 session = '180122_001';
 view = 'Top';
-
+pawsTop = [2 3];
 
 outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view 'Corrected.mat'];
 if exist(outputFile, 'file')
@@ -112,10 +93,14 @@ switch view
         correctTracking(outputFile, vid, locations, frameInds, frameDelay, anchorPts);
     case 'Top'
         frameDelay = .1;
+        buffer = 5; % how many frames to include before and after first control and last mod step
         load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stepSegmentation.mat'], ...
-            'controlStepIdentities', 'modifiedStepIdentities')
-        frameIndsTop = getTrialIndsFromStepIdentities(controlStepIdentities, modifiedStepIdentities);
-        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts);
+            'stanceBins', 'controlStepIdentities', 'modifiedStepIdentities')
+        load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+            'frameTimeStamps', 'obsOnTimes', 'obsOffTimes')
+        frameIndsTop = getTrialIndsFromStepIdentities(controlStepIdentities, modifiedStepIdentities, ...
+            frameTimeStamps, obsOnTimes, obsOffTimes, pawsTop, buffer);
+        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts, stanceBins);
 end
 
 %% get avg trial stats
@@ -167,35 +152,6 @@ for imNum = randperm(height(features), 20)
     
     pause(2)
 end
-
-%% get getFrameInds
-
-session = '180122_000';
-
-obsCenter = .382; % where obs is at center of wheel
-obsPrePostBot = [.55 .25];
-obsPrePostTop = [.2 .12];
-velPrePost = [.08 .08]; % compute trials velocity between these obstacle positions
-anchorPtsBot = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH // each entry is x,y pair measured from top left corner
-
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
-    'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'mToPixMapping', 'targetFs')
-load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsBot.mat'], 'potentialLocationsBot')
-load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
-obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes);
-
-[frameIndsBot, trialIdentities] = getTrialFrameInds(minVel, obsCenter, obsPrePostBot, velPrePost, frameTimeStamps,...
-    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
-frameIndsTop = getTrialFrameInds(minVel, obsCenter, obsPrePostTop, velPrePost, frameTimeStamps,...
-    wheelPositions, wheelTimes, obsPositions, obsTimes, obsOnTimes, obsOffTimes);
-
-
-vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
-showLocations(vid, frameIndsBot, potentialLocationsBot, ...
-    locations.locationsCorrected, locations.trialIdentities, 1, .025, anchorPtsBot, hsv(4));
-
-
-
 
 
 
