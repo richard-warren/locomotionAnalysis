@@ -242,12 +242,12 @@ blackenFig;
 %% delta length probability density functions
 
 % settings
-yLims = [0 .07];
+yLims = [0 .1];
 xLims = [-.06 .06];
 xRes = .001;
 colors = winter(2);
 controlColor = repmat(.15, 1, 3);
-gausKernelSig = .005; % (m)
+gausKernelSig = .0025; % (m)
 transparency = .4;
 
 % initializations
