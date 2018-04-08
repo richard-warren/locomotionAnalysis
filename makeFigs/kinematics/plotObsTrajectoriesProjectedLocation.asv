@@ -16,13 +16,14 @@ load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
 data = data([data.oneSwingOneStance]);
 binNum = 5;
 
-% get bins
-binVar = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to obs
-% binEdges = prctile(predictedDistToObs, linspace(0,100,binNum+1));
-binEdges = linspace(min(binVar), max(binVar), binNum+1);
-bins = discretize(binVar, binEdges);
+% get prediceted distance to obs bins
+predictedDistToObs = [data.swingStartDistance] + [data.predictedLengths];
+binEdges = prctile(predictedDistToObs, linspace(0,100,binNum+1));
+bins = discretize(predictedDistToObs, binEdges);
+
+% create speed and phase labels
 binLabels = cell(1,binNum);
-for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
+for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(predictedDistToObs(bins==i))); end
 
 
 %% sperm plots
@@ -30,7 +31,7 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
 % settings
 yLims = [-.1 .1];
 xLims = [-.02 .02];
-tracesPerPlot = 10;
+tracesPerPlot = 15;
 colors = winter(2);
 controlColor = repmat(.5, 1, 3);
 linWid = 4;
@@ -119,7 +120,6 @@ line([xLims(2)-scaleBarSize xLims(2)], repmat(yLims(1),1,2), 'linewidth', 3, 'co
 text(xLims(2)-.5*scaleBarSize, yLims(1)+.005, sprintf('%i mm', scaleBarSize*1000), 'horizontalalignment', 'center')
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\trialKinematics.png']);
-savefig([getenv('OBSDATADIR') 'figures\trialKinematics.fig'])
 blackenFig;
 
 
@@ -203,11 +203,9 @@ for h = 1:binNum
     end
 
     % plot mod right, two step
-    if ~isempty(rightModTwoStepLocations)
-        x = squeeze(rightModTwoStepLocations(:,1,:));
-        y = squeeze(rightModTwoStepLocations(:,2,:));
-        plot(mean(y,1), mean(x,1), 'color', colors(1,:), 'linewidth', linWid + -oneTwoRatio*linWid); hold on;
-    end
+    x = squeeze(rightModTwoStepLocations(:,1,:));
+    y = squeeze(rightModTwoStepLocations(:,2,:));
+    plot(mean(y,1), mean(x,1), 'color', colors(1,:), 'linewidth', linWid + -oneTwoRatio*linWid); hold on;
 
     % mark avg position of obsPos
     if any(rightModOneStepBins)
@@ -215,12 +213,9 @@ for h = 1:binNum
         scatter(mean(squeeze(rightModOneStepLocations(:,2,oneStepObsPos))), ...
                 mean(squeeze(rightModOneStepLocations(:,1,oneStepObsPos))), circSize + oneTwoRatio*circSize, colors(2,:), 'filled'); hold on
     end
-    
-    if any(rightModTwoStepBins)
-        twoStepObsPos = round(nanmean(obsPosIndInterps(rightModTwoStepBins)));
-        scatter(mean(squeeze(rightModTwoStepLocations(:,2,twoStepObsPos))), ...
-                mean(squeeze(rightModTwoStepLocations(:,1,twoStepObsPos))), circSize + -oneTwoRatio*circSize, colors(1,:), 'filled'); hold on
-    end
+    twoStepObsPos = round(nanmean(obsPosIndInterps(rightModTwoStepBins)));
+    scatter(mean(squeeze(rightModTwoStepLocations(:,2,twoStepObsPos))), ...
+            mean(squeeze(rightModTwoStepLocations(:,1,twoStepObsPos))), circSize + -oneTwoRatio*circSize, colors(1,:), 'filled'); hold on
 
 
 
@@ -236,7 +231,6 @@ line([xLims(2)-scaleBarSize xLims(2)], repmat(yLims(1),1,2), 'linewidth', 3, 'co
 text(xLims(2)-.5*scaleBarSize, yLims(1)+.005, sprintf('%i mm', scaleBarSize*1000), 'horizontalalignment', 'center')
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\meanKinematics.png']);
-savefig([getenv('OBSDATADIR') 'figures\meanKinematics.fig']);
 blackenFig;
 
 %% delta length probability density functions
@@ -248,12 +242,13 @@ xRes = .001;
 colors = winter(2);
 controlColor = repmat(.15, 1, 3);
 gausKernelSig = .005; % (m)
-transparency = .4;
 
 % initializations
 deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths];
-deltaControlLengths = cellfun(@(x) x(2,3), {data.controlSwingLengths}) - [data.predictedControlLengths];
+deltaControlLengths = cellfun(@(x) x(2,3), {data.controlSwingLengths}) - [data.predictedLengths];
 numModSteps = cellfun(@(x) x(1,3), {data.modStepNum})';
+modifiedSwingLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths});
+controlSwingLengths = cellfun(@(x) x(1,3), {data.controlSwingLengths});
 
 kernel = arrayfun(@(x) (1/(gausKernelSig*sqrt(2*pi))) * exp(-.5*(x/gausKernelSig)^2), ...
     -gausKernelSig*5:xRes:gausKernelSig*5);
@@ -262,42 +257,36 @@ deltaBinCenters = min(min(deltaLengths)-2*gausKernelSig, xLims(1)) : xRes : max(
 deltaBinEdges = [deltaBinCenters deltaBinCenters(end)+xRes] - .5*xRes;
 
 
-close all
-figure('color', 'white', 'menubar', 'none', 'position', [150 400 300*binNum 250]);
+
+figure('color', 'white', 'menubar', 'none', 'position', [150 400 300*binNum 350]);
 
 for h = 1:binNum
 
-    ax = subaxis(1, binNum , h, 'marginleft', .01, 'marginright', .01, 'marginbottom', .2);
+    ax = subaxis(1, binNum , h, 'spacing', .02);
     binBins = (bins==h)';
     oneStepBins = binBins & numModSteps==1;
     twoStepBins = binBins & numModSteps==2;
     oneTwoRatio = sum(oneStepBins) / (sum(oneStepBins) + sum(twoStepBins));
 
-    % control histo
-    binCounts = histcounts(deltaControlLengths(binBins), deltaBinEdges);
-    histoConv = conv(binCounts, kernel, 'same');
-    histoConv = (histoConv/sum(histoConv));
-    shadedErrorBar(deltaBinCenters, histoConv, cat(1, histoConv, zeros(1,length(histoConv))), ...
-            'lineprops', {'linewidth', 3, 'color', controlColor}, ...
-            'patchSaturation', 1-transparency); hold on;
-        
     % one step histo
     if any(oneStepBins)
         binCounts = histcounts(deltaLengths(oneStepBins), deltaBinEdges);
         histoConv = conv(binCounts, kernel, 'same');
         histoConv = (histoConv/sum(histoConv)) * oneTwoRatio;
-        shadedErrorBar(deltaBinCenters, histoConv, cat(1, histoConv, zeros(1,length(histoConv))), ...
-            'lineprops', {'linewidth', 3, 'color', colors(2,:)}, ...
-            'patchSaturation', 1-transparency); hold on;
+        plot(deltaBinCenters, histoConv, 'color', colors(2,:), 'linewidth', 3); hold on;
     end
 
     % two step histo
     binCounts = histcounts(deltaLengths(twoStepBins), deltaBinEdges);
     histoConv = conv(binCounts, kernel, 'same');
     histoConv = (histoConv/sum(histoConv)) * (1-oneTwoRatio);
-    shadedErrorBar(deltaBinCenters, histoConv, cat(1, histoConv, zeros(1,length(histoConv))), ...
-            'lineprops', {'linewidth', 3, 'color', colors(1,:)}, ...
-            'patchSaturation', 1-transparency); hold on;
+    plot(deltaBinCenters, histoConv, 'color', colors(1,:), 'linewidth', 3);
+
+    % control histo
+    binCounts = histcounts(deltaLengths(twoStepBins), deltaBinEdges);
+    histoConv = conv(binCounts, kernel, 'same');
+    histoConv = (histoConv/sum(histoConv)) * (1-oneTwoRatio);
+    plot(deltaBinCenters, histoConv, 'color', colors(1,:), 'linewidth', 3);
 
     % set apearance
     set(ax, 'box', 'off', 'xlim', xLims, 'ylim', yLims, 'tickdir', 'out', 'xtick', [-abs(min(xLims))*.5 0 abs(min(xLims))*.5])
@@ -305,9 +294,7 @@ for h = 1:binNum
 end
 
 
-saveas(gcf, [getenv('OBSDATADIR') 'figures\deltaLengthHistograms.png']);
-savefig([getenv('OBSDATADIR') 'figures\deltaLengthHistograms.fig']);
-blackenFig
+saveas(gcf, [getenv('OBSDATADIR') 'figures\swingLengthHistograms.png']);
 
 
 %% swing length histograms
@@ -400,7 +387,7 @@ for i = 1:length(xGrid)
     
     % get data within bin
     xBinLims = [xGrid(max(1,i-windowShift)) xGrid(min(length(xGrid),i+windowShift))];
-    dataInds = find(binVar>=xBinLims(1) & binVar<=xBinLims(2));
+    dataInds = find(predictedDistToObs>=xBinLims(1) & predictedDistToObs<=xBinLims(2));
     deltaLengthsSub = deltaLengths(dataInds);
     
     binCounts = histogram(deltaLengthsSub, [yGrid yGrid(end)+dY] - .5*dY); % last argument changes bin centers to bin edges

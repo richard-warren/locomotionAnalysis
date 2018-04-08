@@ -89,7 +89,7 @@ anchorPts = {[0 0], [1 0], [1 1], [0 1]}; % LH, LF, RF, RH
 
 switch view
     case 'Bot'
-        frameDelay = .021;
+        frameDelay = .021;  
         correctTracking(outputFile, vid, locations, frameInds, frameDelay, anchorPts);
     case 'Top'
         frameDelay = .1;

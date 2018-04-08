@@ -290,11 +290,16 @@ for i = 1:length(mice)
     % make linear model
     models{i} = fitlm(cat(1,prevLengths,vel)', lengths, 'Linear', 'RobustOpts', 'on');
     
-    % generate predictions
+    % generate control length predictions (this is used to validate method)
+    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
+    [data(mouseBins).predictedControlLengths] = predictedLengths{:};
+    
+    % generate mod length predictions
     prevLengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});
     vel = cellfun(@(x) x(1,3), {data(mouseBins).modifiedWheelVels});
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
     [data(mouseBins).predictedLengths] = predictedLengths{:};
+        
 end
 
 
