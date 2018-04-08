@@ -39,27 +39,25 @@ modifiedStepIdentities = nan(size(allSwingIdentities));
 for i = trials
     for j = 1:4
 
-        if ~isnan(contactTimes(i))
-            % find id of swing that crosses obs
-            overObsInd = find(frameTimeStamps>obsOnTimes(i) & ... 
-                              frameTimeStamps<obsOffTimes(i) & ...
-                              locations(:,1,j)>=obsPixPositions', 1, 'first');
-            swingOverObsIdentity = allSwingIdentities(overObsInd, j);
-            
-            % find id of first swing during or after obs contact with wisk
-            firstModifiedInd = find(~isnan(allSwingIdentities(:,j)) & frameTimeStamps>=contactTimes(i), 1, 'first');
-            firstModifiedIdentitiy = allSwingIdentities(firstModifiedInd, j);
+        % find id of swing that crosses obs
+        overObsInd = find(frameTimeStamps>obsOnTimes(i) & ... 
+                          frameTimeStamps<obsOffTimes(i) & ...
+                          locations(:,1,j)>=obsPixPositions', 1, 'first');
+        swingOverObsIdentity = allSwingIdentities(overObsInd, j);
 
-            modifiedBins = (allSwingIdentities(:,j) >= firstModifiedIdentitiy) & ...
-                           (allSwingIdentities(:,j) <= swingOverObsIdentity);
-            controlBins = (allSwingIdentities(:,j) >= (firstModifiedIdentitiy-controlSteps)) & ...
-                          (allSwingIdentities(:,j) < firstModifiedIdentitiy);
-            
-            steps = cumsum([0; diff(modifiedBins)==1]);
-            modifiedStepIdentities(modifiedBins, j) = steps(modifiedBins);
-            steps = cumsum([0; diff(controlBins)==1]);
-            controlStepIdentities(controlBins, j) = steps(controlBins);
-        end
+        % find id of first swing during or after obs contact with wisk
+        firstModifiedInd = find(~isnan(allSwingIdentities(:,j)) & frameTimeStamps>=contactTimes(i), 1, 'first');
+        firstModifiedIdentitiy = allSwingIdentities(firstModifiedInd, j);
+
+        modifiedBins = (allSwingIdentities(:,j) >= firstModifiedIdentitiy) & ...
+                       (allSwingIdentities(:,j) <= swingOverObsIdentity);
+        controlBins = (allSwingIdentities(:,j) >= (firstModifiedIdentitiy-controlSteps)) & ...
+                      (allSwingIdentities(:,j) < firstModifiedIdentitiy);
+
+        steps = cumsum([0; diff(modifiedBins)==1]);
+        modifiedStepIdentities(modifiedBins, j) = steps(modifiedBins);
+        steps = cumsum([0; diff(controlBins)==1]);
+        controlStepIdentities(controlBins, j) = steps(controlBins);
         
     end
 end

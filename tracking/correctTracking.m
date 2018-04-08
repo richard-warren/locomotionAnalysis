@@ -1,4 +1,4 @@
-function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, paws)
+function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts)
 
 
 % settings

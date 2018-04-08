@@ -299,7 +299,6 @@ yLims = [-.03 .04];
 xGridLims = [-.03 .02];
 dX = .001;
 xWindowSize = .008;
-yLims = [-.03 .08];
 dY = .001;
 yKernelSig = .008;
 probColor = [0 .7 1];

@@ -93,7 +93,7 @@ setTrialExclusion(session, trials);
 % settings
 session = '180122_001';
 view = 'Top';
-
+minVel = .4; velPrePost = [.08 .08];
 
 outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view 'Corrected.mat'];
 if exist(outputFile, 'file')
@@ -112,10 +112,13 @@ switch view
         correctTracking(outputFile, vid, locations, frameInds, frameDelay, anchorPts);
     case 'Top'
         frameDelay = .1;
-        load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stepSegmentation.mat'], ...
-            'controlStepIdentities', 'modifiedStepIdentities')
-        frameIndsTop = getTrialIndsFromStepIdentities(controlStepIdentities, modifiedStepIdentities);
-        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts);
+        load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPixPositions', 'frameTimeStamps',...
+            'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'obsOnTimes', 'obsOffTimes', 'nosePos')
+        
+        
+        
+
+        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts, p);
 end
 
 %% get avg trial stats

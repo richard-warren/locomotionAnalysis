@@ -87,7 +87,7 @@ if any(strcmp('stepSegmentation', steps))
     
     % initializations
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
-    load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactTimes.mat'], 'contactTimes')
+    load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes')
     locationsBot = locations.locationsCorrected;
     trialIdentities = locations.trialIdentities;
     fs = 250;

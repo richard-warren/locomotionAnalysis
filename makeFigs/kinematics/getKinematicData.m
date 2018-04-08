@@ -32,7 +32,7 @@ for i = 1:length(sessions)
         'stanceBins', 'controlStepIdentities', 'modifiedStepIdentities')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'isExcluded')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\velocityInfo.mat'], 'trialVels', 'minVel')
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], 'contactTimes', 'contactPositions')
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
     vel = getVelocity(wheelPositions, speedTime, targetFs);
     locations(:,2,:) = locations(:,2,:) - nosePos(2); % subtract midline from all y values
     
@@ -56,7 +56,7 @@ for i = 1:length(sessions)
             
             
             % GET TIME, OBS POSITION, AND SPEED AT MOMENT OF CONTACT
-            if isnan(contactPositions(j)) || isObsPosStatic
+            if isObsPosStatic
 
                 % set contact position as median of contact positiosn for session
                 contactPositions(j) = nanmedian(contactPositions);
@@ -82,7 +82,6 @@ for i = 1:length(sessions)
             % get trial data interpolated s.t. 0 is moment of wisk contact
             trialObsPixPositions = interp1(trialTimeStamps, obsPixPositions(trialBins), trialTimeStampsInterp);
 
-%             trialSwingIdentities = nan(sum(trialBins), size(swingIdentities,2));
             trialControlStepIds = nan(sum(trialBins), 4);
             trialModStepIds = nan(sum(trialBins), 4);
             trialLocations = nan(sum(trialBins), size(locations,2), size(locations,3));

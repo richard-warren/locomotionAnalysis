@@ -62,8 +62,25 @@ for i = 1:length(sessions)
     end
     
     
+    % replace all NaN entires with the time and position corresponding to the median position
+    nanInds = find(isnan(contactPositions));
+
+    if ~isempty(nanInds)
+        medianPosition = nanmedian(contactPositions);
+
+        for j = nanInds
+
+            contactPositions(j) = medianPosition;
+
+            % interpolate to find time at which obsPosition==contactPosition
+            % note: this is done by finding the ind before and after threshold crossing, then interpolating between these two sample points!
+            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
+            contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+        end
+    end
+
     % save results
-    save([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], ...
+    save([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], ...
         'contactPositions', 'contactTimes', 'preContactFrames', 'contactFrames', 'thresh');
     
     
@@ -91,6 +108,9 @@ for i = 1:length(sessions)
     end
     fprintf('%s: getWiskContactTimes completed\n', sessions{i})
 end
+
+
+
 
 
 
