@@ -1,22 +1,18 @@
 function plotTrajectories(data, bins, binLabels, plotType)
 
 
-% yellow = [1 1 0];
-% pink = [1 0 1];
-% orange = [1 .5 0];
-% red = [1 .35 .35];
-blue = [.25 1 1];
-green = [.25 1 .25];
+
 
 % global settings
-colors = cat(1, blue, green);
+colors = [.25 1 1; .25 1 .25];
 controlColor = repmat(0, 1, 3);
 botPadding = .08;
 topPadding = .05;
 histoHgt = .15;
+showPredictedLocations = true;
 
 % kinematic plot settings
-yLims = [-.12 .08];
+yLims = [-.1 .1];
 xLims = [-.02 .02];
 scaleBarSize = .01;
 circSize = 150;
@@ -33,6 +29,9 @@ transparency = .4;
 
 
 % initializations
+if showPredictedLocations
+     predictedLocations = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to obs
+end
 binNum = max(bins);
 deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths];
 deltaControlLengths = cellfun(@(x) x(2,3), {data.controlSwingLengths}) - [data.predictedControlLengths];
@@ -108,7 +107,10 @@ if strcmp(plotType, 'trials')
     for h = 1:binNum
 
         subaxis(2, binNum, h, 'marginleft', .01, 'marginright', .01);
-        line(xLims, [0 0], 'color', [0 0 0], 'linewidth', 3); hold on; % add line for obstacle
+        line(xLims, [0 0], 'color', [0 0 0], 'linewidth', 5); hold on; % add line for obstacle
+        if showPredictedLocations
+            line(xLims, repmat(mean(predictedLocations(bins==h)),1,2), 'color', [0 0 0], 'linewidth', 3, 'linestyle', ':'); hold on; % add line for obstacle
+        end
 
 
         % get inds for one and two step trials within bin
@@ -187,7 +189,10 @@ elseif strcmp(plotType, 'averages')
 
         % get subplot bins
         subaxis(2, binNum, h, 'marginleft', .01, 'marginright', .01);
-        line(xLims, [0 0], 'color', [0 0 0], 'linewidth', 3); hold on; % add line for obstacle
+        line(xLims, [0 0], 'color', [0 0 0], 'linewidth', 5); hold on; % add line for obstacle
+        if showPredictedLocations
+            line(xLims, repmat(mean(predictedLocations(bins==h)),1,2), 'color', [0 0 0], 'linewidth', 3, 'linestyle', ':'); hold on; % add line for obstacle
+        end
         
         % get subplot bins for different conditions
         binBins = (bins==h)';
@@ -230,17 +235,17 @@ elseif strcmp(plotType, 'averages')
         xOffsetRight = mean(squeeze(modLocations(:,1,1)));
 
 
-        % plot control left
-        x = squeeze(leftControlLocations(:,1,:));
-        x = x - (mean(x(:,1)) - xOffsetLeft);
-        y = squeeze(leftControlLocations(:,2,:));
-        plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', lineWid); hold on;
-
-        % plot control right
-        x = squeeze(rightControlLocations(:,1,:));
-        x = x - (mean(x(:,1)) - xOffsetRight);
-        y = squeeze(rightControlLocations(:,2,:));
-        plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', lineWid); hold on;
+%         % plot control left
+%         x = squeeze(leftControlLocations(:,1,:));
+%         x = x - (mean(x(:,1)) - xOffsetLeft);
+%         y = squeeze(leftControlLocations(:,2,:));
+%         plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', lineWid); hold on;
+% 
+%         % plot control right
+%         x = squeeze(rightControlLocations(:,1,:));
+%         x = x - (mean(x(:,1)) - xOffsetRight);
+%         y = squeeze(rightControlLocations(:,2,:));
+%         plot(mean(y,1), mean(x,1), 'color', controlColor, 'linewidth', lineWid); hold on;
 
         % plot mod left
         x = squeeze(leftModLocations(:,1,:));
@@ -290,8 +295,8 @@ end
 
 
 % add scale bar
-line([xLims(2)-scaleBarSize xLims(2)], repmat(yLims(2),1,2)-.04, 'linewidth', 3, 'color', 'black')
-text(xLims(2)-.5*scaleBarSize, yLims(2)-.04+.005, sprintf('%i mm', scaleBarSize*1000), 'horizontalalignment', 'center')
+line([xLims(2)-scaleBarSize xLims(2)], repmat(yLims(2),1,2)-.02, 'linewidth', 3, 'color', 'black')
+text(xLims(2)-.5*scaleBarSize, yLims(2)-.02+.005, sprintf('%i mm', scaleBarSize*1000), 'horizontalalignment', 'center')
 
 saveas(gcf, [getenv('OBSDATADIR') 'figures\trialKinematics.png']);
 savefig([getenv('OBSDATADIR') 'figures\trialKinematics.fig'])

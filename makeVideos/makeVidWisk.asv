@@ -15,10 +15,9 @@ border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 obsBotThickness = 15;
 contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and 255
-
 includeWebcam = false;
 showPawTouches = true;
-showTrialInfo = false;
+showTrialInfo = true;
 showWiskTouches = true;
 
 
@@ -31,9 +30,8 @@ vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']);
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsPixPositions',...
                                             'wheelPositions', 'wheelTimes',...
                                             'obsOnTimes', 'obsOffTimes',...
-                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
+                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps',...
                                             'touchSig', 'touchSigTimes', 'nosePos');
-load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes');
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
 
@@ -139,10 +137,7 @@ for i = trials
                 
                 frameWisk = repmat(frameWisk,1,1,3);
                 if showWiskTouches
-                    if frameTimeStampsWisk(wiskFrameInd)>=contactTimes(i) && ...
-                            obsPixPositions(frameInds(j))>=xWiskPos % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
-                        frameWisk(:,:,3) = frameWisk(:,:,3) * .2;
-                    end
+                    frameWisk
                 end
                 
                 % incorporate into frame
