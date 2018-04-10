@@ -1,24 +1,21 @@
-
+function plotReactionTimes(data)
 
 % settings
-sessions = {'180122_001', '180122_002', '180122_003', ...
-            '180123_001', '180123_002', '180123_003', ...
-            '180124_001', '180124_002', '180124_003', ...
-            '180125_001', '180125_002', '180125_003'};
 neighborNum = 40; % how many similar trials to use to construct control distribution
 dt = .004; % 1/fps of camera
-dtInterp = .001;
+xlims = [-10 80]; % (ms)
+ylims = [-20 30];
+colors = [.25 1 1; .25 1 .25];
+
+% dtInterp = .001;
 
 
 % initializations
-data = getKinematicData(sessions);
-tic; save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data'); toc;
-data = data([data.oneSwingOneStance]);
 swingMaxSmps = size(data(1).modifiedLocations{1},3); % inherits max samples for swing locations from getKinematicData
 times = linspace(-swingMaxSmps*dt, swingMaxSmps*dt, swingMaxSmps*2+1);
-timesInterp = times(1):dtInterp:times(end);
+% timesInterp = times(1):dtInterp:times(end);
 
-%%
+
 
 
 controlVels1 = cellfun(@(x) x(1,3), {data.controlWheelVels});
@@ -88,12 +85,7 @@ modDifsX = squeeze(modDifs(:,1,:));
 % modDifsXInterp = interpWithNans(modDifsX, times, timesInterp, 'pchip');
 
 
-% plot mean difs
-xlims = [-10 100];
-ylims = [-20 30];
-colors = winter(2);
-
-close all; figure('color', 'white', 'menubar', 'none', 'position', [680   215   528   763]);
+figure('color', 'white', 'menubar', 'none', 'position', [680   215   528   763], 'InvertHardcopy', 'off');
 numModSteps = reshape([data.modStepNum],4,length(data))';
 fcns = {@(x) nanstd(x)/sqrt(size(x,1)), @(x) nanstd(x)};
 
@@ -118,54 +110,54 @@ end
 saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimes.png']);
 
 
-%% plot single trial dif from control population
+% % plot single trial dif from control population
+% 
+% rows = 4;
+% cols = 3;
+% percentiles = [5 95];
+% trialInds = randperm(length(data), (rows*cols));
+% xlims = [-.1 .2];
+% 
+% close all; figure('color', 'white');
+% 
+% for i = 1:(rows*cols)
+%     subaxis(rows, cols, i, 'spacing', .02, 'margin', .08, 'padding', 0)
+%     
+%     if numModSteps(trialInds(i),3)==1; colorInd=2; else; colorInd=1; end
+%     plot(times, squeeze(modLocations(trialInds(i),1,:)), 'color', colors(colorInd,:), 'linewidth', 3); hold on;
+%     
+%     controlMean = nanmean(squeeze(controlLocations(trialInds(i),1,:,:)), 2)';
+%     controlErrs = prctile(squeeze(controlLocations(trialInds(i),1,:,:))', percentiles, 1);
+%     controlErrs = abs(controlErrs - repmat(controlMean,2,1));
+%     shadedErrorBar(times, controlMean, controlErrs, 'lineprops', {'linewidth', 3, 'color', [0 0 0]});
+%     
+%     set(gca, 'box', 'off', 'ytick', [], 'xtick', [], 'xcolor', 'white', 'ycolor', 'white', 'xlim', xlims);
+%     line([0 0], get(gca,'ylim'), 'color', [0 0 0])
+%     
+% end
+% 
+% pimpFig
+% 
+% saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimesTrials.png']);
 
-rows = 4;
-cols = 3;
-percentiles = [5 95];
-trialInds = randperm(length(data), (rows*cols));
-xlims = [-.1 .2];
 
-close all; figure('color', 'white');
-
-for i = 1:(rows*cols)
-    subaxis(rows, cols, i, 'spacing', .02, 'margin', .08, 'padding', 0)
-    
-    if numModSteps(trialInds(i),3)==1; colorInd=2; else; colorInd=1; end
-    plot(times, squeeze(modLocations(trialInds(i),1,:)), 'color', colors(colorInd,:), 'linewidth', 3); hold on;
-    
-    controlMean = nanmean(squeeze(controlLocations(trialInds(i),1,:,:)), 2)';
-    controlErrs = prctile(squeeze(controlLocations(trialInds(i),1,:,:))', percentiles, 1);
-    controlErrs = abs(controlErrs - repmat(controlMean,2,1));
-    shadedErrorBar(times, controlMean, controlErrs, 'lineprops', {'linewidth', 3, 'color', [0 0 0]});
-    
-    set(gca, 'box', 'off', 'ytick', [], 'xtick', [], 'xcolor', 'white', 'ycolor', 'white', 'xlim', xlims);
-    line([0 0], get(gca,'ylim'), 'color', [0 0 0])
-    
-end
-
-pimpFig
-
-saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimesTrials.png']);
-
-
-%% find and plot latency distributions
-
-latencies = 1:length(data);
-
-for i = 1:length(data)
-    
-    modTrial = squeeze(modLocations(i,1,:));
-    controlErrs = prctile(squeeze(controlLocations(i,1,:,:))', percentiles, 1);
-    firstDeviatedInd = find(modTrial<controlErrs(1,:)' | modTrial>controlErrs(2,:)', 1, 'first');
-    if ~isempty(firstDeviatedInd)
-        latencies(i) = times(firstDeviatedInd);
-    else
-        latencies(i) = nan;
-    end
-end
-
-figure; histogram(latencies(latencies>0));
+% % find and plot latency distributions
+% 
+% latencies = 1:length(data);
+% 
+% for i = 1:length(data)
+%     
+%     modTrial = squeeze(modLocations(i,1,:));
+%     controlErrs = prctile(squeeze(controlLocations(i,1,:,:))', percentiles, 1);
+%     firstDeviatedInd = find(modTrial<controlErrs(1,:)' | modTrial>controlErrs(2,:)', 1, 'first');
+%     if ~isempty(firstDeviatedInd)
+%         latencies(i) = times(firstDeviatedInd);
+%     else
+%         latencies(i) = nan;
+%     end
+% end
+% 
+% figure; histogram(latencies(latencies>0));
 
 
 

@@ -140,7 +140,7 @@ if any(strcmp('top', steps))
     % initializations
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocationsTop.mat'], 'potentialLocationsTop')
     load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
-    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stanceBins.mat'], 'stanceBins')
+    load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stepSegmentation.mat'], 'stanceBins')
 
     % fix x alignment for bottom view
     locationsBot = locations.locationsCorrected;

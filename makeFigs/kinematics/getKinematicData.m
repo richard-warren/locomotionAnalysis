@@ -30,7 +30,7 @@ for i = 1:length(sessions)
     locations = locations.locationsCorrected;
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\stepSegmentation.mat'], ...
         'stanceBins', 'controlStepIdentities', 'modifiedStepIdentities')
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'isExcluded')
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\isExcluded.mat'], 'excludedTrials')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\velocityInfo.mat'], 'trialVels', 'minVel')
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
     vel = getVelocity(wheelPositions, speedTime, targetFs);
@@ -48,8 +48,8 @@ for i = 1:length(sessions)
         % only analyze trials that have kinematic data (no nans in locations), are not excluded, and meet velocity criterion
         trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
         
-        if ~any(isnan(reshape(locations(trialBins,:,:), 1, []))) ...
-                && ~any(isExcluded(trialBins)) ...
+        if ~any(isnan(reshape(locations(trialBins,:,:), 1, []))) ... % !!! why do i need to check that there are no NaN values...
+                && ~ismember(j, excludedTrials) ...
                 && trialVels(j)>=minVel
             
             

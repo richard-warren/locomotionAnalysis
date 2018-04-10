@@ -3,19 +3,19 @@
 
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 %%
-thingsToAnalyze = {'stepSegmentation'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
+thingsToAnalyze = {'potTop', 'top'}; % which steps of the analysis to perform (the word 'steps' is very misleading, lol)
 minVel = .4;
-showTracking = true;
+showTracking = false;
 
-for session = 8:length(sessionDirs)
+for session = 3:length(sessionDirs)
     
     % get locations
     nameInd = find(sessionDirs{session}=='\',1,'last');
-    try
+%     try
         getLocations(sessionDirs{session}(nameInd+1:end), thingsToAnalyze, minVel, showTracking);
-    catch
-        fprintf('FAILED TO ANALYZE %s\n', sessionDirs{session}(nameInd+1:end));
-    end
+%     catch
+%         fprintf('FAILED TO ANALYZE %s\n', sessionDirs{session}(nameInd+1:end));
+%     end
     
 end
 
@@ -39,9 +39,9 @@ getLocations(session, thingsToAnalyze, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180122_002';
-view = 'Bot';
-showCorrected = 1;
+session = '180122_001';
+view = 'Top';
+showCorrected = 0;
 frameDelay = .01;
 
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\potentialLocations' view '.mat'])
@@ -63,8 +63,8 @@ showLocations(vid, find(locations.isAnalyzed), eval(['potentialLocations' view])
 
 %% exclude trials
 
-session = '180225_002';
-trials = [79];
+session = '180125_003';
+trials = [32 34];
 
 setTrialExclusion(session, trials);
 
@@ -75,6 +75,7 @@ setTrialExclusion(session, trials);
 session = '180122_001';
 view = 'Top';
 pawsTop = [2 3];
+pawsToShow = [1 2 3 4];
 
 outputFile = [getenv('OBSDATADIR') 'sessions\' session '\tracking\locations' view 'Corrected.mat'];
 if exist(outputFile, 'file')
@@ -100,7 +101,7 @@ switch view
             'frameTimeStamps', 'obsOnTimes', 'obsOffTimes')
         frameIndsTop = getTrialIndsFromStepIdentities(controlStepIdentities, modifiedStepIdentities, ...
             frameTimeStamps, obsOnTimes, obsOffTimes, pawsTop, buffer);
-        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts, stanceBins);
+        correctTracking(outputFile, vid, locations, frameIndsTop, frameDelay, anchorPts, stanceBins, pawsToShow);
 end
 
 %% get avg trial stats

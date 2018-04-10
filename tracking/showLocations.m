@@ -60,7 +60,7 @@ close(fig)
 % keypress controls
 function changeFrames(~,~)
     
-    key = double(get(fig, 'currentcharacter'))
+    key = double(get(fig, 'currentcharacter'));
     
     if ~isempty(key) && isnumeric(key)
         

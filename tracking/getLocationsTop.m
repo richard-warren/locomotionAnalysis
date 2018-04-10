@@ -36,90 +36,90 @@ end
 
 
 % iterate through all frameInds
-frameInds = find([potentialLocationsTop.isAnalyzed]);
-
-for i = 1:length(frameInds)
-    
-    % sort paws from closest to furthest away from camera
-    ys = squeeze(locationsBot(frameInds(i),2,:))';
-    [~, pawSequence] = sort(ys, 'descend');
-    if any(isnan(ys))
-        nans = sum(isnan(ys));
-        pawSequence = [pawSequence(1+nans:end) 1:nans];
-    end
-    alreadyTaken = false(length(potentialLocationsTop(frameInds(i)).x), 1);
-    scores = nan(4, length(potentialLocationsTop(frameInds(i)).x));
-    
-    
-    for j = 1:length(pawSequence)
-        
-        % check if paw is occluded
-        isOccluded = any(abs(locationsBot(frameInds(i),1,pawSequence(j)) - locationsBot(frameInds(i),1,:)) < xOccludeBuffer &...
-            (locationsBot(frameInds(i),2,:) > locationsBot(frameInds(i),2,pawSequence(j))));
-        
-        % only conduct analysis if paw is not occluded and if location has not been determined by stance analysis above
-        if ~isOccluded && isnan(locations.locationsRaw(frameInds(i),2,pawSequence(j)))
-            
-            % get unary potentials
-            xDistances = abs(locationsBot(frameInds(i),1,pawSequence(j)) - potentialLocationsTop(frameInds(i)).x);
-            isTooFar = xDistances > maxXDistance;
-
-            unaries = xDistances;
-            unaries(isTooFar) = maxXDistance;
-            unaries = (maxXDistance - unaries) / maxXDistance;
-            unaries(isnan(unaries)) = 0;
-
-
-            
-            % get pairwise potentials
-
-            % find last ind with detected paw
-            lastInd = 1;
-            for k = fliplr(1:i-1) % find last ind with detected frame
-                if ~isnan(locations.locationsRaw(frameInds(k),1,pawSequence(j)))
-                    lastInd = k;
-                    break;
-                end
-            end
-
-            dx = locations.locationsRaw(frameInds(lastInd),1,pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
-            dz = locations.locationsRaw(frameInds(lastInd),2,pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
-            dt = frameTimeStamps(frameInds(i)) - frameTimeStamps(frameInds(lastInd));
-            vels = sqrt(dx.^2 + dz.^2) / dt;
-            isTooFast = vels > maxVel;
-
-            pairwise = vels;
-            pairwise(isTooFast) = maxVel;
-            pairwise = (maxVel - pairwise) / maxVel;
-            pairwise(isnan(pairwise)) = 0;
-            
-            
-            % get highness scores
-            wheelZs = wheelCenter(2) - round(sqrt(wheelRadius^2 - (potentialLocationsTop(frameInds(i)).x-wheelCenter(1)).^2)); % !!! should replace this with pre-computed lookup table
-            highness = wheelZs - potentialLocationsTop(frameInds(i)).z;
-            tooLow = highness<minHgt;
-            highness(highness>maxHgt) = maxHgt;
-            highness = highness / maxHgt;
-
-            
-            % compute scores
-            pawScores = (unaries * unaryWeight) + (pairwise * pairwiseWeight) + (highness * highnessWeight);
-            pawScores(isTooFar | isTooFast | alreadyTaken | tooLow) = 0;
-            scores(:, potentialLocationsTop(frameInds(i)).class==2) = 0; % remove potential locations not classified by cnn as a paw
-            scores(pawSequence(j), :) = pawScores;
-            
-
-            [maxScore, maxInd] = max(scores(pawSequence(j), :));
-
-            if maxScore>0
-                locations.locationsRaw(frameInds(i),1,pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
-                locations.locationsRaw(frameInds(i),1,pawSequence(j)) = locationsBot(frameInds(i),1,pawSequence(j));
-                locations.locationsRaw(frameInds(i),2,pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
-                alreadyTaken(maxInd) = true;
-            end
-        end
-    end
-end
+% frameInds = find([potentialLocationsTop.isAnalyzed]);
+% 
+% for i = 1:length(frameInds)
+%     
+%     % sort paws from closest to furthest away from camera
+%     ys = squeeze(locationsBot(frameInds(i),2,:))';
+%     [~, pawSequence] = sort(ys, 'descend');
+%     if any(isnan(ys))
+%         nans = sum(isnan(ys));
+%         pawSequence = [pawSequence(1+nans:end) 1:nans];
+%     end
+%     alreadyTaken = false(length(potentialLocationsTop(frameInds(i)).x), 1);
+%     scores = nan(4, length(potentialLocationsTop(frameInds(i)).x));
+%     
+%     
+%     for j = 1:length(pawSequence)
+%         
+%         % check if paw is occluded
+%         isOccluded = any(abs(locationsBot(frameInds(i),1,pawSequence(j)) - locationsBot(frameInds(i),1,:)) < xOccludeBuffer &...
+%             (locationsBot(frameInds(i),2,:) > locationsBot(frameInds(i),2,pawSequence(j))));
+%         
+%         % only conduct analysis if paw is not occluded and if location has not been determined by stance analysis above
+%         if ~isOccluded && isnan(locations.locationsRaw(frameInds(i),2,pawSequence(j)))
+%             
+%             % get unary potentials
+%             xDistances = abs(locationsBot(frameInds(i),1,pawSequence(j)) - potentialLocationsTop(frameInds(i)).x);
+%             isTooFar = xDistances > maxXDistance;
+% 
+%             unaries = xDistances;
+%             unaries(isTooFar) = maxXDistance;
+%             unaries = (maxXDistance - unaries) / maxXDistance;
+%             unaries(isnan(unaries)) = 0;
+% 
+% 
+%             
+%             % get pairwise potentials
+% 
+%             % find last ind with detected paw
+%             lastInd = 1;
+%             for k = fliplr(1:i-1) % find last ind with detected frame
+%                 if ~isnan(locations.locationsRaw(frameInds(k),1,pawSequence(j)))
+%                     lastInd = k;
+%                     break;
+%                 end
+%             end
+% 
+%             dx = locations.locationsRaw(frameInds(lastInd),1,pawSequence(j)) - potentialLocationsTop(frameInds(i)).x;
+%             dz = locations.locationsRaw(frameInds(lastInd),2,pawSequence(j)) - potentialLocationsTop(frameInds(i)).z;
+%             dt = frameTimeStamps(frameInds(i)) - frameTimeStamps(frameInds(lastInd));
+%             vels = sqrt(dx.^2 + dz.^2) / dt;
+%             isTooFast = vels > maxVel;
+% 
+%             pairwise = vels;
+%             pairwise(isTooFast) = maxVel;
+%             pairwise = (maxVel - pairwise) / maxVel;
+%             pairwise(isnan(pairwise)) = 0;
+%             
+%             
+%             % get highness scores
+%             wheelZs = wheelCenter(2) - round(sqrt(wheelRadius^2 - (potentialLocationsTop(frameInds(i)).x-wheelCenter(1)).^2)); % !!! should replace this with pre-computed lookup table
+%             highness = wheelZs - potentialLocationsTop(frameInds(i)).z;
+%             tooLow = highness<minHgt;
+%             highness(highness>maxHgt) = maxHgt;
+%             highness = highness / maxHgt;
+% 
+%             
+%             % compute scores
+%             pawScores = (unaries * unaryWeight) + (pairwise * pairwiseWeight) + (highness * highnessWeight);
+%             pawScores(isTooFar | isTooFast | alreadyTaken | tooLow) = 0;
+%             scores(:, potentialLocationsTop(frameInds(i)).class==2) = 0; % remove potential locations not classified by cnn as a paw
+%             scores(pawSequence(j), :) = pawScores;
+%             
+% 
+%             [maxScore, maxInd] = max(scores(pawSequence(j), :));
+% 
+%             if maxScore>0
+%                 locations.locationsRaw(frameInds(i),1,pawSequence(j)) = potentialLocationsTop(frameInds(i)).x(maxInd);
+%                 locations.locationsRaw(frameInds(i),1,pawSequence(j)) = locationsBot(frameInds(i),1,pawSequence(j));
+%                 locations.locationsRaw(frameInds(i),2,pawSequence(j)) = potentialLocationsTop(frameInds(i)).z(maxInd);
+%                 alreadyTaken(maxInd) = true;
+%             end
+%         end
+%     end
+% end
 
 
 % copy isAnalyzed and trialIdentities to locationsBot

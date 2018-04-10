@@ -1,4 +1,4 @@
-function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, stanceBins)
+function correctTracking(outputFile, vid, locations, frameInds, vidDelay, anchorPts, stanceBins, pawsToShow)
 
 
 % settings
@@ -9,6 +9,7 @@ maxCorrectionInterpolation = 20; % max number of frames that can be interpolated
 
 
 % initializations
+if ~exist('pawsToShow', 'var'); pawsToShow = 1:4; end
 pawPair = [4 3];
 playing = true;
 paused = false;
@@ -41,7 +42,7 @@ preview = image(sampleFrame, 'CDataMapping', 'scaled'); hold on;
 rawAxis = gca;
 set(rawAxis, 'visible', 'off', 'units', 'pixels',...
     'position', [0 0 vid.Width*vidSizeScaling vid.Height*vidSizeScaling]);
-circSizes = circSize * ones(1,length(anchorPts));
+circSizes = circSize * ones(1,length(pawsToShow));
 
 
 % % prepare lines showing x locations of bottom tracked paws
@@ -54,14 +55,14 @@ circSizes = circSize * ones(1,length(anchorPts));
 
 
 % prepare circles showing locationsRaw
-scatterRaw = scatter(rawAxis, zeros(1,length(anchorPts)), zeros(1,length(anchorPts)),...
-    circSizes, colors, 'linewidth', 2.5); hold on
+scatterRaw = scatter(rawAxis, zeros(1,length(pawsToShow)), zeros(1,length(pawsToShow)),...
+    circSizes, colors(pawsToShow,:), 'linewidth', 2.5); hold on
 
 
 % prepare colored circles in the corner to tell you which paw goes where
 hold on; scatter(rawAxis, [anchorPts{1}(1) anchorPts{2}(1) anchorPts{3}(1) anchorPts{4}(1)] .* (vid.Width-1) + 1,...
                  [anchorPts{1}(2) anchorPts{2}(2) anchorPts{3}(2) anchorPts{4}(2)] .* (vid.Height-1) + 1,...
-                 circSizes, colors, 'filled', 'linewidth', 3);     % show anchor points
+                 circSize * ones(1,length(anchorPts)), colors, 'filled', 'linewidth', 3);     % show anchor points
 
 % prepare impoints, draggable markers used to show / adjust tracking
 for i = 1:4
@@ -86,7 +87,7 @@ close(w)
 % keypress controls
 function changeFrames(~,~)
     
-    key = double(get(fig, 'currentcharacter'))
+    key = double(get(fig, 'currentcharacter'));
     
     switch key
         
@@ -239,7 +240,7 @@ function updateFrame(frameStep)
     frameLocations(correctedBins) = frameLocationCorrections(correctedBins);
     frameLocations = squeeze(frameLocations);
     
-    set(scatterRaw, 'XData', frameLocations(1,:), 'YData', frameLocations(2,:), 'visible', 'on');
+    set(scatterRaw, 'XData', frameLocations(1,pawsToShow), 'YData', frameLocations(2,pawsToShow), 'visible', 'on');
     if isStanceBins
         set(scatterRaw, 'CData', colors .* (~stanceBins(frameInds(currentFrameInd),:)'));
     end

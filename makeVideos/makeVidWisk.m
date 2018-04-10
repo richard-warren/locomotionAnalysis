@@ -9,6 +9,7 @@ function makeVidWisk(session, obsPosRange, playBackSpeed, trialProportion, trial
 
 
 % settings
+
 editedDir = [getenv('OBSDATADIR') 'editedVid\'];
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
@@ -36,7 +37,7 @@ if fps>maxFps
     vidSetting = 'Motion JPEG AVI';
 end
 
-vidWriter = VideoWriter(sprintf('%s%sspeed%.2f', editedDir, session, playBackSpeed), vidSetting);
+vidWriter = VideoWriter(sprintf('%sTEST%sspeed%.2f', editedDir, session, playBackSpeed), vidSetting);
 set(vidWriter, 'FrameRate', fps)
 if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
@@ -55,7 +56,6 @@ normedReal = zscore(wiskTouchSignal(realInds));
 wiskTouchSignal = nan(size(wiskTouchSignal));
 wiskTouchSignal(realInds) = normedReal;
 
-% obsPositions = fixObsPositions(obsPositions, obsTimes, obsOnTimes); % correct for drift in obstacle position readings
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
 % get position where wisk frame should overlap with runTop frame
@@ -67,8 +67,14 @@ frameWisk = rgb2gray(read(vidWisk, wiskInd));
 
 % edit video
 w = waitbar(0, 'editing video...');
+if trialProportion<=1
+    trials = 1 : round(1/trialProportion) : length(obsOnTimes);
+else
+    trials = trialProportion; % if trialProportion is a vector, just use these as the trials to use!
+end
 
-for i = 1 : round(1/trialProportion) : length(obsOnTimes)
+
+for i = trials
     
     % find trial indices
     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
