@@ -19,7 +19,7 @@ cmap = jet(cmapRes);
 dims = [diff(yLims)+1, diff(xLims)+1]; % height, width
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'frameTimeStamps');
-load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactTimes.mat'], 'contactTimes');
+load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes');
 load([getenv('OBSDATADIR') 'sessions\' session '\tracking\velocityInfo.mat'], 'trialVels');
 
 validInds = trialVels>velMin;
@@ -39,7 +39,7 @@ maxVel = max(trialVels(trials));
 
 % make histogram
 close all;
-figure('color', 'white', 'menubar', 'none')
+figure('color', 'white', 'menubar', 'none', 'position', [100 100 dims(2)*2 dims(1)*4]*.75, 'InvertHardcopy', 'off')
 kernel = arrayfun(@(x) (1/(gausKernelSig*sqrt(2*pi))) * exp(-.5*(x/gausKernelSig)^2), ...
     -gausKernelSig*5:velRes:gausKernelSig*5);
 kernel = kernel / sum(kernel);
@@ -56,11 +56,13 @@ histoPlot = plot(velBinCenters, histoConv, 'linewidth', 5);
 lineCmap = [uint8(jet(length(histoConv))*255) uint8(ones(length(histoConv),1))].'; pause(.01)
 set(histoPlot.Edge, 'ColorBinding', 'interpolated', 'ColorData', lineCmap)
 ax = gca;
-set(ax, 'box', 'off', 'xlim', [velBinCenters(1) velBinCenters(end)])
+set(ax, 'box', 'off', 'xlim', [velBinCenters(1) velBinCenters(end)], 'position', [0.05 .25 .9 .75], 'xcolor', [0 0 0]);
 ax.YAxis.Visible = 'off';
 xlabel('velocity (m/s)')
+blackenFig;
 savefig([getenv('OBSDATADIR') 'figures\bradyBunchVelHisto.fig'])
 saveas(gcf, [getenv('OBSDATADIR') 'figures\bradyBunchVelHisto.png'])
+print('-clipboard', '-dmeta')
 %%
 
 

@@ -111,7 +111,40 @@ trials = sort([61 121 161 21 81]);
 makeVidWisk('wiskAndObsTouchSensingExample', session, [-.1 .1], playBackSpeed, trials);
 
 
+%% PLOT CORRELATION BTWN PREV STEP LENGTH, SPEED, AND CURRENT STEP LENGTH
 
+% settings
+circSize = 8;
+circColor = [1 1 0];
+lineColor = [0 0 0];
+
+close all;
+figure('color', 'white', 'position', [2000 100 1280/3 720], 'InvertHardcopy', 'off', 'menubar', 'none');
+
+lengths = cellfun(@(x) x(2,3), {data.controlSwingLengths});
+prevLengths = cellfun(@(x) x(1,3), {data.controlSwingLengths});
+vels = cellfun(@(x) x(2,3), {data.controlWheelVels});
+
+
+
+subplot(2,1,1)
+scatter(vels, lengths, circSize, circColor, 'filled');
+xlabel('velocity (m)')
+ylabel('swing length (m)')
+fit = polyfit(vels, lengths, 1);
+line(get(gca,'xlim'), get(gca,'xlim')*fit(1)+fit(2), 'linewidth', 2, 'color', lineColor)
+set(gca, 'xlim', [.2 .8]);
+
+
+subplot(2,1,2)
+scatter(prevLengths, lengths, circSize, circColor, 'filled');
+xlabel('previous swing length (m)')
+ylabel('swing length (m)')
+fit = polyfit(prevLengths, lengths, 1);
+line(get(gca,'xlim'), get(gca,'xlim')*fit(1)+fit(2), 'linewidth', 2, 'color', lineColor)
+
+blackenFig
+print('-clipboard', '-dbitmap')
 
 
 

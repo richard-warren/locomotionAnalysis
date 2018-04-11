@@ -73,20 +73,72 @@ blackenFig; print('-clipboard', '-dmeta')
 
 % settings
 sessions = {'180226_002', '180228_002'};
+sessionConditions = {'wisk', 'noWisk'};
 obsPosRange = [-.1 .1];
 playBackSpeed = .1;
 trialNum = 5;
 trialProportion = .05;
+minVel = .3;
 
 % select trials
-isLightOn = zeros(1,length(obsOnTimes));
-for i =1:length(obsOnTimes)
-    if min(abs(obsOnTimes(i) - obsLightOnTimes)) < .5; isLightOn(i) = 1; end
+for i = 2
+    
+    % get light on/off inds
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'obsOnTimes', 'obsLightOnTimes');
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\tracking\velocityInfo.mat'], 'trialVels');
+    lightOnBins = zeros(1,length(obsOnTimes));
+    
+    for j =1:length(obsOnTimes)    
+        if min(abs(obsOnTimes(j) - obsLightOnTimes)) < .5; lightOnBins(j) = 1; end
+    end
+    
+    lightOnInds = find(lightOnBins & trialVels>minVel);
+    lightOnTrials = sort(lightOnInds(randperm(length(lightOnInds), trialNum)));
+    lightOffInds = find(~lightOnBins & trialVels>minVel);
+    lightOffTrials = sort(lightOffInds(randperm(length(lightOffInds), trialNum)));
+    
+    % make vids
+%     makeVidWisk([sessionConditions{i} 'LightOn'], sessions{i}, obsPosRange, playBackSpeed, lightOnTrials);
+    makeVidWisk([sessionConditions{i} 'LightOff'], sessions{i}, obsPosRange, playBackSpeed, lightOffTrials);
 end
 
+%% MAKE WISK TOUCH AND OBS TOUCH SAMPLE VID
+
+session = '171226_002';
+playBackSpeed = .1;
+trials = sort([61 121 161 21 81]);
+
+makeVidWisk('wiskAndObsTouchSensingExample', session, [-.1 .1], playBackSpeed, trials);
 
 
-makeVidWisk(sessions{1}, obsPosRange, playBackSpeed, trialProportion);
+%% PLOT CORRELATION BTWN PREV STEP LENGTH, SPEED, AND CURRENT STEP LENGTH
+
+% settings
+circSize = 10;
+
+close all; figure('color', 'white', 'position', [100 100 1280/3 720]);
+
+lengths = cellfun(@(x) x(2,3), {data.controlSwingLengths});
+prevLengths = cellfun(@(x) x(1,3), {data.controlSwingLengths});
+vels = cellfun(@(x) x(2,3), {data.controlWheelVels});
+
+
+
+subplot(2,1,1)
+scatter(vels, lengths, circSize, 'filled');
+xlabel('velocity (m)')
+ylabel('swing length (m)')
+fit = polyfit(vels, lengths, 1);
+line(get(gca,'xlim'), get(gca,'xlim')*fit)
+
+
+subplot(2,1,2)
+scatter(prevLengths, lengths, circSize, 'filled');
+xlabel('previous swing length (m)')
+ylabel('swing length (m)')
+fit = polyfit(vels, lengths, 1);
+
+% blackenFig
 
 
 

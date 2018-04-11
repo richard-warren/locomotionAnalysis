@@ -1,4 +1,4 @@
-% function makeSetupExampleVid
+function makeSetupExampleVid
 % this make a wide vid with top view plus drawing of obs off screen, intended to explain how obs appears and is controlled by the speed of the wheel
 % should use trials in which there is variability in wheel speed, and ideally some in which mouse moves both forwards and backwards
 
@@ -24,7 +24,7 @@ open(vidWriter);
 
 
 % iterate through trials
-for i = 1:length(trials)
+for i = 1%:length(trials)
     
     trialBins = frameTimeStamps>=(obsOnTimes(trials(i))+prePostTime(1)) & ...
                 frameTimeStamps<=(obsOffTimes(trials(i))+prePostTime(2));
@@ -50,6 +50,7 @@ for i = 1:length(trials)
         
         % write to video
         writeVideo(vidWriter, frame);
+%         if j==49; break; end
     end
 end
 
