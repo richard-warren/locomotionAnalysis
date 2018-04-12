@@ -17,6 +17,7 @@ obsPrePost = [-.5 .2]; % plot this much before and after the obs is at the mouse
 posRes = .001; % resolution of x axis, in meters
 yLims = [.1 .6]; % m/s
 conditionYAxes = {'(light)', '(no light)', '', '(light vs no light)'};
+adjustColorsForPresentation = true;
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -61,12 +62,26 @@ condColors = [cmap(end,:); cmap(1,:)];
 cmap = {cmap(sessionNum+1:end,:), cmap(1:sessionNum,:), winter(sessionNum)};
 
 
+if adjustColorsForPresentation
+    
+    colors = [1 .25 .25; .25 1 .25];
+    colorGradient = nan(sessionNum, 3);
+    
+    for i = 1:3
+        colorGradient(:,i) = linspace(colors(1,i), colors(2,i), sessionNum)';
+    end
+    
+    cmap{1} = colorGradient;
+    cmap{2} = colorGradient;
+    cmap{3} = colorGradient; % this replaces last colors with colors used in research in progress talk
+end
 
 
 % plot everything
 
 % prepare figure
-figure('name', 'speedOverTimeSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 200 1400 450], 'color', [1 1 1]);
+figure('name', 'speedOverTimeSummary', 'menubar', 'none', 'units', 'pixels', ...
+    'position', [500 200 1400 450], 'color', [1 1 1], 'inverthardcopy', 'off');
 fields = {'lightOnVel', 'lightOffVel', 'vel'};
 
 % plot light on and light off avoidance for each mouse

@@ -236,6 +236,7 @@ for i = 1:length(sessions)
             sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}),1,'first');
             data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
             data(dataInd).session = sessions{i};
+            data(dataInd).trial = j;
             
             data(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
             data(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact

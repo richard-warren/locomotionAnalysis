@@ -81,7 +81,7 @@ isSuccess = num2cell((([data.frontTouchingFrames] + [data.topTouchingFrames]) < 
 [data.isSuccess] = isSuccess{:};
 
 
-figure('color', 'white', 'menubar', 'none');
+figure('color', 'white', 'menubar', 'none', 'inverthardcopy', 'off', 'position', [100 100 1280/2 720]);
 
 
 mice = unique({data.mouse});

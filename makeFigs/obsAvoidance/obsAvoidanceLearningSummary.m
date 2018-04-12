@@ -16,6 +16,7 @@ noBrSessions = 3; % uses the most recent noBrSessions
 brSessions = 7; % uses the first (oldest) brSessions
 mouseScatSize = 25;
 meanScatSize = 100;
+adjustColorsForPresentation = true;
 
 % initializations
 xInds = 1:(noBrSessions + brSessions); % session inds for plots
@@ -100,14 +101,27 @@ end
 
 
 
-
+keyboard
+%%
+if adjustColorsForPresentation
+    twoColors = [1 .25 .25; .25 1 .25];
+    sessionColors = nan(noBrSessions+brSessions, 3);
+    for i = 1:3; sessionColors(:,i) = linspace(twoColors(1,i), twoColors(2,i), noBrSessions+brSessions)'; end
+    cmap{1}(:,:) = .15;
+    cmap{2}(:,:) = .15;
+    cmap{3}(:,:) = .15;
+end
 % ---------------
 % plot everything
 % ---------------
 
 % prepare figure
-figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', 'position', [500 100 600 950], 'color', [1 1 1]);
+close all
+figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', ...
+    'position', [2000 100 600 950], 'color', [1 1 1], 'inverthardcopy', 'off');
 fields = {'lightOnAvoidance', 'lightOffAvoidance', 'overallAvoidance'};
+
+
 
 % plot light on and light off avoidance for each mouse
 
@@ -141,8 +155,16 @@ for i = 1:3
     
     subplot(4,1,i)
     meanAvoidance = nanmean(squeeze(allAvoidanceData(:,:,i)),1);
-    plot(xInds, meanAvoidance, 'lineWidth', 3, 'color', get(gca, 'xcolor'))
-    scatter(xInds, meanAvoidance, meanScatSize, get(gca, 'xcolor'), 'filled')
+    
+    if adjustColorsForPresentation
+        for j = 1:brSessions+noBrSessions-1
+            plot(xInds(j:j+1), meanAvoidance(j:j+1), 'lineWidth', 3, 'color', sessionColors(j+1,:))
+        end
+        scatter(xInds, meanAvoidance, meanScatSize, sessionColors, 'filled')
+    else
+        plot(xInds, meanAvoidance, 'lineWidth', 3, 'color', get(gca, 'xcolor'))
+        scatter(xInds, meanAvoidance, meanScatSize, get(gca, 'xcolor'), 'filled')
+    end
     
 end
 
@@ -180,7 +202,8 @@ set(gca, 'xlim', [centers(1)-border centers(2)+border], 'ylim', [0 1], 'box', 'o
     'position', [posTemp(1) posTemp(2) .25 posTemp(4)], 'xtick', centers, 'xticklabel', {'light', 'no light'}, 'xcolor', [0 0 0])
 ylabel({'fraction avoided', conditionYAxes{i}}, 'fontweight', 'bold')
 
-% save fig
+blackenFig; print('-clipboard', '-dmeta')
+%% save fig
 savefig([getenv('OBSDATADIR') 'figures\obsAvoidanceLearningSummary.fig'])
 saveas(gcf, [getenv('OBSDATADIR') 'figures\obsAvoidanceLearningSummary.png']);
 blackenFig

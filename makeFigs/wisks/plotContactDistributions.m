@@ -21,7 +21,7 @@ data(length(sessions)) = struct(); % stores trial data for all sessions
 for i = 1:length(sessions)
     
     % load session data
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactTimes.mat'], ...
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], ...
         'contactTimes', 'contactPositions', 'contactFrames')
     
     % store data
@@ -35,7 +35,7 @@ end
 
 
 % plot results
-close all; figure('color', [1 1 1], 'menubar', 'none');
+close all; figure('color', [1 1 1], 'menubar', 'none', 'inverthardcopy', 'off');
 
 % get all contact positions
 allContactPositions = {data.contactPositions};
@@ -45,6 +45,7 @@ allContactPositions = cat(2, allContactPositions{:});
 allContactFrames = {data.contactFrames};
 allContactFrames = cat(3, allContactFrames{:});
 meanFrame = uint8(nanmean(allContactFrames,3));
+meanFrame = 255 - meanFrame; % invert color
 
 % trim frame
 meanFrame = meanFrame(1:220, :);
