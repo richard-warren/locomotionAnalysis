@@ -2,14 +2,15 @@ function makePlotVid
 
 
 % settings
-trialNum = 3;
-pixelsLeftOfPos = 1200;
+trialNum = 2;
+pixelsLeftOfPos = 1000;
 contrastLims = [.1 .9];
 paws = [2 3];
 circSize = 100;
 obsPixPosBuffer = 40; % replace the first obsPixPosBuffer frames with positions inferred from wheel positions - this is to avoid the duration of veloivty ramp
 fps = 250;
 playbackSpeed = .1;
+postWiskSlowDown = 2; % slow down by this factor after whisk touches obs
 wiskPause = 3;
 
 
@@ -21,9 +22,10 @@ numModSteps = cellfun(@(x) x(1,3), {data.modStepNum});
 predictedDistances = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to obs
 deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths];
 
-% inds = find([data.oneSwingOneStance] & ~[data.isFlipped] & numModSteps~=1 & predictedDistances<.002 & predictedDistances>-.005);
-inds = find([data.oneSwingOneStance] & ~[data.isFlipped] & numModSteps~=1 & deltaLengths>-.001 & deltaLengths<.001);
-% inds = find([data.oneSwingOneStance] & ~[data.isFlipped] & numModSteps==1 & deltaLengths>.02);
+inds = find([data.oneSwingOneStance] & ~[data.isFlipped] & numModSteps~=1 & ...
+    predictedDistances>-.005 & predictedDistances<-.0025 & deltaLengths<-.01);
+% inds = find([data.oneSwingOneStance] & ~[data.isFlipped] & numModSteps~=1 & deltaLengths>-.002 & deltaLengths<.002);
+% inds = find([data.oneSwingOneStance] & ~[data.isFlipped] & numModSteps==1 & deltaLengths>.02 & predictedDistances>.002);
 
 trialInds = inds(randperm(length(inds), trialNum));
 sessions = {data(trialInds).session};
@@ -43,16 +45,16 @@ colors = [.25 1 1; .25 1 .25]; % use these if you want different colors per step
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{1} '\runBot.mp4']);
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{1} '\runTop.mp4']);
 dims = [vid.Height+vidTop.Height pixelsLeftOfPos+vid.Width];
-% obsPos = pixelsLeftOfPos;
 
 
 % prepare figure and objects
-fig = figure('menubar', 'none', 'position', [2000 0 dims(2) dims(1)], 'color', 'black');
+fig = figure('menubar', 'none', 'position', [2000 100 dims(2) dims(1)], 'color', 'black');
 
 % frame
 colormap gray
 frame = zeros(vid.Height, vid.Width);
-frameShow = image(1:vid.Width, 1:vid.Height, frame, 'cdatamapping', 'scaled'); hold on;
+frameTop = zeros(vidTop.Height, vidTop.Width);
+frameShow = image(1:vid.Width, 1:vid.Height+vidTop.Height, cat(1, frame, frameTop), 'cdatamapping', 'scaled'); hold on;
 
 
 % kinematic plots
@@ -68,14 +70,14 @@ for i = 1:length(scatters)
 end
 
 % obstacle
-line([pixelsLeftOfPos pixelsLeftOfPos], [1 vid.Height], 'color', 'white', 'linewidth', 8);
+line([pixelsLeftOfPos pixelsLeftOfPos], [vidTop.Height vidTop.Height+vid.Height], 'color', 'white', 'linewidth', 8);
 
 % predicted distance line
-predLine = line([0 0], [1 vid.Height], 'color', 'white', 'linewidth', 3, 'linestyle', ':', 'visible', 'off');
+predLine = line([0 0], [vidTop.Height vidTop.Height+vid.Height], 'color', 'white', 'linewidth', 3, 'linestyle', ':', 'visible', 'off');
 
 
 ax = gca;
-set(ax, 'color', 'black', 'position', [0 0 1 1], 'xlim', [1 dims(2)], 'ylim', [1 vid.Height], 'visible', 'off', 'clim', [0 1]);
+set(ax, 'color', 'black', 'position', [0 0 1 1], 'xlim', [1 dims(2)], 'ylim', [1 vid.Height+vidTop.Height], 'visible', 'off', 'clim', [0 1]);
 
 
 
@@ -87,6 +89,7 @@ for i = 1:length(trialInds)
     % load session data if it is not already loaded
     if i==1 || ~strcmp(sessions{i-1}, sessions{i})
         vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
+        vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
         load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stepSegmentation.mat'], 'modifiedStepIdentities')
         load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes')
         load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations')
@@ -125,9 +128,9 @@ for i = 1:length(trialInds)
     fit = polyfit(wheelPosInterp(pixPosStart:pixPosEnd), obsPixPositions(pixPosStart:pixPosEnd)', 1);
     predictedObsPixPositions = wheelPosInterp*fit(1) + fit(2);
     
-%     keyboard
+    
     % recompute frame inds to restrict from pixelsLeftOfPos to moment mouse exits screen
-    startInd = find((pixelsLeftOfPos - predictedObsPixPositions+vid.Width)>0 & frameTimeStamps>obsOnTimes(trial), 1, 'first');
+    startInd = find((pixelsLeftOfPos - predictedObsPixPositions+vid.Width)>0 & frameTimeStamps>obsOffTimes(trial-1), 1, 'first') - 1;
     endInd = find(pixelsLeftOfPos - predictedObsPixPositions>dims(2),1,'first'); % extend frameInds so they go until mouse is off the screen
     frameInds = startInd:endInd;
     
@@ -138,8 +141,14 @@ for i = 1:length(trialInds)
         frame = rgb2gray(read(vid, frameInds(j)));
         frame = double(frame) / 255;
         frame = imadjust(frame, contrastLims, [0 1]);
+        
+        frameTop = rgb2gray(read(vidTop, frameInds(j)));
+        frameTop = double(frameTop) / 255;
+        frameTop = imadjust(frameTop, contrastLims, [0 1]);
+        
+        
         frameLeftInd = round(pixelsLeftOfPos - predictedObsPixPositions(frameInds(j)));
-        set(frameShow, 'XData', (1:vid.Width)+frameLeftInd, 'CData', frame);
+        set(frameShow, 'XData', (1:vid.Width)+frameLeftInd, 'CData', cat(1, frameTop, frame));
         
         
         for k = 1:length(paws)
@@ -150,6 +159,7 @@ for i = 1:length(trialInds)
                 
                 % update plot
                 pawLocations = locations(locationBins,:,paws(k));
+                pawLocations(:,2) = pawLocations(:,2) + vidTop.Height; % add y offset so traces don't end up on top view
                 pawLocations(:,1) = pawLocations(:,1) - obsPixPositions(locationBins)' + pixelsLeftOfPos;
                 if numModSteps(paws(k))==1; trialColor = colors(2,:); else; trialColor = colors(1,:); end
                 set(plots{k}, 'XData', pawLocations(:,1), 'YData', pawLocations(:,2), 'color', trialColor)
@@ -168,9 +178,15 @@ for i = 1:length(trialInds)
             for k = 1:wiskPause*frameRate-1; writeVideo(vidWriter, getframe(gcf)); end
         end
         
-        writeVideo(vidWriter, getframe(gcf));
+        % write frames
+        if frameInds(j)>=contactInd
+            for k = 1:postWiskSlowDown
+                writeVideo(vidWriter, getframe(gcf));
+            end
+        else
+            writeVideo(vidWriter, getframe(gcf));
+        end
     end
-    
 end
 
 
