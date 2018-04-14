@@ -122,6 +122,14 @@ for i = trials
             frameBot = imadjust(frameBot, contrastLims, [0 1]);
             frame(vidTop.Height+1:end, 1:vidBot.Width, :) = repmat(frameBot,1,1,3);
             
+            % change color of frame if touching
+            if showPawTouches
+                currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
+                if currentTouch
+                    frame(:,:,3) = frame(:,:,3)*.2;
+                end
+            end
+            
             % wisk
             wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
             
@@ -177,16 +185,7 @@ for i = trials
                 frame = insertText(frame, [size(frame,2), size(frameTop,1)+size(frameBot,1)], trialLabels{trialInds(i)},...
                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
             end
-            
-            
-            % change color of frame if touching
-            if showPawTouches
-                currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
-                if currentTouch
-                    frame(:,:,2) = frame(:,:,1)*.15;
-                end
-            end
-            
+                        
 
             % write frame to video
             writeVideo(vidWriter, frame);

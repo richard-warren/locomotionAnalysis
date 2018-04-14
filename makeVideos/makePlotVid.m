@@ -2,7 +2,7 @@ function makePlotVid
 
 
 % settings
-trialNum = 2;
+trialNum = 1;
 pixelsLeftOfPos = 1000;
 contrastLims = [.1 .9];
 paws = [2 3];

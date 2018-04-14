@@ -39,7 +39,7 @@ getLocations(session, thingsToAnalyze, minVel, showTracking);
 %% show tracking for session
 
 % settings
-session = '180122_001';
+session = '180122_002';
 view = 'Top';
 showCorrected = 0;
 frameDelay = .01;
@@ -72,7 +72,7 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '180122_001';
+session = '180122_002';
 view = 'Top';
 pawsTop = [2 3];
 pawsToShow = [1 2 3 4];
