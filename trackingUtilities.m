@@ -29,7 +29,7 @@ getObsContacts(session, vidDelay)
 
 %% getLocations on single session
 
-session = '180122_000';
+session = '180123_001';
 thingsToAnalyze = {'top'};
 
 showTracking = true;
@@ -72,7 +72,7 @@ setTrialExclusion(session, trials);
 %% correct tracking
 
 % settings
-session = '180122_002';
+session = '180123_001';
 view = 'Top';
 pawsTop = [2 3];
 pawsToShow = [1 2 3 4];
