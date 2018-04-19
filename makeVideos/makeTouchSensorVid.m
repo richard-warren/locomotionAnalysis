@@ -1,4 +1,4 @@
-function makeTouchSensorVid(session, trials)
+function makeTouchSensorVid(session, trialNum)
 
 % settings
 editedDir = [getenv('OBSDATADIR') 'editedVid\'];
@@ -14,7 +14,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'backFron', 'topDown
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPixPositions');
 
 % initializations
-trials = randperm(length(obsOnTimes), min(trials, length(obsOnTimes)));
+trials = randperm(length(obsOnTimes), min(trialNum, length(obsOnTimes)));
 trials = sort(trials);
 % trials = 30:40; % temp
 vidWriter = VideoWriter(sprintf('%ssensorVid%s', editedDir, session), 'MPEG-4');

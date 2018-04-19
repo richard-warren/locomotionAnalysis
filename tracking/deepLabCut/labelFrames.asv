@@ -1,0 +1,28 @@
+% function labelFrames(dataStruct)
+
+ % temp
+ trainingSetName = 'newTrainingData';
+ features = {'pawTL', 'pawTR', 'pawBR', 'pawBL', 'gen', 'tailBase', 'tailMid', 'tailEnd'};
+ 
+ % settings
+ 
+ 
+ 
+ % initializations
+ load([getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData');
+ fields = fieldnames(trainingData);
+ 
+ % add fields that have not yet been created
+ for i = features
+     if ~ismember(i, fields)
+         nanEntries = num2cell(nan(length(trainingData),1));
+         [trainingData.(i{1})] = nanEntries{:};
+         fprintf('creating field %s\n', i{1});
+     end
+ end
+ 
+ 
+ 
+ 
+ %% save
+ save([getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData');

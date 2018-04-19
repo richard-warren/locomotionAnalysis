@@ -429,6 +429,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     % save results
     if anythingAnalyzed
         save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct')
+        fprintf('%s: data analyzed and saved\n', dataFolder)
     end
     
     

@@ -6,6 +6,7 @@ function makeVidWisk(namePrefix, session, obsPosRange, playBackSpeed, trialPropo
 % kept and everything else is edited out. obsPosRange is in m and defines
 % the start and end position of the obstacle along the track that each
 % trial should include.
+% namePrefix is added to the beginning of the file name... kind of weird i know, sorry bro
 
 
 % settings
@@ -17,9 +18,10 @@ obsBotThickness = 15;
 contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and 255
 
 includeWebcam = false;
-showPawTouches = true;
+showPawTouches = false;
 showTrialInfo = false;
-showWiskTouches = true;
+showWiskTouches = false;
+drawObs = true;
 
 
 % initializations
@@ -33,7 +35,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
                                             'touchSig', 'touchSigTimes', 'nosePos');
-load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes');
+if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
 
@@ -118,7 +120,9 @@ for i = trials
             
             % bot
             frameBot = rgb2gray(read(vidBot, frameInds(j)));
-%             frameBot = addObsToFrame(frameBot, obsPixPositions(frameInds(j)), obsBotThickness, [1, size(frameBot,1)], 255);
+            if drawObs
+                frameBot = addObsToFrame(frameBot, obsPixPositions(frameInds(j)), obsBotThickness, [1, size(frameBot,1)], 255);
+            end
             frameBot = imadjust(frameBot, contrastLims, [0 1]);
             frame(vidTop.Height+1:end, 1:vidBot.Width, :) = repmat(frameBot,1,1,3);
             

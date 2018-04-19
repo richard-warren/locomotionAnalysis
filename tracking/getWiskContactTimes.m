@@ -66,6 +66,7 @@ for i = 1:length(sessions)
     nanInds = find(isnan(contactPositions));
 
     if ~isempty(nanInds)
+        keyboard
         medianPosition = nanmedian(contactPositions);
 
         for j = nanInds

@@ -3,7 +3,7 @@
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
 miceToPlot = {'run6', 'run7', 'run8'};
-vidTrialProportion = .25;
+vidTrialProportion = .15;
 %%
 for i = 1:length(sessionDirs)
     
@@ -50,7 +50,7 @@ for j = 1:length(sessionDirs)
         end
     end
 
-    makeVidWisk(session, [-.1 .1], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
+    makeVidWisk('', session, [-.1 .1], .1, vidTrialProportion, {'OFF', 'ON'}, trialConditions);
 end
 
 
