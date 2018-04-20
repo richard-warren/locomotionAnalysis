@@ -29,7 +29,7 @@ getObsContacts(session, vidDelay)
 
 %% getLocations on single session
 
-session = '180123_001';
+session = '180123_002';
 thingsToAnalyze = {'top'};
 
 showTracking = true;

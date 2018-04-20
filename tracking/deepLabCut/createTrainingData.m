@@ -11,7 +11,7 @@ obsPortion = .5; % portion of trials to include obstacle
 features = {'pawTL', 'pawTR', 'pawBR', 'pawBL', 'gen', 'tailBase', 'tailMid', 'tailEnd'};
 
 % initializations
-trainingSetDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\'];
+trainingSetDir = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetName '\'];
 if ~exist(trainingSetDir, 'dir'); mkdir(trainingSetDir); end
 
 
@@ -23,9 +23,8 @@ end
 
 %% label things
 
-trainingSetName = 'newTrainingData';
 features = {'pawTL', 'pawTR', 'pawBR', 'pawBL', 'gen', 'tailBase', 'tailMid', 'tailEnd'};
-labelFrames(trainingSetName, features);
+labelFrames(trainingSetDir, features);
 
 
 

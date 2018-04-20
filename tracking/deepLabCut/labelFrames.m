@@ -1,6 +1,6 @@
-function labelFrames(trainingSetName, features)
+function labelFrames(trainingSetDir, features)
 
-% store locations in struct // restrict point locations // ensure a point has been moved before saving it's value
+% restrict point locations
 
 % settings
 vidScaling = 2;
@@ -10,7 +10,7 @@ labelledColor = [1 1 0];
 
 % initializations
 defaultPositions = repmat([10 10], length(features), 1) .* repmat(1:length(features),2,1)';
-load([getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData');
+load([trainingSetDir 'trainingData.mat'], 'trainingData');
 fields = fieldnames(trainingData);
 structInd = 1;
 
@@ -45,6 +45,12 @@ for i = 1:length(features)
     featureTexts{i} = text(defaultPositions(i,1)+textOffset(1), defaultPositions(i,2)+textOffset(2), features{i});
     featurePoints{i} = impoint(gca, defaultPositions(i,:));
     addNewPositionCallback(featurePoints{i}, @(x) movePoint(i));
+    setPositionConstraintFcn(featurePoints{i}, @constrainPosition)
+    
+    % add special constraint for end of tail
+    if strcmp(features{i}, 'tailEnd')
+        setPositionConstraintFcn(featurePoints{i}, @tailEndConstrainPosition)
+    end
 end
 updateFrame(0); % set positions and colors of points based on whether the first frame has already been labeled
 
@@ -75,7 +81,7 @@ function keypress(~,~)
                 close(fig)
                 
             case 115 % 's'
-                save([getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData');
+                save([trainingSetDir 'trainingData.mat'], 'trainingData');
                 m = msgbox('saving progress...'); pause(.5); close(m)
         end
     end
@@ -120,6 +126,33 @@ function movePoint(featureInd)
     trainingData(structInd).(features{featureInd}) = pos;
     setColor(featurePoints{featureInd}, labelledColor);
     set(featureTexts{featureInd}, 'position', pos + textOffset, 'color', labelledColor);
+end
+
+
+% make sure points don't go out of frame
+function constrainedPos = constrainPosition(newPos)
+    constrainedPos(1) = min(newPos(1), vid.Width);
+    constrainedPos(1) = max(constrainedPos(1), 1);
+    constrainedPos(2) = min(newPos(2), vid.Height);
+    constrainedPos(2) = max(constrainedPos(2), 1); 
+end
+
+
+% make sure tail end stays on edge of train
+function constrainedPos = tailEndConstrainPosition(newPos)
+    
+    if newPos(2)<1
+        constrainedPos(1) = min(newPos(1), vid.Width);
+        constrainedPos(1) = max(constrainedPos(1), 1);
+        constrainedPos(2) = 1;
+    elseif newPos(2)>vid.Height
+        constrainedPos(1) = min(newPos(1), vid.Width);
+        constrainedPos(1) = max(constrainedPos(1), 1);
+        constrainedPos(2) = vid.Height;
+    else
+        constrainedPos(1) = 1;
+        constrainedPos(2) = newPos(2);
+    end
 end
 
 end
