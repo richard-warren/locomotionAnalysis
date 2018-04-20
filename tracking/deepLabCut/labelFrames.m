@@ -1,6 +1,6 @@
 function labelFrames(trainingSetDir, features)
 
-% restrict point locations
+% unlabel part, highlight part? // move to frames with nans automatically // add way of excluding trials
 
 % settings
 vidScaling = 2;

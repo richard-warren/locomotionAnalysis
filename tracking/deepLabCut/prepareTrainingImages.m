@@ -1,29 +1,61 @@
-% function prepareTrainingImages()
-
-% temp
-load('C:\Users\rick\Google Drive\columbia\obstacleData\tracking\trainingData\deepLabCut\newTrainingData\trainingData.mat', 'trainingData');
-features = {'pawTL', 'pawTR', 'pawBR', 'pawBL', 'gen', 'tailBase', 'tailMid', 'tailEnd'};
+function prepareTrainingImages(trainingData, features)
 
 
+% settings
+fileType = '.png';
+writeDir = 'C:\Users\rick\Desktop\trainingExamples\deepLabCut\newTrainingData\';
 
 
+% get xy values for all labelled features in all frames
+fieldNames = fieldnames(trainingData);
+isLabeled = false(length(trainingData), length(features)); % keeps track of whether features were labelled in given frames
+positions = nan(2, length(features), length(trainingData)); % stores all features in all frames
 
-
-
-
-
-
-
-
-
-
-% save spreadsheet for each paw, which are used by deepLabCut
-for i = 1:4
+for i = 1:length(features)
     
-    tableInds = (i-1)*2+2 : (i-1)*2+3;
-    pawFeatures = features(:, tableInds);
-    pawFeatures.Properties.VariableNames{1} = 'X';
-    pawFeatures.Properties.VariableNames{2} = 'Y';
+    % extract x and y values
+    x = cellfun(@(j) j(1), {trainingData.(features{i})});
+    realBins = ~isnan(x);
+    isLabeled(realBins, i) = 1;
+    y = nan(size(x));
+    y(realBins) = cellfun(@(j) j(2), {trainingData(realBins).(features{i})});
     
-    writetable(pawFeatures, [writeDir 'paw' num2str(i) '.csv'], 'delimiter', ' ')
+    positions(1,i,:) = x;
+    positions(2,i,:) = x;
+    
 end
+structInds = find(all(isLabeled, 2)); % only use frames where all frames are labelled
+
+
+
+% create images (only for frames in which everything is labelled
+currentSession = trainingData(structInds(1)).session;
+vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
+
+for i = 1:length(structInds)
+    
+    if ~strcmp(currentSession, trainingData(structInds(i)).session)
+        currentSession = trainingData(structInds(i)).session;
+        vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
+    end
+    frame = read(vid, trainingData(structInds(i)).frameNum);
+    imwrite(frame, [writeDir 'img' num2str(i) fileType])
+    
+end
+
+
+% save spreadsheet for each feature, which are used by deepLabCut
+for i = 1:length(features)
+    
+    X = squeeze(positions(1,i,structInds));
+    Y = squeeze(positions(2,i,structInds));
+    featureTable = table(X, Y);
+    
+    writetable(featureTable, [writeDir features{i} '.csv'], 'delimiter', ' ')
+end
+
+
+
+
+
+
