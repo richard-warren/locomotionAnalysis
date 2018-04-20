@@ -92,11 +92,14 @@ function updateFrame(frameStep)
     
     % move to next frame
     structInd = structInd + frameStep;
+    if structInd==0; structInd=length(trainingData); end
+    if structInd>length(trainingData); structInd=1; end
     currentFrame = trainingData(structInd).frameNum;
     
     % load new video if switching to new session
     if ~strcmp(currentSession, trainingData(structInd).session)
         currentSession = trainingData(structInd).session;
+        m = msgbox(sprintf('loading session %s...', currentSession)); pause(.5); close(m);
         vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
     end
     

@@ -32,8 +32,9 @@ for i = 1:length(sessions)
     frames = sort([obsFrames noObsFrames]); % all obstacle and non-obstacle frames
     frames = mat2cell(frames, 1, ones(sessionFrameNums(i),1));
     
+    
     % get struct inds for session
-    if i==1; startInd = 1; else; startInd = sum(sessionFrameNums(1:i-1)); end
+    if i==1; startInd = 1; else; startInd = sum(sessionFrameNums(1:i-1))+1; end
     endInd = startInd + sessionFrameNums(i)-1;
     
     % insert session name and frame numbers into struct

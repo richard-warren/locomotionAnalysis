@@ -1,13 +1,11 @@
-function prepareTrainingImages(trainingData, features)
+function prepareTrainingImages(writeDir, trainingData, features)
 
 
 % settings
 fileType = '.png';
-writeDir = 'C:\Users\rick\Desktop\trainingExamples\deepLabCut\newTrainingData\';
 
 
 % get xy values for all labelled features in all frames
-fieldNames = fieldnames(trainingData);
 isLabeled = false(length(trainingData), length(features)); % keeps track of whether features were labelled in given frames
 positions = nan(2, length(features), length(trainingData)); % stores all features in all frames
 
@@ -38,7 +36,7 @@ for i = 1:length(structInds)
         currentSession = trainingData(structInds(i)).session;
         vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
     end
-    frame = read(vid, trainingData(structInds(i)).frameNum);
+    frame = rgb2gray(read(vid, trainingData(structInds(i)).frameNum));
     imwrite(frame, [writeDir 'img' num2str(i) fileType])
     
 end
@@ -53,6 +51,8 @@ for i = 1:length(features)
     
     writetable(featureTable, [writeDir features{i} '.csv'], 'delimiter', ' ')
 end
+
+disp('all done!')
 
 
 
