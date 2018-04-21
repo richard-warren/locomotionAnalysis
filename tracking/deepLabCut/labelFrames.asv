@@ -35,9 +35,9 @@ featurePoints = cell(1, length(features));
 featureTexts = cell(1, length(features));
 
 if ~ismember('excludeFrame', fields)
-    falseEntries = num2cell(false(length(trainingData),1));
-    [trainingData.excludeFrame] = falseEntries{:};
-    disp('creating field: excludeFrame');
+    falseEntries = num2cell(nan(length(trainingData),1));
+    [trainingData.(features{i})] = nanEntries{:};
+    fprintf('creating field %s\n', features{i});
 end
 
 for i = 1:length(features)
@@ -46,7 +46,7 @@ for i = 1:length(features)
     if ~ismember(features{i}, fields)
         nanEntries = num2cell(nan(length(trainingData),1));
         [trainingData.(features{i})] = nanEntries{:};
-        fprintf('creating field: %s\n', features{i});
+        fprintf('creating field %s\n', features{i});
     end
     
     % create draggables for features
@@ -114,8 +114,6 @@ function keypress(~,~)
                 
             % e: exclude frame from analysis
             case 101
-                trainingData(structInd).excludeFrame = ~trainingData(structInd).excludeFrame;
-                updateFrame(0);
                 
             % s: save progress
             case 115
@@ -124,8 +122,6 @@ function keypress(~,~)
         end
     end
 end
-
-
 
 
 function updateFrame(frameStep)
@@ -146,8 +142,7 @@ function updateFrame(frameStep)
     % update frame
     frame = rgb2gray(read(vid, trainingData(structInd).frameNum));
     set(im, 'CData', frame);
-    if trainingData(structInd).excludeFrame; excludedString = '(excluded frame)'; else; excludedString = ''; end
-    set(fig, 'name', sprintf('%s, frame %i %s', currentSession, currentFrame, excludedString))
+    set(fig, 'name', sprintf('%s, frame %i', currentSession, currentFrame))
     
     % update colors and positions of points
     for j = 1:length(features)
@@ -168,8 +163,6 @@ function updateFrame(frameStep)
 end
 
 
-
-
 function movePoint(featureInd)
     pos = getPosition(featurePoints{featureInd});
     trainingData(structInd).(features{featureInd}) = pos;
@@ -179,8 +172,6 @@ function movePoint(featureInd)
     set(selectedCirc, 'XData', pos(1), 'YData', pos(2), 'visible', 'on')
     selectedPoint = featureInd;
 end
-
-
 
 
 % make sure points don't go out of frame

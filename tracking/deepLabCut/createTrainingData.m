@@ -36,6 +36,6 @@ features = {'pawTL', 'pawTR', 'pawBR', 'pawBL', 'tailBase', 'tailMid', 'tailEnd'
 trainingSetDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\'];
 if ~exist(trainingSetDir, 'dir'); mkdir(trainingSetDir); end
 load([getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData')
-prepareTrainingImages(trainingSetDir, trainingData, features)
+prepareTrainingImages(trainingSetDir, trainingData, features);
 
 
