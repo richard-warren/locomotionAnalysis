@@ -19,7 +19,7 @@ for i = 1:length(features)
     y(realBins) = cellfun(@(j) j(2), {trainingData(realBins).(features{i})});
     
     positions(1,i,:) = x;
-    positions(2,i,:) = x;
+    positions(2,i,:) = y;
     
 end
 structInds = find(all(isLabeled, 2)); % only use frames where all frames are labelled
