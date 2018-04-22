@@ -34,17 +34,12 @@ selectedCirc = scatter(0, 0, 200, [.5 .5 1], 'linewidth', 3, 'visible', 'off'); 
 featurePoints = cell(1, length(features));
 featureTexts = cell(1, length(features));
 
-if ~ismember('excludeFrame', fields)
-    falseEntries = num2cell(false(length(trainingData),1));
-    [trainingData.excludeFrame] = falseEntries{:};
-    disp('creating field: excludeFrame');
-end
 
 for i = 1:length(features)
     
     % initialize non-existent features
     if ~ismember(features{i}, fields)
-        nanEntries = num2cell(nan(length(trainingData),1));
+        nanEntries = mat2cell(nan(length(trainingData),2), ones(1,length(trainingData)), 2);
         [trainingData.(features{i})] = nanEntries{:};
         fprintf('creating field: %s\n', features{i});
     end
@@ -91,7 +86,7 @@ function keypress(~,~)
             % d: delete selectetion
             case 100
                 if ~isnan(selectedPoint)
-                    trainingData(structInd).(features{selectedPoint}) = nan;
+                    trainingData(structInd).(features{selectedPoint}) = [nan nan];
                     updateFrame(0);
                 end
                 
@@ -112,9 +107,9 @@ function keypress(~,~)
                 updateFrame(0);
     
                 
-            % e: exclude frame from analysis
-            case 101
-                trainingData(structInd).excludeFrame = ~trainingData(structInd).excludeFrame;
+            % i: include frame for analysis
+            case 105
+                trainingData(structInd).includeFrame = ~trainingData(structInd).includeFrame;
                 updateFrame(0);
                 
             % s: save progress
@@ -146,8 +141,8 @@ function updateFrame(frameStep)
     % update frame
     frame = rgb2gray(read(vid, trainingData(structInd).frameNum));
     set(im, 'CData', frame);
-    if trainingData(structInd).excludeFrame; excludedString = '(excluded frame)'; else; excludedString = ''; end
-    set(fig, 'name', sprintf('%s, frame %i %s', currentSession, currentFrame, excludedString))
+    if trainingData(structInd).includeFrame; includedString = '(included)'; else; includedString = ''; end
+    set(fig, 'name', sprintf('%s, frame %i %s', currentSession, currentFrame, includedString))
     
     % update colors and positions of points
     for j = 1:length(features)

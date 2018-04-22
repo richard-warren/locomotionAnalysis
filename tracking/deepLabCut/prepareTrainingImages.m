@@ -13,16 +13,17 @@ for i = 1:length(features)
     
     % extract x and y values
     x = cellfun(@(j) j(1), {trainingData.(features{i})});
-    realBins = ~isnan(x);
-    isLabeled(realBins, i) = 1;
-    y = nan(size(x));
-    y(realBins) = cellfun(@(j) j(2), {trainingData(realBins).(features{i})});
-    
+    y = cellfun(@(j) j(2), {trainingData.(features{i})});
     positions(1,i,:) = x;
     positions(2,i,:) = y;
     
+    realBins = ~isnan(x);
+    isLabeled(realBins, i) = 1;
+
+    
 end
-structInds = find(all(isLabeled, 2)' & ~[trainingData.excludeFrame]); % only use frames where all frames are labelled
+% structInds = find(all(isLabeled, 2)' & [trainingData.includeFrame]); % only use frames where all frames are labelled
+structInds = find([trainingData.includeFrame]); % only use frames where all frames are labelled
 
 
 % create images (only for frames in which everything is labelled
@@ -49,6 +50,10 @@ for i = 1:length(features)
     X = squeeze(positions(1,i,structInds));
     Y = squeeze(positions(2,i,structInds));
     featureTable = table(X, Y);
+    
+    % set to 0 all NaN values (this is how deepLabCut expects to see occluded features)
+    X(isnan(X)) = 0;
+    Y(isnan(Y)) = 0;
     
     writetable(featureTable, [writeDir features{i} '.csv'], 'delimiter', ' ')
 end

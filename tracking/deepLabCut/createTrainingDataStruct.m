@@ -8,7 +8,6 @@ sessionFrameNums = ones(1, length(sessions)) * round(frameNum / length(sessions)
 sessionFrameNums(end) = sessionFrameNums(end) + (frameNum-sum(sessionFrameNums));
 trainingData(frameNum,1) = struct();
 
-
 for i = 1:length(sessions)
     
     % load vid and sesion data
@@ -43,3 +42,9 @@ for i = 1:length(sessions)
     [trainingData(startInd:endInd).frameNum] = frames{:};
     
 end
+
+falseVector = num2cell(false(1, frameNum));
+[trainingData(:).includeFrame] = falseVector{:};
+
+
+
