@@ -35,11 +35,12 @@ labelFrames(trainingSetDir, features);
 
 %% prepare data for deepLabCut
 trainingSetName = 'topBotCat';
-features = {'pawTL', 'pawTR', 'pawBR', 'pawBL','gen', 'tailBase', 'tailMid', 'tailEnd'}; % excluding genitals
+% features = {'pawTL', 'pawTR', 'pawBR', 'pawBL','gen', 'tailBase', 'tailMid', 'tailEnd'}; % excluding genitals
+features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'tailEnd', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'}; % with top view
 
 trainingSetDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\'];
 if ~exist(trainingSetDir, 'dir'); mkdir(trainingSetDir); end
-load([getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData')
-prepareTrainingImages(trainingSetDir, trainingData, features);
+load([getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetName '\trainingData.mat'], 'trainingData', 'view')
+prepareTrainingImages(trainingSetDir, trainingData, view, features);
 
 

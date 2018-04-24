@@ -1,4 +1,4 @@
-function prepareTrainingImages(writeDir, trainingData, features)
+function prepareTrainingImages(writeDir, trainingData, view, features)
 
 
 % settings
@@ -27,18 +27,34 @@ structInds = find([trainingData.includeFrame]); % only use frames where all fram
 
 
 % create images (only for frames in which everything is labelled
-currentSession = trainingData(structInds(1)).session;
-vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
-fprintf('processing session: %s\n', currentSession)
+currentSession = '';
 
 for i = 1:length(structInds)
     
+    % load new video if reached a new session
     if ~strcmp(currentSession, trainingData(structInds(i)).session)
         currentSession = trainingData(structInds(i)).session;
-        vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
+        
+        if strcmp(view, 'top')
+            vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runTop.mp4']);
+        elseif strcmp(view, 'bot')
+            vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
+        elseif strcmp(view, 'both')
+            vid = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runTop.mp4']);
+            vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
+        end
+        
         fprintf('processing session: %s\n', currentSession)
     end
-    frame = rgb2gray(read(vid, trainingData(structInds(i)).frameNum));
+    
+    % get frame
+    currentFrame = trainingData(structInds(i)).frameNum;
+    if strcmp(view, 'both')
+        frame = cat(1, rgb2gray(read(vid, currentFrame)), rgb2gray(read(vidBot, currentFrame)));
+    else
+        frame = rgb2gray(read(vid, currentFrame));
+    end
+    
     imwrite(frame, [writeDir 'img' num2str(i) fileType])
     
 end
@@ -49,12 +65,12 @@ for i = 1:length(features)
     
     X = squeeze(positions(1,i,structInds));
     Y = squeeze(positions(2,i,structInds));
-    featureTable = table(X, Y);
     
     % set to 0 all NaN values (this is how deepLabCut expects to see occluded features)
     X(isnan(X)) = 0;
     Y(isnan(Y)) = 0;
     
+    featureTable = table(X, Y);
     writetable(featureTable, [writeDir features{i} '.csv'], 'delimiter', ' ')
 end
 

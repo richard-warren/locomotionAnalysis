@@ -1,6 +1,0 @@
-function concatTopBot(session)
-
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
-vidBot = 
-vidWriter = VideoWriter([getenv('OBSDATADIR') 'sessions\' session '\runBotBgSub.mp4'], 'MPEG-4');
-open(vidWriter)
