@@ -28,7 +28,7 @@ trainingSetName = 'topBotCat';
 
 trainingSetDir = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetName '\'];
 % features = {'pawTL', 'pawTR', 'pawBR', 'pawBL', 'gen', 'tailBase', 'tailMid', 'tailEnd'};
-features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'tailEnd', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'}; % with top view
+features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'}; % with top view
 labelFrames(trainingSetDir, features);
 
 
@@ -36,7 +36,7 @@ labelFrames(trainingSetDir, features);
 %% prepare data for deepLabCut
 trainingSetName = 'topBotCat';
 % features = {'pawTL', 'pawTR', 'pawBR', 'pawBL','gen', 'tailBase', 'tailMid', 'tailEnd'}; % excluding genitals
-features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'tailEnd', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'}; % with top view
+features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'}; % with top view
 
 trainingSetDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetName '\'];
 if ~exist(trainingSetDir, 'dir'); mkdir(trainingSetDir); end

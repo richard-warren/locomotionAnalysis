@@ -107,18 +107,10 @@ function keypress(~,~)
                     updateFrame(0);
                 end
                 
-            % n: move to next frame with NaN value
+            % n: move to next frame that is not yet included
             case 110
-                isntLabeled = false(length(trainingData), length(features));
-                for j = 1:length(features)
-                    x = cellfun(@(k) k(1), {trainingData.(features{j})});
-                    nanBins = isnan(x);
-                    isntLabeled(nanBins, j) = 1;
-                end
-                notFullyLabelledBins = any(isntLabeled,2);
-                
-                newStructInd = find(notFullyLabelledBins' & 1:length(trainingData)>structInd, 1, 'first'); % find first frame with nonlabelled part that is later than current frame
-                if isempty(newStructInd); newStructInd = find(notFullyLabelledBins, 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
+                newStructInd = find(~[trainingData.includeFrame] & 1:length(trainingData)>structInd, 1, 'first'); % find first frame with nonlabelled part that is later than current frame
+                if isempty(newStructInd); newStructInd = find(~[trainingData.includeFrame], 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
                 if ~isempty(newStructInd); structInd = newStructInd; end % otherwise, keep current frame
                     
                 updateFrame(0);
@@ -164,7 +156,6 @@ function updateFrame(frameStep)
             vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
             hgt = vid.Height + vidBot.Height;
         end
-
     end
     
     % update frame

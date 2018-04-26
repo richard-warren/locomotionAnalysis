@@ -37,7 +37,6 @@ fig = figure('name', sprintf('%s, frame %i', currentSession, currentFrame), ...
     'menubar', 'none', 'color', 'white', 'keypressfcn', @keypress, 'position', [200 200 vid.Width*vidScaling, hgt*vidScaling]);
 colormap gray
 if strcmp(view, 'both')
-    keyboard
     imgCat = cat(1, rgb2gray(read(vid, currentFrame)), rgb2gray(read(vidBot, currentFrame)));
     im = image(imgCat, 'CDataMapping', 'scaled'); hold on
 else
@@ -108,17 +107,9 @@ function keypress(~,~)
                     updateFrame(0);
                 end
                 
-            % n: move to next frame with NaN value
-            case 110
-                isntLabeled = false(length(trainingData), length(features));
-                for j = 1:length(features)
-                    x = cellfun(@(k) k(1), {trainingData.(features{j})});
-                    nanBins = isnan(x);
-                    isntLabeled(nanBins, j) = 1;
-                end
-                notFullyLabelledBins = any(isntLabeled,2);
-                
-                newStructInd = find(notFullyLabelledBins' & 1:length(trainingData)>structInd, 1, 'first'); % find first frame with nonlabelled part that is later than current frame
+            % n: move to next frame that is not yet included
+            case 110                
+                newStructInd = find([trainingData.]' & 1:length(trainingData)>structInd, 1, 'first'); % find first frame with nonlabelled part that is later than current frame
                 if isempty(newStructInd); newStructInd = find(notFullyLabelledBins, 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
                 if ~isempty(newStructInd); structInd = newStructInd; end % otherwise, keep current frame
                     
@@ -132,7 +123,7 @@ function keypress(~,~)
                 
             % s: save progress
             case 115
-                save([trainingSetDir 'trainingData.mat'], 'trainingData');
+                save([trainingSetDir 'trainingData.mat'], 'trainingData', 'view');
                 m = msgbox('saving progress...'); pause(.5); close(m)
         end
     end
@@ -165,11 +156,14 @@ function updateFrame(frameStep)
             vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' currentSession '\runBot.mp4']);
             hgt = vid.Height + vidBot.Height;
         end
-
     end
     
     % update frame
-    frame = rgb2gray(read(vid, trainingData(structInd).frameNum));
+    if strcmp(view, 'both')
+        frame = cat(1, rgb2gray(read(vid, currentFrame)), rgb2gray(read(vidBot, currentFrame)));
+    else
+        frame = rgb2gray(read(vid, trainingData(structInd).frameNum));
+    end
     set(im, 'CData', frame);
     if trainingData(structInd).includeFrame; includedString = '(included)'; else; includedString = ''; end
     set(fig, 'name', sprintf('%s, frame %i %s', currentSession, currentFrame, includedString))
