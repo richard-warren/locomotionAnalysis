@@ -1,11 +1,11 @@
-function [x, y, scores] = nonMaximumSupress(scoresRaw, boxSize, thresh)
+function [x, y, scores] = nonMaximumSupress(scoresRaw, boxSize, minOverlap, thresh)
 
 % !!! need to document
 
-
+if ~exist('thresh', 'var'); thresh = 0; end
 
 % convert scores to 2D coordinates and sort
-detected = find(scoresRaw(:) > 0);
+detected = find(scoresRaw(:) > thresh);
 [y, x] = ind2sub(size(scoresRaw), detected);
 [scores, sortInds] = sort(scoresRaw(detected), 'descend');
 y = y(sortInds);
@@ -35,7 +35,7 @@ for i = 1:nPoints
             overlap = xOverlap * yOverlap;
             union = 2*area - overlap;
 
-            if( (overlap / union) > thresh)
+            if( (overlap / union) > minOverlap)
                 keepers(j) = false;
             end
         end
