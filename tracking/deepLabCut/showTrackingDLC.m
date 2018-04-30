@@ -1,6 +1,7 @@
 function showTrackingDLC(session, vidDelay)
 
 % settings
+startFrame = 22635; % 20763, 
 circSize = 150;
 vidSizeScaling = 1.25;
 colorMap = 'hsv';
@@ -12,8 +13,8 @@ vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
-[locations, features, featurePairInds] = fixTrackingDLC(session);
-save([getenv('OBSDATADIR') 'sessions\' session '\trackingFixed.mat'], 'locations', 'features', 'featurePairInds') % temp
+[locations, features, featurePairInds, isInterped] = fixTrackingDLC(session);
+% save([getenv('OBSDATADIR') 'sessions\' session '\trackingFixed.mat'], 'locations', 'features', 'featurePairInds') % temp
 
 
 % set up figure
@@ -57,7 +58,7 @@ scatterLocations = scatter(imAxis, zeros(1,length(features)), zeros(1,length(fea
     circSize, cmap, 'linewidth', 3); hold on
 
 % set state variables
-currentFrame = 1;
+currentFrame = startFrame;
 playing = true;
 paused = false;
 
@@ -150,7 +151,8 @@ function updateFrame(frameStep)
 
     % upate scatter positions
     set(scatterLocations, 'XData', locations(currentFrame,1,:), ...
-        'YData', locations(currentFrame,2,:));
+        'YData', locations(currentFrame,2,:), ...
+        'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(currentFrame,:))*circSize*.9);
 
     % pause to reflcet on the little things...
     pause(vidDelay);
