@@ -4,7 +4,7 @@ function showTrackingDLC(session, vidDelay)
 circSize = 150;
 vidSizeScaling = 1.25;
 colorMap = 'hsv';
-connectedFeatures = {{'gen', 'tailBase', 'tailMid', 'tailEnd'}}; % features that are connected within a view (not across views)
+connectedFeatures = {{'gen', 'tailBase', 'tailMid'}, {'tailBaseTop', 'tailMidTop'}}; % features that are connected within a view (not across views)
 
 
 % get videos
@@ -13,6 +13,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
 [locations, features, featurePairInds] = fixTrackingDLC(session);
+save([getenv('OBSDATADIR') 'sessions\' session '\trackingFixed.mat'], 'locations', 'features', 'featurePairInds') % temp
 
 
 % set up figure
