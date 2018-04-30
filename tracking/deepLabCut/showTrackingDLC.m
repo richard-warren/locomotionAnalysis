@@ -1,12 +1,17 @@
-function showTrackingDLC(session, vidDelay)
+function showTrackingDLC(session, vidDelay, trainingDataPath)
 
 % settings
-startFrame = 22635; % 20763, 
 circSize = 150;
 vidSizeScaling = 1.25;
 colorMap = 'hsv';
 connectedFeatures = {{'gen', 'tailBase', 'tailMid'}, {'tailBaseTop', 'tailMidTop'}}; % features that are connected within a view (not across views)
 
+
+
+% initializations
+frameInds = getFramesToShow(session);
+addingFrames = exist('trainingDataPath', 'var');
+if addingFrames; load(trainingDataPath, 'trainingData', 'view'); end
 
 % get videos
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
@@ -14,8 +19,6 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
 [locations, features, featurePairInds, isInterped] = fixTrackingDLC(session);
-% save([getenv('OBSDATADIR') 'sessions\' session '\trackingFixed.mat'], 'locations', 'features', 'featurePairInds') % temp
-
 
 % set up figure
 hgt = (vidBot.Height+vidTop.Height);
@@ -58,7 +61,7 @@ scatterLocations = scatter(imAxis, zeros(1,length(features)), zeros(1,length(fea
     circSize, cmap, 'linewidth', 3); hold on
 
 % set state variables
-currentFrame = startFrame;
+frameInd = 1;
 playing = true;
 paused = false;
 
@@ -82,24 +85,43 @@ function changeFrames(~,~)
     
     if ~isempty(key) && isnumeric(key)
         
-        % LEFT: move frame backward
+        % left: move frame backward
         if key==28                      
             pause(.001);
             paused = true;
             updateFrame(-1);
         
-        % RIGHT: move frame forward
+        % right: move frame forward
         elseif key==29                  
             pause(.001);
             paused = true;
             updateFrame(1);
+        
+        % 'a': add frame to training set
+        elseif key==97
+            m = msgbox('adding frame to training set...'); pause(.5); close(m)
+            ind = length(trainingData)+1;
+            trainingData(ind).session = session;
+            trainingData(ind).frameNum = frameInds(frameInd);
+            trainingData(ind).includeFrame = false;
+            for j = 1:length(features)
+                trainingData(ind).(features{j}) = squeeze(locations(frameInds(frameInd),:,j));
+            end
+            
+            % resort the structure so like sessions stay together
+            [~, sortInds] = sort({trainingData.session});
+            trainingData = trainingData(sortInds);
+        
+        % 's': save training set
+        elseif key==115
+            uisave({'trainingData', 'view'}, trainingDataPath)
         
         % 'f': select frame
         elseif key==102                  
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
-            currentFrame = str2num(input{1});
+            frameInd = find(frameInds==str2num(input{1}));
             updateFrame(0);
             
         % ESCAPE: close window
@@ -119,18 +141,18 @@ end
 % update frame preview
 function updateFrame(frameStep)
     
-    currentFrame = currentFrame + frameStep;
-    if currentFrame > vidBot.NumberOfFrames; currentFrame = 1;
-    elseif currentFrame < 1; currentFrame = vidBot.NumberOfFrames; end
+    frameInd = frameInd + frameStep;
+    if frameInds(frameInd) > vidBot.NumberOfFrames; frameInd = 1;
+    elseif frameInd < 1; frameInd = length(frameInds); end
     
     % get frame and sub-frames
-    frameBot = rgb2gray(read(vidBot, currentFrame));
-    frameTop = rgb2gray(read(vidTop, currentFrame));
+    frameBot = rgb2gray(read(vidBot, frameInds(frameInd)));
+    frameTop = rgb2gray(read(vidTop, frameInds(frameInd)));
     frame = cat(1, frameTop, frameBot);
     
 	% add frame number
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
-        sprintf('session %s, frame %i', session, currentFrame),...
+        sprintf('session %s, frame %i', session, frameInds(frameInd)),...
         'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
@@ -139,20 +161,20 @@ function updateFrame(frameStep)
     % update vertical lines
     for j = 1:length(lines)
         set(lines{j}, ...
-            'xdata', [locations(currentFrame, 1, featurePairInds(j,1)) locations(currentFrame, 1, featurePairInds(j,2))], ...
-            'ydata', [locations(currentFrame, 2, featurePairInds(j,1)) locations(currentFrame, 2, featurePairInds(j,2))])
+            'xdata', [locations(frameInds(frameInd), 1, featurePairInds(j,1)) locations(frameInds(frameInd), 1, featurePairInds(j,2))], ...
+            'ydata', [locations(frameInds(frameInd), 2, featurePairInds(j,1)) locations(frameInds(frameInd), 2, featurePairInds(j,2))])
     end
     
     % lines connecting within view features
     for j = 1:length(connectedFeatures)
-        set(linesConnected{j}, 'xdata', locations(currentFrame,1,connectedFeatureInds{j}), ...
-            'ydata', locations(currentFrame,2,connectedFeatureInds{j}));
+        set(linesConnected{j}, 'xdata', locations(frameInds(frameInd),1,connectedFeatureInds{j}), ...
+            'ydata', locations(frameInds(frameInd),2,connectedFeatureInds{j}));
     end
 
     % upate scatter positions
-    set(scatterLocations, 'XData', locations(currentFrame,1,:), ...
-        'YData', locations(currentFrame,2,:), ...
-        'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(currentFrame,:))*circSize*.9);
+    set(scatterLocations, 'XData', locations(frameInds(frameInd),1,:), ...
+        'YData', locations(frameInds(frameInd),2,:), ...
+        'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(frameInds(frameInd),:))*circSize*.9);
 
     % pause to reflcet on the little things...
     pause(vidDelay);

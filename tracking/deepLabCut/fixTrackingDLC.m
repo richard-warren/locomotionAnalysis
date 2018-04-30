@@ -30,7 +30,24 @@ for i = 1:length(featurePairNames)
     if length(pair)==2; featurePairInds(end+1,:) = pair; end
 end
 
-
+% check that vid has same number of frames as trackedFeaturesRaw has rows... fix if necessary
+if length(frameTimeStamps)~=height(locationsTable)
+    temp = table2array(locationsTable);
+    duplicateInds = [];
+    for i=1:size(temp,1)-1
+        if all(temp(i,:) == temp(i+1,:)); duplicateInds(end+1)=i; end
+    end
+    
+    fprintf('WARNING: %i frames in video and %i frames in trackedFeaturesRaw\n', ...
+        length(frameTimeStamps), height(locationsTable))
+    if (height(locationsTable)-length(duplicateInds))==length(frameTimeStamps)
+        fprintf('  removed %i duplicate rows in trackedFeaturesRaw\n', length(duplicateInds))
+    else
+        fprintf('  COULD NOT RESOLVE DIFFERENCE IN FRAME NUMBERS! WTF!\n')
+    end
+    
+    locationsTable = locationsTable(~ismember(1:height(locationsTable), duplicateInds), :);
+end
 
 
 
@@ -42,16 +59,15 @@ locations(lowScoreBins) = nan;
 
 
 % median filter
-locations = medfilt1(locations, 3, [], 'omitnan');
-% for i = 1:length(features)
-%     locations(:,1,i) = medfilt1(locations(:,1,i), );
-%     locations(:,2,i) = medfilt1(locations(:,2,i), );
-% end
+% locations = medfilt1(locations, 3, [], 'omitnan');
+
+
 
 % remove inds that jump too far
 % tic
 % for i = 1:length(features)
 %     fprintf('now analyzing: %s\n', features{i})
+%     keyboard
 %     
 %     speeds = sqrt(sum(diff(squeeze(locations(:,:,i)), 1, 1).^2,2)) ./ diff(frameTimeStamps);
 %     checkVelInds = find(diff(isnan(locations(:,1,i)))==1 | speeds>maxSpeed) + 1;

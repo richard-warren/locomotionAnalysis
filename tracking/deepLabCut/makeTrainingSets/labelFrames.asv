@@ -1,4 +1,4 @@
-function labelFrames(trainingSetDir, trainingSetName, features)
+function labelFrames(trainingSetDir, features)
 
 % add way of excluding trials
 
@@ -10,7 +10,7 @@ labelledColor = [1 1 0];
 
 % initializations
 defaultPositions = repmat([10 10], length(features), 1) .* repmat(1:length(features),2,1)';
-load([trainingSetDir trainingSetName], 'trainingData', 'view');
+load([trainingSetDir 'trainingData.mat'], 'trainingData', 'view');
 fields = fieldnames(trainingData);
 structInd = 1;
 selectedPoint = nan;
@@ -123,7 +123,7 @@ function keypress(~,~)
                 
             % s: save progress
             case 115
-                save([trainingSetDir trainingSetName], 'trainingData', 'view');
+                save([trainingSetDir 'trainingData.mat'], 'trainingData', 'view');
                 m = msgbox('saving progress...'); pause(.5); close(m)
         end
     end
