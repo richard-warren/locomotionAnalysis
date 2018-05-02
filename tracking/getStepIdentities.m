@@ -1,25 +1,14 @@
 function [controlStepIdentities, modifiedStepIdentities] = ...
-    getStepIdentities(stanceBins, locations, trialIdentities, contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions)
+    getStepIdentities(stanceBins, locations, contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions)
 
 % given the bins in which paws are in stance and time of wisk contact with obs, determines frames corresponding to control and modified swings
 % modified swings are those occuring during or after obs contact with wisk, including but not after swing that actually gets over obs
 % control swings are those before mod swings, for now two swings before mod swings for each paw
 
-% % temp
-% session = '180122_001';
-% load([getenv('OBSDATADIR') 'sessions\' session '\tracking\stanceBins.mat'], 'stanceBins');
-% load([getenv('OBSDATADIR') 'sessions\' session '\tracking\locationsBotCorrected.mat'], 'locations');
-% load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactTimes.mat'], 'contactTimes');
-% load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'obsPixPositions');
-% trialIdentities = locations.trialIdentities;
-% locations = locations.locationsCorrected;
 
 % settings
 controlSteps = 2;
-
-% initializations
-trials = unique(trialIdentities(~isnan(trialIdentities)))';
-
+plotExample = true;
 
 % give each swing a number across all trials, in ascending order
 swingBins = ~stanceBins;
@@ -36,7 +25,7 @@ controlStepIdentities = nan(size(allSwingIdentities));
 modifiedStepIdentities = nan(size(allSwingIdentities));
 
 
-for i = trials
+for i = 1:length(obsOnTimes)
     for j = 1:4
 
         % find id of swing that crosses obs
@@ -63,48 +52,48 @@ for i = trials
 end
 
 
+if plotExample
+    % plot control and modified step segmentation
+    % don't delete this - it is a very useful way to check that this is doing the right thing)
 
-% % plot control and modified step segmentation
-% % don't delete this - it is a very useful way to check that this is doing the right thing)
-% 
-% % get trial
-% trialInd  = randperm(length(trials), 1);
-% trial = trials(trialInd);
-% trialBins = trialIdentities==trial;
-% paws = [1 2 3 4];
-% xLocations = squeeze(locations(:,1,:)) - obsPixPositions';
-% colors = hsv(4);
-% 
-% close all; figure;
-% 
-% % plot x positions
-% for i = 1:length(paws)
-%     
-%     % plot all x positions
-%     plot(frameTimeStamps(trialBins), xLocations(trialBins, paws(i)), ...
-%         'linewidth', 2, 'color', colors(paws(i),:)); hold on
-%     
-%     % highlight control swings
-%     for j = 1:max(controlStepIdentities(trialBins,paws(i)))
-%         controlBins = trialBins & controlStepIdentities(:,paws(i))==j;
-%         plot(frameTimeStamps(controlBins), xLocations(controlBins, paws(i)), ...
-%             'linewidth', 5, 'color', [0 0 0]); hold on
-%     end
-%     
-%     
-%     % highlight modified swings
-%     for j = 1:max(modifiedStepIdentities(trialBins,paws(i)))
-%         modBins = trialBins & modifiedStepIdentities(:,paws(i))==j;
-%         plot(frameTimeStamps(modBins), xLocations(modBins, paws(i)), ...
-%             'linewidth', 5, 'color', colors(paws(i),:)); hold on
-%     end
-%     
-% end
-% % add lines for obs position and obsContactTime
-% line(get(gca,'xlim'), [0 0])
-% line([contactTimes(trial) contactTimes(trial)], get(gca,'ylim'))
-% 
-% pimpFig
+    % get trial
+    trial  = randperm(length(obsOnTimes), 1);
+    trialBins = frameTimeStamps>obsOnTimes(trial) & frameTimeStamps<obsOffTimes(trial);
+    paws = [1 2 3 4];
+    xLocations = squeeze(locations(:,1,:)) - obsPixPositions';
+    colors = hsv(4);
+
+    figure;
+
+    % plot x positions
+    for i = 1:length(paws)
+
+        % plot all x positions
+        plot(frameTimeStamps(trialBins), xLocations(trialBins, paws(i)), ...
+            'linewidth', 2, 'color', colors(paws(i),:)); hold on
+
+        % highlight control swings
+        for j = 1:max(controlStepIdentities(trialBins,paws(i)))
+            controlBins = trialBins & controlStepIdentities(:,paws(i))==j;
+            plot(frameTimeStamps(controlBins), xLocations(controlBins, paws(i)), ...
+                'linewidth', 5, 'color', [0 0 0]); hold on
+        end
+
+
+        % highlight modified swings
+        for j = 1:max(modifiedStepIdentities(trialBins,paws(i)))
+            modBins = trialBins & modifiedStepIdentities(:,paws(i))==j;
+            plot(frameTimeStamps(modBins), xLocations(modBins, paws(i)), ...
+                'linewidth', 5, 'color', colors(paws(i),:)); hold on
+        end
+
+    end
+    % add lines for obs position and obsContactTime
+    line(get(gca,'xlim'), [0 0])
+    line([contactTimes(trial) contactTimes(trial)], get(gca,'ylim'))
+
+    pimpFig
+end
 
 
 

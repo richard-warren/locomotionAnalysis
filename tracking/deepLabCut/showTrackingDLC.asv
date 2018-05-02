@@ -1,6 +1,8 @@
-function showTrackingDLC(session, vidDelay, trainingDataDir)
+function showTrackingDLC(session, vidDelay, trainingDataPath)
 
 % settings
+vidFs = 250;
+topPawInds = 8:11;
 circSize = 150;
 vidSizeScaling = 1.25;
 colorMap = 'hsv';
@@ -10,8 +12,8 @@ connectedFeatures = {{'gen', 'tailBase', 'tailMid'}, {'tailBaseTop', 'tailMidTop
 
 % initializations
 frameInds = getFramesToShow(session);
-addingFrames = exist('trainingDataDir', 'var');
-if addingFrames; load(trainingDataDir, 'trainingData'); end
+addingFrames = exist('trainingDataPath', 'var');
+if addingFrames; load(trainingDataPath, 'trainingData', 'view'); end
 
 % get videos
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
@@ -19,6 +21,11 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
 [locations, features, featurePairInds, isInterped] = fixTrackingDLC(session);
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'wheelPoints', 'mToPixMapping');
+mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
+wheelPoints = getWheelPoints(vidTop);
+stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixFactor);
 
 % set up figure
 hgt = (vidBot.Height+vidTop.Height);
@@ -56,9 +63,12 @@ for i = 1:length(connectedFeatures)
     linesConnected{i} = line([0 0], [0 0], 'color', [1 1 1]);
 end
 
-% set up scatter points
+% set up scatter points for tracked features
 scatterLocations = scatter(imAxis, zeros(1,length(features)), zeros(1,length(features)),...
     circSize, cmap, 'linewidth', 3); hold on
+
+% set up stance scatter points
+scatterStance = scatter(imAxis, 0, 0, circSize*.5, 'white', 'filled'); hold on
 
 % set state variables
 frameInd = 1;
@@ -81,7 +91,7 @@ close(fig)
 % keypress controls
 function changeFrames(~,~)
     
-    key = double(get(fig, 'currentcharacter'))
+    key = double(get(fig, 'currentcharacter'));
     
     if ~isempty(key) && isnumeric(key)
         
@@ -99,18 +109,22 @@ function changeFrames(~,~)
         
         % 'a': add frame to training set
         elseif key==97
-            ind = height(trainingData)+1; % first look for session...
-            
+            m = msgbox('adding frame to training set...'); pause(.5); close(m)
+            ind = length(trainingData)+1;
             trainingData(ind).session = session;
-            trainingData(ind).frameNum = frameInds(frameInd));
+            trainingData(ind).frameNum = frameInds(frameInd);
             trainingData(ind).includeFrame = false;
             for j = 1:length(features)
                 trainingData(ind).(features{j}) = squeeze(locations(frameInds(frameInd),:,j));
             end
+            
+            % resort the structure so like sessions stay together
+            [~, sortInds] = sort({trainingData.session});
+            trainingData = trainingData(sortInds);
         
         % 's': save training set
         elseif key==115
-            keyboard
+            uisave({'trainingData', 'view'}, trainingDataPath)
         
         % 'f': select frame
         elseif key==102                  
@@ -138,8 +152,9 @@ end
 function updateFrame(frameStep)
     
     frameInd = frameInd + frameStep;
-    if frameInds(frameInd) > vidBot.NumberOfFrames; frameInd = 1;
-    elseif frameInd < 1; frameInd = length(frameInds); end
+    if frameInd < 1; frameInd = length(frameInds);
+    elseif frameInds(frameInd) > vidBot.NumberOfFrames; frameInd = 1; end
+    
     
     % get frame and sub-frames
     frameBot = rgb2gray(read(vidBot, frameInds(frameInd)));
@@ -171,6 +186,12 @@ function updateFrame(frameStep)
     set(scatterLocations, 'XData', locations(frameInds(frameInd),1,:), ...
         'YData', locations(frameInds(frameInd),2,:), ...
         'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(frameInds(frameInd),:))*circSize*.9);
+    
+    % update scatter stance positions
+    isStance = repmat(stanceBins(frameInds(frameInd),:),1,2);
+    set(scatterStance, ...
+        'XData', squeeze(locations(frameInds(frameInd),1,featurePairInds(:))) .* isStance', ...
+        'YData', squeeze(locations(frameInds(frameInd),2,featurePairInds(:))));
 
     % pause to reflcet on the little things...
     pause(vidDelay);

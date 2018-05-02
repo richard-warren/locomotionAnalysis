@@ -67,45 +67,45 @@ locations(lowScoreBins) = nan;
 
 
 % remove inds that violate velocity constraint
-% for i = 1:length(features)
-%     
-%     speeds = sqrt(sum(diff(squeeze(locations(:,:,i)), 1, 1).^2,2)) ./ diff(frameTimeStamps);
-%     checkVelInds = find(diff(isnan(locations(:,1,i)))==1 | speeds>maxSpeed) + 1;
-%     
-%     for j = checkVelInds'
-%         
-%         % find first frame where tracking doesn't violate max speed
-%         lastTrackedInd = j-1; while isnan(locations(lastTrackedInd,1,i)); lastTrackedInd = lastTrackedInd-1; end
-%         
-%         inds = lastTrackedInd+1 : min(lastTrackedInd+lookAheadFrames, size(locations,1));
-%         dp = sqrt(sum((locations(lastTrackedInd,:,i) - locations(inds,:,i)).^2,2));
-%         dt = frameTimeStamps(inds)-frameTimeStamps(lastTrackedInd);
-%         vels = dp ./ dt;
-%         
-%         nextTrackedInd = lastTrackedInd + find(vels<maxSpeed,1,'first');
-%         
-%         % replace values violating speed constraint with nans
-%         locations(lastTrackedInd+1:nextTrackedInd-1,:,i) = nan;
-%     end
-% end
+for i = 1:length(features)
+    
+    speeds = sqrt(sum(diff(squeeze(locations(:,:,i)), 1, 1).^2,2)) ./ diff(frameTimeStamps);
+    checkVelInds = find(diff(isnan(locations(:,1,i)))==1 | speeds>maxSpeed) + 1;
+    
+    for j = checkVelInds'
+        
+        % find first frame where tracking doesn't violate max speed
+        lastTrackedInd = j-1; while isnan(locations(lastTrackedInd,1,i)); lastTrackedInd = lastTrackedInd-1; end
+        
+        inds = lastTrackedInd+1 : min(lastTrackedInd+lookAheadFrames, size(locations,1));
+        dp = sqrt(sum((locations(lastTrackedInd,:,i) - locations(inds,:,i)).^2,2));
+        dt = frameTimeStamps(inds)-frameTimeStamps(lastTrackedInd);
+        vels = dp ./ dt;
+        
+        nextTrackedInd = lastTrackedInd + find(vels<maxSpeed,1,'first');
+        
+        % replace values violating speed constraint with nans
+        locations(lastTrackedInd+1:nextTrackedInd-1,:,i) = nan;
+    end
+end
 
 
 
 % remove top locations where x is too far from bottom location
-% for i = 1:size(featurePairInds)
-%     xDiffs = abs(diff(squeeze(locations(:,1,featurePairInds(i,:))), 1, 2));
-%     locations(xDiffs>xDiffMax, :, featurePairInds(i,2)) = nan;
-% end
+for i = 1:size(featurePairInds)
+    xDiffs = abs(diff(squeeze(locations(:,1,featurePairInds(i,:))), 1, 2));
+    locations(xDiffs>xDiffMax, :, featurePairInds(i,2)) = nan;
+end
 
 
 
 % fill in missing values
 isInterped = isnan(squeeze(locations(:,1,:)));
 
-% for i = 1:length(features)
-%     locations(:,1,i) = fillmissing(locations(:,1,i), 'pchip', 'endvalues', 'none');
-%     locations(:,2,i) = fillmissing(locations(:,2,i), 'pchip', 'endvalues', 'none');
-% end
+for i = 1:length(features)
+    locations(:,1,i) = fillmissing(locations(:,1,i), 'pchip', 'endvalues', 'none');
+    locations(:,2,i) = fillmissing(locations(:,2,i), 'pchip', 'endvalues', 'none');
+end
 
 
 

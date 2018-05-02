@@ -1,0 +1,16 @@
+% test speed of different analyses
+
+session = '180122_001';
+velPrePost = [.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
+
+
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'])
+obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+
+%% vels
+trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
+
+%% stance bins
+tic; 
+stanceBins = getStanceBins(vidTop, wheelPoints, squeeze(locationsBot(:,1,:)), locations.trialIdentities', ...
+        fs, mToPixFactor, wheelPositions, wheelTimes, targetFs, frameTimeStamps);

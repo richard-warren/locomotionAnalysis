@@ -1,6 +1,9 @@
 function showTrackingDLC(session, vidDelay, trainingDataPath)
 
 % settings
+vidFs = 250;
+botPawInds = 1:4;
+topPawInds = 8:11;
 circSize = 150;
 vidSizeScaling = 1.25;
 colorMap = 'hsv';
@@ -19,6 +22,12 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
 [locations, features, featurePairInds, isInterped] = fixTrackingDLC(session);
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping');
+mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
+wheelPoints = getWheelPoints(vidTop);
+[wheelRadius, wheelCenter] = fitCircle(wheelPoints);
+stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixFactor);
 
 % set up figure
 hgt = (vidBot.Height+vidTop.Height);
@@ -29,6 +38,9 @@ imPreview = image(zeros(hgt, vidBot.Width), 'CDataMapping', 'scaled'); hold on;
 imAxis = gca;
 set(imAxis, 'visible', 'off', 'units', 'pixels',...
     'position', [0 0 vidBot.Width*vidSizeScaling hgt*vidSizeScaling]);
+
+% draw circle at wheel location
+viscircles(wheelCenter', wheelRadius, 'color', 'blue');
 
 % set colors s.t. matching features in top and bot view have same color
 cmap = eval(sprintf('%s(%i);', colorMap, length(features)));
@@ -56,9 +68,14 @@ for i = 1:length(connectedFeatures)
     linesConnected{i} = line([0 0], [0 0], 'color', [1 1 1]);
 end
 
-% set up scatter points
+% set up scatter points for tracked features
 scatterLocations = scatter(imAxis, zeros(1,length(features)), zeros(1,length(features)),...
     circSize, cmap, 'linewidth', 3); hold on
+
+% set up stance scatter points
+scatterStance = scatter(imAxis, ...
+    zeros(1,length([botPawInds topPawInds])), zeros(1,length([botPawInds topPawInds])), ...
+    circSize, cmap([botPawInds topPawInds],:), 'filled'); hold on
 
 % set state variables
 frameInd = 1;
@@ -176,6 +193,12 @@ function updateFrame(frameStep)
     set(scatterLocations, 'XData', locations(frameInds(frameInd),1,:), ...
         'YData', locations(frameInds(frameInd),2,:), ...
         'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(frameInds(frameInd),:))*circSize*.9);
+    
+    % update scatter stance positions
+    isStance = repmat(stanceBins(frameInds(frameInd),:),1,2);
+    set(scatterStance, ...
+        'XData', squeeze(locations(frameInds(frameInd),1,[botPawInds topPawInds])) .* isStance', ...
+        'YData', squeeze(locations(frameInds(frameInd),2,[botPawInds topPawInds])));
 
     % pause to reflcet on the little things...
     pause(vidDelay);
