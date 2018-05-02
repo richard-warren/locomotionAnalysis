@@ -17,7 +17,7 @@ function bgImage = getBgImage(vid, meanFrameNum, skipTime, diffThresh, showImage
     meanFrame = zeros(size(frameLast)); % re-computes mean every time it grabs a new frame to avoid having to store many frames in memory simultaneously
     meanFrameCount = 0;
     
-    w = waitbar(0, 'computing background frame...', 'position', [1500 50 270 56.2500]);
+%     w = waitbar(0, 'computing background frame...', 'position', [1500 50 270 56.2500]);
     
     
     
@@ -42,13 +42,13 @@ function bgImage = getBgImage(vid, meanFrameNum, skipTime, diffThresh, showImage
                 vid.CurrentTime = vid.CurrentTime + timeToSkip;
             end
             
-            waitbar(meanFrameCount/meanFrameNum)
+%             waitbar(meanFrameCount/meanFrameNum)
         end
 
         frameLast = frame;
         currentFrame = currentFrame + 1;
     end
-    close(w)
+%     close(w)
 %     meanFrame = getFeatures(meanFrame);
     bgImage = uint8(meanFrame);
     

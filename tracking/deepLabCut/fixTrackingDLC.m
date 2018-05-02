@@ -1,4 +1,4 @@
-function [locations, features, featurePairInds, isInterped] = fixTrackingDLC(session)
+function [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps)
 
 % !!! currently assumes features for the top and second in the list of features, after features for the bottom... i should fix this yo
 
@@ -10,9 +10,6 @@ maxSpeed = 5000; % pixels per second (5000 = 20 pix per frame at 250 fps)
 lookAheadFrames = 100;
 
 % load data and convert from table to matrices
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get tracking data
-locationsTable = locationsTable(:,2:end); % remove index column
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'frameTimeStamps'); % get tracking data
 frameNum = height(locationsTable);
 features = locationsTable(:,1:3:width(locationsTable)).Properties.VariableNames;
 

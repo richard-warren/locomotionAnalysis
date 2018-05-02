@@ -1,4 +1,4 @@
-%% RECALCULATE KINEMATIC DATA
+%% CALCULATE KINEMATIC DATA
 
 % settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
@@ -6,13 +6,12 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
             '180124_001', '180124_002', '180124_003', ...
             '180125_001', '180125_002', '180125_003'};
 
-
 % initializations
-data = getKinematicData(sessions);
+data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
 
-%% LOAD DATA
+%% LOAD PREVIOUSLY CALCULATEDDATA
 
 load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
 data = data([data.oneSwingOneStance]);

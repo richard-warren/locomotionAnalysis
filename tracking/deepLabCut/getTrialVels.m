@@ -7,7 +7,7 @@ trialVels = nan(1, length(obsOnTimes));
 for i = 1:length(obsOnTimes)
     
     % get trial velocity
-    startInd = find(obsTimes>obsOnTimes(i) & obsPositions>-velPrePost(1), 1, 'first');
+    startInd = find(obsTimes>obsOnTimes(i) & obsPositions>velPrePost(1), 1, 'first');
     endInd = find(obsTimes>obsOnTimes(i) & obsPositions>velPrePost(2), 1, 'first');
     trialVels(i) = (obsPositions(endInd) - obsPositions(startInd)) / (obsTimes(endInd) - obsTimes(startInd));
     

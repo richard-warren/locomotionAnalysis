@@ -1,5 +1,5 @@
 function [controlStepIdentities, modifiedStepIdentities] = ...
-    getStepIdentities(stanceBins, locations, contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions)
+    getStepIdentities(stanceBins, locationsBotPaws, contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions)
 
 % given the bins in which paws are in stance and time of wisk contact with obs, determines frames corresponding to control and modified swings
 % modified swings are those occuring during or after obs contact with wisk, including but not after swing that actually gets over obs
@@ -8,7 +8,7 @@ function [controlStepIdentities, modifiedStepIdentities] = ...
 
 % settings
 controlSteps = 2;
-plotExample = true;
+plotExample = false;
 
 % give each swing a number across all trials, in ascending order
 swingBins = ~stanceBins;
@@ -31,7 +31,7 @@ for i = 1:length(obsOnTimes)
         % find id of swing that crosses obs
         overObsInd = find(frameTimeStamps>obsOnTimes(i) & ... 
                           frameTimeStamps<obsOffTimes(i) & ...
-                          locations(:,1,j)>=obsPixPositions', 1, 'first');
+                          locationsBotPaws(:,1,j)>=obsPixPositions', 1, 'first');
         swingOverObsIdentity = allSwingIdentities(overObsInd, j);
 
         % find id of first swing during or after obs contact with wisk
@@ -60,7 +60,7 @@ if plotExample
     trial  = randperm(length(obsOnTimes), 1);
     trialBins = frameTimeStamps>obsOnTimes(trial) & frameTimeStamps<obsOffTimes(trial);
     paws = [1 2 3 4];
-    xLocations = squeeze(locations(:,1,:)) - obsPixPositions';
+    xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositions';
     colors = hsv(4);
 
     figure;

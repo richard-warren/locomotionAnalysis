@@ -21,9 +21,11 @@ vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
-[locations, features, featurePairInds, isInterped] = fixTrackingDLC(session);
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping');
+locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+locationsTable = locationsTable(:,2:end); % remove index column
+[locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps);
 mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
 wheelPoints = getWheelPoints(vidTop);
 [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
