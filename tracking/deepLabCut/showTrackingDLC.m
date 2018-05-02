@@ -142,8 +142,9 @@ end
 function updateFrame(frameStep)
     
     frameInd = frameInd + frameStep;
-    if frameInds(frameInd) > vidBot.NumberOfFrames; frameInd = 1;
-    elseif frameInd < 1; frameInd = length(frameInds); end
+    if frameInd < 1; frameInd = length(frameInds);
+    elseif frameInds(frameInd) > vidBot.NumberOfFrames; frameInd = 1; end
+    
     
     % get frame and sub-frames
     frameBot = rgb2gray(read(vidBot, frameInds(frameInd)));
