@@ -11,7 +11,7 @@ data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
 
-%% LOAD PREVIOUSLY CALCULATEDDATA
+%% LOAD PREVIOUSLY CALCULATED DATA
 
 load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
 data = data([data.oneSwingOneStance]);
@@ -33,7 +33,7 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
 %% MAKE KINEMATIC FIGS
 
 plotType = 'averages';
-plotTrajectories(data, bins, binLabels, plotType);
+plotTrajectories2(data, bins, binLabels, plotType);
 
 
 % reformat single bin figure
