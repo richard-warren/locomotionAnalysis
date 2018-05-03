@@ -74,34 +74,33 @@ for i = 1:length(data)
 end
 
 
-% get x values
-controlDifsX = squeeze(controlDifs(:,1,:,:));
-controlDifsX = reshape(permute(controlDifsX, [1 3 2]), [], length(times));
-modDifsX = squeeze(modDifs(:,1,:));
-
-% interpolate
-% controlDifsXInterp = interpWithNans(controlDifsX, times, timesInterp, 'pchip');
-% modDifsXInterp = interpWithNans(modDifsX, times, timesInterp, 'pchip');
 
 
-figure('color', 'white', 'menubar', 'none', 'position', [680   215   528   763], 'InvertHardcopy', 'off');
+figure('color', 'white', 'menubar', 'none', 'position', [680   100   496   898], 'InvertHardcopy', 'off');
 numModSteps = reshape([data.modStepNum],4,length(data))';
-fcns = {@(x) nanstd(x)/sqrt(size(x,1)), @(x) nanstd(x)};
+errorFcn = @(x) nanstd(x)/sqrt(size(x,1));
+dims = {'x', 'y', 'z'};
 
-for i = 1:length(fcns)
+for i = 1:3
     
-    subplot(2,1,i)
+    % get diifs for one dimension
+    controlDifsSub = squeeze(controlDifs(:,i,:,:));
+    controlDifsSub = reshape(permute(controlDifsSub, [1 3 2]), [], length(times));
+    modDifsSub = squeeze(modDifs(:,i,:));
     
-    shadedErrorBar(times*1000, controlDifsX*1000, {@nanmean, fcns{i}}, ...
+    
+    subplot(3,1,i)
+    
+    shadedErrorBar(times*1000, controlDifsSub*1000, {@nanmean, errorFcn}, ...
         'lineprops', {'linewidth', 3, 'color', [0 0 0]}); hold on;
-    shadedErrorBar(times*1000, modDifsX(numModSteps(:,3)>1,:)*1000, {@nanmean, fcns{i}}, ...
+    shadedErrorBar(times*1000, modDifsSub(numModSteps(:,3)>1,:)*1000, {@nanmean, errorFcn}, ...
         'lineprops', {'linewidth', 3, 'color', colors(1,:)});
-    shadedErrorBar(times*1000, modDifsX(numModSteps(:,3)==1,:)*1000, {@nanmean, fcns{i}}, ...
+    shadedErrorBar(times*1000, modDifsSub(numModSteps(:,3)==1,:)*1000, {@nanmean, errorFcn}, ...
         'lineprops', {'linewidth', 3, 'color', colors(2,:)});
 
     % pimp fig
     set(gca, 'xlim', xlims, 'ylim', ylims)
-    ylabel('\Deltax (mm)')
+    ylabel(['\Delta' dims{i} ' (mm)'])
     xlabel('time (ms)')
     line([0 0], get(gca,'ylim'), 'color', [0 0 0])
 end

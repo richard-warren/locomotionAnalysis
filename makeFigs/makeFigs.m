@@ -32,7 +32,7 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
 
 %% MAKE KINEMATIC FIGS
 
-plotType = 'trials';
+plotType = 'averages';
 plotTrajectories(data, bins, binLabels, plotType);
 
 
