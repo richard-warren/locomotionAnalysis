@@ -4,8 +4,8 @@ function plotTrajectories2(data, bins, binLabels, plotType)
 
 
 % global settings
-azimuth = 0;
-elevation = 0;
+azimuth = -10;
+elevation = 10;
 projectionDarkening = .6;
 obsThickness = .003;
 obsHeight = .009;
@@ -22,7 +22,7 @@ yLims = [-0.0381 0.0381]; % 3 inches, which is width of wheel
 zLims = [0 .015];
 scaleBarSize = .01;
 circSize = 150;
-lineWid = 4;
+lineWid = 3;
 tracesPerPlot = 8;
 
 % histogram settings
@@ -291,8 +291,8 @@ elseif strcmp(plotType, 'averages')
         y = squeeze(rightControlLocations(:,2,:));
         z = squeeze(rightControlLocations(:,3,:));
         plot3(mean(x,1), mean(y,1), mean(z,1), 'color', controlColor, 'linewidth', lineWid); hold on;
-        plot3(mean(x,1), ones(1,size(y,2))*yLims(1), mean(z,1), ...
-            'color', controlColor*projectionDarkening, 'linewidth', lineWid); hold on;
+%         plot3(mean(x,1), ones(1,size(y,2))*yLims(1), mean(z,1), ...
+%             'color', controlColor*projectionDarkening, 'linewidth', lineWid); hold on;
 
         % plot mod left
 %         x = squeeze(leftModLocations(:,1,:));
@@ -305,8 +305,8 @@ elseif strcmp(plotType, 'averages')
             y = squeeze(rightModOneStepLocations(:,2,:));
             z = squeeze(rightModOneStepLocations(:,3,:));
             plot3(mean(x,1), mean(y,1), mean(z,1), 'color', colors(2,:), 'linewidth', lineWid + oneTwoRatio*lineWid); hold on;
-            plot3(mean(x,1), ones(1,size(y,2))*yLims(1), mean(z,1), ...
-                'color', colors(2,:)*projectionDarkening, 'linewidth', lineWid + oneTwoRatio*lineWid); hold on;
+%             plot3(mean(x,1), ones(1,size(y,2))*yLims(1), mean(z,1), ...
+%                 'color', colors(2,:)*projectionDarkening, 'linewidth', lineWid + oneTwoRatio*lineWid); hold on;
         end
 
         % plot mod right, two step
@@ -315,8 +315,8 @@ elseif strcmp(plotType, 'averages')
             y = squeeze(rightModTwoStepLocations(:,2,:));
             z = squeeze(rightModTwoStepLocations(:,3,:));
             plot3(mean(x,1), mean(y,1), mean(z,1), 'color', colors(1,:), 'linewidth', lineWid + -oneTwoRatio*lineWid); hold on;
-            plot3(mean(x,1), ones(1,size(y,2))*yLims(1), mean(z,1), ...
-                'color', colors(1,:)*projectionDarkening, 'linewidth', lineWid + -oneTwoRatio*lineWid); hold on;
+%             plot3(mean(x,1), ones(1,size(y,2))*yLims(1), mean(z,1), ...
+%                 'color', colors(1,:)*projectionDarkening, 'linewidth', lineWid + -oneTwoRatio*lineWid); hold on;
         end
 
         % mark avg position of obsPos
@@ -360,9 +360,9 @@ end
 % line([xLims(2)-scaleBarSize xLims(2)], repmat(yLims(2),1,2)-.02, 'linewidth', 3, 'color', 'black')
 % text(xLims(2)-.5*scaleBarSize, yLims(2)-.02+.005, sprintf('%i mm', scaleBarSize*1000), 'horizontalalignment', 'center')
 
+blackenFig;
 saveas(gcf, [getenv('OBSDATADIR') 'figures\trialKinematics.png']);
 savefig([getenv('OBSDATADIR') 'figures\trialKinematics.fig'])
-blackenFig;
 print('-clipboard', '-dmeta')
 
 

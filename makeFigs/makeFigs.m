@@ -65,7 +65,7 @@ blackenFig; print('-clipboard', '-dmeta')
 %% REACTION TIMES
 
 tic; plotReactionTimes(data); toc
-blackenFig; print('-clipboard', '-dmeta')
+print('-clipboard', '-dmeta')
 
 
 %% MAKE SENSORY DEPENDENCE VIDS

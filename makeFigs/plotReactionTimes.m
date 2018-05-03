@@ -105,6 +105,7 @@ for i = 1:3
     line([0 0], get(gca,'ylim'), 'color', [0 0 0])
 end
 
+blackenFig
 saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimes.png']);
 
 
