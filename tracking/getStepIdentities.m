@@ -38,23 +38,26 @@ for i = 1:length(obsOnTimes)
         firstModifiedInd = find(~isnan(allSwingIdentities(:,j)) & frameTimeStamps>=contactTimes(i), 1, 'first');
         firstModifiedIdentitiy = allSwingIdentities(firstModifiedInd, j);
 
-        modifiedBins = (allSwingIdentities(:,j) >= firstModifiedIdentitiy) & ...
-                       (allSwingIdentities(:,j) <= swingOverObsIdentity);
-        controlBins = (allSwingIdentities(:,j) >= (firstModifiedIdentitiy-controlSteps)) & ...
-                      (allSwingIdentities(:,j) < firstModifiedIdentitiy);
+        try
+            modifiedBins = (allSwingIdentities(:,j) >= firstModifiedIdentitiy) & ...
+                           (allSwingIdentities(:,j) <= swingOverObsIdentity);
+            controlBins = (allSwingIdentities(:,j) >= (firstModifiedIdentitiy-controlSteps)) & ...
+                          (allSwingIdentities(:,j) < firstModifiedIdentitiy);
 
-        steps = cumsum([0; diff(modifiedBins)==1]);
-        modifiedStepIdentities(modifiedBins, j) = steps(modifiedBins);
-        steps = cumsum([0; diff(controlBins)==1]);
-        controlStepIdentities(controlBins, j) = steps(controlBins);
+            steps = cumsum([0; diff(modifiedBins)==1]);
+            modifiedStepIdentities(modifiedBins, j) = steps(modifiedBins);
+            steps = cumsum([0; diff(controlBins)==1]);
+            controlStepIdentities(controlBins, j) = steps(controlBins);
+        catch
+            fprintf('  problem with trial %i\n', i)
+        end
         
     end
 end
 
 
+% plot control and modified step segmentation
 if plotExample
-    % plot control and modified step segmentation
-    % don't delete this - it is a very useful way to check that this is doing the right thing)
 
     % get trial
     trial  = randperm(length(obsOnTimes), 1);

@@ -2,7 +2,7 @@
 
 % settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
-            '180123_001', '180123_002', '180123_003', ...
+            '180123_001', '180123_003', ...
             '180124_001', '180124_002', '180124_003', ...
             '180125_001', '180125_002', '180125_003'};
 
@@ -32,7 +32,7 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
 
 %% MAKE KINEMATIC FIGS
 
-plotType = 'averages';
+plotType = 'trials';
 plotTrajectories(data, bins, binLabels, plotType);
 
 
