@@ -10,6 +10,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     %         decoding wheel position
     %         getting obstacle on and off times
     %         getting obstacle light on and off times
+    %         whether a trial has light on or not
     %         getting frame time stamps
     %         getting wisk frame time stamps
     %         getting webcam time stamps
@@ -219,7 +220,29 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
         varStruct.obsLightOffTimes = obsLightOffTimes; 
         anythingAnalyzed = true;
     end
+    
+    
+    
+    
+    % determine whether light was on or off for every trial
+    if analyzeVar('isLightOn', varNames, varsToOverWrite)
 
+        fprintf('%s: determing whether each trial is light on or light off\n', dataFolder)
+        
+        if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsObTimes')
+            isLightOn = false(size(varStruct.obsOnTimes));
+
+            for i = 1:length(varStruct.obsOnTimes)
+                isLightOn(i) = min(abs(varStruct.obsOnTimes(i) - varStruct.obsLightOnTimes)) < 1; % did the light turn on near when the obstacle turned on
+            end
+        else
+            isLightOn = [];
+        end
+
+        % save values
+        varStruct.isLightOn = isLightOn;
+        anythingAnalyzed = true;
+    end
 
 
 
@@ -350,16 +373,19 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     
     % get position of tip of nose
     if analyzeVar('nosePos', varNames, varsToOverWrite)
+        
+        if exist([dataDir dataFolder '\runBot.mp4'], 'file')
 
             fprintf('%s: getting nose position in bottom view\n', dataFolder)
-            
+
             % get nose position
             vidBot = VideoReader([dataDir dataFolder '\runBot.mp4']);
             [noseX, noseY] = getNosePos(vidBot);
-            
+
             % save
             varStruct.nosePos = [noseX noseY];
             anythingAnalyzed = true;
+        end
     end
 
 
@@ -402,7 +428,9 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     if analyzeVar('wiskTouchPixels', varNames, varsToOverWrite) ||...
        analyzeVar('wiskTouchSignal', varNames, varsToOverWrite)
         
-        if ~isempty('obsOntimes') && exist([sessionDir 'runWisk.mp4'], 'file')  %!!! probably needs more checks here
+        if ~isempty('obsOntimes') && ...
+           exist([sessionDir 'runWisk.mp4'], 'file') && ...
+           isfield(varStruct, 'frameTimeStampsWisk')  %!!! probably needs more checks here
             
             fprintf('%s: analyzing wisk contacts\n', dataFolder)
 

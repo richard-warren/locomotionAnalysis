@@ -30,24 +30,14 @@ end
 
 % check that vid has same number of frames as trackedFeaturesRaw has rows... fix if necessary
 if length(frameTimeStamps)~=height(locationsTable)
-    temp = table2array(locationsTable);
-    duplicateInds = [];
-    for i=1:size(temp,1)-1
-        if all(temp(i,:) == temp(i+1,:)); duplicateInds(end+1)=i; end
-    end
-    
     fprintf('WARNING: %i frames in video and %i frames in trackedFeaturesRaw\n', ...
         length(frameTimeStamps), height(locationsTable))
-    if (height(locationsTable)-length(duplicateInds))==length(frameTimeStamps)
-        fprintf('  removed %i duplicate rows in trackedFeaturesRaw\n', length(duplicateInds))
+    if length(frameTimeStamps) > height(locationsTable)
+        dif = length(frameTimeStamps)-height(locationsTable);
+        locations(end+dif,:,:) = nan;
     else
-        fprintf('  COULD NOT RESOLVE DIFFERENCE IN FRAME NUMBERS! WTF!\n')
+        locations = locations(1:length(frameTimeStamps),:,:);
     end
-    
-    nonDuplicateBins = ~ismember(1:size(locations,1), duplicateInds);
-    locations = locations(nonDuplicateBins, :, :);
-    scores = scores(nonDuplicateBins, :);
-    locationsTable = locationsTable(nonDuplicateBins,:);
 end
 
 

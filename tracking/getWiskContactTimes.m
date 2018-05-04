@@ -75,7 +75,9 @@ for i = 1:length(sessions)
             % interpolate to find time at which obsPosition==contactPosition
             % note: this is done by finding the ind before and after threshold crossing, then interpolating between these two sample points!
             indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
+            try
             contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+            catch; keyboard; end
         end
     end
 

@@ -3,7 +3,7 @@ function [wiskTouchSignal, wiskTouchPixels] = getWiskContacts(vid, showTracking,
 % !!! need to document
 
 % settings
-bgThresh = 100;
+bgThresh = 120;
 wiskThresh = 50;
 erosion = 3;
 dilation = 6;
@@ -84,7 +84,8 @@ for i = frameInds
     
     if any(obsMask(:))
         obsMaskShifted = zeros(size(frame));
-        obsMaskShifted(1:end-borderThickness, 1:end-borderThickness) = obsMask(borderThickness+1:end, borderThickness+1:end);
+%         obsMaskShifted(1:end-borderThickness, 1:end-borderThickness) = obsMask(borderThickness+1:end, borderThickness+1:end); shifted left and up
+        obsMaskShifted(:, 1:end-borderThickness) = obsMask(:, borderThickness+1:end); % only shifted left
         borderMask = xor(obsMask, obsMaskShifted) & ~obsMask;
     end
         

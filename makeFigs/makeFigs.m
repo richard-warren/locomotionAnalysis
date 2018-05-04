@@ -1,4 +1,4 @@
-%% CALCULATE KINEMATIC DATA
+%% CALCULATE KINEMATIC DATA (no light, wisk only)
 
 % settings
 sessions = {'180122_001', '180122_002', '180122_003', ...
@@ -10,6 +10,16 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
 data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
+
+%% CALCULATE KINEMATIC DATA (no light, wisk only)
+
+% settings
+wiskSessions = {'180225_000', '180225_001', '180225_002', '180226_000', '180226_001'};
+noWiskSessions = {'180228_000', '180228_001', '180228_002', '180301_000', '180301_001', '180301_002'};
+
+% initializations
+data = getKinematicData3(cat(2, wiskSessions, noWiskSessions));
+save([getenv('OBSDATADIR') 'kinematicDataSensoryDependence.mat'], 'data');
 
 %% LOAD PREVIOUSLY CALCULATED DATA
 

@@ -9,7 +9,7 @@ for i = 1:length(sessionDirs)
     
     % spike analysis
     nameInd = find(sessionDirs{i}=='\',1,'last');
-    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
+    spikeAnalysis(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end), {'isLightOn'});
     
 end
 

@@ -113,7 +113,7 @@ for i = 1:length(sessions)
 
             % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
             trialLocations(:,1,:) = trialLocations(:,1,:) - trialObsPixPositions;
-
+fix 
             % convert to meters
             trialLocations = trialLocations / abs(mToPixMapping(1));
 
