@@ -48,7 +48,7 @@ for i = allInds
 end
 
 
-%%
+
 close all;
 figure('color', 'white', 'position', [500 500 900 300], 'InvertHardCopy', 'off');
 
