@@ -1,12 +1,12 @@
-function data = getKinematicData(sessions)
+function data = getKinematicData(sessions, obsPos)
 
+% note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
 % settings
 botPawInds = 1:4;
 topPawInds = 8:11;
 minVel = 0;
 velPrePost = [-.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
-isObsPosStatic = false; % if true, assumes wisk contacts obstacle at median detected obsContactPosition PER SESSION
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
@@ -39,7 +39,18 @@ for i = 1:length(sessions)
     wheelPoints = getWheelPoints(vidTop);
     [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, 250, mToPixFactor);
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
+    if exist('obsPos', 'var')
+        contactPositions = ones(size(obsOnTimes))*obsPos;
+        contactTimes = nan(size(obsOnTimes));
+        
+        % get times when obs reaches obPos
+        for j = 1:length(obsOnTimes)
+            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
+            contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+        end
+    else
+        load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
+    end
     [controlStepIdentities, modifiedStepIdentities] = ...
         getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions);
     vel = getVelocity(wheelPositions, speedTime, targetFs);
@@ -63,28 +74,13 @@ for i = 1:length(sessions)
     
     for j = trials
         
-        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
-        
-            
-        % GET TIME, OBS POSITION, AND SPEED AT MOMENT OF CONTACT
-        if isObsPosStatic
-
-            % set contact position as median of contact positiosn for session
-            contactPositions(j) = nanmedian(contactPositions);
-
-            % interpolate to find time at which obsPosition==contactPosition
-            % note: this is done by finding the ind before and after threshold crossing, then interpolating between these two sample points!
-            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
-            contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
-        end
-        sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
-
-
-
-
         % GET TRIAL DATA
         % note: i pull out trial specific data because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
+        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
 
+        % get vel at moment of contact
+        sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
+        
         % get time stamps relative to wisk contact
         trialTimeStamps = frameTimeStamps(trialBins)-contactTimes(j);
         [~, minInd] = min(abs(trialTimeStamps));

@@ -11,15 +11,22 @@ data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
 
-%% CALCULATE KINEMATIC DATA (no light, wisk only)
+%% CALCULATE KINEMATIC DATA (wisk vs no wisk sessions)
 
 % settings
-wiskSessions = {'180225_000', '180225_001', '180225_002', '180226_000', '180226_001'};
+wiskSessions = {'180225_000', '180225_001', '180225_002', '180226_000', '180226_001'}; % !!! missing '180226_002' because problem with wisk analysis
 noWiskSessions = {'180228_000', '180228_001', '180228_002', '180301_000', '180301_001', '180301_002'};
 
 % initializations
-data = getKinematicData3(cat(2, wiskSessions, noWiskSessions));
+dataWisk = getKinematicData3(wiskSessions);
+medObsPos = median([dataWisk.obsPos]);
+dataNoWisk = getKinematicData3(noWiskSessions, medObsPos);
+
 save([getenv('OBSDATADIR') 'kinematicDataSensoryDependence.mat'], 'data');
+
+%% PLOT SENSORY DEPENDENCE KINEMATICS
+sensoryDependenceKinematics(cat(2,dataWisk,dataNoWisk), wiskSessions, noWiskSessions);
+
 
 %% LOAD PREVIOUSLY CALCULATED DATA
 

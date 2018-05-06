@@ -226,14 +226,15 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
     
     % determine whether light was on or off for every trial
     if analyzeVar('isLightOn', varNames, varsToOverWrite)
-
-        fprintf('%s: determing whether each trial is light on or light off\n', dataFolder)
-        
-        if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsObTimes')
+        if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsOnTimes')
+            
+            fprintf('%s: determing whether each trial is light on or light off\n', dataFolder)
             isLightOn = false(size(varStruct.obsOnTimes));
 
-            for i = 1:length(varStruct.obsOnTimes)
-                isLightOn(i) = min(abs(varStruct.obsOnTimes(i) - varStruct.obsLightOnTimes)) < 1; % did the light turn on near when the obstacle turned on
+            if ~isempty(varStruct.obsLightOnTimes) 
+                for i = 1:length(varStruct.obsOnTimes)
+                    isLightOn(i) = min(abs(varStruct.obsOnTimes(i) - varStruct.obsLightOnTimes)) < 1; % did the light turn on near when the obstacle turned on
+                end
             end
         else
             isLightOn = [];
