@@ -13,7 +13,7 @@ connectedFeatures = {{'gen', 'tailBase', 'tailMid'}, {'tailBaseTop', 'tailMidTop
 
 % initializations
 frameInds = getFramesToShow(session);
-addingFrames = exist('trainingDataPath', 'var');
+addingFrames = exist('trainingDataPath', 'var'); % keeps track of whether frames will be added to the training set
 if addingFrames; load(trainingDataPath, 'trainingData', 'view'); end
 
 % get videos
@@ -23,7 +23,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping');
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw2.csv']); % get raw tracking data
 locationsTable = locationsTable(:,2:end); % remove index column
 [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps);
 mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
@@ -162,7 +162,7 @@ function updateFrame(frameStep)
     
     frameInd = frameInd + frameStep;
     if frameInd < 1; frameInd = length(frameInds);
-    elseif frameInds(frameInd) > vidBot.NumberOfFrames; frameInd = 1; end
+    elseif frameInd > length(frameInds); frameInd = 1; end
     
     
     % get frame and sub-frames

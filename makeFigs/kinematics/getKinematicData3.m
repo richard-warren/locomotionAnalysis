@@ -31,7 +31,7 @@ for i = 1:length(sessions)
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = median(mToPixMapping(:,1));
-    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw.csv']); % get raw tracking data
+    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw2.csv']); % get raw tracking data
     locationsTable = locationsTable(:,2:end); % remove index column
     [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps);
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
@@ -111,7 +111,7 @@ for i = 1:length(sessions)
             trialLocations(:,1,:) = trialLocations(:,1,:) - trialObsPixPositions;
 
             % convert to meters
-            trialLocations = trialLocations / abs(mToPixMapping(1));
+            trialLocations = trialLocations / abs(mToPixFactor);
 
             % determine whether left and right forepaws are in swing at obsPos moment
             isLeftSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));

@@ -2,8 +2,8 @@
 
 % settings
 sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
-miceToPlot = {'run6', 'run7', 'run8'};
-vidTrialProportion = .15;
+% miceToPlot = {'run6', 'run7', 'run8'};
+% vidTrialProportion = .15;
 %%
 for i = 1:length(sessionDirs)
     

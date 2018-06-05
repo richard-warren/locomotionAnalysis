@@ -17,9 +17,9 @@ trialRange = [.05 .95]; % only include trials in the middle between these two li
 rewardRotations = 9.1;
 positRange = [2 7]; % units: wheel rotations // only compute trial median velocity within these wheel positions on a per-trial basis 
 wheelDiam = 0.1905; % m
-ylims = [0 .7];
+yLims = [0 .8];
 smoothing = .5; % window for mean smoothing (s)
-yTicks = 0:.2:.6;
+yTicks = 0:.2:yLims(2);
 
 
 
@@ -35,7 +35,7 @@ sessionBins = ismember(sessionInfo.mouse, mice) &...
 sessions = sessionInfo(sessionBins, :);
 
 data = struct(); % initialize storage variable
-cmap = winter(length(mice));
+cmap = hsv(length(mice));
 
 
 % collect data
@@ -129,12 +129,14 @@ subplot(1,3,3)
 meanVel = mean(mouseMedVels);
 line([-.5 .5], [meanVel meanVel], 'color', [0 0 0], 'linewidth', 3)
 
+legend(mice, 'location', 'southeast')
+legend('boxoff')
 
 
 % pimp fig
 
 % velocity traces
-subplot(1,3,1:2); set(gca, 'ylim', ylims, 'xlim', [0 maxPosit], 'box', 'off', 'xtick', 0:1:5, 'ytick', yTicks)
+subplot(1,3,1:2); set(gca, 'ylim', yLims, 'xlim', [0 maxPosit], 'box', 'off', 'xtick', 0:1:5, 'ytick', yTicks)
 
 % add lines indicating position range for mean calculation
 for i = 1:2
@@ -145,7 +147,7 @@ xlabel('distance travelled (m)', 'fontweight', 'bold')
 ylabel('velocity (m/s)', 'fontweight', 'bold')
 
 % scatter plot
-subplot(1,3,3); set(gca, 'ylim', ylims, 'xlim', [-1.5 1.5], 'xcolor', 'none', 'ytick', yTicks)
+subplot(1,3,3); set(gca, 'ylim', yLims, 'xlim', [-1.5 3], 'xcolor', 'none', 'ytick', yTicks)
 ylabel('velocity (m/s)', 'fontweight', 'bold')
 
 

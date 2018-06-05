@@ -405,9 +405,9 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
             vidBot = VideoReader([dataDir dataFolder '\runBot.mp4']);
             xLims = [60 vidBot.Width-40];
             yLims = [1 vidBot.Height];
-            pixThreshFactor = 3;
+            pixThreshFactor = 2.25;
             invertColors = false;
-            showTracking = false;
+            showTracking = true;
             obsMinThickness = 10;
 
             % track obstacle in bottom view
