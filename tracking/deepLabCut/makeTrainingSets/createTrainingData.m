@@ -44,14 +44,16 @@ showTrackingDLC(session, .02, trainingDataPath)
 
 
 %% prepare data for deepLabCut
+
 trainingSetFolder = 'topBotCat';
+scaling = 0.5;
 trainingSetName = 'trainingData.mat';
-features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'}; % with top view
+features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'};
 
 trainingDataPath = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetFolder '\' trainingSetName];
 load(trainingDataPath, 'trainingData', 'view')
-writeDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetFolder '\'];
+writeDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetFolder  'Scaling' num2str(scaling) '\']; % images will be written here
 if ~exist(writeDir, 'dir'); mkdir(writeDir); end
-prepareTrainingImages(writeDir, trainingData, view, features);
+prepareTrainingImages(writeDir, trainingData, view, features, scaling);
 
 

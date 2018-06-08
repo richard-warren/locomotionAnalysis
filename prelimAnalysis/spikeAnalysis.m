@@ -407,7 +407,7 @@ function spikeAnalysis(dataDir, dataFolder, varsToOverWrite)
             yLims = [1 vidBot.Height];
             pixThreshFactor = 2.25;
             invertColors = false;
-            showTracking = true;
+            showTracking = false;
             obsMinThickness = 10;
 
             % track obstacle in bottom view

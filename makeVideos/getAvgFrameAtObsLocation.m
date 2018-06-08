@@ -13,10 +13,10 @@ function avgFrame = getAvgFrameAtObsLocation(session, obsPos)
 
 % load data
 dataDir = [getenv('OBSDATADIR') 'sessions\'];
-vid = VideoReader([dataDir session '\runWisk.mp4']);
+vid = VideoReader([dataDir session '\runTop.mp4']);
 
 load([dataDir session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsPixPositions', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'nosePos');
-obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1))
+% obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
 
  
 

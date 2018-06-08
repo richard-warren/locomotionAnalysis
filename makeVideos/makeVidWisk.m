@@ -97,17 +97,17 @@ for i = trials
     endTime = min(obsTimes(startInd)+maxTrialTime, obsTimes(endInd));
     frameInds = find(frameTimeStamps>obsTimes(startInd) & frameTimeStamps<endTime);
     
-    % get webCame frame indices
-    webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
-    webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
-    webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
-
-    % interpolate webFrames to number of inds in frameInds
-    webFramesInterp = interp1(webCamTimeStamps(webFrameInds), 1:length(webFrameInds), frameTimeStamps(frameInds), 'nearest', 'extrap');
-    
     if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
         fprintf('skipping trial %i\n', i)
     else
+        
+        % get webCame frame indices
+        webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
+        webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
+        webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
+
+        % interpolate webFrames to number of inds in frameInds
+        webFramesInterp = interp1(webCamTimeStamps(webFrameInds), 1:length(webFrameInds), frameTimeStamps(frameInds), 'nearest', 'extrap');
         
         for j = 1:length(frameInds)
             

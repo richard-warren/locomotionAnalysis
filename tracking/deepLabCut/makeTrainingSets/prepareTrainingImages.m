@@ -1,4 +1,4 @@
-function prepareTrainingImages(writeDir, trainingData, view, features)
+function prepareTrainingImages(writeDir, trainingData, view, features, scaling)
 
 
 % settings
@@ -12,8 +12,8 @@ positions = nan(2, length(features), length(trainingData)); % stores all feature
 for i = 1:length(features)
     
     % extract x and y values
-    x = cellfun(@(j) j(1), {trainingData.(features{i})});
-    y = cellfun(@(j) j(2), {trainingData.(features{i})});
+    x = cellfun(@(j) j(1), {trainingData.(features{i})}) * scaling;
+    y = cellfun(@(j) j(2), {trainingData.(features{i})}) * scaling;
     positions(1,i,:) = x;
     positions(2,i,:) = y;
     
@@ -54,6 +54,9 @@ for i = 1:length(structInds)
     else
         frame = rgb2gray(read(vid, currentFrame));
     end
+    
+    % rescale frame
+    if scaling~=1; frame = imresize(frame, scaling); end
     
     imwrite(frame, [writeDir 'img' num2str(i) fileType])
     
