@@ -1,13 +1,11 @@
 %% initialize new training data structure
 
 % settings
-trainingSetFolder = 'topBotCat';
+trainingSetFolder = 'barObstacle';
 view = 'both';
-sessions = {'180122_001', '180122_002', '180122_003', ...
-            '180123_001', '180123_002', '180123_003', ...
-            '180124_001', '180124_002', '180124_003', ...
-            '180125_001', '180125_002', '180125_003'};
-frameNum = 1000;
+sessions = {'180605_000', '180605_001', '180605_002', ...
+            '180609_000', '180609_001', '180609_002', '180609_003', '180609_004', '180609_005'};
+frameNum = 200;
 obsPortion = .5; % portion of trials to include obstacle
 
 
@@ -24,11 +22,12 @@ end
 
 %% label things
 
-trainingSetFolder = 'topBotCat';
+trainingSetFolder = 'barObstacle';
 trainingSetName = 'trainingData.mat';
 
 trainingSetDir = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetFolder '\'];
-features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'}; % with top view
+features = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', 'tailBase_top', 'tailMid_top', 'nose_top', 'obs_top', ...
+            'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot', 'tailBase_bot', 'tailMid_bot', 'nose_bot', 'obsHigh_bot', 'obsLow_bot'}; % with top view
 labelFrames(trainingSetDir, trainingSetName, features);
 
 

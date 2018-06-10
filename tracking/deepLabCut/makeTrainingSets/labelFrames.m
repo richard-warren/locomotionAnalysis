@@ -9,12 +9,23 @@ nanColor = [1 0 0];
 labelledColor = [1 1 0];
 
 % initializations
-defaultPositions = repmat([10 10], length(features), 1) .* repmat(1:length(features),2,1)';
+defaultPositions = repmat([20 20], length(features), 1) .* repmat(1:length(features),2,1)';
 load([trainingSetDir trainingSetName], 'trainingData', 'view');
 fields = fieldnames(trainingData);
 structInd = 1;
 selectedPoint = nan;
 
+
+% find feature pairs (same feature appearing in top and bottom views) // there must be a nicer way of doing this than what i do here
+featurePairInds = nan(0,2);
+featureNames = cellfun(@(x) x(1:end-4), features, 'UniformOutput', false);
+uniqueFeatureNames = unique(featureNames);
+for i = 1:length(uniqueFeatureNames)
+    pairInds = find(ismember(featureNames, uniqueFeatureNames{i}));
+    if length(pairInds)==2
+        featurePairInds(end+1,:) = pairInds;
+    end
+end
 
 
 % create figure
@@ -51,7 +62,6 @@ selectedCirc = scatter(0, 0, 200, [.5 .5 1], 'linewidth', 3, 'visible', 'off'); 
 featurePoints = cell(1, length(features));
 featureTexts = cell(1, length(features));
 
-
 for i = 1:length(features)
     
     % initialize non-existent features
@@ -62,7 +72,7 @@ for i = 1:length(features)
     end
     
     % create draggables for features
-    featureTexts{i} = text(defaultPositions(i,1)+textOffset(1), defaultPositions(i,2)+textOffset(2), features{i});
+    featureTexts{i} = text(defaultPositions(i,1)+textOffset(1), defaultPositions(i,2)+textOffset(2), features{i}, 'interpreter', 'none');
     featurePoints{i} = impoint(gca, defaultPositions(i,:));
     addNewPositionCallback(featurePoints{i}, @(x) movePoint(i));
     setPositionConstraintFcn(featurePoints{i}, @constrainPosition)
@@ -72,7 +82,27 @@ for i = 1:length(features)
         setPositionConstraintFcn(featurePoints{i}, @tailEndConstrainPosition)
     end
 end
+
+% create lines connecting feature pairs
+featurePairColors = parula(size(featurePairInds,1));
+featurePairLines = cell(1,size(featurePairInds,1));
+for i = 1:size(featurePairInds,1)
+    featurePairLines{i} = line([0 0], [0 0], 'color', featurePairColors(i,:)); hold on
+    uistack(featurePairLines{i}, 'bottom');
+    uistack(featurePairLines{i}, 'up');
+end
+
+% move text to bottom of feature stack (so it doesn't prevent clicking on impoints)
+for i = 1:length(features)
+    uistack(featureTexts{i}, 'bottom');
+    uistack(featureTexts{i}, 'up');
+end
+
 updateFrame(0); % set positions and colors of points based on whether the first frame has already been labeled
+
+
+
+
 
 
 % ---------
@@ -100,21 +130,25 @@ function keypress(~,~)
             case 27
                 close(fig)
                 
-            % d: delete selectetion
+            % d: delete selection
             case 100
                 if ~isnan(selectedPoint)
                     trainingData(structInd).(features{selectedPoint}) = [nan nan];
                     updateFrame(0);
                 end
                 
-            % n: move to next frame that is not yet included
-            case 110
+            % f: move to next frame that is not yet included
+            case 102
                 newStructInd = find(~[trainingData.includeFrame] & 1:length(trainingData)>structInd, 1, 'first'); % find first frame with nonlabelled part that is later than current frame
                 if isempty(newStructInd); newStructInd = find(~[trainingData.includeFrame], 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
                 if ~isempty(newStructInd); structInd = newStructInd; end % otherwise, keep current frame
-                    
                 updateFrame(0);
-    
+            
+            % move to structInd
+            case 110
+                input = inputdlg('enter new n...');
+                structInd = str2num(input{1});
+                updateFrame(0);
                 
             % i: include frame for analysis
             case 105
@@ -166,7 +200,7 @@ function updateFrame(frameStep)
     end
     set(im, 'CData', frame);
     if trainingData(structInd).includeFrame; includedString = '(included)'; else; includedString = ''; end
-    set(fig, 'name', sprintf('%s, frame %i %s', currentSession, currentFrame, includedString))
+    set(fig, 'name', sprintf('%s, frame %i %s (n = %i)', currentSession, currentFrame, includedString, structInd))
     
     % update colors and positions of points
     for j = 1:length(features)
@@ -181,6 +215,9 @@ function updateFrame(frameStep)
             setPosition(featurePoints{j}, pos);
         end
     end
+    
+    % update feature pair lines
+    updateFeatureLines();
     
     set(selectedCirc, 'visible', 'off')
     selectedPoint = nan;
@@ -197,6 +234,7 @@ function movePoint(featureInd)
     
     set(selectedCirc, 'XData', pos(1), 'YData', pos(2), 'visible', 'on')
     selectedPoint = featureInd;
+    updateFeatureLines();
 end
 
 
@@ -208,6 +246,16 @@ function constrainedPos = constrainPosition(newPos)
     constrainedPos(1) = max(constrainedPos(1), 1);
     constrainedPos(2) = min(newPos(2), hgt);
     constrainedPos(2) = max(constrainedPos(2), 1); 
+end
+
+% update feature pair lines
+function updateFeatureLines()
+    for j = 1:size(featurePairInds,1)
+        inds = featurePairInds(j,:);
+        pos1 = getPosition(featurePoints{inds(1)});
+        pos2 = getPosition(featurePoints{inds(2)});
+        set(featurePairLines{j}, 'xdata', [pos1(1) pos2(1)], 'ydata', [pos1(2) pos2(2)]);
+    end
 end
 
 

@@ -1,7 +1,8 @@
 function trainingData = createTrainingDataStruct(sessions, frameNum, obsPortion)
 
-
-
+% settings
+obsLims = [.32 .39]; % !!! this is a hack, because obsPositions are unreliable and vary session to session // perhaps if I normalize by end position for each trial like i used to? // also, this will break if length of track changes
+minFrame = 250*5*60; % 4 minutes at 250 fps
 
 % initializations
 sessionFrameNums = ones(1, length(sessions)) * round(frameNum / length(sessions));
@@ -13,18 +14,25 @@ for i = 1:length(sessions)
     % load vid and sesion data
     fprintf('loading video: %s\n', sessions{i})
     vid = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runBot.mp4']);
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'obsPixPositions')
-    minFrame = find(~isnan(obsPixPositions),1,'first');
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], ...
+        'frameTimeStamps', 'obsTimes', 'obsPositions', 'obsOnTimes', 'obsOffTimes')
+    obsPositionsInterped = interp1(obsTimes, obsPositions, frameTimeStamps);
     
-    
-    % select random frame numbers
+    % get number of obs and obs frames for this session
     obsNum = round(sessionFrameNums(i)*obsPortion); % number of frames to get with obstacle
     noObsNum = sessionFrameNums(i) - obsNum;
     
-    obsBins = obsPixPositions>0 & obsPixPositions<=vid.Width;
-    obsInds = find(obsBins & 1:length(obsPixPositions)>minFrame); % inds of all obstacle frames
-    noObsInds = find(~obsBins & 1:length(obsPixPositions)>minFrame);
+    % find frames with obstacles
+    obsBins = false(1, length(frameTimeStamps));
+    for j = 1:length(obsOnTimes)
+        trialObsInFrameBins = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j) & ...
+                              obsPositionsInterped>obsLims(1) & obsPositionsInterped<obsLims(2);
+        obsBins(trialObsInFrameBins) = true;
+    end
+    obsInds = find(obsBins);
+    noObsInds = find(~obsBins & 1:length(frameTimeStamps)>minFrame);
     
+    % find frames without obstacles
     obsFrames = obsInds(randperm(length(obsInds), obsNum)); % inds of randomly selected obstacle frames
     noObsFrames = noObsInds(randperm(length(noObsInds), noObsNum));
     
