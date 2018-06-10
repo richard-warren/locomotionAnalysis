@@ -6,13 +6,11 @@ sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to a
 vidTrialProportion = .15;
 %%
 parfor i = 1:length(sessionDirs)
-    
     % spike analysis
     nameInd = find(sessionDirs{i}=='\',1,'last');
     spikeAnalysis2(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
-    
 end
-
+disp('all done!')
 %% delete(gcp); % delete parallel pool
 
 % generate plots

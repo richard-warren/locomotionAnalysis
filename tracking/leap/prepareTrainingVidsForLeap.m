@@ -8,6 +8,7 @@ function prepareTrainingVidsForLeap(sessions, vidDir, framesPerVid, outputDims)
 deflation = 1;
 obsLims = [.32 .39]; % !!! this is a hack, because obsPositions are unreliable and vary session to session // perhaps if I normalize by end position for each trial like i used to? // also, this will break if length of track changes
 
+
 % load video
 for i = 1:length(sessions)
     
