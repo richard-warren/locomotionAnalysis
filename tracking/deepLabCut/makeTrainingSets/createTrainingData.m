@@ -44,10 +44,12 @@ showTrackingDLC(session, .02, trainingDataPath)
 
 %% prepare data for deepLabCut
 
-trainingSetFolder = 'topBotCat';
-scaling = 0.5;
+trainingSetFolder = 'barObstacle';
+scaling = 1;
 trainingSetName = 'trainingData.mat';
-features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'};
+% features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'};
+features = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', 'tailBase_top', 'tailMid_top', 'nose_top', 'obs_top', ...
+            'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot', 'tailBase_bot', 'tailMid_bot', 'nose_bot', 'obsHigh_bot', 'obsLow_bot'}; % with top view
 
 trainingDataPath = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetFolder '\' trainingSetName];
 load(trainingDataPath, 'trainingData', 'view')

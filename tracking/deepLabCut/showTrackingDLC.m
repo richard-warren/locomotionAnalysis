@@ -2,12 +2,14 @@ function showTrackingDLC(session, vidDelay, trainingDataPath)
 
 % settings
 vidFs = 250;
-botPawInds = 1:4;
-topPawInds = 8:11;
-circSize = 150;
+% botPawInds = 1:4;
+% topPawInds = 8:11;
+circSize = 100;
 vidSizeScaling = 1.25;
 colorMap = 'hsv';
-connectedFeatures = {{'gen', 'tailBase', 'tailMid'}, {'tailBaseTop', 'tailMidTop'}}; % features that are connected within a view (not across views)
+connectedFeatures = {{'tailBase_bot', 'tailMid_bot'}, ...
+                     {'tailBase_top', 'tailMid_top'}, ...
+                     {'obsHigh_bot', 'obsLow_bot'}}; % features that are connected within a view (not across views)
 
 
 
@@ -23,13 +25,13 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping');
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw2.csv']); % get raw tracking data
+locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
 locationsTable = locationsTable(:,2:end); % remove index column
 [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps);
-mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
+% mToPixFactor = median(mToPixMapping(:,1)); % get mapping from meters to pixels
 wheelPoints = getWheelPoints(vidTop);
 [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
-stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixFactor);
+% stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixFactor);
 
 % set up figure
 hgt = (vidBot.Height+vidTop.Height);
@@ -52,10 +54,10 @@ end
 
 
 % set up lines joining same featres in top and bot
-lines = cell(size(featurePairInds,1),1);
-for i = 1:length(lines)
-    lines{i} = line([0 0], [0 0], 'color', cmap(featurePairInds(i),:));
-end
+% lines = cell(size(featurePairInds,1),1);
+% for i = 1:length(lines)
+%     lines{i} = line([0 0], [0 0], 'color', cmap(featurePairInds(i),:));
+% end
 
 % set up lines joing features within a view
 connectedFeatureInds = cell(1,length(connectedFeatures));
@@ -75,9 +77,9 @@ scatterLocations = scatter(imAxis, zeros(1,length(features)), zeros(1,length(fea
     circSize, cmap, 'linewidth', 3); hold on
 
 % set up stance scatter points
-scatterStance = scatter(imAxis, ...
-    zeros(1,length([botPawInds topPawInds])), zeros(1,length([botPawInds topPawInds])), ...
-    circSize, cmap([botPawInds topPawInds],:), 'filled'); hold on
+% scatterStance = scatter(imAxis, ...
+%     zeros(1,length([botPawInds topPawInds])), zeros(1,length([botPawInds topPawInds])), ...
+%     circSize, cmap([botPawInds topPawInds],:), 'filled'); hold on
 
 % set state variables
 frameInd = 1;
@@ -179,11 +181,11 @@ function updateFrame(frameStep)
     set(imPreview, 'CData', frame);
     
     % update vertical lines
-    for j = 1:length(lines)
-        set(lines{j}, ...
-            'xdata', [locations(frameInds(frameInd), 1, featurePairInds(j,1)) locations(frameInds(frameInd), 1, featurePairInds(j,2))], ...
-            'ydata', [locations(frameInds(frameInd), 2, featurePairInds(j,1)) locations(frameInds(frameInd), 2, featurePairInds(j,2))])
-    end
+%     for j = 1:length(lines)
+%         set(lines{j}, ...
+%             'xdata', [locations(frameInds(frameInd), 1, featurePairInds(j,1)) locations(frameInds(frameInd), 1, featurePairInds(j,2))], ...
+%             'ydata', [locations(frameInds(frameInd), 2, featurePairInds(j,1)) locations(frameInds(frameInd), 2, featurePairInds(j,2))])
+%     end
     
     % lines connecting within view features
     for j = 1:length(connectedFeatures)
@@ -197,10 +199,10 @@ function updateFrame(frameStep)
         'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(frameInds(frameInd),:))*circSize*.9);
     
     % update scatter stance positions
-    isStance = repmat(stanceBins(frameInds(frameInd),:),1,2);
-    set(scatterStance, ...
-        'XData', squeeze(locations(frameInds(frameInd),1,[botPawInds topPawInds])) .* isStance', ...
-        'YData', squeeze(locations(frameInds(frameInd),2,[botPawInds topPawInds])));
+%     isStance = repmat(stanceBins(frameInds(frameInd),:),1,2);
+%     set(scatterStance, ...
+%         'XData', squeeze(locations(frameInds(frameInd),1,[botPawInds topPawInds])) .* isStance', ...
+%         'YData', squeeze(locations(frameInds(frameInd),2,[botPawInds topPawInds])));
 
     % pause to reflcet on the little things...
     pause(vidDelay);

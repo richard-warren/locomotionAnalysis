@@ -1,4 +1,4 @@
-function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
+function spikeAnalysis2(session, varsToOverWrite)
 
     % performs preliminary analyses on spike data and saves results in runAnalyzed.mat
     %
@@ -15,17 +15,14 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     %         getting wisk frame time stamps
     %         getting webcam time stamps
     %         get position of tip of nose from bot view
-    %         video tracking of obstacle in bottom view
-    %         for each track, gets linear mapping of obsPosition (m) to obsPixPosition (pixels), which can be used to subsequently determine mapping between pixels and meters
-    %         get times of wisk contact, and pixels at which wisk contact occurs within wisk vid
+    %         linear mapping between meters and pixels
     %
     % for each session, loads existing runAnalyzed.mat
     % if a computed variable is not already stored in runAnalyzed.mat AND the files necessary to compute it exist, it computes the variable
     % if a variable name is included in cell array varsToOverWrite, it re-computes the variable even if it already exists, so long as
     % the necessary files exist in the directory to compute it
     %
-    % input:     dataDir           directory containing session folders
-    %            dataFolder        !!!
+    % input:     sessions          session to analyze
     %            varsToOverwrite   cell array of of variables that should be re-computed
 
 
@@ -49,10 +46,10 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     
 
 
-    anythingAnalyzed = false;
+    anythingAnalyzed = false; % results are only saved if something was found that wasn't already analyzed
 
     % load or initialize data structure
-    sessionDir = [dataDir dataFolder '\'];
+    sessionDir = [getenv('OBSDATADIR') '\sessions\' session '\'];
 
     if exist([sessionDir 'runAnalyzed.mat'], 'file')
         varStruct = load([sessionDir 'runAnalyzed.mat']);
@@ -62,11 +59,12 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     varNames = fieldnames(varStruct);
 
 
-
+    
+    
     % analyze reward times
     if analyzeVar('rewardTimes', varNames, varsToOverWrite)
 
-        fprintf('%s: getting reward times\n', dataFolder)
+        fprintf('%s: getting reward times\n', session)
         load([sessionDir 'run.mat'], 'reward')
 
         % find reward times
@@ -92,7 +90,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
 
         % decode stepper motor
         if exist('stepDir', 'var') && ~isempty(stepDir.times)
-            fprintf('%s: decoding stepper motor commands\n', dataFolder)
+            fprintf('%s: decoding stepper motor commands\n', session)
             [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
         else
             motorPositions = [];
@@ -116,10 +114,10 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
         load([sessionDir 'run.mat'], 'obEncodA', 'obEncodB')
 
         if exist('obEncodA', 'var') && ~isempty(obEncodA.times)
-            fprintf('%s: decoding obstacle position\n', dataFolder)
+            fprintf('%s: decoding obstacle position\n', session)
             [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
-                                                         obEncodB.times, obEncodB.level,...
-                                                         obEncoderSteps, obsRad, targetFs, dataFolder);
+                                                     obEncodB.times, obEncodB.level,...
+                                                     obEncoderSteps, obsRad, targetFs, session);
         else
             obsPositions = [];
             obsTimes = [];
@@ -139,12 +137,12 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     if analyzeVar('wheelPositions', varNames, varsToOverWrite) ||...
        analyzeVar('wheelTimes', varNames, varsToOverWrite)
 
-        fprintf('%s: decoding wheel position\n', dataFolder)
+        fprintf('%s: decoding wheel position\n', session)
         load([sessionDir 'run.mat'], 'whEncodA', 'whEncodB')
 
         [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
                                                      whEncodB.times, whEncodB.level,...
-                                                     whEncoderSteps, wheelRad, targetFs, dataFolder);
+                                                     whEncoderSteps, wheelRad, targetFs, session);
         % save values
         varStruct.wheelPositions = wheelPositions;
         varStruct.wheelTimes = wheelTimes;
@@ -160,12 +158,12 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     if analyzeVar('obsOnTimes', varNames, varsToOverWrite) ||...
        analyzeVar('obsOffTimes', varNames, varsToOverWrite)
 
-        fprintf('%s: getting obstacle on and off times\n', dataFolder)
+        fprintf('%s: getting obstacle on and off times\n', session)
         load([sessionDir 'run.mat'], 'obsOn')
 
         if exist('obsOn', 'var')
-            firstOnInd  = find(obsOn.level, 1, 'first');
-            lastOffInd  = find(~obsOn.level, 1, 'last');
+            firstOnInd = find(obsOn.level, 1, 'first');
+            lastOffInd = find(~obsOn.level, 1, 'last');
 
             obsOn.level = obsOn.level(firstOnInd:lastOffInd);
             obsOn.times = obsOn.times(firstOnInd:lastOffInd);
@@ -182,6 +180,30 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
         varStruct.obsOffTimes = obsOffTimes; 
         anythingAnalyzed = true;
     end
+    
+    
+    
+    
+    % determine obstacle height for every trial
+    if analyzeVar('obsHeights', varNames, varsToOverWrite) && ...
+       exist([sessionDir '\trialInfo.csv'], 'file')
+       
+        fprintf('%s: getting obstacle heights\n', session)
+        obsHeightData = dlmread([sessionDir '\trialInfo.csv']); % columns: obsHeight (mm), timestamp (s), timestamps (ms)
+        obsTimesSeconds = obsHeightData(:,2);
+        validInds = [abs(diff(obsTimesSeconds))>0; true]; %if two times are very close to eachother only believe the second of the two times
+        obsHeights = obsHeightData(validInds,1);
+        obsHeights = obsHeights(1:length(varStruct.obsOnTimes)); % this gets rid of last entry, which we shouldn't need
+        
+        % there should be one more obsHeight than there all trials because an obs height is randomly chosen
+        if sum(validInds)-1 > length(obsHeights)
+            fprintf('%s: WARNING: problem assigning obstacle height metadata to correct trial\n', session)
+        end
+
+        % save values
+        varStruct.obsHeights = obsHeights;
+        anythingAnalyzed = true;
+    end
 
 
 
@@ -191,7 +213,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     if analyzeVar('obsLightOnTimes', varNames, varsToOverWrite) ||...
        analyzeVar('obsLightOffTimes', varNames, varsToOverWrite)
 
-        fprintf('%s: getting obstacle light on and off times\n', dataFolder)
+        fprintf('%s: getting obstacle light on and off times\n', session)
         load([sessionDir 'run.mat'], 'obsLight')
 
         if exist('obsLight', 'var') && any(obsLight.values>2)
@@ -228,7 +250,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     if analyzeVar('isLightOn', varNames, varsToOverWrite)
         if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsOnTimes')
             
-            fprintf('%s: determing whether each trial is light on or light off\n', dataFolder)
+            fprintf('%s: determing whether each trial is light on or light off\n', session)
             isLightOn = false(size(varStruct.obsOnTimes));
 
             if ~isempty(varStruct.obsLightOnTimes) 
@@ -254,7 +276,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
            analyzeVar('touchSigTimes', varNames, varsToOverWrite) ||...
            analyzeVar('touchOffTimes', varNames, varsToOverWrite)
 
-            fprintf('%s: debouncing touch signal\n', dataFolder)
+            fprintf('%s: debouncing touch signal\n', session)
             load([sessionDir 'run.mat'], 'touch', 'breaks')
 
             % decode stepper motor
@@ -281,7 +303,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
 
         if exist([sessionDir 'run.csv'], 'file')
 
-            fprintf('%s: getting frame time stamps\n', dataFolder)
+            fprintf('%s: getting frame time stamps\n', session)
             load([sessionDir '\run.mat'], 'exposure')
 
             % get camera metadata and spike timestamps
@@ -290,7 +312,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
             timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,3));
 
             if length(exposure.times) >= length(frameCountsWisk)
-                frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, dataFolder);
+                frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
             else
                 disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
                 frameTimeStamps = [];
@@ -310,7 +332,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
 
         if exist([sessionDir 'wisk.csv'], 'file')
             
-            fprintf('%s: getting wisk frame time stamps\n', dataFolder)
+            fprintf('%s: getting wisk frame time stamps\n', session)
             load([sessionDir '\run.mat'], 'exposure')
 
             % get camera metadata and spike timestamps
@@ -319,7 +341,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
             timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
 
             if length(exposure.times) >= length(frameCountsWisk)
-                frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, dataFolder);
+                frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
             else
                 disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
                 frameTimeStampsWisk = [];
@@ -341,7 +363,7 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
            exist([sessionDir 'run.csv'], 'file') &&...
            any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
 
-            fprintf('%s: getting webcam time stamps\n', dataFolder)
+            fprintf('%s: getting webcam time stamps\n', session)
 
             % load data
             camMetadataWisk = dlmread([sessionDir '\run.csv']);
@@ -370,10 +392,65 @@ function spikeAnalysis2(dataDir, dataFolder, varsToOverWrite)
     end
     
     
+    
+    
+    % get nose position
+    if analyzeVar('nosePos', varNames, varsToOverWrite) && ...
+       exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
+
+        fprintf('%s: getting nose position\n', session)
+
+        % load data
+        locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); % get raw tracking data
+        columnNames = locationsTable.Properties.VariableNames;
+        columnNamesTrimmed = cellfun(@(x) x(1:min(length('nose_bot'),length(x))), columnNames, 'UniformOutput', false);
+        noseBotInds = find(ismember(columnNamesTrimmed, 'nose_bot'));
+        noseBotX = median(table2array(locationsTable(:,noseBotInds(1))));
+        noseBotY = median(table2array(locationsTable(:,noseBotInds(2))));
+
+        % save
+        varStruct.nosePos = [noseBotY noseBotX];
+        anythingAnalyzed = true;
+    end
+    
+    
+    
+    % !!! change this bro
+    if analyzeVar('obsPixPositions', varNames, varsToOverWrite) || ...
+       analyzeVar('mToPixMapping', varNames, varsToOverWrite)
+
+        if ~isempty('obsOntimes') && ...
+           any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
+
+            fprintf('%s: tracking obstacles in bottom view\n', dataFolder)
+            
+            % settings
+            vidBot = VideoReader([dataDir dataFolder '\runBot.mp4']);
+            xLims = [60 vidBot.Width-40];
+            yLims = [1 vidBot.Height];
+            pixThreshFactor = 2.25;
+            invertColors = false;
+            showTracking = false;
+            obsMinThickness = 10;
+
+            % track obstacle in bottom view
+            [obsPixPositions, mappings] = trackObstacles(vidBot, varStruct.obsOnTimes, varStruct.obsOffTimes,...
+                varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
+                xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
+
+            % save
+            varStruct.obsPixPositions = obsPixPositions;
+            varStruct.mToPixMapping = mappings;
+            anythingAnalyzed = true;
+        end
+    end
+    
+    
+    
     % save results
     if anythingAnalyzed
         save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct')
-        fprintf('%s: data analyzed and saved\n', dataFolder)
+        fprintf('%s: data analyzed and saved\n', session)
     end
     
     

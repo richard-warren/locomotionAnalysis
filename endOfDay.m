@@ -1,15 +1,13 @@
 % spike preliminary analysis and video making!
 
 % settings
-sessionDirs = uigetdir2([getenv('OBSDATADIR') 'sessions\'], 'select folders to analyze');
+sessions = selectSessions;
 
 
 
 %%
-parfor i = 1:length(sessionDirs)
-    % spike analysis
-    nameInd = find(sessionDirs{i}=='\',1,'last');
-    spikeAnalysis2(sessionDirs{i}(1:nameInd), sessionDirs{i}(nameInd+1:end));
+for i = 1:length(sessions)
+    spikeAnalysis2(sessions{i});
 end
 disp('all done!')
 

@@ -4,7 +4,7 @@ function [positions, times] = motorDecoder(directions, directionTimes, stepTimes
     % input     directions:      vector of step directions at times when the direction changes
     %           directionTimes:  times at which directions change 
     %           stepTimes:       times of all steps, regardless of direction
-    %           targetFs:        sampling frequency with which data are interpolated (see interData)
+    %           targetFs:        sampling frequency with which data are interpolated (see interpData)
     %
     % output    positions:       position of motor (m) at all stepTimes
 

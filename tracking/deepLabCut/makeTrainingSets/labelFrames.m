@@ -3,7 +3,7 @@ function labelFrames(trainingSetDir, trainingSetName, features)
 % add way of excluding trials
 
 % settings
-vidScaling = 2;
+vidScaling = 2.5;
 textOffset = [5 0];
 nanColor = [1 0 0];
 labelledColor = [1 1 0];
@@ -45,7 +45,7 @@ elseif strcmp(view, 'both')
 end
 
 fig = figure('name', sprintf('%s, frame %i', currentSession, currentFrame), ...
-    'menubar', 'none', 'color', 'white', 'keypressfcn', @keypress, 'position', [200 200 vid.Width*vidScaling, hgt*vidScaling]);
+    'menubar', 'none', 'color', 'white', 'keypressfcn', @keypress, 'position', [200 0 vid.Width*vidScaling, hgt*vidScaling]);
 colormap gray
 if strcmp(view, 'both')
     imgCat = cat(1, rgb2gray(read(vid, currentFrame)), rgb2gray(read(vidBot, currentFrame)));
@@ -200,7 +200,7 @@ function updateFrame(frameStep)
     end
     set(im, 'CData', frame);
     if trainingData(structInd).includeFrame; includedString = '(included)'; else; includedString = ''; end
-    set(fig, 'name', sprintf('%s, frame %i %s (n = %i)', currentSession, currentFrame, includedString, structInd))
+    set(fig, 'name', sprintf('%s, frame %i %s (n = %i/%i)', currentSession, currentFrame, includedString, structInd, length(trainingData)))
     
     % update colors and positions of points
     for j = 1:length(features)
