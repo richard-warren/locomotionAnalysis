@@ -28,16 +28,14 @@ for i = 1:length(sessions)
     % LOAD SESSION DATA (damn that's a lot of stuff homes)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
-            'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs');
+            'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
+            'wheelRadius', 'wheelCenter');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = median(mToPixMapping(:,1));
     locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw2.csv']); % get raw tracking data
-    locationsTable = locationsTable(:,2:end); % remove index column
     [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps);
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
     vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runTop.mp4']);
-    wheelPoints = getWheelPoints(vidTop);
-    [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, 250, mToPixFactor);
     if exist('obsPos', 'var')
         contactPositions = ones(size(obsOnTimes))*obsPos;

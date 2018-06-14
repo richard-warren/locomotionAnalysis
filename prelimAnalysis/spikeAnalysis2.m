@@ -83,8 +83,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
     % decode stepper motor commands
-    if analyzeVar('motorPositions', varNames, varsToOverWrite) ||...
-       analyzeVar('motorTimes', varNames, varsToOverWrite)
+    if analyzeVar({'motorPositions', 'motorTimes'}, varNames, varsToOverWrite)
 
         load([sessionDir 'run.mat'], 'step', 'stepDir')
 
@@ -108,8 +107,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
     % decode obstacle position (based on obstacle track rotary encoder)
-    if analyzeVar('obsPositions', varNames, varsToOverWrite) ||...
-       analyzeVar('obsTimes', varNames, varsToOverWrite)
+    if analyzeVar({'obsPositions', 'obsTimes'}, varNames, varsToOverWrite)
 
         load([sessionDir 'run.mat'], 'obEncodA', 'obEncodB')
 
@@ -134,8 +132,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
     % decode wheel position
-    if analyzeVar('wheelPositions', varNames, varsToOverWrite) ||...
-       analyzeVar('wheelTimes', varNames, varsToOverWrite)
+    if analyzeVar({'wheelPositions', 'wheelTimes'}, varNames, varsToOverWrite)
 
         fprintf('%s: decoding wheel position\n', session)
         load([sessionDir 'run.mat'], 'whEncodA', 'whEncodB')
@@ -155,8 +152,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
     % get obstacle on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
-    if analyzeVar('obsOnTimes', varNames, varsToOverWrite) ||...
-       analyzeVar('obsOffTimes', varNames, varsToOverWrite)
+    if analyzeVar({'obsOnTimes', 'obsOffTimes'}, varNames, varsToOverWrite)
 
         fprintf('%s: getting obstacle on and off times\n', session)
         load([sessionDir 'run.mat'], 'obsOn')
@@ -210,8 +206,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
     % get obstacle light on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
-    if analyzeVar('obsLightOnTimes', varNames, varsToOverWrite) ||...
-       analyzeVar('obsLightOffTimes', varNames, varsToOverWrite)
+    if analyzeVar({'obsLightOnTimes', 'obsLightOffTimes'}, varNames, varsToOverWrite)
 
         fprintf('%s: getting obstacle light on and off times\n', session)
         load([sessionDir 'run.mat'], 'obsLight')
@@ -248,6 +243,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     % determine whether light was on or off for every trial
     if analyzeVar('isLightOn', varNames, varsToOverWrite)
+        
         if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsOnTimes')
             
             fprintf('%s: determing whether each trial is light on or light off\n', session)
@@ -271,10 +267,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
     % debounce touch signal and get touch on/off times
     if exist('touch', 'var')
-        if analyzeVar('touchSig', varNames, varsToOverWrite) ||...
-           analyzeVar('touchOnTimes', varNames, varsToOverWrite) ||...
-           analyzeVar('touchSigTimes', varNames, varsToOverWrite) ||...
-           analyzeVar('touchOffTimes', varNames, varsToOverWrite)
+        if analyzeVar({'touchSig', 'touchOnTimes', 'touchOffTimes', 'touchSigTimes'}, varNames, varsToOverWrite)
 
             fprintf('%s: debouncing touch signal\n', session)
             load([sessionDir 'run.mat'], 'touch', 'breaks')
@@ -402,11 +395,8 @@ function spikeAnalysis2(session, varsToOverWrite)
 
         % load data
         locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); % get raw tracking data
-        columnNames = locationsTable.Properties.VariableNames;
-        columnNamesTrimmed = cellfun(@(x) x(1:min(length('nose_bot'),length(x))), columnNames, 'UniformOutput', false);
-        noseBotInds = find(ismember(columnNamesTrimmed, 'nose_bot'));
-        noseBotX = median(table2array(locationsTable(:,noseBotInds(1))));
-        noseBotY = median(table2array(locationsTable(:,noseBotInds(2))));
+        noseBotX = median(locationsTable.nose_bot);
+        noseBotY = median(locationsTable.nose_bot_1);
 
         % save
         varStruct.nosePos = [noseBotY noseBotX];
@@ -415,35 +405,82 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     
-    % !!! change this bro
-    if analyzeVar('obsPixPositions', varNames, varsToOverWrite) || ...
-       analyzeVar('mToPixMapping', varNames, varsToOverWrite)
+    % get obstacle pixel positions in bottom view
+    if analyzeVar('obsPixPositions', varNames, varsToOverWrite) && ...
+       ~isempty(varStruct.obsOnTimes)
 
-        if ~isempty('obsOntimes') && ...
-           any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
+        fprintf('%s: tracking obstacles in bottom view\n', session)
+        
+        % load tracking data if not already open
+        if ~exist('locationsTable', 'var'); locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); end
+        
+        % get obs pix positions
+        obsHighX = locationsTable.obsHigh_bot;
+        obsLowX = locationsTable.obsLow_bot;
+        obsHighScores = locationsTable.obsHigh_bot_2;
+        obsLowScores = locationsTable.obsLow_bot_2;
+        
+        % ensure that confidences are high for top and bottom points of obstacle, and ensure that both have x values that are close to one another
+        validInds = abs(obsHighX - obsLowX) < 10 & ...
+                    obsHighScores>0.99 & ...
+                    obsLowScores>0.99;
+        obsPixPositions = mean([obsHighX, obsLowX], 2);
+        obsPixPositions(~validInds) = nan;
+        
 
-            fprintf('%s: tracking obstacles in bottom view\n', dataFolder)
-            
-            % settings
-            vidBot = VideoReader([dataDir dataFolder '\runBot.mp4']);
-            xLims = [60 vidBot.Width-40];
-            yLims = [1 vidBot.Height];
-            pixThreshFactor = 2.25;
-            invertColors = false;
-            showTracking = false;
-            obsMinThickness = 10;
-
-            % track obstacle in bottom view
-            [obsPixPositions, mappings] = trackObstacles(vidBot, varStruct.obsOnTimes, varStruct.obsOffTimes,...
-                varStruct.frameTimeStamps, varStruct.obsPositions, varStruct.obsTimes,...
-                xLims, yLims, pixThreshFactor, obsMinThickness, invertColors, showTracking);
-
-            % save
-            varStruct.obsPixPositions = obsPixPositions;
-            varStruct.mToPixMapping = mappings;
-            anythingAnalyzed = true;
-        end
+        % save
+        varStruct.obsPixPositions = obsPixPositions';
+        anythingAnalyzed = true;
     end
+    
+    
+    
+    
+    % get meter to pix mapping
+    if analyzeVar('mToPixMapping', varNames, varsToOverWrite) && ...
+       ~isempty(varStruct.obsOnTimes)
+
+        fprintf('%s: getting m to pix mapping\n', session)
+        
+        % get necessary data
+        obsPixPositions = varStruct.obsPixPositions;
+        obsPositions = varStruct.obsPositions;
+        obsTimes  = varStruct.obsTimes;
+        frameTimeStamps = varStruct.frameTimeStamps;
+        obsOnTimes = varStruct.obsOnTimes;
+        obsOffTimes = varStruct.obsOffTimes;
+        obsPositionsInterp = interp1(obsTimes, obsPositions, frameTimeStamps); % get position of obstacle for all frames
+        
+        % get m to pix mapping for each trial
+        trialMappings = nan(length(obsOnTimes), 2);
+        for i = 1:length(obsOnTimes)
+            frameBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions);
+            trialMappings(i,:) = polyfit(obsPositionsInterp(frameBins), obsPixPositions(frameBins), 1);
+        end
+        
+        % save
+        varStruct.mToPixMapping = nanmedian(trialMappings,1);
+        anythingAnalyzed = true;
+    end
+    
+    
+    
+    % get wheel points
+    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite) && ...
+       exist([sessionDir 'runTop.mp4'], 'file')
+        
+        fprintf('%s: getting wheel position\n', session)
+        
+        vidTop = VideoReader([sessionDir 'runTop.mp4']);
+        wheelPoints = getWheelPoints(vidTop);
+        [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
+        
+        % save
+        varStruct.wheelCenter = wheelCenter;
+        varStruct.wheelRadius = wheelRadius;
+        anythingAnalyzed = true;
+    end
+    
     
     
     
@@ -460,8 +497,8 @@ function spikeAnalysis2(session, varsToOverWrite)
     % FUNCTIONS
     % ---------
     
-    function analyze = analyzeVar(var, varNames, varsToOverWrite)
-        analyze = ~any(strcmp(varNames, var)) || any(strcmp(varsToOverWrite, var));
+    function analyze = analyzeVar(vars, varNames, varsToOverWrite)
+        analyze = ~any(ismember(varNames, vars)) || any(ismember(varsToOverWrite, vars));
     end
 end
 

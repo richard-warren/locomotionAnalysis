@@ -1,6 +1,5 @@
-function [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps)
+function [locations, features, featurePairInds, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps)
 
-% !!! currently assumes features for the top and second in the list of features, after features for the bottom... i should fix this yo
 
 % settings
 xDiffMax = 10;
@@ -11,22 +10,26 @@ lookAheadFrames = 100;
 
 % load data and convert from table to matrices
 frameNum = height(locationsTable);
-features = locationsTable(:,1:3:width(locationsTable)).Properties.VariableNames;
+features = locationsTable(:,2:3:width(locationsTable)).Properties.VariableNames;
 
 locations = nan(frameNum, 2, length(features));
 scores = nan(frameNum, length(features));
 
 for i = 1:length(features)
-    locations(:,:,i) = table2array(locationsTable(:, (i-1)*3+1 : (i-1)*3+2));
-    scores(:,i) = table2array(locationsTable(:, (i-1)*3+3));
+    locations(:,:,i) = table2array(locationsTable(:, (i-1)*3+2 : (i-1)*3+3));
+    scores(:,i) = table2array(locationsTable(:, (i-1)*3+4));
 end
 
 % find inds of feature pairs
-featurePairInds = nan(0,2);
+pawInds = find(~cellfun(@isempty, strfind(features, 'paw')));
+
+featurePairInds = nan(length(featurePairNames),2); % !!! this code is hacky
 for i = 1:length(featurePairNames)
     pair = find(~cellfun(@isempty, strfind(features, featurePairNames{i})));
-    if length(pair)==2; featurePairInds(end+1,:) = pair; end
+    if strfind(features{pair(1)}, 'top'); pair = fliplr(pair); end % ensures the bot features come first
+    if length(pair)==2; featurePairInds(i,:) = pair; end
 end
+
 
 % check that vid has same number of frames as trackedFeaturesRaw has rows... fix if necessary
 if length(frameTimeStamps)~=height(locationsTable)
@@ -39,7 +42,6 @@ if length(frameTimeStamps)~=height(locationsTable)
         locations = locations(1:length(frameTimeStamps),:,:);
     end
 end
-
 
 
 
@@ -89,7 +91,7 @@ end
 % fill in missing values
 isInterped = isnan(squeeze(locations(:,1,:)));
 
-for i = 1:length(features)
+for i = pawInds % 1:length(features)
     locations(:,1,i) = fillmissing(locations(:,1,i), 'pchip', 'endvalues', 'none');
     locations(:,2,i) = fillmissing(locations(:,2,i), 'pchip', 'endvalues', 'none');
 end

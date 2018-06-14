@@ -17,18 +17,19 @@ scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values,
 obsBotThickness = 15;
 contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and 255
 
-includeWebcam = false;
-showPawTouches = false;
+includeWiskCam = false;
+includeWebCam = false;
+showPawTouches = true;
 showTrialInfo = false;
 showWiskTouches = false;
-drawObs = true;
+drawObs = false;
 
 
 % initializations
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
-vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']);
-vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']);
+if includeWiskCam; vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']); end
+if includeWebCam; vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']); end
 
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsPixPositions',...
                                             'wheelPositions', 'wheelTimes',...
@@ -42,21 +43,25 @@ obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTim
 % get position where wisk frame should overlap with runTop frame
 topInd = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width, 1, 'first'); % find a frame where the obstacle is at the right edge, eg within the whisker camera
 frameTop = rgb2gray(read(vidTop, topInd));
-wiskInd = find(frameTimeStampsWisk==frameTimeStamps(topInd), 1, 'first');
-frameWisk = rgb2gray(read(vidWisk, wiskInd));
-[yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, scalings);
-smpWiskFrame = imresize(frameWisk, wiskScaling);
+if includeWiskCam
+    wiskInd = find(frameTimeStampsWisk==frameTimeStamps(topInd), 1, 'first');
+    frameWisk = rgb2gray(read(vidWisk, wiskInd));
+    [yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, scalings);
+    smpWiskFrame = imresize(frameWisk, wiskScaling);
+end
 
 
 
 
-if includeWebcam
+if includeWebCam
     frameDim = round([vidTop.Height + vidBot.Height, ...
         vidBot.Width + (vidWeb.Width * ((vidBot.Height+vidTop.Height)/vidWeb.Height)), 3]);
     webDim = [vidBot.Height+vidTop.Height, frameDim(2) - vidBot.Width];
-else
+elseif includeWebCam
     frameDim = round([vidTop.Height + vidBot.Height, ...
         xWiskPos+size(smpWiskFrame,2), 3]);
+else
+    frameDim = [vidTop.Height + vidBot.Height, vidBot.Width, 3];
 end
 
 vidSetting = 'MPEG-4';
@@ -102,13 +107,15 @@ for i = trials
     else
         
         % get webCame frame indices
-        webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
-        webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
-        webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
+        if includeWebCam
+            webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
+            webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
+            webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
 
-        % interpolate webFrames to number of inds in frameInds
-        webFramesInterp = interp1(webCamTimeStamps(webFrameInds), 1:length(webFrameInds), frameTimeStamps(frameInds), 'nearest', 'extrap');
-        
+            % interpolate webFrames to number of inds in frameInds
+            webFramesInterp = interp1(webCamTimeStamps(webFrameInds), 1:length(webFrameInds), frameTimeStamps(frameInds), 'nearest', 'extrap');
+        end
+
         for j = 1:length(frameInds)
             
             frame = uint8(zeros(frameDim));
@@ -135,34 +142,36 @@ for i = trials
             end
             
             % wisk
-            wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
-            
-            if ~isempty(wiskFrameInd) % timeDif < .01 % only write wisk frame if it is temporally close to run frame
-                
-                % get wisk frame
-                frameWisk = rgb2gray(read(vidWisk, wiskFrameInd));
-                               
-                % resize, adjust contrast, and draw border
-                frameWisk = imresize(frameWisk, wiskScaling);
-                frameWisk = imadjust(frameWisk, [.75 .95], [0 1]);
-                frameWisk = 255 - frameWisk;
-                frameWisk([1:border, end-border:end], :) = 255;
-                frameWisk(:, [1:border, end-border:end]) = 255;
-                
-                frameWisk = repmat(frameWisk,1,1,3);
-                if showWiskTouches
-                    if frameTimeStampsWisk(wiskFrameInd)>=contactTimes(i) && ...
-                            obsPixPositions(frameInds(j))>=xWiskPos % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
-                        frameWisk(:,:,3) = frameWisk(:,:,3) * .2;
+            if includeWiskCam
+                wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
+
+                if ~isempty(wiskFrameInd) % timeDif < .01 % only write wisk frame if it is temporally close to run frame
+
+                    % get wisk frame
+                    frameWisk = rgb2gray(read(vidWisk, wiskFrameInd));
+
+                    % resize, adjust contrast, and draw border
+                    frameWisk = imresize(frameWisk, wiskScaling);
+                    frameWisk = imadjust(frameWisk, [.75 .95], [0 1]);
+                    frameWisk = 255 - frameWisk;
+                    frameWisk([1:border, end-border:end], :) = 255;
+                    frameWisk(:, [1:border, end-border:end]) = 255;
+
+                    frameWisk = repmat(frameWisk,1,1,3);
+                    if showWiskTouches
+                        if frameTimeStampsWisk(wiskFrameInd)>=contactTimes(i) && ...
+                                obsPixPositions(frameInds(j))>=xWiskPos % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
+                            frameWisk(:,:,3) = frameWisk(:,:,3) * .2;
+                        end
                     end
+
+                    % incorporate into frame
+                    frame(yWiskPos:yWiskPos+size(frameWisk,1)-1, xWiskPos:xWiskPos+size(frameWisk,2)-1, :) = frameWisk;
                 end
-                
-                % incorporate into frame
-                frame(yWiskPos:yWiskPos+size(frameWisk,1)-1, xWiskPos:xWiskPos+size(frameWisk,2)-1, :) = frameWisk;
             end
             
             % webCam
-            if includeWebcam
+            if includeWebCam
                 frameWeb = webFrames(:,:,webFramesInterp(j));
                 frameWeb = imresize(frameWeb, webDim);
                 frame(:, vidBot.Width+1:end, :) = repmat(frameWeb,1,1,3);
