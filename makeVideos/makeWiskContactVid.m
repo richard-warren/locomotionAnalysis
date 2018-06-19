@@ -1,11 +1,11 @@
 
 % settings
-session = '180122_001';
+session = '180615_005';
 frameRate = 25;
 obsPrePost = [-.05 .03];
 
 
-vid = VideoReader(['C:\Users\rick\Google Drive\columbia\obstacleData\sessions\' session '\runWisk.mp4']);
+vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']);
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'nosePos');
 obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));

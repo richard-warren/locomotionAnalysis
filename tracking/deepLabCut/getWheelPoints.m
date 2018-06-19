@@ -12,16 +12,14 @@ function wheelPoints = getWheelPoints(vid)
 % settings
 xLocations = [.1 .5 .9]; % x locations of circRoiPoints, expressed as fraction of vid width
 frameNum = 100;
-minFrame = 10000;
-threshFactor = .5; % 2 times the mean of the frame
+minFrame = 250*5*60; % five minutes in
+threshFactor = .5; % threshFactor times average pixel vale
 
 
 
 % initializations
-bg = getBgImage(vid, 1000, 120, 2*10e-4, false);
-thresh = mean(bg(:)) * threshFactor;
 wheelPoints = nan(3,2); % each row is x,y measured from top left of image
-wheelPoints(:,1) = round(xLocations * size(bg,2))';
+wheelPoints(:,1) = round(xLocations * vid.Width)';
 
 
 
@@ -33,8 +31,7 @@ frames = nan(vid.Height, vid.Width, frameNum);
 for i = 1:length(frameInds)
     frames(:,:,i) = rgb2gray(read(vid, frameInds(i)));
 end
-
-
+thresh = mean(frames(:))*threshFactor;
 
 % get minimum project across all frames (this effectively removes the legs from above the wheel)
 minProjection = uint8(min(frames, [], 3));
@@ -51,7 +48,9 @@ wheelOutline = ismember(regionInfo, botRowGroups);
 % for each x value, find the top of the circle, which is the first white point in the wheelOutline (from the top to bot of column)
 for i = 1:3
     x = wheelPoints(i,1);
+    try
     wheelPoints(i,2) = find(wheelOutline(:,x), 1, 'first');
+    catch; keyboard; end
 end
 
 

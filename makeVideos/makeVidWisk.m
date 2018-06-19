@@ -14,13 +14,13 @@ editedDir = [getenv('OBSDATADIR') 'editedVid\'];
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
-obsBotThickness = 15;
+obsBotThickness = 10;
 contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and 255
 
 includeWiskCam = false;
 includeWebCam = false;
 showPawTouches = true;
-showTrialInfo = false;
+showTrialInfo = true;
 showWiskTouches = false;
 drawObs = false;
 

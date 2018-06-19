@@ -5,8 +5,9 @@ vidFs = 250;
 showScores = true;
 showStance = false;
 circSize = 100;
-vidSizeScaling = 1.25;
+vidSizeScaling = 1.5;
 colorMap = 'hsv';
+scaling = 1.0; % network was trained on resolution of (saling)*(original resolution)
 connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
                      {'paw2LF_bot', 'paw2LF_top'}, ...
                      {'paw3RF_bot', 'paw3RF_top'}, ...
@@ -20,7 +21,10 @@ connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
 % initializations
 frameInds = getFramesToShow(session);
 addingFrames = exist('trainingDataPath', 'var'); % keeps track of whether frames will be added to the training set
-if addingFrames; load(trainingDataPath, 'trainingData', 'view'); end
+if addingFrames
+    load(trainingDataPath, 'trainingData', 'view');
+    framesAdded = 0;
+end
 
 % get videos
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
@@ -29,15 +33,17 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', 'wheelCenter', 'wheelRadius');
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\temp\trackedFeaturesRaw.csv']); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
+locations = locations / scaling; % bring back to original resolution
 if showStance
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixMapping(1));
 end
 
 % set up figure
+if addingFrames; figureName = [session ', frames added: 0']; else; figureName = session; end
 hgt = (vidBot.Height+vidTop.Height);
-fig = figure('units', 'pixels', 'position', [600 400 vidBot.Width*vidSizeScaling hgt*vidSizeScaling],...
+fig = figure('name', figureName, 'units', 'pixels', 'position', [600 400 vidBot.Width*vidSizeScaling hgt*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
 imPreview = image(zeros(hgt, vidBot.Width), 'CDataMapping', 'scaled'); hold on;
@@ -122,18 +128,24 @@ function changeFrames(~,~)
         
         % 'a': add frame to training set
         elseif key==97
-            m = msgbox('adding frame to training set...'); pause(.5); close(m)
-            ind = length(trainingData)+1;
-            trainingData(ind).session = session;
-            trainingData(ind).frameNum = frameInds(frameInd);
-            trainingData(ind).includeFrame = false;
-            for j = 1:length(features)
-                trainingData(ind).(features{j}) = squeeze(locations(frameInds(frameInd),:,j));
+            if addingFrames
+                m = msgbox('adding frame to training set...'); pause(.5); close(m)
+                ind = length(trainingData)+1;
+                trainingData(ind).session = session;
+                trainingData(ind).frameNum = frameInds(frameInd);
+                trainingData(ind).includeFrame = false;
+                for j = 1:length(features)
+                    trainingData(ind).(features{j}) = squeeze(locations(frameInds(frameInd),:,j));
+                end
+
+                % resort the structure so like sessions stay together
+                [~, sortInds] = sort({trainingData.session});
+                trainingData = trainingData(sortInds);
+                
+                % update figure title
+                framesAdded = framesAdded + 1;
+                set(fig, 'name', sprintf('%s, frames added: %i', session, framesAdded))
             end
-            
-            % resort the structure so like sessions stay together
-            [~, sortInds] = sort({trainingData.session});
-            trainingData = trainingData(sortInds);
         
         % 's': save training set
         elseif key==115

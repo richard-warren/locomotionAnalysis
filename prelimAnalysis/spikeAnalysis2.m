@@ -62,7 +62,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % analyze reward times
-    if analyzeVar('rewardTimes', varNames, varsToOverWrite)
+    if analyzeVar({'rewardTimes'}, varNames, varsToOverWrite)
 
         fprintf('%s: getting reward times\n', session)
         load([sessionDir 'run.mat'], 'reward')
@@ -170,6 +170,12 @@ function spikeAnalysis2(session, varsToOverWrite)
             obsOnTimes = [];
             obsOffTimes = [];
         end
+        
+        % get rid of really close obsOnTimes (debounce)
+        validBins = (obsOffTimes-obsOnTimes) > .1; % not too close together
+        obsOnTimes = obsOnTimes(validBins);
+        obsOffTimes = obsOffTimes(validBins);
+        
 
         % save values
         varStruct.obsOnTimes = obsOnTimes;
@@ -181,7 +187,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % determine obstacle height for every trial
-    if analyzeVar('obsHeights', varNames, varsToOverWrite) && ...
+    if analyzeVar({'obsHeights'}, varNames, varsToOverWrite) && ...
        exist([sessionDir '\trialInfo.csv'], 'file')
        
         fprintf('%s: getting obstacle heights\n', session)
@@ -189,7 +195,9 @@ function spikeAnalysis2(session, varsToOverWrite)
         obsTimesSeconds = obsHeightData(:,2);
         validInds = [abs(diff(obsTimesSeconds))>0; true]; %if two times are very close to eachother only believe the second of the two times
         obsHeights = obsHeightData(validInds,1);
+        try
         obsHeights = obsHeights(1:length(varStruct.obsOnTimes)); % this gets rid of last entry, which we shouldn't need
+        catch; keyboard; end
         
         % there should be one more obsHeight than there all trials because an obs height is randomly chosen
         if sum(validInds)-1 > length(obsHeights)
@@ -242,7 +250,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % determine whether light was on or off for every trial
-    if analyzeVar('isLightOn', varNames, varsToOverWrite)
+    if analyzeVar({'isLightOn'}, varNames, varsToOverWrite)
         
         if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsOnTimes')
             
@@ -266,13 +274,12 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
     % debounce touch signal and get touch on/off times
-    if exist('touch', 'var')
-        if analyzeVar({'touchSig', 'touchOnTimes', 'touchOffTimes', 'touchSigTimes'}, varNames, varsToOverWrite)
+    if analyzeVar({'touchSig', 'touchSigTimes', 'touchOnTimes', 'touchOffTimes'}, varNames, varsToOverWrite)
 
             fprintf('%s: debouncing touch signal\n', session)
             load([sessionDir 'run.mat'], 'touch', 'breaks')
 
-            % decode stepper motor
+            % debounce touch signal
             if exist('breaks', 'var')
                 [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
             else
@@ -285,14 +292,13 @@ function spikeAnalysis2(session, varsToOverWrite)
             varStruct.touchOnTimes = touchOnTimes;
             varStruct.touchOffTimes = touchOffTimes;
             anythingAnalyzed = true;
-        end
     end
 
 
 
 
     % get frame timeStamps
-    if analyzeVar('frameTimeStamps', varNames, varsToOverWrite)
+    if analyzeVar({'frameTimeStamps'}, varNames, varsToOverWrite)
 
         if exist([sessionDir 'run.csv'], 'file')
 
@@ -321,7 +327,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get wisk frame timeStamps
-    if analyzeVar('frameTimeStampsWisk', varNames, varsToOverWrite)
+    if analyzeVar({'frameTimeStampsWisk'}, varNames, varsToOverWrite)
 
         if exist([sessionDir 'wisk.csv'], 'file')
             
@@ -350,7 +356,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
     % get webCam timeStamps if webCam data exist
-    if analyzeVar('webCamTimeStamps', varNames, varsToOverWrite)
+    if analyzeVar({'webCamTimeStamps'}, varNames, varsToOverWrite)
 
         if exist([sessionDir 'webCam.csv'], 'file') &&...
            exist([sessionDir 'run.csv'], 'file') &&...
@@ -388,7 +394,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get nose position
-    if analyzeVar('nosePos', varNames, varsToOverWrite) && ...
+    if analyzeVar({'nosePos'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
 
         fprintf('%s: getting nose position\n', session)
@@ -399,14 +405,15 @@ function spikeAnalysis2(session, varsToOverWrite)
         noseBotY = median(locationsTable.nose_bot_1);
 
         % save
-        varStruct.nosePos = [noseBotY noseBotX];
+        varStruct.nosePos = [noseBotX noseBotY];
         anythingAnalyzed = true;
     end
     
     
     
     % get obstacle pixel positions in bottom view
-    if analyzeVar('obsPixPositions', varNames, varsToOverWrite) && ...
+    if analyzeVar({'obsPixPositions'}, varNames, varsToOverWrite) && ...
+       exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
        ~isempty(varStruct.obsOnTimes)
 
         fprintf('%s: tracking obstacles in bottom view\n', session)
@@ -437,7 +444,8 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get meter to pix mapping
-    if analyzeVar('mToPixMapping', varNames, varsToOverWrite) && ...
+    if analyzeVar({'mToPixMapping'}, varNames, varsToOverWrite) && ...
+       any(strcmp(fieldnames(varStruct), 'obsPixPositions')) && ...
        ~isempty(varStruct.obsOnTimes)
 
         fprintf('%s: getting m to pix mapping\n', session)
@@ -454,8 +462,8 @@ function spikeAnalysis2(session, varsToOverWrite)
         % get m to pix mapping for each trial
         trialMappings = nan(length(obsOnTimes), 2);
         for i = 1:length(obsOnTimes)
-            frameBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions);
-            trialMappings(i,:) = polyfit(obsPositionsInterp(frameBins), obsPixPositions(frameBins), 1);
+            frameBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions)';
+            trialMappings(i,:) = polyfit(obsPositionsInterp(frameBins), obsPixPositions(frameBins)', 1);
         end
         
         % save
@@ -498,7 +506,11 @@ function spikeAnalysis2(session, varsToOverWrite)
     % ---------
     
     function analyze = analyzeVar(vars, varNames, varsToOverWrite)
-        analyze = ~any(ismember(varNames, vars)) || any(ismember(varsToOverWrite, vars));
+        if ~strcmp(varsToOverWrite,'all')
+            analyze = ~any(ismember(varNames, vars)) || any(ismember(varsToOverWrite, vars));
+        else
+            analyze = true;
+        end
     end
 end
 

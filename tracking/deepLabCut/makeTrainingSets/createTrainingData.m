@@ -34,7 +34,7 @@ labelFrames(trainingSetDir, trainingSetName, features);
 %% add incorrect frames from tracked vid
 
 session = '180123_000';
-trainingSetFolder = 'topBotCat';
+trainingSetFolder = 'barObstacle';
 trainingSetName = 'trainingData.mat';
 
 trainingDataPath = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetFolder '\' trainingSetName];
@@ -45,7 +45,7 @@ showTrackingDLC(session, .02, trainingDataPath)
 %% prepare data for deepLabCut
 
 trainingSetFolder = 'barObstacle';
-scaling = 1;
+scaling = .5;
 trainingSetName = 'trainingData.mat';
 % features = {'paw1', 'paw2', 'paw3', 'paw4', 'gen', 'tailBase', 'tailMid', 'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBaseTop', 'tailMidTop'};
 features = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', 'tailBase_top', 'tailMid_top', 'nose_top', 'obs_top', ...
