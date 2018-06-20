@@ -276,15 +276,18 @@ function spikeAnalysis2(session, varsToOverWrite)
     % debounce touch signal and get touch on/off times
     if analyzeVar({'touchSig', 'touchSigTimes', 'touchOnTimes', 'touchOffTimes'}, varNames, varsToOverWrite)
 
-            fprintf('%s: debouncing touch signal\n', session)
+            fprintf('%s: getting touch signal\n', session)
             load([sessionDir 'run.mat'], 'touch', 'breaks')
 
             % debounce touch signal
-            if exist('breaks', 'var')
-                [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
-            else
-                [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes);
-            end
+%             if exist('breaks', 'var')
+%                 [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
+%             else
+%                 [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes);
+%             end
+            touchSig = double(touch.values>2);
+            touchOnTimes = touch.times([false; diff(touch.values>2)==1]);
+            touchOffTimes = touch.times([diff(touch.values>2)==-1; false]);
 
             % save values
             varStruct.touchSig = touchSig;

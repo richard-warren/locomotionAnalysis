@@ -6,8 +6,8 @@ sessions = selectSessions;
 
 
 %%
-parfor i = 1:length(sessions)
-    spikeAnalysis2(sessions{i}, 'nosePos');
+for i = 1:length(sessions)
+    spikeAnalysis2(sessions{i});
 end
 disp('all done!')
 
@@ -18,7 +18,7 @@ vidTrialProportion = 1;
 
 for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
-    makeVidWisk('', sessions{i}, [-.01 .1], .1, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
+    makeVidWisk('', sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
 end
 
 

@@ -23,6 +23,7 @@ showPawTouches = true;
 showTrialInfo = true;
 showWiskTouches = false;
 drawObs = false;
+obsNotYetTracked = true;
 
 
 % initializations
@@ -37,13 +38,17 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
                                             'touchSig', 'touchSigTimes', 'nosePos');
 if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
-obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+if obsNotYetTracked
+    obsPositions = fixObsPositionsHacky(obsPositions);
+else
+    obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+end
 
 
 % get position where wisk frame should overlap with runTop frame
-topInd = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width, 1, 'first'); % find a frame where the obstacle is at the right edge, eg within the whisker camera
-frameTop = rgb2gray(read(vidTop, topInd));
 if includeWiskCam
+    topInd = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width, 1, 'first'); % find a frame where the obstacle is at the right edge, eg within the whisker camera
+    frameTop = rgb2gray(read(vidTop, topInd));
     wiskInd = find(frameTimeStampsWisk==frameTimeStamps(topInd), 1, 'first');
     frameWisk = rgb2gray(read(vidWisk, wiskInd));
     [yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, scalings);
@@ -57,7 +62,7 @@ if includeWebCam
     frameDim = round([vidTop.Height + vidBot.Height, ...
         vidBot.Width + (vidWeb.Width * ((vidBot.Height+vidTop.Height)/vidWeb.Height)), 3]);
     webDim = [vidBot.Height+vidTop.Height, frameDim(2) - vidBot.Width];
-elseif includeWebCam
+elseif includeWiskCam
     frameDim = round([vidTop.Height + vidBot.Height, ...
         xWiskPos+size(smpWiskFrame,2), 3]);
 else
