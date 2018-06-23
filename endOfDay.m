@@ -1,12 +1,10 @@
-% spike preliminary analysis and video making!
+% pick sessions
 
-% settings
 sessions = selectSessions;
 
 
-
-%%
-for i = 1:length(sessions)
+%% analyze spike data
+parfor i = 1:length(sessions)
     spikeAnalysis2(sessions{i});
 end
 disp('all done!')
@@ -14,6 +12,7 @@ disp('all done!')
 
 
 %% make video with trials labelled by condition
+
 vidTrialProportion = 1;
 
 for i = 1:length(sessions)
@@ -22,6 +21,8 @@ for i = 1:length(sessions)
 end
 
 
+%% plot baseline
 
-
-
+% mice = {'run6', 'run7', 'run8', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5', 'sen6', 'mtc1', 'mtc2', 'mtc3', 'mtc4', 'mtc5', 'mtc6', 'den2', 'den4', 'den5'};
+mice = {'sen1', 'sen2', 'sen3', 'sen4', 'sen5', 'sen6', 'mtc1', 'mtc2', 'mtc3', 'mtc4', 'mtc5', 'mtc6', 'den2', 'den4', 'den5'};
+baselineSummary(mice);

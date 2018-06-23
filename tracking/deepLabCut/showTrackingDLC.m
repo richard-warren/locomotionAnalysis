@@ -33,7 +33,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', 'wheelCenter', 'wheelRadius');
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\temp\trackedFeaturesRaw.csv']); % get raw tracking data
+locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
 locations = locations / scaling; % bring back to original resolution
 if showStance

@@ -82,7 +82,9 @@ for i = 1:size(sessions,1)
     % store values
     data(i).mouse = sessions.mouse{i};
     data(i).vel = nanmean(velInterp, 1);
+    try
     data(i).vel = smooth(data(i).vel, smoothSmps);
+    catch; keyboard; end
     middlePositInds = (positsInterp > positRangeMeters(1)) & (positsInterp < positRangeMeters(2));
     data(i).meanVel = nanmean( nanmean(velInterp(:, middlePositInds), 2) ); % !!! why is nanmean necessary here!!!
     
