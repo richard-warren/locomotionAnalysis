@@ -33,7 +33,7 @@ labelFrames(trainingSetDir, trainingSetName, features);
 
 %% add incorrect frames from tracked vid
 
-session = '180618_010';
+session = '180623_006';
 trainingSetFolder = 'barObstacle';
 trainingSetName = 'trainingData.mat';
 
