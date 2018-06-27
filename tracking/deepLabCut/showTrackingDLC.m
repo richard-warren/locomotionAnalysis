@@ -3,7 +3,7 @@ function showTrackingDLC(session, vidDelay, trainingDataPath)
 % settings
 vidFs = 250;
 showScores = true;
-showStance = false;
+showStance = true;
 circSize = 100;
 vidSizeScaling = 1.5;
 colorMap = 'hsv';
@@ -36,9 +36,13 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
 locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
 locations = locations / scaling; % bring back to original resolution
+topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
+botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 if showStance
-    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixMapping(1));
+    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, ...
+        wheelTimes, wheelCenter, wheelRadius, vidFs, mToPixMapping(1));
 end
+
 
 % set up figure
 if addingFrames; figureName = [session ', frames added: 0']; else; figureName = session; end

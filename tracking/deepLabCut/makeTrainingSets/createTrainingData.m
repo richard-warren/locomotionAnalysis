@@ -53,7 +53,7 @@ features = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', 'tailBase_to
 
 trainingDataPath = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetFolder '\' trainingSetName];
 load(trainingDataPath, 'trainingData', 'view')
-writeDir = [getenv('TRAININGEXAMPLESDIR') 'deepLabCut\' trainingSetFolder  'Scaling' num2str(scaling) '\']; % images will be written here
+writeDir = [getenv('OBSDATADIR') 'tracking\trainingData\deepLabCut\' trainingSetFolder '\' trainingSetFolder 'Scaling' num2str(scaling) '\']; % images will be written here
 if ~exist(writeDir, 'dir'); mkdir(writeDir); end
 prepareTrainingImages(writeDir, trainingData, view, features, scaling);
 

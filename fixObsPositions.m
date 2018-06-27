@@ -1,14 +1,6 @@
 function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, noseX)
 
 
-
-% temp
-% session = '180123_001';
-% load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-%     'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'nosePos');
-% noseX = nosePos(1);
-
-
 obsPositionsFixed = nan(size(obsPositions));
 
 for i = 1:length(obsOnTimes)
@@ -29,26 +21,3 @@ for i = 1:length(obsOnTimes)
         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
     end
 end
-
-
-% close all; figure; plot(obsPositionsFixed); pimpFig
-
-
-
-
-
-% obsPositionsFixed = obsPositions;
-% 
-% for i = 1:length(obsOnTimes)
-%     
-%     if i<length(obsOnTimes)
-%         endTime = obsOnTimes(i+1);
-%     else
-%         endTime = max(obsTimes);
-%     end
-%     
-%     trialInds = (obsTimes>obsOnTimes(i)) & (obsTimes<=endTime);
-%     minPos = min(obsPositions(trialInds));
-%     obsPositionsFixed(trialInds) = obsPositionsFixed(trialInds) - minPos;
-%     
-% end

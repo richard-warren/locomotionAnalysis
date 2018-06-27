@@ -1,4 +1,5 @@
-function stanceBins = getStanceBins(frameTimeStamps, locationsTopPaws, wheelPositions, wheelTimes, wheelPoints, vidFs, mToPixFactor)
+function stanceBins = getStanceBins(frameTimeStamps, locationsTopPaws, wheelPositions, wheelTimes, wheelCenter, wheelRadius, vidFs, mToPixFactor)
+
 
 
 % settings
@@ -8,8 +9,6 @@ velTime = .02;         % amount of time to compute velocity over
 stanceMaxHgt = 12;
 
 
-% get wheel parameters
-[wheelRadius, wheelCenter] = fitCircle(wheelPoints);
 
 % get x velocities for bottom view tracking
 xVel = nan(size(locationsTopPaws,1),4);

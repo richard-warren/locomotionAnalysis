@@ -1,11 +1,9 @@
-function data = getKinematicData(sessions, obsPos)
+function data = getKinematicData3(sessions, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
 % settings
-botPawInds = 1:4;
-topPawInds = 8:11;
-minVel = 0;
+minVel = 0; % only include trials where mouse is running at least this fast
 velPrePost = [-.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
@@ -29,14 +27,17 @@ for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
-            'wheelRadius', 'wheelCenter');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
-    mToPixFactor = median(mToPixMapping(:,1));
-    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw2.csv']); % get raw tracking data
-    [locations, features, featurePairInds, isInterped] = fixTrackingDLC(locationsTable, frameTimeStamps);
+    mToPixFactor = abs(mToPixMapping(1));
+    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw.csv']); % get raw tracking data
+    [locations, features, featurePairInds, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
+    botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
+    topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
     vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runTop.mp4']);
-    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelPoints, 250, mToPixFactor);
+    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
+    
     if exist('obsPos', 'var')
         contactPositions = ones(size(obsOnTimes))*obsPos;
         contactTimes = nan(size(obsOnTimes));
@@ -74,7 +75,8 @@ for i = 1:length(sessions)
         
         % GET TRIAL DATA
         % note: i pull out trial specific data because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
-        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
+%         trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
+        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j);
 
         % get vel at moment of contact
         sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
@@ -94,6 +96,7 @@ for i = 1:length(sessions)
 
         for k = 1:4
             trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+            if max(trialControlStepIds(:,k))<2; keyboard; end
             trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
 
             for m = 1:size(locationsPaws,2)
@@ -101,7 +104,19 @@ for i = 1:length(sessions)
             end
         end
         
-        if any(all(isnan(trialControlStepIds),1) | all(isnan(trialModStepIds),1))
+        
+        
+        % check whether any control or modified steps are missing
+        missingControlStep = false;
+        for k = 1:controlSteps
+            if ~all(any(trialControlStepIds==k,1))
+                missingControlStep = true;
+            end
+        end
+        missingModStep = any(all(isnan(trialModStepIds),1));
+        
+        % analyze trial if all steps are accounted for
+        if  missingModStep || missingControlStep
             fprintf('  missing steps in trial %i\n', j)
         else
 
@@ -109,7 +124,7 @@ for i = 1:length(sessions)
             trialLocations(:,1,:) = trialLocations(:,1,:) - trialObsPixPositions;
 
             % convert to meters
-            trialLocations = trialLocations / abs(mToPixFactor);
+            trialLocations = trialLocations / mToPixFactor;
 
             % determine whether left and right forepaws are in swing at obsPos moment
             isLeftSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));
@@ -249,6 +264,7 @@ for i = 1:length(sessions)
             data(dataInd).session = sessions{i};
             data(dataInd).trial = j;
             data(dataInd).isLightOn = isLightOn(j);
+            data(dataInd).osbHeightsVid = obsHeightsVid(j);
 
             data(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
             data(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact

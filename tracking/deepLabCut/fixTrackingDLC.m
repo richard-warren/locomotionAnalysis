@@ -7,6 +7,7 @@ scoreThresh = .99;
 featurePairNames = {'paw1', 'paw2', 'paw3', 'paw4'}; % two features both containing the same string in this array are considered the same feature in the top and bottom views...
 maxSpeed = 5000; % pixels per second (5000 = 20 pix per frame at 250 fps)
 lookAheadFrames = 100;
+minimizeCorrections = false; % set to true to 'see' the tracking errors, which is useful for adding mistracked frames to training sets
 
 % load data and convert from table to matrices
 frameNum = height(locationsTable);
@@ -50,41 +51,38 @@ lowScoreBins = permute(repmat(scores<scoreThresh,1,1,2), [1 3 2]);
 locations(lowScoreBins) = nan;
 
 
+if ~minimizeCorrections
+    % remove inds that violate velocity constraint
+    for i = 1:length(features)
 
-% median filter
-% locations = medfilt1(locations, 3, [], 'omitnan');
+        speeds = sqrt(sum(diff(squeeze(locations(:,:,i)), 1, 1).^2,2)) ./ diff(frameTimeStamps);
+        checkVelInds = find(diff(isnan(locations(:,1,i)))==1 | speeds>maxSpeed) + 1;
 
+        for j = checkVelInds'
 
-% remove inds that violate velocity constraint
-% for i = 1:length(features)
-%     
-%     speeds = sqrt(sum(diff(squeeze(locations(:,:,i)), 1, 1).^2,2)) ./ diff(frameTimeStamps);
-%     checkVelInds = find(diff(isnan(locations(:,1,i)))==1 | speeds>maxSpeed) + 1;
-%     
-%     for j = checkVelInds'
-%         
-%         % find first frame where tracking doesn't violate max speed
-%         lastTrackedInd = j-1; while isnan(locations(lastTrackedInd,1,i)); lastTrackedInd = lastTrackedInd-1; end
-%         
-%         inds = lastTrackedInd+1 : min(lastTrackedInd+lookAheadFrames, size(locations,1));
-%         dp = sqrt(sum((locations(lastTrackedInd,:,i) - locations(inds,:,i)).^2,2));
-%         dt = frameTimeStamps(inds)-frameTimeStamps(lastTrackedInd);
-%         vels = dp ./ dt;
-%         
-%         nextTrackedInd = lastTrackedInd + find(vels<maxSpeed,1,'first');
-%         
-%         % replace values violating speed constraint with nans
-%         locations(lastTrackedInd+1:nextTrackedInd-1,:,i) = nan;
-%     end
-% end
+            % find first frame where tracking doesn't violate max speed
+            lastTrackedInd = j-1; while isnan(locations(lastTrackedInd,1,i)); lastTrackedInd = lastTrackedInd-1; end
+
+            inds = lastTrackedInd+1 : min(lastTrackedInd+lookAheadFrames, size(locations,1));
+            dp = sqrt(sum((locations(lastTrackedInd,:,i) - locations(inds,:,i)).^2,2));
+            dt = frameTimeStamps(inds)-frameTimeStamps(lastTrackedInd);
+            vels = dp ./ dt;
+
+            nextTrackedInd = lastTrackedInd + find(vels<maxSpeed,1,'first');
+
+            % replace values violating speed constraint with nans
+            locations(lastTrackedInd+1:nextTrackedInd-1,:,i) = nan;
+        end
+    end
 
 
 
-% remove top locations where x is too far from bottom location
-% for i = 1:size(featurePairInds)
-%     xDiffs = abs(diff(squeeze(locations(:,1,featurePairInds(i,:))), 1, 2));
-%     locations(xDiffs>xDiffMax, :, featurePairInds(i,2)) = nan;
-% end
+    % remove top locations where x is too far from bottom location
+    for i = 1:size(featurePairInds)
+        xDiffs = abs(diff(squeeze(locations(:,1,featurePairInds(i,:))), 1, 2));
+        locations(xDiffs>xDiffMax, :, featurePairInds(i,2)) = nan;
+    end
+end
 
 
 

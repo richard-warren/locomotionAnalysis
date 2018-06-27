@@ -11,6 +11,14 @@ data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
 
+%% make temp data
+
+sessions = selectSessions;
+obsPos = -0.0087;
+data = getKinematicData3(sessions, obsPos);
+data = data([data.oneSwingOneStance]);
+
+
 %% CALCULATE KINEMATIC DATA (wisk vs no wisk sessions)
 
 % settings
@@ -22,7 +30,7 @@ dataWisk = getKinematicData3(wiskSessions);
 medObsPos = median([dataWisk.obsPos]);
 dataNoWisk = getKinematicData3(noWiskSessions, medObsPos);
 
-save([getenv('OBSDATADIR') 'kinematicDataSensoryDependence.mat'], 'data');
+save([getenv('OBSDATADIR') 'kinematicDataSensoryDependence.mat'], 'dataWisk', 'dataNoWisk');
 
 %% PLOT SENSORY DEPENDENCE KINEMATICS
 sensoryDependenceKinematics(cat(2,dataWisk,dataNoWisk), wiskSessions, noWiskSessions);
@@ -30,7 +38,7 @@ sensoryDependenceKinematics(cat(2,dataWisk,dataNoWisk), wiskSessions, noWiskSess
 
 %% LOAD PREVIOUSLY CALCULATED DATA
 
-load([getenv('OBSDATADIR') 'kinematicData.mat'], 'data')
+load([getenv('OBSDATADIR') '\kinematicData\kinematicData.mat'], 'data')
 data = data([data.oneSwingOneStance]);
 
 %% BIN DATA

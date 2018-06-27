@@ -49,7 +49,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     anythingAnalyzed = false; % results are only saved if something was found that wasn't already analyzed
 
     % load or initialize data structure
-    sessionDir = [getenv('OBSDATADIR') '\sessions\' session '\'];
+    sessionDir = [getenv('OBSDATADIR') 'sessions\' session '\'];
 
     if exist([sessionDir 'runAnalyzed.mat'], 'file')
         varStruct = load([sessionDir 'runAnalyzed.mat']);
@@ -414,8 +414,8 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     
-    % get obstacle pixel positions in bottom view
-    if analyzeVar({'obsPixPositions'}, varNames, varsToOverWrite) && ...
+    % get mToPixMapping and obstacle pixel positions in bottom view
+    if analyzeVar({'obsPixPositions', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
        ~isempty(varStruct.obsOnTimes)
 
@@ -436,51 +436,35 @@ function spikeAnalysis2(session, varsToOverWrite)
                     obsLowScores>0.99;
         obsPixPositions = mean([obsHighX, obsLowX], 2);
         obsPixPositions(~validInds) = nan;
+        obsPositionsInterp = interp1(varStruct.obsTimes, varStruct.obsPositions, varStruct.frameTimeStamps); % get position of obstacle for all frames
         
+        % use obs position from rotary encoder to infer pix positions when obs is out of frame
+        epochTimes = [0; varStruct.obsOnTimes; varStruct.frameTimeStamps(end)];
+        trialMappings = nan(length(varStruct.obsOnTimes), 2);
+        for i = 1:(length(epochTimes)-1)
+            epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
+                        varStruct.frameTimeStamps<=epochTimes(i+1);
+            getMappingBins = epochBins & ~isnan(obsPixPositions);
+            interpBins =  epochBins & isnan(obsPixPositions);
+            if any(epochBins)
+                trialMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
+                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*varStruct.mToPixMapping(1) +varStruct.mToPixMapping(2);
+            end
+        end
 
         % save
         varStruct.obsPixPositions = obsPixPositions';
-        anythingAnalyzed = true;
-    end
-    
-    
-    
-    
-    % get meter to pix mapping
-    if analyzeVar({'mToPixMapping'}, varNames, varsToOverWrite) && ...
-       any(strcmp(fieldnames(varStruct), 'obsPixPositions')) && ...
-       ~isempty(varStruct.obsOnTimes)
-
-        fprintf('%s: getting m to pix mapping\n', session)
-        
-        % get necessary data
-        obsPixPositions = varStruct.obsPixPositions;
-        obsPositions = varStruct.obsPositions;
-        obsTimes  = varStruct.obsTimes;
-        frameTimeStamps = varStruct.frameTimeStamps;
-        obsOnTimes = varStruct.obsOnTimes;
-        obsOffTimes = varStruct.obsOffTimes;
-        obsPositionsInterp = interp1(obsTimes, obsPositions, frameTimeStamps); % get position of obstacle for all frames
-        
-        % get m to pix mapping for each trial
-        trialMappings = nan(length(obsOnTimes), 2);
-        for i = 1:length(obsOnTimes)
-            frameBins = frameTimeStamps>=obsOnTimes(i) & frameTimeStamps<=obsOffTimes(i) & ~isnan(obsPixPositions)';
-            trialMappings(i,:) = polyfit(obsPositionsInterp(frameBins), obsPixPositions(frameBins)', 1);
-        end
-        
-        % save
         varStruct.mToPixMapping = nanmedian(trialMappings,1);
         anythingAnalyzed = true;
     end
     
     
     
+    
     % get wheel points
-    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite) && ...
-       exist([sessionDir 'runTop.mp4'], 'file')
+    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite)
         
-        fprintf('%s: getting wheel position\n', session)
+        fprintf('%s: getting wheel center and radius\n', session)
         
         vidTop = VideoReader([sessionDir 'runTop.mp4']);
         wheelPoints = getWheelPoints(vidTop);
@@ -489,6 +473,42 @@ function spikeAnalysis2(session, varsToOverWrite)
         % save
         varStruct.wheelCenter = wheelCenter;
         varStruct.wheelRadius = wheelRadius;
+        anythingAnalyzed = true;
+    end
+    
+    
+    
+    
+    % get height of obs for each trial
+    if analyzeVar({'obsHeightsVid'}, varNames, varsToOverWrite) && ...
+       any(strcmp(fieldnames(varStruct), 'obsPixPositions'))
+        
+        fprintf('%s: getting obstacle heights\n', session)
+        
+        % settings
+        obsDiameter = 3.175; % (mm)
+        
+        % load tracking data if not already open
+        if ~exist('locationsTable', 'var'); locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); end
+        obsTopY = locationsTable.obs_top_1;
+        obsTopScores = locationsTable.obs_top_2;
+        
+        obsHeightsVid = nan(1,length(varStruct.obsOnTimes));
+        for i = 1:length(varStruct.obsOnTimes)
+            trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
+                        varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
+                        ~isnan(varStruct.obsPixPositions)' & ...
+                        obsTopScores>.99;
+            medianObsY = median(obsTopY(trialBins));
+            obsHeightPix = varStruct.wheelCenter(2) - varStruct.wheelRadius - medianObsY;
+            obsHeightsVid(i) = (obsHeightPix / abs(varStruct.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
+        end
+        
+        % temp
+        figure; scatter(varStruct.obsHeights, obsHeightsVid); hold on; line(get(gca,'xlim'), get(gca,'xlim'))
+        
+        % save
+        varStruct.obsHeightsVid = obsHeightsVid;
         anythingAnalyzed = true;
     end
     

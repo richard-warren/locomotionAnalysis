@@ -58,9 +58,9 @@ end
 
 % plot control and modified step segmentation
 if plotExample
-
+    
     % get trial
-    trial  = randperm(length(obsOnTimes), 1);
+    trial = randperm(length(obsOnTimes), 1);
     trialBins = frameTimeStamps>obsOnTimes(trial) & frameTimeStamps<obsOffTimes(trial);
     paws = [1 2 3 4];
     xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositions';
