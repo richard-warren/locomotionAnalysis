@@ -45,7 +45,9 @@ for i = 1:length(sessions)
         % get times when obs reaches obPos
         for j = 1:length(obsOnTimes)
             indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
-            contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+            if ~isempty(indStart)
+                contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+            end
         end
     else
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
@@ -76,47 +78,56 @@ for i = 1:length(sessions)
         % GET TRIAL DATA
         % note: i pull out trial specific data because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
 %         trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
-        trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j);
+        try
+            trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j);
 
-        % get vel at moment of contact
-        sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
-        
-        % get time stamps relative to wisk contact
-        trialTimeStamps = frameTimeStamps(trialBins)-contactTimes(j);
-        [~, minInd] = min(abs(trialTimeStamps));
-        trialTimeStampsInterp = trialTimeStamps - trialTimeStamps(minInd);
+            % get vel at moment of contact
+            sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
 
-        % get trial data interpolated s.t. 0 is moment of wisk contact
-        trialObsPixPositions = interp1(trialTimeStamps, obsPixPositions(trialBins), trialTimeStampsInterp);
+            % get time stamps relative to wisk contact
+            trialTimeStamps = frameTimeStamps(trialBins)-contactTimes(j);
+            [~, minInd] = min(abs(trialTimeStamps));
+            trialTimeStampsInterp = trialTimeStamps - trialTimeStamps(minInd);
 
-        trialControlStepIds = nan(sum(trialBins), 4);
-        trialModStepIds = nan(sum(trialBins), 4);
-        trialLocations = nan(sum(trialBins), size(locationsPaws,2), size(locationsPaws,3));
-        trialWheelVel = interp1(wheelTimes-contactTimes(j), vel, trialTimeStampsInterp);
+            % get trial data interpolated s.t. 0 is moment of wisk contact
+            trialObsPixPositions = interp1(trialTimeStamps, obsPixPositions(trialBins), trialTimeStampsInterp);
 
-        for k = 1:4
-            trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
-            if max(trialControlStepIds(:,k))<2; keyboard; end
-            trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+            trialControlStepIds = nan(sum(trialBins), 4);
+            trialModStepIds = nan(sum(trialBins), 4);
+            trialLocations = nan(sum(trialBins), size(locationsPaws,2), size(locationsPaws,3));
+            trialWheelVel = interp1(wheelTimes-contactTimes(j), vel, trialTimeStampsInterp);
 
-            for m = 1:size(locationsPaws,2)
-                trialLocations(:,m,k) = interp1(trialTimeStamps, locationsPaws(trialBins,m,k), trialTimeStampsInterp, 'linear', 'extrap');
+            for k = 1:4
+                trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+                if max(trialControlStepIds(:,k))<2; keyboard; end
+                trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+
+                for m = 1:size(locationsPaws,2)
+                    trialLocations(:,m,k) = interp1(trialTimeStamps, locationsPaws(trialBins,m,k), trialTimeStampsInterp, 'linear', 'extrap');
+                end
             end
-        end
-        
-        
-        
-        % check whether any control or modified steps are missing
-        missingControlStep = false;
-        for k = 1:controlSteps
-            if ~all(any(trialControlStepIds==k,1))
-                missingControlStep = true;
+            
+            % check whether any control or modified steps are missing
+            missingControlStep = false;
+            for k = 1:controlSteps
+                if ~all(any(trialControlStepIds==k,1))
+                    missingControlStep = true;
+                end
             end
+            missingModStep = any(all(isnan(trialModStepIds),1));
+            
+            somethingWentWrong = missingModStep || missingControlStep;
+        catch
+            fprintf('  problem with trial %i\n', i)
+            somethingWentWrong = true;
         end
-        missingModStep = any(all(isnan(trialModStepIds),1));
+
+
+        
+        
         
         % analyze trial if all steps are accounted for
-        if  missingModStep || missingControlStep
+        if somethingWentWrong
             fprintf('  missing steps in trial %i\n', j)
         else
 

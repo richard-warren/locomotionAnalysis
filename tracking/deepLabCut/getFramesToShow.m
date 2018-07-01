@@ -9,7 +9,9 @@ postRewardDistance = .5; % meters
 % initializations
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'rewardTimes', 'wheelPositions', 'wheelTimes', 'obsOnTimes')
-rewardTimes = rewardTimes(find(rewardTimes<obsOnTimes(1),1,'last'):end); % start with reward preceding first obstacle trial
+
+% rewardTimes = rewardTimes(find(rewardTimes<obsOnTimes(1),1,'last'):end); % start with reward preceding first obstacle trial
+rewardTimes = rewardTimes(find(rewardTimes>obsOnTimes(1),1,'first'):end);
 toShowBins = false(size(frameTimeStamps));
 wheelPosInterp = interp1(wheelTimes, wheelPositions, frameTimeStamps);
 
