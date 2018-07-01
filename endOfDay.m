@@ -4,7 +4,7 @@ sessions = selectSessions;
 
 
 %% analyze spike data
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     spikeAnalysis2(sessions{i}, {'obsPixPositions'});
 end
 disp('all done!')
@@ -13,7 +13,7 @@ disp('all done!')
 
 %% make video with trials labelled by condition
 
-vidTrialProportion = 1;
+vidTrialProportion = .5;
 
 for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
@@ -26,3 +26,7 @@ end
 % mice = {'run6', 'run7', 'run8', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5', 'sen6', 'mtc1', 'mtc2', 'mtc3', 'mtc4', 'mtc5', 'mtc6', 'den2', 'den4', 'den5'};
 mice = {'sen1', 'sen2', 'sen3', 'sen4', 'sen5', 'sen6', 'mtc1', 'mtc2', 'mtc3', 'mtc4', 'mtc5', 'mtc6', 'den2', 'den4', 'den5'};
 baselineSummary(mice);
+
+%% plot learning progress
+mice = {'sen2', 'sen3', 'sen4', 'sen5', 'sen6'};
+makeSpeedAndAvoidanceFigs(mice);

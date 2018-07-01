@@ -35,7 +35,7 @@ for i = 1:length(sessions)
     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
-    vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runTop.mp4']);
+%     vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runTop.mp4']);
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
     
     if exist('obsPos', 'var')
@@ -58,7 +58,7 @@ for i = 1:length(sessions)
     locationsPaws = nan(size(locations,1), 3, 4);
     locationsPaws(:,1:2,:) = locations(:,:,botPawInds);
     locationsPaws(:,3,:) = locations(:,2,topPawInds);
-    locationsPaws(:,2,:) = locationsPaws(:,2,:) - (nosePos(2)+vidTop.Height); % subtract midline from all y values
+    locationsPaws(:,2,:) = locationsPaws(:,2,:) - nosePos(2); % subtract midline from all y values
     locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
     clear vidTop
     
@@ -264,7 +264,7 @@ for i = 1:length(sessions)
             data(dataInd).session = sessions{i};
             data(dataInd).trial = j;
             data(dataInd).isLightOn = isLightOn(j);
-            data(dataInd).osbHeightsVid = obsHeightsVid(j);
+            data(dataInd).obsHeightsVid = obsHeightsVid(j);
 
             data(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
             data(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact

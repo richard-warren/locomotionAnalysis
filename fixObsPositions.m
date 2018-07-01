@@ -2,6 +2,7 @@ function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPosit
 
 
 obsPositionsFixed = nan(size(obsPositions));
+epochTimes = [obsOnTimes; obsTimes(end)];
 
 for i = 1:length(obsOnTimes)
     
@@ -17,7 +18,13 @@ for i = 1:length(obsOnTimes)
         obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
         
         % get trial obsPos and subtract obsAtNosePos
-        trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));
+%         trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));
+%         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
+        trialObsPosBins = (obsTimes>=epochTimes(i)) & (obsTimes<epochTimes(i+1));
         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
     end
 end
+
+% replace first obsPositions with first fixed obsPosition
+firstRealInd = find(~isnan(obsPositionsFixed),1,'first');
+obsPositionsFixed(1:firstRealInd-1) = obsPositionsFixed(firstRealInd);

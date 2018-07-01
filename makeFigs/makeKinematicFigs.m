@@ -11,12 +11,12 @@ data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
 
-%% make temp data
-
-sessions = selectSessions;
-obsPos = -0.0087;
-data = getKinematicData3(sessions, obsPos);
-data = data([data.oneSwingOneStance]);
+% %% make temp data
+% 
+% % sessions = selectSessions;
+% obsPos = -0.0087;
+% data = getKinematicData3(sessions, obsPos);
+% data = data([data.oneSwingOneStance]);
 
 
 %% CALCULATE KINEMATIC DATA (wisk vs no wisk sessions)
@@ -42,7 +42,7 @@ load([getenv('OBSDATADIR') '\kinematicData\kinematicData.mat'], 'data')
 data = data([data.oneSwingOneStance]);
 
 %% BIN DATA
-binNum = 5;
+binNum = 3;
 
 % get bins
 % binVar = [data.swingStartDistance]; % phase

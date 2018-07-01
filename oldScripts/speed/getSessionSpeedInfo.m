@@ -25,7 +25,7 @@ obsOnPositions = nan(length(obsOnTimes), 1);
 
 for j = 1:length(obsOnTimes)
 
-    % locate trial;
+    % locate trial
     obsTime  = obsTimes(find(obsTimes>=obsOnTimes(j) & obsTimes<=obsOffTimes(j) & obsPositions >= 0, 1, 'first')); % time at which obstacle reaches obsPos
     
     if ~isempty(obsTime)

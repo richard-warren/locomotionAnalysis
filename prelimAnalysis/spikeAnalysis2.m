@@ -439,16 +439,16 @@ function spikeAnalysis2(session, varsToOverWrite)
         obsPositionsInterp = interp1(varStruct.obsTimes, varStruct.obsPositions, varStruct.frameTimeStamps); % get position of obstacle for all frames
         
         % use obs position from rotary encoder to infer pix positions when obs is out of frame
-        epochTimes = [0; varStruct.obsOnTimes; varStruct.frameTimeStamps(end)];
+        epochTimes = [varStruct.obsOnTimes; varStruct.frameTimeStamps(end)];
         trialMappings = nan(length(varStruct.obsOnTimes), 2);
         for i = 1:(length(epochTimes)-1)
             epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
                         varStruct.frameTimeStamps<=epochTimes(i+1);
-            getMappingBins = epochBins & ~isnan(obsPixPositions);
-            interpBins =  epochBins & isnan(obsPixPositions);
+            getMappingBins = epochBins & ~isnan(obsPixPositions); % bins used to determine linear mapping
+            interpBins =  epochBins & isnan(obsPixPositions); % bins that should be interpolated over
             if any(epochBins)
                 trialMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
-                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*varStruct.mToPixMapping(1) +varStruct.mToPixMapping(2);
+                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*trialMappings(i,1) + trialMappings(i,2);
             end
         end
 
