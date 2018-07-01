@@ -3,7 +3,7 @@ function labelFrames(trainingSetDir, trainingSetName, features)
 % add way of excluding trials
 
 % settings
-vidScaling = 2.5;
+vidScaling = 1.5;
 textOffset = [5 0];
 nanColor = [1 0 0];
 labelledColor = [1 1 0];

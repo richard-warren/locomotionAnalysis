@@ -13,7 +13,7 @@ disp('all done!')
 
 %% make video with trials labelled by condition
 
-vidTrialProportion = .5;
+vidTrialProportion = 1;
 
 for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
