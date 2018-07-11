@@ -195,9 +195,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         obsTimesSeconds = obsHeightData(:,2);
         validInds = [abs(diff(obsTimesSeconds))>0; true]; %if two times are very close to eachother only believe the second of the two times
         obsHeights = obsHeightData(validInds,1);
-        try
         obsHeights = obsHeights(1:length(varStruct.obsOnTimes)); % this gets rid of last entry, which we shouldn't need
-        catch; keyboard; end
         
         % there should be one more obsHeight than there all trials because an obs height is randomly chosen
         if sum(validInds)-1 > length(obsHeights)
@@ -415,7 +413,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
-    if analyzeVar({'obsPixPositions', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'obsPixPositions', 'obsPixPositionsContinuous', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
        ~isempty(varStruct.obsOnTimes)
 
@@ -436,26 +434,58 @@ function spikeAnalysis2(session, varsToOverWrite)
                     obsLowScores>0.99;
         obsPixPositions = mean([obsHighX, obsLowX], 2);
         obsPixPositions(~validInds) = nan;
+        obsPixPositionsContinuous = obsPixPositions; % these pix positions don't move back and forth along the track like the obs actually does, but simulates the obs being very far away, and continuously moving forward as the wheel progresses
         obsPositionsInterp = interp1(varStruct.obsTimes, varStruct.obsPositions, varStruct.frameTimeStamps); % get position of obstacle for all frames
+        wheelPositionsInterp = interp1(varStruct.wheelTimes, varStruct.wheelPositions, varStruct.frameTimeStamps); % get position of wheel for all frames
+        
+        % determine mappings between obs pix positions (x) and both wheel
+        % positions and obs positions (both from independent rotary encoders)
+        trialObsMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and obsPos from rotary encoder
+        trialWheelMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and wheel pos from wheel rotary encoder
+        for i = 1:length(varStruct.obsOnTimes)
+            getMappingBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
+                             varStruct.frameTimeStamps<=varStruct.obsOffTimes(i) & ...
+                             ~isnan(obsPixPositions);
+            if any(getMappingBins)
+                trialObsMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
+                trialWheelMappings(i,:) = polyfit(wheelPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
+            end          
+        end
         
         % use obs position from rotary encoder to infer pix positions when obs is out of frame
         epochTimes = [varStruct.obsOnTimes; varStruct.frameTimeStamps(end)];
-        trialMappings = nan(length(varStruct.obsOnTimes), 2);
         for i = 1:(length(epochTimes)-1)
             epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
                         varStruct.frameTimeStamps<=epochTimes(i+1);
-            getMappingBins = epochBins & ~isnan(obsPixPositions); % bins used to determine linear mapping
             interpBins =  epochBins & isnan(obsPixPositions); % bins that should be interpolated over
             if any(epochBins)
-                trialMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
-                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*trialMappings(i,1) + trialMappings(i,2);
+                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*trialObsMappings(i,1) + trialObsMappings(i,2);
             end
         end
         
+        % use wheel position from rotary encoder to infer 'unraveled' obs pix positions
+        %
+        % wheel based pix positions move forward with the wheel always, not only
+        % when obs is moving forward, and are used to subsequently
+        % 'unheadfix' the mouse by adding forward momentum of wheel to x
+        % coordinates of tracked features. pix positions are used when obs
+        % in in frame to ensure relationship between paws and obs is
+        % accurate, and mapping between wheel and pix positions is used to
+        % infer positions at all other times
+        epochTimes = [0; varStruct.obsOffTimes];
+        for i = 1:(length(epochTimes)-1)
+            epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
+                        varStruct.frameTimeStamps<=epochTimes(i+1);
+            interpBins =  epochBins & isnan(obsPixPositionsContinuous); % bins that should be interpolated over
+            if any(epochBins)    
+                obsPixPositionsContinuous(interpBins) = wheelPositionsInterp(interpBins)*trialWheelMappings(i,1) + trialWheelMappings(i,2);
+            end
+        end
 
         % save
         varStruct.obsPixPositions = obsPixPositions';
-        varStruct.mToPixMapping = nanmedian(trialMappings,1);
+        varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous';
+        varStruct.mToPixMapping = nanmedian(trialObsMappings,1);
         anythingAnalyzed = true;
     end
     
@@ -531,7 +561,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     function analyze = analyzeVar(vars, varNames, varsToOverWrite)
         if ~strcmp(varsToOverWrite,'all')
-            analyze = ~any(ismember(varNames, vars)) || any(ismember(varsToOverWrite, vars));
+            analyze = any(~ismember(vars, varNames)) || any(ismember(varsToOverWrite, vars));
         else
             analyze = true;
         end

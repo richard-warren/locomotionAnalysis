@@ -6,7 +6,7 @@ sessions = selectSessions;
 %% analyze spike data
 
 parfor i = 1:length(sessions)
-    spikeAnalysis2(sessions{i});
+    spikeAnalysis2(sessions{i}, {'obsPixPositionsContinuous'});
 end
 disp('all done!')
 

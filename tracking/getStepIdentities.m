@@ -1,6 +1,6 @@
-function [controlStepIdentities, modifiedStepIdentities, noObsIdentities] = ...
+function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
     getStepIdentities(stanceBins, locationsBotPaws, contactTimes, frameTimeStamps, ...
-    obsOnTimes, obsOffTimes, obsPixPositions, controlSteps)
+    obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps)
 
 % given the bins in which paws are in stance and time of wisk contact with obs, determines frames corresponding to control and modified swings
 % modified swings are those occuring during or after obs contact with wisk, including but not after swing that actually gets over obs
@@ -70,11 +70,9 @@ if plotExample
     
     % get trial
     trial = randperm(length(obsOnTimes)-1, 1)+1;
-%     trialBins = frameTimeStamps>obsOnTimes(trial) & frameTimeStamps<obsOffTimes(trial);
     trialBins = frameTimeStamps>obsOffTimes(trial-1) & frameTimeStamps<obsOffTimes(trial);
     paws = [1 2 3 4];
-    keyboard
-    xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositions';
+    xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositionsContinuous';
     colors = hsv(4);
 
     figure;

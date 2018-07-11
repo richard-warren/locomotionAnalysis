@@ -11,7 +11,7 @@ swingMaxSmps = 50; % when averaging swing locations without interpolating don't 
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
-controlSteps = 3; % needs to be at least 2
+controlSteps = 2; % needs to be at least 2
 data = struct();
 dataInd = 1;
 
@@ -23,9 +23,9 @@ for i = 1:length(sessions)
     fprintf('%s: collecting data\n', sessions{i});
     
     
-    % LOAD SESSION DATA (damn that's a lot of stuff homes)
+    % LOAD SESSION DATA (damn that's a lot of stuff)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
-            'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
+            'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
             'wheelRadius', 'wheelCenter', 'obsHeightsVid');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
@@ -53,7 +53,8 @@ for i = 1:length(sessions)
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
     end
     [controlStepIdentities, modifiedStepIdentities] = ...
-        getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions, controlSteps);
+        getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, ...
+        obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps);
     vel = getVelocity(wheelPositions, speedTime, targetFs);
     
     % put together xyz for paws only
@@ -62,7 +63,7 @@ for i = 1:length(sessions)
     locationsPaws(:,3,:) = locations(:,2,topPawInds);
     locationsPaws(:,2,:) = locationsPaws(:,2,:) - nosePos(2); % subtract midline from all y values
     locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
-    locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositions'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositionsContinuous'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
     locationsPaws = locationsPaws / mToPixFactor; % convert to meters
     clear vidTop
     
@@ -92,8 +93,6 @@ for i = 1:length(sessions)
             trialTimeStampsInterp = trialTimeStamps - trialTimeStamps(minInd);
 
             % get trial data interpolated s.t. 0 is moment of wisk contact
-            trialObsPixPositions = interp1(trialTimeStamps, obsPixPositions(trialBins), trialTimeStampsInterp);
-
             trialControlStepIds = nan(sum(trialBins), 4);
             trialModStepIds = nan(sum(trialBins), 4);
             trialLocations = nan(sum(trialBins), size(locationsPaws,2), size(locationsPaws,3));
