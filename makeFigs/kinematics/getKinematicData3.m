@@ -11,7 +11,7 @@ swingMaxSmps = 50; % when averaging swing locations without interpolating don't 
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
-controlSteps = 2; % !!! don't change this - currently requires this number is two
+controlSteps = 3; % needs to be at least 2
 data = struct();
 dataInd = 1;
 
@@ -53,7 +53,7 @@ for i = 1:length(sessions)
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
     end
     [controlStepIdentities, modifiedStepIdentities] = ...
-        getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions);
+        getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, obsOnTimes, obsOffTimes, obsPixPositions, controlSteps);
     vel = getVelocity(wheelPositions, speedTime, targetFs);
     
     % put together xyz for paws only
@@ -62,6 +62,8 @@ for i = 1:length(sessions)
     locationsPaws(:,3,:) = locations(:,2,topPawInds);
     locationsPaws(:,2,:) = locationsPaws(:,2,:) - nosePos(2); % subtract midline from all y values
     locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
+    locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositions'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    locationsPaws = locationsPaws / mToPixFactor; % convert to meters
     clear vidTop
     
     
@@ -130,12 +132,6 @@ for i = 1:length(sessions)
         if somethingWentWrong
             fprintf('  missing steps in trial %i\n', j)
         else
-
-            % correct x locations (transform them s.t. obs is always at position 0 and positions move forward as though there were no wheel)
-            trialLocations(:,1,:) = trialLocations(:,1,:) - trialObsPixPositions;
-
-            % convert to meters
-            trialLocations = trialLocations / mToPixFactor;
 
             % determine whether left and right forepaws are in swing at obsPos moment
             isLeftSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));
@@ -321,11 +317,11 @@ for i = 1:length(mice)
     % make predictive model
     
     % predictors: wheel speed, previous stride length
-    prevLengths = cellfun(@(x) x(1,3), {data(mouseBins).controlSwingLengths});
-    vel = cellfun(@(x) x(2,3), {data(mouseBins).controlWheelVels});
+    prevLengths = cellfun(@(x) x(end-1,3), {data(mouseBins).controlSwingLengths});
+    vel = cellfun(@(x) x(1,3), {data(mouseBins).controlWheelVels});
 
     % dependent variable: stride length
-    lengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});
+    lengths = cellfun(@(x) x(end,3), {data(mouseBins).controlSwingLengths});
     
     % make linear model
     models{i} = fitlm(cat(1,prevLengths,vel)', lengths, 'Linear', 'RobustOpts', 'on');
@@ -335,7 +331,7 @@ for i = 1:length(mice)
     [data(mouseBins).predictedControlLengths] = predictedLengths{:};
     
     % generate mod length predictions
-    prevLengths = cellfun(@(x) x(2,3), {data(mouseBins).controlSwingLengths});
+    prevLengths = cellfun(@(x) x(end,3), {data(mouseBins).controlSwingLengths});
     vel = cellfun(@(x) x(1,3), {data(mouseBins).modifiedWheelVels});
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
     [data(mouseBins).predictedLengths] = predictedLengths{:};

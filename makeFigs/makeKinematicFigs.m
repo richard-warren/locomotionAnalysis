@@ -1,3 +1,38 @@
+%% OBS HEIGHT KINEMATICS
+
+
+% get data
+sessions = selectSessions;
+obsPos = -0.0087;
+data = getKinematicData3(sessions, obsPos);
+save([getenv('OBSDATADIR') 'kinematicData\obsHeightkinematicData.mat'], 'data');
+
+%% settings
+mice = {'sen2', 'sen3', 'sen4', 'sen5', 'sen6'};
+
+% find trials to include
+numModSteps = cellfun(@(x) x(1,3), {data.modStepNum});
+validBins = numModSteps==2 & ...
+            [data.oneSwingOneStance] & ...
+            ~[data.isLightOn] & ...
+            ismember({data.mouse}, mice);
+%             ~[data.isFlipped] & ...
+            
+
+% get bins
+binNum = 3;
+% binVar = [data.swingStartDistance]; % phase
+binVar = cellfun(@(x) x(1,3), {data.modifiedWheelVels}); % speed
+% binVar = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to ob
+binEdges = linspace(min(binVar(validBins)), max(binVar(validBins)), binNum+1);
+bins = discretize(binVar, binEdges);
+binLabels = cell(1,binNum); for i = 1:binNum; binLabels{i} = sprintf('%.2f', mean(binVar(bins==i & validBins))); end
+bins(~validBins) = 0;
+
+plotObsHeightTrajectories(data, bins, binLabels)
+
+
+
 %% CALCULATE KINEMATIC DATA (no light, wisk only)
 
 % settings
@@ -10,14 +45,6 @@ sessions = {'180122_001', '180122_002', '180122_003', ...
 data = getKinematicData3(sessions);
 save([getenv('OBSDATADIR') 'kinematicData.mat'], 'data');
 data = data([data.oneSwingOneStance]);
-
-%% make temp data
-
-sessions = selectSessions;
-obsPos = -0.0087;
-data = getKinematicData3(sessions, obsPos);
-data = data([data.oneSwingOneStance]);
-
 
 %% CALCULATE KINEMATIC DATA (wisk vs no wisk sessions)
 

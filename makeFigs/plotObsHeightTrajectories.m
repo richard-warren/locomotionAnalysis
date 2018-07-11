@@ -1,37 +1,24 @@
-% function plotObsHeightTrajectories(data)
+function plotObsHeightTrajectories(data, bins, binNames)
 
 % eventually fcn will be given bins, vector of zeros for trials not to be
 % included, and 1..n for trials to be included in rows 1...n in the plot,
 % allowing independent plots to be created for dft conditions, such as
 % speed, light on vs off, etc.
 
-% temp
-bins = zeros(1,length(data));
-bins([data.isLightOn]) = 1;
-bins(~[data.isLightOn]) = 2;
-binNames = {'light on', 'light off'};
-numModSteps = reshape([data.modStepNum],4,length(data))';
-isOneStepTrial = numModSteps(:,3)==1;
-
-
 
 % settings
 trialsPerPlot = 10;
 maxSmpsThoughObs = 2;
 heightBinNum = 3;
-azimuth = 0;
-elevation = 0;
 obsDiam = 3.175; % (mm)
 xLims = [-.06 0];
-% xLims = [-.05 .04];
 zLims = [0 .015];
 lineWid = 2.5;
 
 % initializations
-plotNum = max(bins);
 avgColors = parula(heightBinNum);
 trialColors = parula(trialsPerPlot);
-allInds = find(bins~=0 & isOneStepTrial' & ~[data.isFlipped]);
+allInds = find(bins~=0);
 obsX = ([0 obsDiam]-.5*obsDiam) / 1000;
 
 locationSmps = size(data(1).modifiedLocationsInterp{1},3);
@@ -62,7 +49,6 @@ for i = allInds
     
     
     if sum(throughObsBins(i,:)) > maxSmpsThoughObs
-%         fprintf('trial %i passed though obstacle\n', i);
         locationsMod(i,:,:) = nan;
         locationsControl(i,:,:) = nan;
     end
@@ -74,7 +60,6 @@ fprintf('%.2f of trials passed though obs\n', ...
 
 
 
-close all;
 figure('menubar', 'none', 'color', 'white', 'position', [-1500 500 1500 450], 'InvertHardCopy', 'off');
 
 for i = 1:length(binNames)
@@ -83,15 +68,12 @@ for i = 1:length(binNames)
     subaxis(length(binNames),2,(i-1)*2+1)
     
     xs = squeeze(locationsMod(bins==i & validTrials,1,:));
-%     ys = squeeze(locationsMod(bins==i & validTrials,2,:));
     zs = squeeze(locationsMod(bins==i & validTrials,3,:));
     
     trialInds = randperm(size(xs,1), trialsPerPlot);
     [~, sortInds] = sort([data(trialInds).obsHeightsVid]);
     trialInds = trialInds(sortInds);
     for j = 1:length(trialInds)
-%         plot3(xs(trialInds(j),:), ys(trialInds(j),:), zs(trialInds(j),:), ...
-%             'color', trialColors(j,:), 'linewidth', 1); hold on
         plot(xs(trialInds(j),:), zs(trialInds(j),:), ...
             'color', trialColors(j,:), 'linewidth', 1); hold on
     end
@@ -99,16 +81,12 @@ for i = 1:length(binNames)
     % plot control mean
     xOffset = nanmean(squeeze(locationsMod(bins==i,1,1)));
     xsCtl = squeeze(locationsControl(bins==i,1,:));
-%     ysCtl = squeeze(locationsControl(bins==i,2,:));
     zsCtl = squeeze(locationsControl(bins==i,3,:));
-%     plot3(nanmean(xsCtl,1) - nanmean(xsCtl(:,1)) + xOffset, nanmean(ysCtl,1), nanmean(zsCtl,1), ...
-%         'color', [0 0 0], 'linewidth', lineWid); hold on
     plot(nanmean(xsCtl,1) - nanmean(xsCtl(:,1)) + xOffset, nanmean(zsCtl,1), ...
         'color', [0 0 0], 'linewidth', lineWid); hold on
     
     % pimp appearance
     daspect([1 1 1]);
-%     set(gca, 'xlim', xLims, 'zlim', zLims, 'view', [azimuth elevation], 'YDir', 'reverse');
     set(gca, 'xlim', xLims, 'zlim', zLims);
     axis off
     
@@ -118,10 +96,9 @@ for i = 1:length(binNames)
     
     % PLOT HEIGHT BINNED MEANS
     subaxis(length(binNames),2,(i-1)*2+2)
-%     plot3(nanmean(xsCtl,1) - nanmean(xsCtl(:,1)) + xOffset, nanmean(ysCtl,1), nanmean(zsCtl,1), ...
-%         'color', [0 0 0], 'linewidth', lineWid); hold on
     plot(nanmean(xsCtl,1) - nanmean(xsCtl(:,1)) + xOffset, nanmean(zsCtl,1), ...
         'color', [0 0 0], 'linewidth', lineWid); hold on
+    title(binNames{i})
 
     % get bins
     heights = [data.obsHeightsVid];
@@ -132,69 +109,24 @@ for i = 1:length(binNames)
     
     for j = 1:heightBinNum
         xs = squeeze(locationsMod(bins==i & heightBins==j & validTrials,1,:));
-%         ys = squeeze(locationsMod(bins==i & heightBins==j & validTrials,2,:));
         zs = squeeze(locationsMod(bins==i & heightBins==j & validTrials,3,:));
         
-%         plot3(nanmean(xs,1), nanmean(ys,1), nanmean(zs,1), ...
-%             'color', avgColors(j,:), 'linewidth', lineWid); hold on
         plot(nanmean(xs,1), nanmean(zs,1), ...
             'color', avgColors(j,:), 'linewidth', lineWid); hold on
         
         % add cylinder
         rad = obsDiam/1000/2;
         z = mean(heights(heightBins==j & bins==i)) / 1000;
-%         circ = viscircles([0 z-obsDiam/1000/2], obsDiam/1000/2, 'color', avgColors(j,:));
         circ = rectangle('position', [0-rad, z-2*rad, 2*rad, 2*rad], ...
             'curvature', [1 1], 'facecolor', [avgColors(j,:) .8], 'edgecolor', 'none');
-%         xyz1 = [0 yLims(1) z];
-%         xyz2 = [0 yLims(2) z];
-%         Cylinder(xyz1, xyz2, obsDiam/1000/2, 40, avgColors(j,:) , 1, 0);
     end
-    
-    
-    
-    
-    
-    
     
     % pimp appearance
     daspect([1 1 1]);
-%     set(gca, 'xlim', xLims, 'zlim', zLims, 'zlim', zLims, 'view', [azimuth elevation], 'YDir', 'reverse');
-    set(gca, 'xlim', xLims, 'zlim', zLims);
+    set(gca, 'xlim', xLims, 'ylim', zLims);
     axis off
 end
 
-
-% %% plot control trajectory
-% xOffset = nanmean(squeeze(locationsMod(:,1,1)));
-% xs = squeeze(locationsControl(allBins,1,:));
-% ys = squeeze(locationsControl(allBins,2,:));
-% zs = squeeze(locationsControl(allBins,3,:));
-% plot3(nanmean(xs,1) - nanmean(xs(:,1)) + xOffset, nanmean(ys,1), nanmean(zs,1), ...
-%     'color', [0 0 0], 'linewidth', lineWid); hold on
-% 
-
-% 
-% for i = 1:length(conditionNames)+1
-%     
-%     subaxis(length(conditionNames)+1,1,i)
-%     
-%     daspect([1 1 1]);
-%     set(gca, 'xlim', xLims, 'ylim', yLims, 'zlim', zLims, ...
-%         'view', [azimuth elevation], 'YDir', 'reverse');
-%     axis off
-% 
-% 
-%     patch('Vertices', vertices, 'Faces', faces);
-% 
-%     % add lines for sides of wheel
-%     line([xLims; xLims]', [yLims; yLims], zeros(2,2), ...
-%         'color', [0 0 0], 'linewidth', 2) % x1
-% end
-
-% legend(gca, conditionNames, 'location', 'northeast');
-% pos = get(leg, 'position');
-% set(leg, 'position', [xLims(2)-pos(3) zLims(2)-pos(4) pos(3) pos(4)])
 
 % blackenFig;
 set(gcf, 'menubar', 'figure')

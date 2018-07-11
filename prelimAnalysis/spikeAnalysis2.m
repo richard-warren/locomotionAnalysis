@@ -451,6 +451,7 @@ function spikeAnalysis2(session, varsToOverWrite)
                 obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*trialMappings(i,1) + trialMappings(i,2);
             end
         end
+        
 
         % save
         varStruct.obsPixPositions = obsPixPositions';
