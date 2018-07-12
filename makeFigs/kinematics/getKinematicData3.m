@@ -31,7 +31,7 @@ for i = 1:length(sessions)
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = abs(mToPixMapping(1));
     locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw.csv']); % get raw tracking data
-    [locations, features, featurePairInds, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
+    [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
@@ -133,25 +133,41 @@ for i = 1:length(sessions)
         else
 
             % determine whether left and right forepaws are in swing at obsPos moment
-            isLeftSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));
-            isRightSwing = ~isnan(trialModStepIds(trialTimeStampsInterp==0,3));
-            oneSwingOneStance = xor(isLeftSwing, isRightSwing);
+            isLeftSwingAtContact = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));
+            isRightSwingAtContact = ~isnan(trialModStepIds(trialTimeStampsInterp==0,3));
 
-            % flip y values if the left fore is the swinging foot (thus making it the right paw)
-            if oneSwingOneStance && isLeftSwing
-                trialLocations = trialLocations(:,:,[4 3 2 1]);
-                trialControlStepIds = trialControlStepIds(:,[4 3 2 1]);
-                trialModStepIds = trialModStepIds(:,[4 3 2 1]);
-                trialLocations(:,2,:) = -trialLocations(:,2,:);
-                isFlipped = true;
-            else
-                isFlipped = false;
+            % determine paw that gets over obs first
+            isStepping = ~isnan(trialModStepIds);
+            lastModStepInds = table2array(rowfun(@(x)(find(x,1,'last')), table(isStepping')));
+            [~, firstPawOver] = min(lastModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
+            
+            % determine which is paw first modified step (forepaws only)
+            %
+            % if both one in swing and one in stance at contact, first mod step is one
+            % in swing // if both in stance at moment of contact, first mod
+            % step is first to enter swing // if both in swing, first mod
+            % step is first paw to land on the other side
+            if xor(isLeftSwingAtContact, isRightSwingAtContact)
+                if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
+            elseif isLeftSwingAtContact && isRightSwingAtContact
+                firstModPaw = firstPawOver;
+            elseif ~isLeftSwingAtContact && ~isRightSwingAtContact
+                firstModStepInds = table2array(rowfun(@(x)(find(x,1,'first')), table(isStepping')));
+                [~, firstModPaw] = min(firstModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
             end
 
 
-            % get stance distance from obs
-            stanceDistance = trialLocations(trialTimeStampsInterp==0,1,2); % left fore paw (2) is always the stance foot at this point after flipping y values above
-            swingStartDistance = trialLocations(find(trialModStepIds(:,3)==1,1,'first'),1,3);
+            % get stance distance from obs, but only for trials in which
+            % both forepaws are not in swing at moment of contact
+            if ~(isLeftSwingAtContact && isRightSwingAtContact)
+                if firstModPaw==2; stancePaw=3; else; stancePaw=2; end
+                stanceDistance = trialLocations(trialTimeStampsInterp==0,1,stancePaw);
+            else
+                stanceDistance = nan;
+            end
+            
+            % get distance of firstModPaw to obs at the beginning of first mod step
+            swingStartDistance = trialLocations(find(trialModStepIds(:,3)==1,1,'first'),1,firstModPaw);
 
 
             % get mod and control step(s) length, duration, wheel velocity
@@ -265,6 +281,8 @@ for i = 1:length(sessions)
 
 
             % STORE RESULTS
+            
+            % trial metadata
             sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}),1,'first');
             data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
             data(dataInd).session = sessions{i};
@@ -272,6 +290,7 @@ for i = 1:length(sessions)
             data(dataInd).isLightOn = isLightOn(j);
             data(dataInd).obsHeightsVid = obsHeightsVid(j);
 
+            % bunch of thangs
             data(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
             data(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact
             data(dataInd).obsPosInd = find(trialTimeStampsInterp==0); % ind at which obs contacts wisks for trial
@@ -286,10 +305,14 @@ for i = 1:length(sessions)
             data(dataInd).trialControlStepIdentities = trialControlStepIds;
             data(dataInd).modifiedStepIdentities = trialModStepIds;
             data(dataInd).modStepNum = modStepNum;
-            data(dataInd).oneSwingOneStance = oneSwingOneStance;
             data(dataInd).stanceDistance = stanceDistance;
             data(dataInd).swingStartDistance = swingStartDistance;
-            data(dataInd).isFlipped = isFlipped;
+            
+            % info about which paws did what
+            data(dataInd).isLeftSwingAtContact = isLeftSwingAtContact;
+            data(dataInd).isLeftRightAtContact = isRightSwingAtContact;
+            data(dataInd).firstPawOver = firstPawOver;
+            data(dataInd).firstModPaw = firstModPaw;
 
             data(dataInd).controlSwingLengths = controlSwingLengths;
             data(dataInd).modifiedSwingLengths = modifiedSwingLengths;
@@ -305,33 +328,46 @@ end
 
 
 
-% make model to predict would-be mod swing length using wheel vel and previous swing lengths as predictors
+% make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
 mice = unique({data.mouse});
 models = cell(1,length(mice));
 
 for i = 1:length(mice)
     
     mouseBins = strcmp({data.mouse}, mice{i});
+    mouseInds = find(mouseBins);
     
     % make predictive model
-    
-    % predictors: wheel speed, previous stride length
-    prevLengths = cellfun(@(x) x(end-1,3), {data(mouseBins).controlSwingLengths});
-    vel = cellfun(@(x) x(1,3), {data(mouseBins).controlWheelVels});
+    % use second to last control length and last control wheel vel (at
+    % first moment) to predict last control length
+    % !!! is there a way to do this wiithout looping?
+    prevLengths = nan(1, length(mouseInds));
+    vel = nan(1, length(mouseInds));
+    lengths = nan(1, length(mouseInds));
+    for j = 1:length(mouseInds)
+        ind = mouseInds(j);
+        prevLengths(j) = data(ind).controlSwingLengths(end-1, data(ind).firstModPaw);
+        vel(j) = data(ind).controlWheelVels(end, data(ind).firstModPaw);
+        lengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
+    end
 
-    % dependent variable: stride length
-    lengths = cellfun(@(x) x(end,3), {data(mouseBins).controlSwingLengths});
     
     % make linear model
-    models{i} = fitlm(cat(1,prevLengths,vel)', lengths, 'Linear', 'RobustOpts', 'on');
+    validInds = ~isnan(prevLengths) & ~isnan(vel);
+    models{i} = fitlm(cat(1,prevLengths(validInds),vel(validInds))', lengths, 'Linear', 'RobustOpts', 'on');
     
     % generate control length predictions (this is used to validate method)
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
     [data(mouseBins).predictedControlLengths] = predictedLengths{:};
     
     % generate mod length predictions
-    prevLengths = cellfun(@(x) x(end,3), {data(mouseBins).controlSwingLengths});
-    vel = cellfun(@(x) x(1,3), {data(mouseBins).modifiedWheelVels});
+    prevLengths = nan(1, length(mouseInds));
+    vel = nan(1, length(mouseInds));
+    for j = 1:length(mouseInds)
+        ind = mouseInds(j);
+        prevLengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
+        vel(j) = data(ind).modifiedWheelVels(1, data(ind).firstModPaw);
+    end
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
     [data(mouseBins).predictedLengths] = predictedLengths{:};
         
@@ -339,9 +375,6 @@ end
 
 
 fprintf('--- done collecting data ---\n');
-
-
-
 
 
 

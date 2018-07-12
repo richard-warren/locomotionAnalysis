@@ -9,7 +9,7 @@ function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = 
 
 % settings
 noObsSteps = 5; % !!! take as argument later...
-plotExample = true;
+plotExample = false;
 
 % give each swing a number across all trials, in ascending order
 swingBins = ~stanceBins;
