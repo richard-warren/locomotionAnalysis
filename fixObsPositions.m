@@ -14,6 +14,9 @@ for i = 1:length(obsOnTimes)
     % get obsPos at moment obs reaches nose
     if ~isempty(pixPositions) && length(unique(pixPositions))>1 % !!! sometimes pixPositions were all zero for reasons unknown
         
+        % remove duplicate positional values
+        [pixPositions, uniqueInds] = unique(pixPositions, 'stable');
+        pixTimes = pixTimes(uniqueInds);
         noseTime = interp1(pixPositions, pixTimes, noseX);
         obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
         

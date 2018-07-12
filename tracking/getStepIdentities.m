@@ -1,6 +1,6 @@
 function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
     getStepIdentities(stanceBins, locationsBotPaws, contactTimes, frameTimeStamps, ...
-    obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps)
+    obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps)
 
 % given the bins in which paws are in stance and time of wisk contact with obs, determines frames corresponding to control and modified swings
 % modified swings are those occuring during or after obs contact with wisk, including but not after swing that actually gets over obs
@@ -8,7 +8,6 @@ function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = 
 
 
 % settings
-noObsSteps = 5; % !!! take as argument later...
 plotExample = false;
 
 % give each swing a number across all trials, in ascending order

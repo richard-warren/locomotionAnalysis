@@ -5,8 +5,8 @@ sessions = selectSessions;
 
 %% analyze spike data
 
-parfor i = 1:length(sessions)
-    spikeAnalysis2(sessions{i}, {'obsPixPositionsContinuous'});
+for i = 1:length(sessions)
+    spikeAnalysis2(sessions{i});
 end
 disp('all done!')
 

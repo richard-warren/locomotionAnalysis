@@ -8,10 +8,11 @@ velPrePost = [-.1 .1]; % compute trials velocity between these obstacle position
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
+noObsSteps = 5;
+controlSteps = 2; % needs to be at least 2
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
-controlSteps = 2; % needs to be at least 2
 data = struct();
 dataInd = 1;
 
@@ -35,7 +36,6 @@ for i = 1:length(sessions)
     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
-%     vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runTop.mp4']);
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
     
     if exist('obsPos', 'var')
@@ -52,9 +52,9 @@ for i = 1:length(sessions)
     else
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
     end
-    [controlStepIdentities, modifiedStepIdentities] = ...
+    [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
         getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, ...
-        obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps);
+        obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps);
     vel = getVelocity(wheelPositions, speedTime, targetFs);
     
     % put together xyz for paws only
@@ -65,7 +65,6 @@ for i = 1:length(sessions)
     locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
     locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositionsContinuous'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
     locationsPaws = locationsPaws / mToPixFactor; % convert to meters
-    clear vidTop
     
     
     
@@ -77,12 +76,16 @@ for i = 1:length(sessions)
     trials = find(trialVels>minVel);
     
     for j = trials
-        
-        % GET TRIAL DATA
-        % note: i pull out trial specific data because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
-%         trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j) & ~isnan(obsPixPositions)';
         try
-            trialBins = frameTimeStamps>=obsOnTimes(j) & frameTimeStamps<=obsOffTimes(j);
+            % GET TRIAL DATA
+            % note: i pull out trial specific data because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
+
+            % find trial bins, beginning with obsOffSteps preceding
+            % obstacle and ending with obs turning off
+            if j==1; lastTrialEndTime=0; else; lastTrialEndTime = obsOffTimes(j-1); end
+
+            startInd = find(frameTimeStamps>lastTrialEndTime & any(noObsStepIdentities==1,2), 1, 'first'); % first bin where there is any obsOff step preceding obstacle
+            trialBins = (1:length(frameTimeStamps))'>=startInd & frameTimeStamps<=obsOffTimes(j);
 
             % get vel at moment of contact
             sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
@@ -95,31 +98,34 @@ for i = 1:length(sessions)
             % get trial data interpolated s.t. 0 is moment of wisk contact
             trialControlStepIds = nan(sum(trialBins), 4);
             trialModStepIds = nan(sum(trialBins), 4);
+            trialNoObsStepIds = nan(sum(trialBins), 4);
             trialLocations = nan(sum(trialBins), size(locationsPaws,2), size(locationsPaws,3));
             trialWheelVel = interp1(wheelTimes-contactTimes(j), vel, trialTimeStampsInterp);
 
             for k = 1:4
                 trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
-                if max(trialControlStepIds(:,k))<2; keyboard; end
                 trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+                trialNoObsStepIds(:,k) = interp1(trialTimeStamps, noObsStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
 
                 for m = 1:size(locationsPaws,2)
                     trialLocations(:,m,k) = interp1(trialTimeStamps, locationsPaws(trialBins,m,k), trialTimeStampsInterp, 'linear', 'extrap');
                 end
             end
-            
-            % check whether any control or modified steps are missing
+
+            % check whether any control or modified or obsOff steps are missing
             missingControlStep = false;
             for k = 1:controlSteps
-                if ~all(any(trialControlStepIds==k,1))
-                    missingControlStep = true;
-                end
+                if ~all(any(trialControlStepIds==k,1)); missingControlStep = true; end
             end
+
+            missingObsOffStep = false; % !!! perhaps i shouldnt require that all obsOffSteps are present for a trial to be included...
+            for k = 1:noObsSteps
+                if ~all(any(trialNoObsStepIds==k,1)); missingObsOffStep = true; end
+            end
+
             missingModStep = any(all(isnan(trialModStepIds),1));
-            
-            somethingWentWrong = missingModStep || missingControlStep;
+            somethingWentWrong = missingModStep || missingControlStep || missingObsOffStep;
         catch
-            fprintf('  problem with trial %i\n', i)
             somethingWentWrong = true;
         end
 
@@ -170,12 +176,15 @@ for i = 1:length(sessions)
             swingStartDistance = trialLocations(find(trialModStepIds(:,3)==1,1,'first'),1,firstModPaw);
 
 
-            % get mod and control step(s) length, duration, wheel velocity
+            % get mod, control, and noObs step(s) length, duration, wheel velocity
             controlSwingLengths = nan(controlSteps,4);
+            noObsSwingLengths = nan(noObsSteps,4);
             modifiedSwingLengths = nan(1,4);
             controlSwingDurations = nan(controlSteps,4);
+            noObsSwingDurations = nan(noObsSteps,4);
             modifiedSwingDurations = nan(1,4);
             controlWheelVels = nan(controlSteps,4);
+            noObsWheelVels = nan(noObsSteps,4);
             modifiedWheelVels = nan(1,4);
 
             for k = 1:4
@@ -190,7 +199,6 @@ for i = 1:length(sessions)
 
                 % control steps
                 for m = 1:controlSteps
-
                     stepBins = trialControlStepIds(:,k)==m;
                     stepXLocations = trialLocations(stepBins,1,k);
                     controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
@@ -198,17 +206,29 @@ for i = 1:length(sessions)
                     controlSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
                     controlWheelVels(m,k) = trialWheelVel(find(stepBins,1,'first'));
                 end
+                
+                % no obs steps
+                for m = 1:controlSteps
+                    stepBins = trialNoObsStepIds(:,k)==m;
+                    stepXLocations = trialLocations(stepBins,1,k);
+                    noObsSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
+                    stepTimes = trialTimeStampsInterp(stepBins);
+                    noObsSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
+                    noObsWheelVels(m,k) = trialWheelVel(find(stepBins,1,'first'));
+                end
             end
 
 
 
 
 
-            % GET CONTROL AND MOD PAW LOCATIONS (INTERP AND NON-INTERP)
+            % GET CONTROL, NO OBS, AND MOD PAW LOCATIONS (INTERP AND NON-INTERP)
             controlLocations = cell(1,4);
             modLocations = cell(1,4);
+            noObsLocations = cell(1,4);
             controlLocationsInterp = cell(1,4);
             modLocationsInterp = cell(1,4);
+            noObsLocationsInterp = cell(1,4);
             modStepNum = nan(1,4);
             pawObsPosIndInterp = nan(1,4);
             pawObsPosInd = nan(1,4);
@@ -242,6 +262,32 @@ for i = 1:length(sessions)
                 controlLocationsInterp{k} = pawControlLocationsInterp;
 
 
+                % no obs
+                stepNum = max(trialNoObsStepIds(:,k));
+                pawNoObsLocations = nan(stepNum, 3, swingMaxSmps);
+                pawNoObsLocationsInterp = nan(stepNum, 3, interpSmps);
+                for m = 1:stepNum
+
+                    % locations
+                    startInd = find(trialNoObsStepIds(:,k)==m, 1, 'first');
+                    stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1)); % these inds continue past the end of swing !!! ideally they would stop at the start of the next swing
+                    stepX = trialLocations(stepIndsAll,1,k);
+                    stepY = trialLocations(stepIndsAll,2,k);
+                    stepZ = trialLocations(stepIndsAll,3,k);
+                    pawNoObsLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY',stepZ');
+
+                    % locations interp
+                    stepBins = trialNoObsStepIds(:,k)==m;
+                    xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
+                    yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
+                    zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
+                    pawNoObsLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
+                end
+                noObsLocations{k} = pawNoObsLocations;
+                noObsLocationsInterp{k} = pawNoObsLocationsInterp;
+                
+                
+                
                 % modified
                 modStepNum(k) = max(trialModStepIds(:,k));
                 pawModifiedLocations = nan(modStepNum(k), 3, swingMaxSmps);
@@ -300,8 +346,10 @@ for i = 1:length(sessions)
             data(dataInd).locations = trialLocations;
             data(dataInd).controlLocations = controlLocations;
             data(dataInd).modifiedLocations = modLocations;
+            data(dataInd).noObsLocations = noObsLocations;
             data(dataInd).controlLocationsInterp = controlLocationsInterp;
             data(dataInd).modifiedLocationsInterp = modLocationsInterp;
+            data(dataInd).noObsLocationsInterp = noObsLocationsInterp;
             data(dataInd).trialControlStepIdentities = trialControlStepIds;
             data(dataInd).modifiedStepIdentities = trialModStepIds;
             data(dataInd).modStepNum = modStepNum;
@@ -316,10 +364,13 @@ for i = 1:length(sessions)
 
             data(dataInd).controlSwingLengths = controlSwingLengths;
             data(dataInd).modifiedSwingLengths = modifiedSwingLengths;
+            data(dataInd).noObsSwingLengths = noObsSwingLengths;
             data(dataInd).controlSwingDurations = controlSwingDurations;
             data(dataInd).modifiedSwingDurations = modifiedSwingDurations;
+            data(dataInd).noObsSwingDurations = noObsSwingDurations;
             data(dataInd).controlWheelVels = controlWheelVels;
             data(dataInd).modifiedWheelVels = modifiedWheelVels;
+            data(dataInd).noObsWheelVels = noObsWheelVels;
 
             dataInd = dataInd + 1;
         end
