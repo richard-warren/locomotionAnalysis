@@ -2,7 +2,7 @@ function [locations, features, featurePairInds, isInterped, scores] = fixTrackin
 
 
 % settings
-xDiffMax = 10;
+xDiffMax = 20;
 scoreThresh = .99;
 featurePairNames = {'paw1', 'paw2', 'paw3', 'paw4'}; % two features both containing the same string in this array are considered the same feature in the top and bottom views...
 maxSpeed = 5000; % pixels per second (5000 = 20 pix per frame at 250 fps)

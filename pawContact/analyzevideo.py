@@ -16,7 +16,7 @@ if len(sys.argv)!=3:
 
 os.chdir(os.path.split(sys.argv[0])[0])
 
-modelName = "dataaug3"
+modelName = "dataaug4"
 baseDir = sys.argv[1]
 session = sys.argv[2]
 fullDir = os.path.join(baseDir, session)

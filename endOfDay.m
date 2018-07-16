@@ -5,10 +5,11 @@ sessions = selectSessions;
 
 %% analyze spike data
 
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     spikeAnalysis2(sessions{i});
 end
 disp('all done!')
+
 
 
 
