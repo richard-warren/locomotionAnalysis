@@ -383,12 +383,16 @@ function spikeAnalysis2(session, varsToOverWrite)
 
             % determine spike clock times from system clock times
             validInds = ~isnan(camSpikeClock);
-            sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
-            webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
+            try
+                sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
+                webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
 
-            % save
-            varStruct.webCamTimeStamps = webCamSpikeClock;
-            anythingAnalyzed = true;
+                % save
+                varStruct.webCamTimeStamps = webCamSpikeClock;
+                anythingAnalyzed = true;
+            catch
+                fprintf('%s: PROBLEM GETTING WEBCAM TIMESTAMPS\n', session)
+            end
         end
     end
     
@@ -555,7 +559,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         proximityThresh = 15;
 
         % run neural network classifier
-%         system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session])
+        [~, ~] = system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         pawAnalyzed = readtable([getenv('OBSDATADIR') 'sessions\' session '\pawAnalyzed.csv']);
         isAnyPawTouching = false(1,length(varStruct.frameTimeStamps));
         isAnyPawTouching(pawAnalyzed.framenum) = pawAnalyzed.forelimb>confidenceThresh | pawAnalyzed.hindlimb>confidenceThresh;

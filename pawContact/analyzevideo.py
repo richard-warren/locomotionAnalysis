@@ -7,6 +7,8 @@ import scipy.io
 import csv
 import sys
 import os
+import tensorflow as tf
+import keras.backend as K
 
 # baseDir, session
 if len(sys.argv)!=3:
@@ -20,6 +22,14 @@ modelName = "dataaug4"
 baseDir = sys.argv[1]
 session = sys.argv[2]
 fullDir = os.path.join(baseDir, session)
+processor = 'CPU'
+
+if processor == 'CPU':
+    print('...analyzing paw contacts using CPU')
+    config = tf.ConfigProto(device_count={'GPU':0})
+    sess = tf.Session(config=config)
+    K.set_session(sess)
+
 model = keras.models.load_model(modelName+".h5")
 clip = VideoFileClip(fullDir+"/runTop.mp4")
 print("Duration of video(s):",clip.duration)
