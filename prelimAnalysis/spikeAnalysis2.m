@@ -16,6 +16,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     %         getting webcam time stamps
     %         get position of tip of nose from bot view
     %         linear mapping between meters and pixels
+    %         neural network classifier to determine whether paws are touching obs
     %
     % for each session, loads existing runAnalyzed.mat
     % if a computed variable is not already stored in runAnalyzed.mat AND the files necessary to compute it exist, it computes the variable
@@ -535,11 +536,64 @@ function spikeAnalysis2(session, varsToOverWrite)
             obsHeightsVid(i) = (obsHeightPix / abs(varStruct.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
         end
         
-        % temp
-        figure; scatter(varStruct.obsHeights, obsHeightsVid); hold on; line(get(gca,'xlim'), get(gca,'xlim'))
-        
         % save
         varStruct.obsHeightsVid = obsHeightsVid;
+        anythingAnalyzed = true;
+    end
+    
+    
+    
+    
+    % neural network classifier to determine whether paw is touching obs
+    if analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite)
+        
+        fprintf('%s: getting paw contacts with neural network\n', session)
+        
+        % settings
+        pythonPath = '\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
+        confidenceThresh = .99;
+        proximityThresh = 15;
+
+        % run neural network classifier
+%         system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session])
+        pawAnalyzed = readtable([getenv('OBSDATADIR') 'sessions\' session '\pawAnalyzed.csv']);
+        isAnyPawTouching = false(1,length(varStruct.frameTimeStamps));
+        isAnyPawTouching(pawAnalyzed.framenum) = pawAnalyzed.forelimb>confidenceThresh | pawAnalyzed.hindlimb>confidenceThresh;
+
+        % get xz positions for paws
+        if ~exist('locationsTable', 'var'); locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); end
+        [locations, features] = fixTrackingDLC(locationsTable, varStruct.frameTimeStamps);
+        pawXZ = nan(size(locations,1), 2, 4);
+        for i = 1:4
+            pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
+            pawZBins = contains(features, ['paw' num2str(i)]) & contains(features, '_top');
+            pawXZ(:,1,i) = locations(:,1,pawXBin);
+            pawXZ(:,2,i) = locations(:,2,pawZBins);
+        end
+
+        % get obs height in pixels for each trial
+        % (replace missing values with median of tracked values for each trial)
+        obsBin = ismember(features, 'obs_top');
+        obsHeights = nan(size(locations,1),1);
+        for i = 1:length(varStruct.obsOnTimes)
+            trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
+                        varStruct.frameTimeStamps<varStruct.obsOffTimes(i);
+            medianHgt = nanmedian(locations(trialBins,2,obsBin));
+            obsHeights(trialBins) = locations(trialBins,2,obsBin);
+            obsHeights(trialBins & isnan(locations(:,2,obsBin))) = medianHgt;
+        end
+        obsHeights = medfilt1(obsHeights,5);
+
+        % get xz distance of paws to obs at all times
+        dx = squeeze(pawXZ(:,1,:)) - repmat(varStruct.obsPixPositions',1,4);
+        dz = squeeze(pawXZ(:,2,:)) - repmat(obsHeights,1,4);
+        pawDistances = sqrt(dx.^2 + dz.^2);
+
+        % determine which paws are touching obs
+        arePawsTouchingObs = repmat(isAnyPawTouching',1,4) & pawDistances<proximityThresh;
+        
+        % save
+        varStruct.arePawsTouchingObs = arePawsTouchingObs;
         anythingAnalyzed = true;
     end
     

@@ -32,7 +32,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', 'wheelCenter', 'wheelRadius');
+    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', 'wheelCenter', 'wheelRadius', 'arePawsTouchingObs');
 locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
 locations = locations / scaling; % bring back to original resolution
@@ -62,7 +62,7 @@ viscircles(wheelCenter', wheelRadius, 'color', 'blue');
 cmap = eval(sprintf('%s(%i);', colorMap, length(features)));
 
 
-% set up lines joing features within a view
+% set up lines joining features within a view
 connectedFeatureInds = cell(1,length(connectedFeatures));
 linesConnected = cell(1,length(connectedFeatures));
 for i = 1:length(connectedFeatures)
@@ -77,6 +77,9 @@ end
 % set up scatter points for tracked features
 scatterLocations = scatter(imAxis, zeros(1,length(features)), zeros(1,length(features)),...
     circSize, cmap, 'linewidth', 3); hold on
+
+% set up scatter points that will surround paw when it is touching obs
+obsTouchScatter = scatter(imAxis, [], [], circSize*3, [1 1 1], 'LineWidth', 2);
 
 % set up stance scatter points
 if showStance
@@ -208,7 +211,8 @@ function updateFrame(frameStep)
     % upate scatter positions
     set(scatterLocations, 'XData', locations(frameInds(frameInd),1,:), ...
         'YData', locations(frameInds(frameInd),2,:), ...
-        'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)).*isInterped(frameInds(frameInd),:))*circSize*.9);
+        'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)) ...
+                    .* isInterped(frameInds(frameInd),:)) * circSize * .9);
     
     % update scatter stance positions
     if showStance
@@ -216,6 +220,14 @@ function updateFrame(frameStep)
         set(scatterStance, ...
             'XData', squeeze(locations(frameInds(frameInd),1,[botPawInds topPawInds])) .* isStance', ...
             'YData', squeeze(locations(frameInds(frameInd),2,[botPawInds topPawInds])));
+    end
+    
+    % update paw touch scatter
+    if exist('arePawsTouchingObs', 'var')
+        touchingBins = arePawsTouchingObs(frameInds(frameInd),:);
+        x = locations(frameInds(frameInd), 1, [topPawInds(touchingBins) botPawInds(touchingBins)]);
+        y = locations(frameInds(frameInd), 2, [topPawInds(touchingBins) botPawInds(touchingBins)]);
+        set(obsTouchScatter, 'XData', x, 'YData', y);
     end
 
     % update scores text
