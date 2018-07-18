@@ -5,7 +5,8 @@ sessions = selectSessions;
 
 %% analyze spike data
 
-parfor i = 1:length(sessions)
+for i = 1:length(sessions)
+    disp('starting to analyze sessions...')
     spikeAnalysis2(sessions{i});
 end
 disp('all done!')
@@ -15,7 +16,7 @@ disp('all done!')
 
 %% make video with trials labelled by condition
 
-vidTrialProportion = 1;
+vidTrialProportion = 0.25;
 
 for i = 1:length(sessions)
     load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');

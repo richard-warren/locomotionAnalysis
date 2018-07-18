@@ -549,18 +549,23 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % neural network classifier to determine whether paw is touching obs
-    if analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite)
+    if analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) && ...
+        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
+        ~isempty(varStruct.obsOnTimes)
         
         fprintf('%s: getting paw contacts with neural network\n', session)
         
         % settings
+        rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = '\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         confidenceThresh = .99;
         proximityThresh = 15;
 
         % run neural network classifier
-        [~, ~] = system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
-        pawAnalyzed = readtable([getenv('OBSDATADIR') 'sessions\' session '\pawAnalyzed.csv']);
+        if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier)
+            [~, ~] = system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+        end
+        pawAnalyzed = readtable([sessionDir 'pawAnalyzed.csv']);
         isAnyPawTouching = false(1,length(varStruct.frameTimeStamps));
         isAnyPawTouching(pawAnalyzed.framenum) = pawAnalyzed.forelimb>confidenceThresh | pawAnalyzed.hindlimb>confidenceThresh;
 
