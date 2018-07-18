@@ -1,6 +1,7 @@
 function showTrackingDLC(session, vidDelay, trainingDataPath)
 
 % settings
+onlyShowFramesNearObs = true;
 vidFs = 250;
 showScores = true;
 showStance = true;
@@ -19,7 +20,7 @@ connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
 
 
 % initializations
-frameInds = getFramesToShow(session);
+frameInds = getFramesToShow(session, onlyShowFramesNearObs);
 addingFrames = exist('trainingDataPath', 'var'); % keeps track of whether frames will be added to the training set
 if addingFrames
     load(trainingDataPath, 'trainingData', 'view');

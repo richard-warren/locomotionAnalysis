@@ -23,7 +23,6 @@ showPawTouches = true;
 showTrialInfo = true;
 showWiskTouches = false;
 drawObs = false;
-obsNotYetTracked = true;
 
 
 % initializations
@@ -38,7 +37,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
                                             'touchSig', 'touchSigTimes', 'nosePos');
 if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
-if obsNotYetTracked
+if ~exist('obsPixPositions', 'var')
     obsPositions = fixObsPositionsHacky(obsPositions);
 else
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));

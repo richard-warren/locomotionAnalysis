@@ -189,7 +189,8 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     % determine obstacle height for every trial
     if analyzeVar({'obsHeights'}, varNames, varsToOverWrite) && ...
-       exist([sessionDir '\trialInfo.csv'], 'file')
+       exist([sessionDir '\trialInfo.csv'], 'file') && ...
+       ~isempty(readtable('Z:\RAW\obstacleData\sessions\180718_000\trialInfo.csv'))
        
         fprintf('%s: getting obstacle heights\n', session)
         obsHeightData = dlmread([sessionDir '\trialInfo.csv']); % columns: obsHeight (mm), timestamp (s), timestamps (ms)
@@ -207,7 +208,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         varStruct.obsHeights = obsHeights;
         anythingAnalyzed = true;
     end
-
+    
 
 
 
@@ -549,8 +550,9 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % neural network classifier to determine whether paw is touching obs
-    if analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) && ...
+    if (analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) || ~exist([sessionDir 'pawAnalyzed.csv'], 'file'))&& ...
         exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
+        isfield(varStruct, 'obsPixPositions') && ...
         ~isempty(varStruct.obsOnTimes)
         
         fprintf('%s: getting paw contacts with neural network\n', session)
@@ -559,7 +561,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = '\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         confidenceThresh = .99;
-        proximityThresh = 15;
+        proximityThresh = 20;
 
         % run neural network classifier
         if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier)
