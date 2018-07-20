@@ -1,4 +1,4 @@
-function data = getKinematicData3(sessions, obsPos)
+function data = getKinematicData4(sessions, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
@@ -13,25 +13,87 @@ controlSteps = 2; % needs to be at least 2
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
-data = struct();
-dataInd = 1;
 
 
-% collect data for all trials sessions
-for i = 1:length(sessions)
-    
-    % report progress
+
+% collect data for all sessions
+data = cell(1,length(sessions));
+getDataForSessionHandle = @getDataForSession;
+parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
+%     data{i} = getDataForSession(sessions{i});
+    data{i} = feval(getDataForSessionHandle, sessions{i});
+end
+data = cat(2,data{:}); % concatenate together data from all sessions 
+
+
+
+
+
+
+% make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
+mice = unique({data.mouse});
+models = cell(1,length(mice));
+
+for i = 1:length(mice)
     
+    mouseBins = strcmp({data.mouse}, mice{i});
+    mouseInds = find(mouseBins);
     
+    % make predictive model
+    % use second to last control length and last control wheel vel (at
+    % first moment) to predict last control length
+    % !!! is there a way to do this wiithout looping?
+    prevLengths = nan(1, length(mouseInds));
+    vel = nan(1, length(mouseInds));
+    lengths = nan(1, length(mouseInds));
+    for j = 1:length(mouseInds)
+        ind = mouseInds(j);
+        prevLengths(j) = data(ind).controlSwingLengths(end-1, data(ind).firstModPaw);
+        vel(j) = data(ind).controlWheelVels(end, data(ind).firstModPaw);
+        lengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
+    end
+
+    
+    % make linear model
+    validInds = ~isnan(prevLengths) & ~isnan(vel);
+    models{i} = fitlm(cat(1,prevLengths(validInds),vel(validInds))', lengths, 'Linear', 'RobustOpts', 'on');
+    
+    % generate control length predictions (this is used to validate method)
+    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
+    [data(mouseBins).predictedControlLengths] = predictedLengths{:};
+    
+    % generate mod length predictions
+    prevLengths = nan(1, length(mouseInds));
+    vel = nan(1, length(mouseInds));
+    for j = 1:length(mouseInds)
+        ind = mouseInds(j);
+        prevLengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
+        vel(j) = data(ind).modifiedWheelVels(1, data(ind).firstModPaw);
+    end
+    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
+    [data(mouseBins).predictedLengths] = predictedLengths{:};     
+end
+
+
+
+
+
+
+
+function sessionData = getDataForSession(session)
+    
+    sessionData = struct();
+    dataInd = 1;
+
     % LOAD SESSION DATA (damn that's a lot of stuff)
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
+    load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
             'wheelRadius', 'wheelCenter', 'obsHeightsVid');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = abs(mToPixMapping(1));
-    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw.csv']); % get raw tracking data
+    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
     [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
@@ -50,7 +112,7 @@ for i = 1:length(sessions)
             end
         end
     else
-        load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
+        load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes', 'contactPositions')
     end
     [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
         getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, ...
@@ -135,7 +197,7 @@ for i = 1:length(sessions)
         
         % analyze trial if all steps are accounted for
         if somethingWentWrong
-            fprintf('  missing steps in trial %i\n', j)
+            fprintf('  %s: missing steps in trial %i\n', session, j)
         else
 
             % determine whether left and right forepaws are in swing at obsPos moment
@@ -324,108 +386,59 @@ for i = 1:length(sessions)
 
             end
 
-
-
             % STORE RESULTS
-            
             % trial metadata
-            sessionInfoBin = find(strcmp(sessionInfo.session, sessions{i}),1,'first');
-            data(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
-            data(dataInd).session = sessions{i};
-            data(dataInd).trial = j;
-            data(dataInd).isLightOn = isLightOn(j);
-            data(dataInd).obsHeightsVid = obsHeightsVid(j);
+            sessionInfoBin = find(strcmp(sessionInfo.session, session),1,'first');
+            sessionData(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
+            sessionData(dataInd).session = session;
+            sessionData(dataInd).trial = j;
+            sessionData(dataInd).isLightOn = isLightOn(j);
+            sessionData(dataInd).obsHeightsVid = obsHeightsVid(j);
 
             % bunch of thangs
-            data(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
-            data(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact
-            data(dataInd).obsPosInd = find(trialTimeStampsInterp==0); % ind at which obs contacts wisks for trial
-            data(dataInd).pawObsPosInd = pawObsPosInd;% ind at which obs contacts wisks for locations for each paw
-            data(dataInd).pawObsPosIndInterp = pawObsPosIndInterp; % ind at which obs contacts wisks for interp locations for each paw
-            data(dataInd).timeStamps = trialTimeStamps;
-            data(dataInd).locations = trialLocations;
-            data(dataInd).controlLocations = controlLocations;
-            data(dataInd).modifiedLocations = modLocations;
-            data(dataInd).noObsLocations = noObsLocations;
-            data(dataInd).controlLocationsInterp = controlLocationsInterp;
-            data(dataInd).modifiedLocationsInterp = modLocationsInterp;
-            data(dataInd).noObsLocationsInterp = noObsLocationsInterp;
-            data(dataInd).trialControlStepIdentities = trialControlStepIds;
-            data(dataInd).modifiedStepIdentities = trialModStepIds;
-            data(dataInd).modStepNum = modStepNum;
-            data(dataInd).stanceDistance = stanceDistance;
-            data(dataInd).swingStartDistance = swingStartDistance;
+            sessionData(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
+            sessionData(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact
+            sessionData(dataInd).obsPosInd = find(trialTimeStampsInterp==0); % ind at which obs contacts wisks for trial
+            sessionData(dataInd).pawObsPosInd = pawObsPosInd;% ind at which obs contacts wisks for locations for each paw
+            sessionData(dataInd).pawObsPosIndInterp = pawObsPosIndInterp; % ind at which obs contacts wisks for interp locations for each paw
+            sessionData(dataInd).timeStamps = trialTimeStamps;
+            sessionData(dataInd).locations = trialLocations;
+            sessionData(dataInd).controlLocations = controlLocations;
+            sessionData(dataInd).modifiedLocations = modLocations;
+            sessionData(dataInd).noObsLocations = noObsLocations;
+            sessionData(dataInd).controlLocationsInterp = controlLocationsInterp;
+            sessionData(dataInd).modifiedLocationsInterp = modLocationsInterp;
+            sessionData(dataInd).noObsLocationsInterp = noObsLocationsInterp;
+            sessionData(dataInd).trialControlStepIdentities = trialControlStepIds;
+            sessionData(dataInd).modifiedStepIdentities = trialModStepIds;
+            sessionData(dataInd).modStepNum = modStepNum;
+            sessionData(dataInd).stanceDistance = stanceDistance;
+            sessionData(dataInd).swingStartDistance = swingStartDistance;
             
             % info about which paws did what
-            data(dataInd).isLeftSwingAtContact = isLeftSwingAtContact;
-            data(dataInd).isLeftRightAtContact = isRightSwingAtContact;
-            data(dataInd).firstPawOver = firstPawOver;
-            data(dataInd).firstModPaw = firstModPaw;
+            sessionData(dataInd).isLeftSwingAtContact = isLeftSwingAtContact;
+            sessionData(dataInd).isLeftRightAtContact = isRightSwingAtContact;
+            sessionData(dataInd).firstPawOver = firstPawOver;
+            sessionData(dataInd).firstModPaw = firstModPaw;
 
-            data(dataInd).controlSwingLengths = controlSwingLengths;
-            data(dataInd).modifiedSwingLengths = modifiedSwingLengths;
-            data(dataInd).noObsSwingLengths = noObsSwingLengths;
-            data(dataInd).controlSwingDurations = controlSwingDurations;
-            data(dataInd).modifiedSwingDurations = modifiedSwingDurations;
-            data(dataInd).noObsSwingDurations = noObsSwingDurations;
-            data(dataInd).controlWheelVels = controlWheelVels;
-            data(dataInd).modifiedWheelVels = modifiedWheelVels;
-            data(dataInd).noObsWheelVels = noObsWheelVels;
+            sessionData(dataInd).controlSwingLengths = controlSwingLengths;
+            sessionData(dataInd).modifiedSwingLengths = modifiedSwingLengths;
+            sessionData(dataInd).noObsSwingLengths = noObsSwingLengths;
+            sessionData(dataInd).controlSwingDurations = controlSwingDurations;
+            sessionData(dataInd).modifiedSwingDurations = modifiedSwingDurations;
+            sessionData(dataInd).noObsSwingDurations = noObsSwingDurations;
+            sessionData(dataInd).controlWheelVels = controlWheelVels;
+            sessionData(dataInd).modifiedWheelVels = modifiedWheelVels;
+            sessionData(dataInd).noObsWheelVels = noObsWheelVels;
 
             dataInd = dataInd + 1;
         end
     end
 end
-
-
-
-% make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
-mice = unique({data.mouse});
-models = cell(1,length(mice));
-
-for i = 1:length(mice)
-    
-    mouseBins = strcmp({data.mouse}, mice{i});
-    mouseInds = find(mouseBins);
-    
-    % make predictive model
-    % use second to last control length and last control wheel vel (at
-    % first moment) to predict last control length
-    % !!! is there a way to do this wiithout looping?
-    prevLengths = nan(1, length(mouseInds));
-    vel = nan(1, length(mouseInds));
-    lengths = nan(1, length(mouseInds));
-    for j = 1:length(mouseInds)
-        ind = mouseInds(j);
-        prevLengths(j) = data(ind).controlSwingLengths(end-1, data(ind).firstModPaw);
-        vel(j) = data(ind).controlWheelVels(end, data(ind).firstModPaw);
-        lengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
-    end
-
-    
-    % make linear model
-    validInds = ~isnan(prevLengths) & ~isnan(vel);
-    models{i} = fitlm(cat(1,prevLengths(validInds),vel(validInds))', lengths, 'Linear', 'RobustOpts', 'on');
-    
-    % generate control length predictions (this is used to validate method)
-    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
-    [data(mouseBins).predictedControlLengths] = predictedLengths{:};
-    
-    % generate mod length predictions
-    prevLengths = nan(1, length(mouseInds));
-    vel = nan(1, length(mouseInds));
-    for j = 1:length(mouseInds)
-        ind = mouseInds(j);
-        prevLengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
-        vel(j) = data(ind).modifiedWheelVels(1, data(ind).firstModPaw);
-    end
-    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
-    [data(mouseBins).predictedLengths] = predictedLengths{:};
-        
+disp('all done!');
 end
 
 
-fprintf('all done!');
 
 
 

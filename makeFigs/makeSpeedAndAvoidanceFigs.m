@@ -1,4 +1,4 @@
-function makeSpeedAndAvoidanceFigs(mice)
+function data = makeSpeedAndAvoidanceFigs(mice)
 % make plots to show how avoidance and speed progresses over time, before
 % and after adding wheel break
 
@@ -8,7 +8,7 @@ subplotNames = {'success rate', 'velocity (m/s)'};
 noBreakExpName = 'obsNoBrBar';
 breakExpName = 'obsBrBar';
 noBrSessions = 2; % uses the most recent noBrSessions 
-brSessions = 7; % uses the first (oldest) brSessions
+brSessions = 5; % uses the first (oldest) brSessions
 mouseScatSize = 50;
 
 % initializations
@@ -18,7 +18,6 @@ sessionBins = ismember(sessionInfo.mouse, mice) &...
               ismember(sessionInfo.experiment, {noBreakExpName, breakExpName}) &...
               sessionInfo.include;
 sessionInfo = sessionInfo(sessionBins, :);
-mouseNum = length(mice);
 mouseColors = hsv(length(mice));
 
 
@@ -42,10 +41,9 @@ end
 
 
 
-
 % get session data
 allSessions = vertcat(mouseSessions{1,:});
-data = getSpeedAndObsAvoidanceData(allSessions);
+data = getSpeedAndObsAvoidanceData(allSessions, false);
 
 
 

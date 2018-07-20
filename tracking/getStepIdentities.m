@@ -57,7 +57,7 @@ for i = 1:length(obsOnTimes)
             steps = cumsum([0; diff(obsOffBins)==1]);
             noObsStepIdentities(obsOffBins, j) = steps(obsOffBins);
         catch
-            fprintf('  problem with trial %i\n', i)
+%             fprintf('  problem with trial %i\n', i)
         end
         
     end

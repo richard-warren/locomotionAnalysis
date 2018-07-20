@@ -1,25 +1,3 @@
-%% MUSCIMOL KINEMATICS
-
-
-% get data
-muscimolSessions = {'180707_003', '180711_000'};
-vehicleSessions = {'180709_003'};
-
-obsPos = -0.0087;
-data = getKinematicData3(cat(2, muscimolSessions, vehicleSessions), obsPos);
-save([getenv('OBSDATADIR') 'kinematicData\muscimolKinematicData.mat'], 'data');
-
-%% plot baseline kinematics
-
-conditionBins = nan(1,length(data));
-conditionBins(ismember({data.session}, muscimolSessions)) = 1;
-conditionBins(ismember({data.session}, vehicleSessions)) = 2;
-conditionLabels = {'muscimol', 'vehicle'};
-plotBaselineKinematics(data, conditionBins, conditionLabels)
-
-
-
-
 %% OBS HEIGHT KINEMATICS
 
 

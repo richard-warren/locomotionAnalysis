@@ -1,4 +1,4 @@
-function plotBaselineKinematics(data, conditionBins, conditionLabels)
+function plotBaselineKinematics(data, conditionBins, conditionLabels, figTitle)
 
 % temp
 % conditionBins = ones(1,length(data));
@@ -14,11 +14,12 @@ zLims = [-.008 .006];
 leftDarkening = .5;
 
 % initializations
+conditions = unique(conditionBins(~isnan(conditionBins)));
 colors = hsv(length(conditionLabels));
 
 noObsLocations = cell(1, length(conditionLabels)); % one cell entry per condition
 xOffsets = cell(1,length(conditionLabels));
-for i = 1:length(noObsLocations)
+for i = conditions
     conditionLocations = cellfun(@(x) cat(4,x{:}), {data(conditionBins==i).noObsLocationsInterp}, 'UniformOutput', 0);
     conditionLocations = cat(1, conditionLocations{:});
     
@@ -38,10 +39,10 @@ end
 
 
 % prepare figure
-figure('color', 'white', 'menubar', 'none', 'position', [300 100 1200 800]);
+figure('Name', figTitle, 'color', 'white', 'menubar', 'none', 'position', [300 100 1200 800]);
 
 % plot xy
-for i = 1:length(noObsLocations)
+for i = conditions
     
     pawXOffsets = [0 xOffsets{i} xOffsets{i} 0]; % offset forepaws only
     

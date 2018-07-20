@@ -6,8 +6,8 @@ sessions = selectSessions;
 %% analyze spike data
 
 disp('starting to analyze sessions...')
-for i = 1:length(sessions)    
-    spikeAnalysis2(sessions{i}, {'arePawsTouchingObs'});
+parfor i = 1:length(sessions)
+    spikeAnalysis2(sessions{i});
 end
 disp('all done!')
 
@@ -31,6 +31,9 @@ mice = {'sen1', 'sen2', 'sen3', 'sen4', 'sen5', 'sen6', 'mtc1', 'mtc2', 'mtc3', 
 baselineSummary(mice);
 
 %% plot learning progress
-% mice = {'sen2', 'sen3', 'sen4', 'sen5', 'sen6'};
-mice = { 'mtc4', 'mtc5', 'mtc6'};
-makeSpeedAndAvoidanceFigs(mice);
+senMice = {'sen2', 'sen3', 'sen4', 'sen5', 'sen6'};
+mtcMice = {'mtc1', 'mtc2', 'mtc3', 'mtc4', 'mtc5', 'mtc6'};
+senData = makeSpeedAndAvoidanceFigs(senMice);
+mtcData = makeSpeedAndAvoidanceFigs(mtcMice);
+
+

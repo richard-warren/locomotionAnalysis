@@ -190,7 +190,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     % determine obstacle height for every trial
     if analyzeVar({'obsHeights'}, varNames, varsToOverWrite) && ...
        exist([sessionDir '\trialInfo.csv'], 'file') && ...
-       ~isempty(readtable('Z:\RAW\obstacleData\sessions\180718_000\trialInfo.csv'))
+       ~isempty(readtable([sessionDir 'trialInfo.csv']))
        
         fprintf('%s: getting obstacle heights\n', session)
         obsHeightData = dlmread([sessionDir '\trialInfo.csv']); % columns: obsHeight (mm), timestamp (s), timestamps (ms)
@@ -550,12 +550,12 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % neural network classifier to determine whether paw is touching obs
-    if (analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) || ~exist([sessionDir 'pawAnalyzed.csv'], 'file'))&& ...
+    if (analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) || ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || isempty(readtable([sessionDir 'pawAnalyzed.csv']))) && ...
         exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
         isfield(varStruct, 'obsPixPositions') && ...
         ~isempty(varStruct.obsOnTimes)
         
-        fprintf('%s: getting paw contacts with neural network\n', session)
+        fprintf('%s: getting paw contacts\n', session)
         
         % settings
         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
@@ -564,7 +564,9 @@ function spikeAnalysis2(session, varsToOverWrite)
         proximityThresh = 20;
 
         % run neural network classifier
-        if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier)
+        if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier) || isempty(readtable([sessionDir 'pawAnalyzed.csv']))
+            fprintf('%s: running paw contact neural network\n', session)
+            save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct') % first save the file so analyzeVideo.py can access it
             [~, ~] = system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         pawAnalyzed = readtable([sessionDir 'pawAnalyzed.csv']);
