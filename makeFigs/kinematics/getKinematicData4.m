@@ -90,7 +90,8 @@ function sessionData = getDataForSession(session)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
-            'wheelRadius', 'wheelCenter', 'obsHeightsVid');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'arePawsTouchingObs');
+    load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = abs(mToPixMapping(1));
     locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
@@ -199,7 +200,15 @@ function sessionData = getDataForSession(session)
         if somethingWentWrong
             fprintf('  %s: missing steps in trial %i\n', session, j)
         else
-
+            
+            
+            % !!! get info about whether paws are touching obs
+            % find whether and where obstacle was toucheed
+            isWheelBreak = any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
+            trialBins = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
+            totalTouchFramesPerPaw = sum(arePawsTouchingObs(trialBins,:),1); % get total number of obs touches in trial per paw
+            
+            
             % determine whether left and right forepaws are in swing at obsPos moment
             isLeftSwingAtContact = ~isnan(trialModStepIds(trialTimeStampsInterp==0,2));
             isRightSwingAtContact = ~isnan(trialModStepIds(trialTimeStampsInterp==0,3));
@@ -415,12 +424,19 @@ function sessionData = getDataForSession(session)
             sessionData(dataInd).stanceDistance = stanceDistance;
             sessionData(dataInd).swingStartDistance = swingStartDistance;
             
+            % trial touch info
+            sessionData(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;
+            sessionData(dataInd).isWheelBreak = isWheelBreak;
+            sessionData(dataInd).isObsAvoided = ~any(totalTouchFramesPerPaw);
+            
+            
             % info about which paws did what
             sessionData(dataInd).isLeftSwingAtContact = isLeftSwingAtContact;
             sessionData(dataInd).isLeftRightAtContact = isRightSwingAtContact;
             sessionData(dataInd).firstPawOver = firstPawOver;
             sessionData(dataInd).firstModPaw = firstModPaw;
 
+            % swing characteristics
             sessionData(dataInd).controlSwingLengths = controlSwingLengths;
             sessionData(dataInd).modifiedSwingLengths = modifiedSwingLengths;
             sessionData(dataInd).noObsSwingLengths = noObsSwingLengths;
