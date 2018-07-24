@@ -1,4 +1,4 @@
-function plotObsHeightTrajectories(data, bins, binNames)
+function plotObsHeightTrajectories(data, bins, binNames, figTitle)
 
 % eventually fcn will be given bins, vector of zeros for trials not to be
 % included, and 1..n for trials to be included in rows 1...n in the plot,
@@ -9,9 +9,9 @@ function plotObsHeightTrajectories(data, bins, binNames)
 % settings
 trialsPerPlot = 10;
 maxSmpsThoughObs = 2;
-heightBinNum = 3;
+heightBinNum = 2;
 obsDiam = 3.175; % (mm)
-xLims = [-.06 0];
+xLims = [-.06 .04];
 zLims = [0 .015];
 lineWid = 2.5;
 
@@ -28,19 +28,9 @@ throughObsBins = nan(length(data), locationSmps);
 
 for i = allInds
     
-    % find fore paw that is first to get over osbtacle
-    isStepping = ~isnan(data(i).modifiedStepIdentities(:,:));
-    lastModStepInds = table2array(rowfun(@(x)(find(x,1,'last')), table(isStepping')));
-    [~, firstPawOverInd] = min(lastModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
-    
+    firstPawOverInd = data(i).firstPawOver;
     locationsMod(i,:,:) = squeeze(data(i).modifiedLocationsInterp{firstPawOverInd}(end,:,:));
     locationsControl(i,:,:) = squeeze(data(i).controlLocationsInterp{firstPawOverInd}(end,:,:));
-    
-    % flip around midline if left paw is selected
-    if firstPawOverInd==2 % fix this... it is not working
-        locationsMod(i,2,:) = -locationsMod(i,2,:);
-        locationsControl(i,2,:) = -locationsControl(i,2,:);
-    end
     
     % check if trial passes through obstacle
     throughObsBins(i,:) = squeeze(locationsMod(i,3,:))<(data(i).obsHeightsVid/1000) & ... 
@@ -60,7 +50,7 @@ fprintf('%.2f of trials passed though obs\n', ...
 
 
 
-figure('menubar', 'none', 'color', 'white', 'position', [-1500 500 1500 450], 'InvertHardCopy', 'off');
+figure('name', figTitle, 'menubar', 'none', 'color', 'white', 'position', [-1500 500 1500 450], 'InvertHardCopy', 'off');
 
 for i = 1:length(binNames)
     

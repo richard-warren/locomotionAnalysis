@@ -7,8 +7,15 @@ function angles = getSessionBodyAngles(session)
 
 % load kinematic data
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'nosePos')
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
-tailXY = [locationsTable.tailBase_bot, locationsTable.tailBase_bot_1];
+try
+    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+    tailXY = [locationsTable.tailBase_bot, locationsTable.tailBase_bot_1];
+catch
+    disp('hacky fix') % !!! for some reason readtable sometimes fails, and reading first with xls read solves the problem... wtf
+    locationsTable = xlsread([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+    tailXY = [locationsTable.tailBase_bot, locationsTable.tailBase_bot_1];
+end
 tailXY(:,1) = -(tailXY(:,1) - nosePos(1)); % set X to number of pixels behind nose
 tailXY(:,2) = -(tailXY(:,2) - nosePos(2));  % set y to number of pixels above nose
 

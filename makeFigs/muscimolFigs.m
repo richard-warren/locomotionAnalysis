@@ -17,8 +17,7 @@ data = kinData; save([getenv('OBSDATADIR') 'kinematicData\muscimolKinematicData.
 speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, false);
 data = speedAvoidanceData; save([getenv('OBSDATADIR') 'kinematicData\muscimolSpeedAvoidanceData.mat'], 'data');
 
-%% plot vehicle vs mus baseline kinematics for all mice and all brain regions per mouse
-
+%% plot baseline kinematics
 
 mice = unique(sessionInfo.mouse);
 
@@ -47,7 +46,6 @@ end
 
 %% plot speed, avoidance, leading paw
 
-
 % settings
 conditions = {'saline', 'muscimol'};
 brainRegions = {'sen', 'mtc'};
@@ -56,11 +54,11 @@ dvs = {'success rate', ...
        {'contra (or right)', 'forepaw first rate'}, ...
        {'body angle towards contra', '(or right) side'}};
 dvYLims = [0 1; 0 .8; 0 1; -15 15];
-
+minTrial = 0;
 
 
 % initializations
-close all; figure('Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 500 800])
+figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 500 800])
 dims = [length(dvs), length(brainRegions)]; % subplot dimensions
 
 % loop over brain regions
@@ -92,28 +90,30 @@ for i = 1:length(brainRegions)
             
             for m = 1:length(sessions)
                 % get speed and success rate
-                sessionBins = strcmp({speedAvoidanceData.session}, sessions{m});
+                sessionBins = strcmp({speedAvoidanceData.session}, sessions{m}) & ...
+                              [speedAvoidanceData.trialNum]>=minTrial;
                 sessionSuccesses(m) = mean([speedAvoidanceData(sessionBins).isObsAvoided]);
                 sessionSpeeds(m) = mean([speedAvoidanceData(sessionBins).avgVel]);
                 
                 % get contra first paw over rate
                 sideOfBrain = sessionInfo.side(strcmp(sessionInfo.session, sessions{m}));
-                sessionKinBins = strcmp({kinData.session}, sessions{m});
+                sessionKinBins = strcmp({kinData.session}, sessions{m}) & [kinData.trial]>minTrial;
                 sessionContraFirstRates(m) = mean([kinData(sessionKinBins).firstPawOver]-2); % assumes left forepaw is 2 and right forepaw is 3                
                 if strcmp(sideOfBrain, 'right'); sessionContraFirstRates(m) = 1-sessionContraFirstRates(m); end
                 
                 % get body angle
-                disp('getting angle')
+                disp('getting angle...')
                 sessionAngles = getSessionBodyAngles(sessions{m});
                 framesToAnalyze = getFramesToShow(sessions{m}, true);
                 sessionContraBodyAngles(m) = nanmedian(sessionAngles(framesToAnalyze));
+%                 sessionContraBodyAngles(m) = 0;
                 if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
             end
             
-            successes(j,k) = mean(sessionSuccesses);
-            speeds(j,k) = mean(sessionSpeeds);
-            contraFirstRates(j,k) = mean(sessionContraFirstRates);
-            contraBodyAngles(j,k) = mean(sessionContraBodyAngles);
+            successes(j,k) = nanmean(sessionSuccesses);
+            speeds(j,k) = nanmean(sessionSpeeds);
+            contraFirstRates(j,k) = nanmean(sessionContraFirstRates);
+            contraBodyAngles(j,k) = nanmean(sessionContraBodyAngles);
         end
         
         % plot mouse success
@@ -133,8 +133,8 @@ for i = 1:length(brainRegions)
         
         % plot contra body angle
         subplot(dims(1), dims(2), i+3*length(brainRegions))
-        line(1:length(conditions), contraBodyAngles(j,:), 'color', [.5 .5 .5]); hold on
-        scatter(1:length(conditions), contraBodyAngles(j,:), 50, colors(j,:), 'filled');
+        line([1:length(conditions)] + xJitters(j), contraBodyAngles(j,:), 'color', [.5 .5 .5]); hold on
+        scatter([1:length(conditions)] + xJitters(j), contraBodyAngles(j,:), 50, colors(j,:), 'filled');
     end
     
     % plot condition means
@@ -159,6 +159,14 @@ for i = 1:length(brainRegions)
         avg = nanmean(contraBodyAngles(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
     end
+    
+    % add mouse labels
+    xLims = get(gca, 'xlim');
+    xs = linspace(xLims(1)*1.2, xLims(2)*.8, length(mice));
+    for j = 1:length(mice)
+        text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, mice{j}, 'Color', colors(j,:));
+    end
+
 end
 
 
@@ -176,11 +184,93 @@ for i = 1:length(dvs)
     end
 end
 
+
 saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimolBarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\muscimolBarPlots.fig'])
 
 
 
-%%
+%% plot kinematics
+
+
+
+% incorporate condition information into kinData struct
+for i = 1:length(kinData)
+    sessionInfoBin = strcmp(sessionInfo.session, kinData(i).session);
+    brainRegion = sessionInfo.brainRegion{sessionInfoBin};
+    injectedSubstance = sessionInfo.injectedSubstance{sessionInfoBin};
+    if strcmp(sessionInfo.side{sessionInfoBin}, 'left')
+        contraLimb = 3;
+    elseif strcmp(sessionInfo.side{sessionInfoBin}, 'right')
+        contraLimb = 2;
+    else
+        contraLimb = nan;
+    end
+    
+    kinData(i).brainRegion = brainRegion;
+    kinData(i).injectedSubstance = injectedSubstance;
+    kinData(i).contraLimb = contraLimb;
+end
+
+% get trial bins
+
+mice = unique(sessionInfo.mouse);
+
+firstPawContraBins = [kinData.firstPawOver]==[kinData.contraLimb];
+firstPawIpsiBins = [kinData.firstPawOver]~=[kinData.contraLimb];
+musBins = strcmp({kinData.injectedSubstance}, 'muscimol');
+vehBins = strcmp({kinData.injectedSubstance}, 'saline');
+lightOnBins = [kinData.isLightOn];
+validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
+% validBins = ismember({kinData.mouse}, mice);
+mtcBins = strcmp({kinData.brainRegion}, 'mtc');
+senBins = strcmp({kinData.brainRegion}, 'sen');
+
+% mtc, light on
+bins = zeros(1,length(kinData));
+figBins = mtcBins & lightOnBins & validBins;
+bins(firstPawIpsiBins & musBins & figBins) = 1; % ipsi
+bins(firstPawContraBins & musBins & figBins) = 2; % contra
+bins(vehBins & figBins) = 3; % vehicle
+binLabels = {'ipsi', 'contra', 'vehicle'};
+plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light on')
+
+% mtc, light off
+bins = zeros(1,length(kinData));
+figBins = mtcBins & ~lightOnBins & validBins;
+bins(firstPawIpsiBins & musBins & figBins) = 1; % ipsi
+bins(firstPawContraBins & musBins & figBins) = 2; % contra
+bins(vehBins & figBins) = 3; % vehicle
+binLabels = {'ipsi', 'contra', 'vehicle'};
+plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light off')
+
+% sen, light on
+bins = zeros(1,length(kinData));
+figBins = senBins & lightOnBins & validBins;
+bins(musBins & figBins) = 1; % mus
+bins(vehBins & figBins) = 2; % vehicle
+binLabels = {'muscimol', 'vehicle'};
+plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light on')
+
+% sen, light off
+bins = zeros(1,length(kinData));
+figBins = senBins & ~lightOnBins & validBins;
+bins(musBins & figBins) = 1; % mus
+bins(vehBins & figBins) = 2; % vehicle
+binLabels = {'muscimol', 'vehicle'};
+plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light off')
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

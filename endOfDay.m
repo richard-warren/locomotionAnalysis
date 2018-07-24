@@ -3,24 +3,44 @@
 sessions = selectSessions;
 
 
-%% analyze spike data
 
+%% run DeepLabCut analysis
+dlcPath = 'C:\Users\rick\Desktop\github\DeepLabCut';
+for i = 1:length(sessions)
+    try
+        fprintf('%s: conducting DeepLabCut analysis...\n', sessions{i})
+        tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' sessions{i}]);
+        fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', sessions{i}, toc/60/60)
+    catch
+        fprintf('%s: problem with DeepLabCut analysis!\n', sessions{i})
+    end
+end
+
+
+
+% analyze spike data
 disp('starting to analyze sessions...')
 parfor i = 1:length(sessions)
-    spikeAnalysis2(sessions{i});
+    try
+        spikeAnalysis2(sessions{i});
+    catch
+        fprintf('%s: problem with spike analysis!\n', sessions{i})
+    end
 end
 disp('all done!')
 
 
 
-
-%% make video with trials labelled by condition
-
-vidTrialProportion = 0.5;
+% make video with trials labelled by condition
+vidTrialProportion = 0.1;
 
 for i = 1:length(sessions)
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
-    makeVidWisk('', sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
+    try
+        load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
+        makeVidWisk('', sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
+    catch
+        fprintf('%s: problem editing video!\n', sessions{i})
+    end
 end
 
 
