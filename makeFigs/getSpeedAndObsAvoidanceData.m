@@ -16,26 +16,39 @@ posRes = .001; % meters // resoultion of positional grid that velocities are com
 
 % initializations
 posInterp = obsPrePost(1) : posRes : obsPrePost(2); % velocities will be interpolated across this grid of positional values
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 
 
-% collect data
-data = struct(); % stores trial data for all sessions
-dataInd = 1;
-
-for i = 1:length(sessions)
-    
+% collect data for all sessions
+data = cell(1,length(sessions));
+getDataForSessionHandle = @getDataForSession;
+parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
+    data{i} = feval(getDataForSessionHandle, sessions{i});
+end
+data = cat(2,data{:}); % concatenate together data from all sessions 
+
+
+
+
+function sessionData = getDataForSession(session)
     
+    warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+    % collect data
+    sessionData = struct(); % stores trial data for all sessions
+    dataInd = 1;
+
+
+    fprintf('%s: collecting data...\n', session);
+
     % get mouse name and experiment name
     sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
-    sessionInd = find(strcmp(sessionInfo.session, sessions{i}));
+    sessionInd = find(strcmp(sessionInfo.session, session));
 
     % load session data
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
+    load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes',...
             'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', 'arePawsTouchingObs');
-    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\run.mat'], 'breaks');
+    load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     wheelVel = getVelocity(wheelPositions, .5, 1/median(diff(wheelTimes)));
 
@@ -81,22 +94,25 @@ for i = 1:length(sessions)
 
 
         % store trial info
-        data(dataInd).session = sessions{i};
-        data(dataInd).mouse = sessionInfo.mouse{sessionInd};
-        data(dataInd).experiment = sessionInfo.experiment{sessionInd};
-        data(dataInd).trialNum = j;
-        data(dataInd).isLightOn = isLightOn(j);
-        data(dataInd).isWheelBreak = isWheelBreak;
-        data(dataInd).obsOnPositions = obsOnPositions(j);
-        data(dataInd).avgVel = avgVel;
-        data(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;
-        data(dataInd).isObsAvoided = ~any(totalTouchFramesPerPaw);
+        sessionData(dataInd).session = session;
+        sessionData(dataInd).mouse = sessionInfo.mouse{sessionInd};
+        sessionData(dataInd).experiment = sessionInfo.experiment{sessionInd};
+        sessionData(dataInd).trialNum = j;
+        sessionData(dataInd).isLightOn = isLightOn(j);
+        sessionData(dataInd).isWheelBreak = isWheelBreak;
+        sessionData(dataInd).obsOnPositions = obsOnPositions(j);
+        sessionData(dataInd).avgVel = avgVel;
+        sessionData(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;
+        sessionData(dataInd).isObsAvoided = ~any(totalTouchFramesPerPaw);
         if includeContinuousVelocity
-            data(dataInd).trialVelInterp = trialVelInterp;
-            data(dataInd).trialPosInterp = posInterp;
+            sessionData(dataInd).trialVelInterp = trialVelInterp;
+            sessionData(dataInd).trialPosInterp = posInterp;
         end
         dataInd = dataInd+1;
     end
 end
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+
+
+warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 disp('all done!')
+end

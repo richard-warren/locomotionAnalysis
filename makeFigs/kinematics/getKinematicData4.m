@@ -21,7 +21,6 @@ data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
 parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
-%     data{i} = getDataForSession(sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
 data = cat(2,data{:}); % concatenate together data from all sessions 

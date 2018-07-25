@@ -17,6 +17,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     %         get position of tip of nose from bot view
     %         linear mapping between meters and pixels
     %         neural network classifier to determine whether paws are touching obs
+    %         body angle
     %
     % for each session, loads existing runAnalyzed.mat
     % if a computed variable is not already stored in runAnalyzed.mat AND the files necessary to compute it exist, it computes the variable
@@ -513,6 +514,25 @@ function spikeAnalysis2(session, varsToOverWrite)
         anythingAnalyzed = true;
     end
     
+    
+            
+    
+    try
+    % get body angle
+    if analyzeVar({'bodyAngle'}, varNames, varsToOverWrite) && ...
+       exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
+        
+        fprintf('%s: getting body angle\n', session)
+        
+        % load tracking data if not already open
+        if ~exist('locationsTable', 'var'); locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); end
+        bodyAngles = getSessionBodyAngles(locationsTable, varStruct.nosePos);
+        
+        % save
+        varStruct.bodyAngles = bodyAngles;
+        anythingAnalyzed = true;
+    end
+    catch; keyboard; end
     
     
     

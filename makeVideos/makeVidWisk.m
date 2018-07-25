@@ -1,4 +1,4 @@
-function makeVidWisk(namePrefix, session, obsPosRange, playBackSpeed, trialProportion, trialLabels, trialInds)
+function makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProportion, trialLabels, trialInds)
 
 % !!! need to document
 
@@ -10,7 +10,7 @@ function makeVidWisk(namePrefix, session, obsPosRange, playBackSpeed, trialPropo
 
 
 % settings
-editedDir = [getenv('OBSDATADIR') 'editedVid\'];
+% editedDir = [getenv('OBSDATADIR') 'editedVid\'];
 maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
@@ -35,7 +35,8 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'wheelPositions', 'wheelTimes',...
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
-                                            'touchSig', 'touchSigTimes', 'nosePos');
+                                            'touchSig', 'touchSigTimes', 'nosePos', 'arePawsTouchingObs');
+isTouching = (sum(arePawsTouchingObs,2)>0);
 if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
 if ~exist('obsPixPositions', 'var')
     obsPositions = fixObsPositionsHacky(obsPositions);
@@ -78,7 +79,7 @@ if fps>maxFps
     vidSetting = 'Motion JPEG AVI';
 end
 
-vidWriter = VideoWriter(sprintf('%s%s%s', editedDir, namePrefix, session), vidSetting);
+vidWriter = VideoWriter(vidName);
 set(vidWriter, 'FrameRate', fps)
 if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
@@ -88,7 +89,7 @@ open(vidWriter)
 
 
 % edit video
-w = waitbar(0, 'editing video...');
+textprogressbar([session ': editing video...']);
 if trialProportion<=1
     trials = 1 : round(1/trialProportion) : length(obsOnTimes);
 else
@@ -139,9 +140,12 @@ for i = trials
             
             % change color of frame if touching
             if showPawTouches
-                currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
-                if currentTouch
-                    frame(:,:,3) = frame(:,:,3)*.2;
+%                 currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
+%                 if currentTouch
+%                     frame(:,:,3) = frame(:,:,3)*.2;
+%                 end
+                if isTouching(frameInds(j))
+                	frame(:,:,3) = frame(:,:,3)*.2;
                 end
             end
             
@@ -212,13 +216,12 @@ for i = trials
         writeVideo(vidWriter, zeros(size(frame)));
     end
     
-    % update waitbar
-    waitbar(i/length(obsOnTimes))
-    
+    % update progress bar
+    textprogressbar((i/length(obsOnTimes)) * 100)
 end
 
 
-close(w)
+textprogressbar(' done')
 close(vidWriter)
 
 

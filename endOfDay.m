@@ -18,20 +18,20 @@ end
 
 
 
-% analyze spike data
+%% analyze spike data
 disp('starting to analyze sessions...')
-parfor i = 1:length(sessions)
-    try
+for i = 1:length(sessions)
+%     try
         spikeAnalysis2(sessions{i});
-    catch
-        fprintf('%s: problem with spike analysis!\n', sessions{i})
-    end
+%     catch
+%         fprintf('%s: problem with spike analysis!\n', sessions{i})
+%     end
 end
 disp('all done!')
 
 
 
-% make video with trials labelled by condition
+%% make video with trials labelled by condition
 vidTrialProportion = 0.1;
 
 for i = 1:length(sessions)
