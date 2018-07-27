@@ -44,21 +44,20 @@ for j = 1:length(mice)
 end
 
 
-%% plot dvs averaged across sessions
+%% plot dv averages
 
 % settings
 conditions = {'saline', 'muscimol'};
 brainRegions = {'sen', 'mtc'};
 dvs = {'success rate', ...
        'speed (m/s)', ...
-       {'contra (or right)', 'forepaw first rate'}, ...
        {'body angle towards contra', '(or right) side'}};
-dvYLims = [0 1; 0 .8; 0 1; -15 15];
-minTrial = 0;
+dvYLims = [0 1; 0 .8; -15 15];
+minTrial = 160;
 
 
 % initializations
-figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 500 800])
+figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 500 600])
 dims = [length(dvs), length(brainRegions)]; % subplot dimensions
 
 % loop over brain regions
@@ -72,7 +71,6 @@ for i = 1:length(brainRegions)
     % containers for averages for each mouse for each condition across all sessions
     speeds = nan(length(mice), length(conditions)); % rows are mice, columns are conditions (saline, muscimol)
     successes = nan(length(mice), length(conditions));
-    contraFirstRates = nan(length(mice), length(conditions));
     contraBodyAngles = nan(length(mice), length(conditions)); % angling towards contra side of body
     
     for j = 1:length(mice)
@@ -86,7 +84,6 @@ for i = 1:length(brainRegions)
             % containers for session averages for all session for a given mouse in a given condition
             sessionSuccesses = nan(1, length(sessions));
             sessionSpeeds = nan(1, length(sessions));
-            sessionContraFirstRates = nan(1, length(sessions));
             sessionContraBodyAngles = nan(1, length(sessions));
             
             for m = 1:length(sessions)
@@ -96,22 +93,18 @@ for i = 1:length(brainRegions)
                 sessionSuccesses(m) = mean([speedAvoidanceData(sessionBins).isObsAvoided]);
                 sessionSpeeds(m) = mean([speedAvoidanceData(sessionBins).avgVel]);
                 
-                % get contra first paw over rate
-                sideOfBrain = sessionInfo.side(strcmp(sessionInfo.session, sessions{m}));
-                sessionKinBins = strcmp({kinData.session}, sessions{m}) & [kinData.trial]>minTrial; % inds for kinematic data struct
-                sessionContraFirstRates(m) = mean([kinData(sessionKinBins).firstPawOver]-2); % assumes left forepaw is 2 and right forepaw is 3
-                if strcmp(sideOfBrain, 'right'); sessionContraFirstRates(m) = 1-sessionContraFirstRates(m); end
-                
                 % get body angle
-                load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\runAnalyzed.mat'], 'bodyAngles');
-                framesToAnalyze = getFramesToShow(sessions{m}, true);
-                sessionContraBodyAngles(m) = nanmedian(bodyAngles(framesToAnalyze));
+                load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\runAnalyzed.mat'], ...
+                'bodyAngles', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
+                load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\run.mat'], 'breaks');
+                bodyAngles = getTrialBodyAngles(bodyAngles, obsOnTimes, obsOffTimes, frameTimeStamps, breaks);
+                sessionContraBodyAngles(m) = nanmedian(bodyAngles);
+                sideOfBrain = sessionInfo.side{strcmp(sessionInfo.session, sessions{m})};
                 if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
             end
             
             successes(j,k) = nanmean(sessionSuccesses);
             speeds(j,k) = nanmean(sessionSpeeds);
-            contraFirstRates(j,k) = nanmean(sessionContraFirstRates);
             contraBodyAngles(j,k) = nanmean(sessionContraBodyAngles);
         end
         
@@ -125,13 +118,8 @@ for i = 1:length(brainRegions)
         line([1:length(conditions)] + xJitters(j), speeds(j,:), 'color', [.5 .5 .5]); hold on
         scatter([1:length(conditions)] + xJitters(j), speeds(j,:), 50, colors(j,:), 'filled');
         
-        % plot mouse fiirst paw over
-        subplot(dims(1), dims(2), i+2*length(brainRegions))
-        line([1:length(conditions)] + xJitters(j), contraFirstRates(j,:), 'color', [.5 .5 .5]); hold on
-        scatter([1:length(conditions)] + xJitters(j), contraFirstRates(j,:), 50, colors(j,:), 'filled');
-        
         % plot contra body angle
-        subplot(dims(1), dims(2), i+3*length(brainRegions))
+        subplot(dims(1), dims(2), i+2*length(brainRegions))
         line([1:length(conditions)] + xJitters(j), contraBodyAngles(j,:), 'color', [.5 .5 .5]); hold on
         scatter([1:length(conditions)] + xJitters(j), contraBodyAngles(j,:), 50, colors(j,:), 'filled');
     end
@@ -147,14 +135,9 @@ for i = 1:length(brainRegions)
         subplot(dims(1), dims(2), i+1*length(brainRegions))
         avg = nanmean(speeds(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
-        
-        % first paw over
-        subplot(dims(1), dims(2), i+2*length(brainRegions))
-        avg = nanmean(contraFirstRates(:,k));
-        line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
-        
+                
         % contra body angles
-        subplot(dims(1), dims(2), i+3*length(brainRegions))
+        subplot(dims(1), dims(2), i+2*length(brainRegions))
         avg = nanmean(contraBodyAngles(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
     end
@@ -177,7 +160,7 @@ for i = 1:length(dvs)
         
         set(gca, 'xlim', [0.75 length(conditions)+0.25], 'xtick', 1:length(conditions), 'XTickLabel', conditions, ...
             'YLim', dvYLims(i,:));
-        if i==1; title(brainRegions{j}); set(gca, 'ylim', [0 1]); end
+        if i==1; title(brainRegions{j}); end
         if j==1; ylabel(dvs{i}); end
         ind = ind+1;
     end
@@ -187,6 +170,127 @@ end
 saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimolBarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\muscimolBarPlots.fig'])
 
+
+
+%% plot dvs over time within sessions
+
+% settings
+trialBinSize = 40;
+conditions = {'saline', 'muscimol'};
+brainRegions = {'sen', 'mtc'};
+dvs = {'success rate', ...
+       'speed (m/s)', ...
+       {'body angle towards contra', '(or right) side'}};
+dvYLims = [0 1; 0 .8; -15 15];
+xMax = 240;
+
+
+% initializations
+figure('Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 800 600])
+dims = [length(dvs), length(brainRegions)]; % subplot dimensions
+colors = winter(length(conditions));
+
+% loop over brain regions
+for i = 1:length(brainRegions)
+    
+    % get max trial num
+    brainRegionBins = ismember({speedAvoidanceData.session}, sessions);
+    maxTrial = max([speedAvoidanceData(brainRegionBins).trialNum]);
+    maxTrial = min(maxTrial, xMax);
+    maxTrial = floor(maxTrial/trialBinSize) * trialBinSize;
+    trialBinEdges = 0:trialBinSize:maxTrial;
+    xInds = trialBinEdges(2:end); % the x positions will be centered within the bins
+    
+    
+    for j = 1:length(conditions)
+        
+        sessions = unique(sessionInfo.session(strcmp(sessionInfo.brainRegion, brainRegions{i}) ...
+                                            & strcmp(sessionInfo.injectedSubstance, conditions{j})));
+        
+        % containers for bins averages across all sessions
+        successes = nan(length(sessions), length(trialBinEdges)-1);
+        speeds = nan(length(sessions), length(trialBinEdges)-1);
+        contraBodyAngles = nan(length(sessions), length(trialBinEdges)-1);
+        
+        for k = 1:length(sessions)
+            
+            load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], ...
+                'bodyAngles', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
+            load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\run.mat'], 'breaks');
+            bodyAngles = getTrialBodyAngles(bodyAngles, obsOnTimes, obsOffTimes, frameTimeStamps, breaks);
+            sideOfBrain = sessionInfo.side{strcmp(sessionInfo.session, sessions{k})};
+            if strcmp(sideOfBrain, 'left'); bodyAngles = -bodyAngles; end
+            
+            
+            for m = 1:length(trialBinEdges)-1
+            
+                trialBinBins = strcmp({speedAvoidanceData.session}, sessions{k}) & ...
+                               [speedAvoidanceData.trialNum]>trialBinEdges(m) & ...
+                               [speedAvoidanceData.trialNum]<trialBinEdges(m+1);
+
+                % get speed, success rate, and body angle
+                successes(k,m) = mean([speedAvoidanceData(trialBinBins).isObsAvoided]);
+                speeds(k,m) = mean([speedAvoidanceData(trialBinBins).avgVel]);
+                bodyAngleBins = 1:length(bodyAngles) > trialBinEdges(m) & 1:length(bodyAngles) < trialBinEdges(m+1);
+                contraBodyAngles(k,m) = nanmean(bodyAngles(bodyAngleBins));
+            end
+            
+            
+            % plot session data
+            % plot session success
+            subplot(dims(1), dims(2), i)
+            line(xInds, successes(k,:), 'color', colors(j,:)); hold on
+
+            % plot session speed
+            subplot(dims(1), dims(2), i+1*length(brainRegions))
+            line(xInds, speeds(k,:), 'color', colors(j,:)); hold on
+
+            % plot session body angle
+            subplot(dims(1), dims(2), i+2*length(brainRegions))
+            line(xInds, contraBodyAngles(k,:), 'color', colors(j,:)); hold on
+        end
+        
+        
+        % plot condition means
+        
+        % mean successes
+        subplot(dims(1), dims(2), i)
+        line(xInds, nanmean(successes,1), 'color', colors(j,:), 'linewidth', 4); hold on
+
+        % mean speeds
+        subplot(dims(1), dims(2), i+1*length(brainRegions))
+        line(xInds, nanmean(speeds,1), 'color', colors(j,:), 'linewidth', 4); hold on
+        
+        % mean session body angle
+        subplot(dims(1), dims(2), i+2*length(brainRegions))
+        line(xInds, nanmean(contraBodyAngles,1), 'color', colors(j,:), 'linewidth', 4); hold on
+    end
+    
+    % add condition labels
+    xs = linspace(trialBinEdges(2)*1.2, trialBinEdges(end)*.8, length(conditions));
+    for j = 1:length(conditions)
+        text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, conditions{j}, 'Color', colors(j,:));
+    end
+end
+    
+
+
+% pimp figs
+ind = 1;
+for i = 1:length(dvs)
+    for j = 1:length(brainRegions)
+        subplot(dims(1), dims(2), ind);
+        
+        set(gca, 'xlim', [trialBinEdges(2) trialBinEdges(end)], 'xtick', trialBinEdges(2:end), 'YLim', dvYLims(i,:));
+        if i==1; title(brainRegions{j}); end
+        if j==1; ylabel(dvs{i}); end
+        ind = ind+1;
+    end
+end
+
+
+saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimolSessionProgressPlots.png']);
+savefig([getenv('OBSDATADIR') 'figures\muscimolSessionProgressPlotsPlots.fig'])
 
 
 %% plot dvs across sessions
@@ -202,7 +306,7 @@ minTrial = 0;
 
 
 % initializations
-figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 800 800])
+figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 800 600])
 dims = [length(dvs), length(brainRegions)]; % subplot dimensions
 
 % loop over brain regions
@@ -214,7 +318,6 @@ for i = 1:length(brainRegions)
     
     
     for j = 1:length(mice)
-        disp(mice{j})
         conditionBins = brainRegionBins & ...
                         strcmp(sessionInfo.mouse, mice{j});
         sessions = unique(sessionInfo.session(conditionBins));
@@ -235,9 +338,11 @@ for i = 1:length(brainRegions)
             sideOfBrain = sessionInfo.side{strcmp(sessionInfo.session, sessions{m})};
 
             % get body angle
-            load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\runAnalyzed.mat'], 'bodyAngles');
-            framesToAnalyze = getFramesToShow(sessions{m}, true);
-            sessionContraBodyAngles(m) = nanmedian(bodyAngles(framesToAnalyze));
+            load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\runAnalyzed.mat'], ...
+                'bodyAngles', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
+            load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\run.mat'], 'breaks');
+            bodyAngles = getTrialBodyAngles(bodyAngles, obsOnTimes, obsOffTimes, frameTimeStamps, breaks);
+            sessionContraBodyAngles(m) = nanmedian(bodyAngles);
             if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
             
             % get condition whether or not muscimol
@@ -270,7 +375,7 @@ for i = 1:length(brainRegions)
     
     % add mouse labels
     xLims = get(gca, 'xlim');
-    xs = linspace(xLims(1)*1.2, xLims(2)*.8, length(mice));
+    xs = linspace(1, xLims(2)*.8, length(mice));
     for j = 1:length(mice)
         text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, mice{j}, 'Color', colors(j,:));
     end
@@ -278,7 +383,7 @@ end
     
 
 
-%% pimp figs
+% pimp figs
 ind = 1;
 for i = 1:length(dvs)
     for j = 1:length(brainRegions)
@@ -292,10 +397,8 @@ for i = 1:length(dvs)
     end
 end
 
-
-saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimolSessionProgressPlots.png']);
-savefig([getenv('OBSDATADIR') 'figures\muscimolSessionProgressPlotsPlots.fig'])
-
+saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimolWithinSessionProgressPlots.png']);
+savefig([getenv('OBSDATADIR') 'figures\muscimolWithinSessionProgressPlotsPlots.fig'])
 
 %% plot kinematics
 
@@ -328,8 +431,8 @@ firstPawIpsiBins = [kinData.firstPawOver]~=[kinData.contraLimb];
 musBins = strcmp({kinData.injectedSubstance}, 'muscimol');
 vehBins = strcmp({kinData.injectedSubstance}, 'saline');
 lightOnBins = [kinData.isLightOn];
-validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
-% validBins = ismember({kinData.mouse}, mice);
+% validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
+validBins = ~[kinData.isWheelBreak] & ismember({kinData.mouse}, mice);
 mtcBins = strcmp({kinData.brainRegion}, 'mtc');
 senBins = strcmp({kinData.brainRegion}, 'sen');
 

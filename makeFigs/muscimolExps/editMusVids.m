@@ -35,8 +35,7 @@ for i = 1:length(brainRegions)
                 load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], 'isLightOn');
                 makeVidWisk(fileName, sessions{k}, [-.05 .1], .15, trialPortion, {'OFF', 'ON'}, isLightOn+1);
             end
-        end
-        
+        end     
     end
-    
 end
+disp('all done!')
