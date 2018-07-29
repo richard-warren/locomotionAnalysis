@@ -9,7 +9,7 @@ function plotObsHeightTrajectories(data, bins, binNames, figTitle)
 % settings
 trialsPerPlot = 10;
 maxSmpsThoughObs = 2;
-heightBinNum = 2;
+heightBinNum = 3;
 obsDiam = 3.175; % (mm)
 xLims = [-.06 .04];
 zLims = [0 .015];
@@ -60,7 +60,7 @@ for i = 1:length(binNames)
     xs = squeeze(locationsMod(bins==i & validTrials,1,:));
     zs = squeeze(locationsMod(bins==i & validTrials,3,:));
     
-    trialInds = randperm(size(xs,1), trialsPerPlot);
+    trialInds = randperm(size(xs,1), min(trialsPerPlot, size(xs,1)));
     [~, sortInds] = sort([data(trialInds).obsHeightsVid]);
     trialInds = trialInds(sortInds);
     for j = 1:length(trialInds)

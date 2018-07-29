@@ -51,13 +51,17 @@ conditions = {'saline', 'muscimol'};
 brainRegions = {'sen', 'mtc'};
 dvs = {'success rate', ...
        'speed (m/s)', ...
-       {'body angle towards contra', '(or right) side'}};
-dvYLims = [0 1; 0 .8; -15 15];
-minTrial = 160;
+       {'body angle towards contra', '(or right) side'}, ...
+       'contra (or right) error rate', ...
+       'ipsi (or left) error rate'};
+dvYLims = [0 1; 0 .8; -15 15; 0 1; 0 1];
+minTrial = 0;
+% validTrials = ~[speedAvoidanceData.isLightOn] & [speedAvoidanceData.trialNum]>=minTrial;
+validTrials = [speedAvoidanceData.trialNum]>=minTrial;
 
 
 % initializations
-figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 200 500 600])
+figure('name', sprintf('min trial: %i', minTrial), 'Color', 'white', 'MenuBar', 'none', 'Position', [-1396 50 500 900])
 dims = [length(dvs), length(brainRegions)]; % subplot dimensions
 
 % loop over brain regions
@@ -72,6 +76,8 @@ for i = 1:length(brainRegions)
     speeds = nan(length(mice), length(conditions)); % rows are mice, columns are conditions (saline, muscimol)
     successes = nan(length(mice), length(conditions));
     contraBodyAngles = nan(length(mice), length(conditions)); % angling towards contra side of body
+    contraErrRates = nan(length(mice), length(conditions));
+    ipsiErrRates = nan(length(mice), length(conditions));
     
     for j = 1:length(mice)
         for k = 1:length(conditions)
@@ -85,27 +91,46 @@ for i = 1:length(brainRegions)
             sessionSuccesses = nan(1, length(sessions));
             sessionSpeeds = nan(1, length(sessions));
             sessionContraBodyAngles = nan(1, length(sessions));
+            sessionContraErrRates = nan(1, length(sessions));
+            sessionIpsiErrRates = nan(1, length(sessions));
             
             for m = 1:length(sessions)
                 % get speed and success rate
-                sessionBins = strcmp({speedAvoidanceData.session}, sessions{m}) & ...
-                              [speedAvoidanceData.trialNum]>=minTrial;
+                sessionBins = strcmp({speedAvoidanceData.session}, sessions{m}) & validTrials;
                 sessionSuccesses(m) = mean([speedAvoidanceData(sessionBins).isObsAvoided]);
                 sessionSpeeds(m) = mean([speedAvoidanceData(sessionBins).avgVel]);
                 
                 % get body angle
                 load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\runAnalyzed.mat'], ...
-                'bodyAngles', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
+                'bodyAngles', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'arePawsTouchingObs');
                 load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\run.mat'], 'breaks');
                 bodyAngles = getTrialBodyAngles(bodyAngles, obsOnTimes, obsOffTimes, frameTimeStamps, breaks);
                 sessionContraBodyAngles(m) = nanmedian(bodyAngles);
                 sideOfBrain = sessionInfo.side{strcmp(sessionInfo.session, sessions{m})};
                 if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
+                
+                % get contra err rate
+                leftErrors = 0;
+                rightErrors = 0;
+                for n = 1:length(obsOnTimes)
+                    trialInds = frameTimeStamps>obsOnTimes(n) & frameTimeStamps<obsOffTimes(n);
+                    leftErrors = leftErrors + any(any(arePawsTouchingObs(trialInds,[1 2])));
+                    rightErrors = rightErrors + any(any(arePawsTouchingObs(trialInds,[3 4]),2)>0);
+                end
+                if strcmp(sideOfBrain, 'left')
+                    sessionContraErrRates = rightErrors / length(obsOnTimes);
+                    sessionIpsiErrRates = leftErrors / length(obsOnTimes);
+                else
+                    sessionContraErrRates = leftErrors / length(obsOnTimes);
+                    sessionIpsiErrRates = rightErrors / length(obsOnTimes);
+                end
             end
             
             successes(j,k) = nanmean(sessionSuccesses);
             speeds(j,k) = nanmean(sessionSpeeds);
             contraBodyAngles(j,k) = nanmean(sessionContraBodyAngles);
+            contraErrRates(j,k) = nanmean(sessionContraErrRates);
+            ipsiErrRates(j,k) = nanmean(sessionIpsiErrRates);
         end
         
         % plot mouse success
@@ -122,6 +147,16 @@ for i = 1:length(brainRegions)
         subplot(dims(1), dims(2), i+2*length(brainRegions))
         line([1:length(conditions)] + xJitters(j), contraBodyAngles(j,:), 'color', [.5 .5 .5]); hold on
         scatter([1:length(conditions)] + xJitters(j), contraBodyAngles(j,:), 50, colors(j,:), 'filled');
+        
+        % plot contra err rates
+        subplot(dims(1), dims(2), i+3*length(brainRegions))
+        line([1:length(conditions)] + xJitters(j), contraErrRates(j,:), 'color', [.5 .5 .5]); hold on
+        scatter([1:length(conditions)] + xJitters(j), contraErrRates(j,:), 50, colors(j,:), 'filled');
+        
+        % plot ipsi err rates
+        subplot(dims(1), dims(2), i+4*length(brainRegions))
+        line([1:length(conditions)] + xJitters(j), ipsiErrRates(j,:), 'color', [.5 .5 .5]); hold on
+        scatter([1:length(conditions)] + xJitters(j), ipsiErrRates(j,:), 50, colors(j,:), 'filled');
     end
     
     % plot condition means
@@ -139,6 +174,16 @@ for i = 1:length(brainRegions)
         % contra body angles
         subplot(dims(1), dims(2), i+2*length(brainRegions))
         avg = nanmean(contraBodyAngles(:,k));
+        line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
+        
+        % contra err rates
+        subplot(dims(1), dims(2), i+3*length(brainRegions))
+        avg = nanmean(contraErrRates(:,k));
+        line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
+        
+        % ipsi err rates
+        subplot(dims(1), dims(2), i+4*length(brainRegions))
+        avg = nanmean(ipsiErrRates(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
     end
     
@@ -431,18 +476,18 @@ firstPawIpsiBins = [kinData.firstPawOver]~=[kinData.contraLimb];
 musBins = strcmp({kinData.injectedSubstance}, 'muscimol');
 vehBins = strcmp({kinData.injectedSubstance}, 'saline');
 lightOnBins = [kinData.isLightOn];
-% validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
-validBins = ~[kinData.isWheelBreak] & ismember({kinData.mouse}, mice);
 mtcBins = strcmp({kinData.brainRegion}, 'mtc');
 senBins = strcmp({kinData.brainRegion}, 'sen');
+% validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
+validBins = ~[kinData.isWheelBreak] & ~[kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
 
 % mtc, light on
 bins = zeros(1,length(kinData));
-figBins = mtcBins & lightOnBins & validBins;
+figBins = mtcBins & validBins;
 bins(firstPawIpsiBins & musBins & figBins) = 1; % ipsi
 bins(firstPawContraBins & musBins & figBins) = 2; % contra
 bins(vehBins & figBins) = 3; % vehicle
-binLabels = {'ipsi', 'contra', 'vehicle'};
+binLabels = {'ipsi', 'contra', 'vehicle ipsi'};
 plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light on')
 
 % mtc, light off
@@ -454,21 +499,21 @@ bins(vehBins & figBins) = 3; % vehicle
 binLabels = {'ipsi', 'contra', 'vehicle'};
 plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light off')
 
-% sen, light on
-bins = zeros(1,length(kinData));
-figBins = senBins & lightOnBins & validBins;
-bins(musBins & figBins) = 1; % mus
-bins(vehBins & figBins) = 2; % vehicle
-binLabels = {'muscimol', 'vehicle'};
-plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light on')
-
-% sen, light off
-bins = zeros(1,length(kinData));
-figBins = senBins & ~lightOnBins & validBins;
-bins(musBins & figBins) = 1; % mus
-bins(vehBins & figBins) = 2; % vehicle
-binLabels = {'muscimol', 'vehicle'};
-plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light off')
+% % sen, light on
+% bins = zeros(1,length(kinData));
+% figBins = senBins & lightOnBins & validBins;
+% bins(musBins & figBins) = 1; % mus
+% bins(vehBins & figBins) = 2; % vehicle
+% binLabels = {'muscimol', 'vehicle'};
+% plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light on')
+% 
+% % sen, light off
+% bins = zeros(1,length(kinData));
+% figBins = senBins & ~lightOnBins & validBins;
+% bins(musBins & figBins) = 1; % mus
+% bins(vehBins & figBins) = 2; % vehicle
+% binLabels = {'muscimol', 'vehicle'};
+% plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light off')
 
 
 

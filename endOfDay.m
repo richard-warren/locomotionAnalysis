@@ -8,7 +8,8 @@ sessions = selectSessions;
 dlcPath = 'C:\Users\rick\Desktop\github\DeepLabCut';
 for i = 1:length(sessions)
     try
-        fprintf('%s: conducting DeepLabCut analysis...\n', sessions{i})
+        currentTime = clock;
+        fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', sessions{i}, currentTime(4), currentTime(5))
         tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' sessions{i}]);
         fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', sessions{i}, toc/60/60)
     catch
@@ -32,12 +33,12 @@ disp('all done!')
 
 
 %% make video with trials labelled by condition
-vidTrialProportion = 0.1;
+vidTrialProportion = 0.5;
 
 for i = 1:length(sessions)
     try
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
-        makeVidWisk('', sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
+        makeVidWisk(sessions{i}, sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
     catch
         fprintf('%s: problem editing video!\n', sessions{i})
     end
