@@ -40,6 +40,7 @@ while true
             currentTime = clock;
             fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
             tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
+%             tic; system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
             fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
             dlcAnalysisSuccessful = true;
         catch
@@ -50,7 +51,7 @@ while true
         % spike analysis
         disp('starting to analyze sessions...')
         try
-            spikeAnalysis2(sessions{i});
+            spikeAnalysis2(newSessions{1});
         catch
             fprintf('%s: problem with spike analysis!\n', newSessions{1})
         end

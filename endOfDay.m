@@ -33,12 +33,12 @@ disp('all done!')
 
 
 %% make video with trials labelled by condition
-vidTrialProportion = 0.5;
+vidTrialProportion = 0.2;
 
 for i = 1:length(sessions)
     try
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
-        makeVidWisk(sessions{i}, sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
+        makeVidWisk([getenv('OBSDATADIR') 'editedVid\' sessions{i}], sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
     catch
         fprintf('%s: problem editing video!\n', sessions{i})
     end
