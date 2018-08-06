@@ -187,28 +187,30 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     
-    
-    % determine obstacle height for every trial
-    if analyzeVar({'obsHeights'}, varNames, varsToOverWrite) && ...
-       exist([sessionDir '\trialInfo.csv'], 'file') && ...
-       ~isempty(readtable([sessionDir 'trialInfo.csv']))
-       
-        fprintf('%s: getting obstacle heights\n', session)
-        obsHeightData = dlmread([sessionDir '\trialInfo.csv']); % columns: obsHeight (mm), timestamp (s), timestamps (ms)
-        obsTimesSeconds = obsHeightData(:,2);
-        validInds = [abs(diff(obsTimesSeconds))>0; true]; %if two times are very close to eachother only believe the second of the two times
-        obsHeights = obsHeightData(validInds,1);
-        obsHeights = obsHeights(1:length(varStruct.obsOnTimes)); % this gets rid of last entry, which we shouldn't need
-        
-        % there should be one more obsHeight than there all trials because an obs height is randomly chosen
-        if sum(validInds)-1 > length(obsHeights)
-            fprintf('%s: WARNING: problem assigning obstacle height metadata to correct trial\n', session)
-        end
-
-        % save values
-        varStruct.obsHeights = obsHeights;
-        anythingAnalyzed = true;
-    end
+% the following is commented out because i prefer using the obsHeights determined from the video // this code threw an error for session 180803_002 and i dont care to find out what that's about!    
+%     % determine obstacle height for every trial
+%     if analyzeVar({'obsHeights'}, varNames, varsToOverWrite) && ...
+%        exist([sessionDir '\trialInfo.csv'], 'file') && ...
+%        ~isempty(readtable([sessionDir 'trialInfo.csv']))
+%        
+%         fprintf('%s: getting obstacle heights\n', session)
+%         obsHeightData = dlmread([sessionDir '\trialInfo.csv']); % columns: obsHeight (mm), timestamp (s), timestamps (ms)
+%         obsTimesSeconds = obsHeightData(:,2);
+%         validInds = [abs(diff(obsTimesSeconds))>0; true]; %if two times are very close to eachother only believe the second of the two times
+%         obsHeights = obsHeightData(validInds,1);
+%         try
+%         obsHeights = obsHeights(1:length(varStruct.obsOnTimes)); % this gets rid of last entry, which we shouldn't need
+%         catch; keyboard; end
+%         
+%         % there should be one more obsHeight than there all trials because an obs height is randomly chosen
+%         if sum(validInds)-1 > length(obsHeights)
+%             fprintf('%s: WARNING: problem assigning obstacle height metadata to correct trial\n', session)
+%         end
+% 
+%         % save values
+%         varStruct.obsHeights = obsHeights;
+%         anythingAnalyzed = true;
+%     end
     
 
 
@@ -310,12 +312,14 @@ function spikeAnalysis2(session, varsToOverWrite)
             load([sessionDir '\run.mat'], 'exposure')
 
             % get camera metadata and spike timestamps
-            camMetadataWisk = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
-            frameCountsWisk = camMetadataWisk(:,2);
-            timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,3));
+            camMetadata = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+            frameCounts = camMetadata(:,2);
+            timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
 
-            if length(exposure.times) >= length(frameCountsWisk)
-                frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+            if length(exposure.times) >= length(frameCounts)
+                try
+                frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session);
+                catch; keyboard; end
             else
                 disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
                 frameTimeStamps = [];
@@ -344,7 +348,7 @@ function spikeAnalysis2(session, varsToOverWrite)
             timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
 
             if length(exposure.times) >= length(frameCountsWisk)
-                frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+                frameTimeStampsWisk = getFrameTimes2(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
             else
                 disp('  there are more frames than exposure TTLs... saving frameTimeStamps as empty vector')
                 frameTimeStampsWisk = [];
@@ -369,9 +373,9 @@ function spikeAnalysis2(session, varsToOverWrite)
             fprintf('%s: getting webcam time stamps\n', session)
 
             % load data
-            camMetadataWisk = dlmread([sessionDir '\run.csv']);
+            camMetadataWisk = dlmread([sessionDir '\wisk.csv']);
             camSysClock = camMetadataWisk(:,1) / 1000;
-            camSpikeClock = varStruct.frameTimeStamps;
+            camSpikeClock = varStruct.frameTimeStampsWisk; % !!! wh
             webCamSysClock = dlmread([sessionDir '\webCam.csv']) / 1000; % convert from ms to s
 
             % remove discontinuities
@@ -393,6 +397,7 @@ function spikeAnalysis2(session, varsToOverWrite)
                 varStruct.webCamTimeStamps = webCamSpikeClock;
                 anythingAnalyzed = true;
             catch
+                keyboard
                 fprintf('%s: PROBLEM GETTING WEBCAM TIMESTAMPS\n', session)
             end
         end
@@ -517,7 +522,6 @@ function spikeAnalysis2(session, varsToOverWrite)
     
             
     
-    try
     % get body angle
     if analyzeVar({'bodyAngle'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
@@ -532,7 +536,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         varStruct.bodyAngles = bodyAngles;
         anythingAnalyzed = true;
     end
-    catch; keyboard; end
+    
     
     
     

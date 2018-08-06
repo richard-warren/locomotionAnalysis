@@ -1,4 +1,4 @@
-function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts, session)
+function frameTimes = getFrameTimes2(ttlTimes, frameTimesRaw, frameCounts, session)
 
 % finds the fimes at which camera frames wre acquired with respect to Spike clock
 % does this by finding breaks in camera exposures, which correspond to reward times, and matching camera metadata to exposure TLLs within every reward epoch
@@ -12,28 +12,24 @@ function frameTimes = getFrameTimes(ttlTimes, frameTimesRaw, frameCounts, sessio
 % NOTE:    this code breaks if there are many adjacent missed frames - it will think this is a reward break in the camera when it is not really...
 %          the break in ttls ocurring at reward times should be .5 seconds. gaps greater than .4 will be considered reward times
 
-keyboard
-%% initializations
+% initializations
+ttlTrialStartInds = [1; find(diff(ttlTimes)>.48 & diff(ttlTimes)<.52)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
+frameTrialStartInds = [1; find(diff(frameTimesRaw)>.48 & diff(frameTimesRaw)<.52)+1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
 
-ttlTrialStartInds = [1; find(diff(ttlTimes)>.48)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
-frameTrialStartInds = [1; find(diff(frameTimesRaw)>.48) + 1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
-
-frameCountDiffs = diff(frameCounts);
-missedFrameInds = find(frameCountDiffs>1);
+frameCountDiffs = [0; diff(frameCounts)];
+missedFrameInds = find(frameCountDiffs>1); % !!! is plus 1 correct?
 frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed...
 
 
 % ensure the correct number of trials were detected
 if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
     
-    
     % this bit of code removes frameTrialStartInds that do not align with ttlTrialStartInds (the latter and not the former being reliable)
     ttlTrialLengths = diff(ttlTimes(ttlTrialStartInds));
     camTrialLengths = diff(frameTrialStartInds)/250;
     
     for i = 2:length(ttlTrialLengths) % start at second frame because first trial often has many missing frames...
-        if abs(ttlTrialLengths(i) - camTrialLengths(i)) > .5
-            disp('ya')
+        if abs(ttlTrialLengths(i) - camTrialLengths(i)) > 1
             camTrialLengths = camTrialLengths([1:i-1 i+1:end]); % remove element i from camTrialLengths
             frameTrialStartInds = frameTrialStartInds([1:i-1 i+1:end]);
         end
@@ -46,7 +42,6 @@ if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
         %     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
         return
     end
-
 end
 
 
@@ -70,7 +65,7 @@ for i = 1:(length(ttlTrialStartInds)-1)
         frameTimes(ttlTrialStartInds(i):ttlTrialStartInds(i+1)-1) = 0;
         
         % trim trial so there are only as many zeros as there are frames // is there a better way to do this???
-        frameTimes = [frameTimes(1:ttlTrialStartInds(i)+framesInTrial-1); frameTimes(ttlTrialStartInds(i+1):end)];
+        frameTimes(ttlTrialStartInds(i)+framesInTrial:ttlTrialStartInds(i+1)-1) = nan;
 
     % otherwise set all missing frame timestamps to nan (these values will subsequently be removed)
     else
@@ -86,7 +81,7 @@ for i = 1:(length(ttlTrialStartInds)-1)
     end
 end
 
-% remove nan values
+%% remove nan values
 frameTimes = frameTimes(~isnan(frameTimes));
 
 % set 0 values to nan to signify that timestamps are unavailable for frames

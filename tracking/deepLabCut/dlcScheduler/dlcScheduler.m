@@ -28,10 +28,10 @@ while true
         
         % wait for files to be transferred
         while ~(exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file') && ...
-                exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file'));
+                exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file'))
             pause(5);
         end
-        fprintf('\n%s: deteceted new session\n', newSessions{1});
+        fprintf('\n\n---------%s: deteceted new session---------\n', newSessions{1});
         
         
         % DeepLabCut analysis
@@ -40,7 +40,6 @@ while true
             currentTime = clock;
             fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
             tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
-%             tic; system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
             fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
             dlcAnalysisSuccessful = true;
         catch

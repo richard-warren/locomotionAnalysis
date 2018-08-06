@@ -50,7 +50,7 @@ fprintf('%.2f of trials passed though obs\n', ...
 
 
 
-figure('name', figTitle, 'menubar', 'none', 'color', 'white', 'position', [-1500 500 1500 450], 'InvertHardCopy', 'off');
+figure('name', figTitle, 'menubar', 'none', 'color', 'white', 'position', [0 500 1500 450], 'InvertHardCopy', 'off');
 
 for i = 1:length(binNames)
     

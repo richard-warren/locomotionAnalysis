@@ -1,11 +1,11 @@
 
 
 % settings
-dir = 'Z:\RAW\sharing\experimentVids\muscimolVids\';
+dir = 'Z:\RAW\sharing\experimentVids\lesionVids\';
 trialPortion = .1;
 overWriteVids = false;
 
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'muscimolNotes');
+sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'lesionNotes');
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
 
 brainRegions = unique(sessionInfo.brainRegion);
@@ -27,7 +27,7 @@ for i = 1:length(brainRegions)
         
         for k = 1:length(sessions)
             sessionBin = strcmp(sessionInfo.session, sessions{k});
-            condition = sessionInfo.injectedSubstance{sessionBin};
+            condition = sessionInfo.preOrPost{sessionBin};
             side = sessionInfo.side{sessionBin};
             
             fileName = sprintf('%sday%i-%s-%s-%s.avi', mouseDir, k, condition, side, sessions{k});
@@ -39,3 +39,5 @@ for i = 1:length(brainRegions)
     end
 end
 disp('all done!')
+
+

@@ -17,7 +17,7 @@ scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values,
 obsBotThickness = 10;
 contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and 255
 
-includeWiskCam = false;
+includeWiskCam = true;
 includeWebCam = false;
 showPawTouches = true;
 showTrialInfo = true;
@@ -47,10 +47,21 @@ end
 
 % get position where wisk frame should overlap with runTop frame
 if includeWiskCam
-    topInd = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width, 1, 'first'); % find a frame where the obstacle is at the right edge, eg within the whisker camera
+    
+    obsInWiskCamInds = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width);
+    
+    % find first time point at which both wisk and run cams have a frame and obs is in wisk cam
+    for i = obsInWiskCamInds
+        wiskInd = find(frameTimeStampsWisk==frameTimeStamps(i));
+        if ~isempty(wiskInd)
+            topInd = i;
+            break;
+        end
+    end
+
     frameTop = rgb2gray(read(vidTop, topInd));
-    wiskInd = find(frameTimeStampsWisk==frameTimeStamps(topInd), 1, 'first');
     frameWisk = rgb2gray(read(vidWisk, wiskInd));
+    
     [yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, scalings);
     smpWiskFrame = imresize(frameWisk, wiskScaling);
 end
@@ -160,7 +171,7 @@ for i = trials
 
                     % resize, adjust contrast, and draw border
                     frameWisk = imresize(frameWisk, wiskScaling);
-                    frameWisk = imadjust(frameWisk, [.75 .95], [0 1]);
+                    frameWisk = imadjust(frameWisk, [.5 1], [0 1]);
                     frameWisk = 255 - frameWisk;
                     frameWisk([1:border, end-border:end], :) = 255;
                     frameWisk(:, [1:border, end-border:end]) = 255;

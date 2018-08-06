@@ -23,7 +23,7 @@ end
 disp('starting to analyze sessions...')
 parfor i = 1:length(sessions)
     try
-        spikeAnalysis2(sessions{i});
+        spikeAnalysis2(sessions{i}, {'frameTimeStamps', 'frameTimeStampsWisk'});
     catch
         fprintf('%s: problem with spike analysis!\n', sessions{i})
     end
@@ -35,13 +35,13 @@ disp('all done!')
 %% make video with trials labelled by condition
 vidTrialProportion = 0.2;
 
-for i = 1:length(sessions)
-    try
+for i = 2%1:length(sessions)
+%     try
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
         makeVidWisk([getenv('OBSDATADIR') 'editedVid\' sessions{i}], sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);
-    catch
-        fprintf('%s: problem editing video!\n', sessions{i})
-    end
+%     catch
+%         fprintf('%s: problem editing video!\n', sessions{i})
+%     end
 end
 
 
