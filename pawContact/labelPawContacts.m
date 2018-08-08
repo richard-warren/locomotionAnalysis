@@ -11,17 +11,17 @@ vidDelay = .02;
 playing = true;
 paused = false;
 currentFrameInd = 1;
-vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
-vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
+vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
+vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 sampleFrameBot = rgb2gray(read(vidBot,currentFrameInd));
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'obsPixPositions', 'obsOnTimes', 'obsOffTimes');
 keypadLayout = [7 8 9; 4 5 6; 1 2 3];
 
 
 % load previous data if it exists
-fileName = [getenv('OBSDATADIR') 'tracking\trainingData\pawContact\' session '_contacts.mat'];
+fileName = fullfile([getenv('OBSDATADIR') 'tracking\trainingData\pawContact\' session '_contacts.mat']);
 if exist(fileName, 'file')
     load(fileName, 'classes', 'classNames')
     fprintf('%s: loaded previous data\n', session)
@@ -54,7 +54,7 @@ tileImg = zeros(imgDim*3, imgDim*3, 3);
 tileImgMask = ones(length(classNames), imgDim*3, imgDim*3, 3);
 
 for i = 1:length(classNames)
-    img = imread([getenv('OBSDATADIR') 'tracking\trainingData\pawContact\exampleImgs\' classNames{i} '.jpeg']);
+    img = imread(fullfile([getenv('OBSDATADIR') 'tracking\trainingData\pawContact\exampleImgs\' classNames{i} '.jpeg']));
     img = double(imresize(img, [imgDim imgDim]))/255;
     img = insertText(img, [0,0], classNames{i}, 'boxcolor', [1 1 1], 'boxopacity', 1, 'fontsize', 18);
     
@@ -66,13 +66,13 @@ for i = 1:length(classNames)
 end
 
 figSamples = figure('name', 'classes', 'units', 'pixels', 'position', [1100 403 400 400], ...
-    'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
+    'menubar', 'none', 'color', 'black');
 samplesIm = imagesc(tileImg); hold on;
 set(gca, 'visible', 'off', 'position', [0 0 1 1]);
 
 % prepare main figure
 figMain = figure('name', session, 'units', 'pixels', 'position', [600 400 vid.Width*vidSizeScaling (vid.Height+vidBot.Height)*vidSizeScaling],...
-    'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
+    'menubar', 'none', 'color', 'black', 'keypressfcn', @keyPress);
 colormap gray
 preview = image([sampleFrame; sampleFrameBot], 'CDataMapping', 'scaled'); hold on;
 set(gca, 'visible', 'off', 'units', 'pixels',...
@@ -97,7 +97,7 @@ close(figMain, figProgress, figSamples)
 % ---------
 
 % keypress controls
-function changeFrames(~,~)
+function keyPress(~,~)
     
     key = double(get(figMain, 'currentcharacter'));
     
@@ -138,7 +138,7 @@ function changeFrames(~,~)
 
             % 's': save current progress
             case 115
-                save(fileName, 'classes', 'classNames')
+                save(fileName, 'classes', 'classNames', 'session')
                 m = msgbox('saving...'); pause(.5); close(m)
 
             % SPACEBAR: pause or resume playback
