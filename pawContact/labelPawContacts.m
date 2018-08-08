@@ -1,4 +1,4 @@
-function makePawContactTrainingSet(session)
+function labelPawContacts(session)
 
 % settings
 vidSizeScaling = 1.25;
