@@ -1,8 +1,9 @@
-function showTrackingDLC(session, vidDelay, trainingDataPath)
+function showTrackingDLC(session, trainingDataPath)
 
 % settings
 onlyShowFramesNearObs = true;
 vidFs = 250;
+vidDelay = .02;
 showScores = true;
 showStance = true;
 circSize = 100;
@@ -164,7 +165,7 @@ function changeFrames(~,~)
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
-            frameInd = find(frameInds==str2num(input{1}));
+            frameInd = find(frameInds>=str2num(input{1}),1,'first');
             updateFrame(0);
             
         % ESCAPE: close window

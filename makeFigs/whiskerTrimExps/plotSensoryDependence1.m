@@ -1,4 +1,4 @@
-function sensoryDependence
+function plotSensoryDependence2
 % plot sensory dependence of obstacle avoidance
 
 % settings

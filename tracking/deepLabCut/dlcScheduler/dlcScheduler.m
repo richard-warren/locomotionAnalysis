@@ -28,7 +28,7 @@ while true
         
         % wait for files to be transferred
         while ~(exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file') && ...
-                exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file'))
+                exist([sessionsDir newSessions{1} '\runBot.mp4'], 'file'))
             pause(5);
         end
         fprintf('\n\n---------%s: deteceted new session---------\n', newSessions{1});
