@@ -1,14 +1,14 @@
 function makeTrainingSetCsv
 
 
-folder = fullfile(getenv('OBSDATADIR'), 'tracking\trainingData\pawContact\');
+folder = fullfile(getenv('OBSDATADIR'), 'tracking', 'trainingData', 'pawContact');
 files = dir(fullfile(folder, '*.mat'));
 
 allSessionsData = cell(1,length(files));
 
 for i = 1:length(files)
     
-    load([folder files(i).name], 'classNames', 'classes', 'session')
+    load(fullfile(folder, files(i).name), 'classNames', 'classes', 'session')
     skipBin = contains(classNames, 'skip');
     analyzedBins = all(~isnan(classes),1) & classes(skipBin,:)~=1;
     
@@ -22,4 +22,4 @@ for i = 1:length(files)
 end
 
 allSessionsData = vertcat(allSessionsData{:}); % combinee into one big ass table
-writetable(allSessionsData, [folder 'contactData.csv']);
+writetable(allSessionsData, fullfile(folder, 'contactData.csv'));

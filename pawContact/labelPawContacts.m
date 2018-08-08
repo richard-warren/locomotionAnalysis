@@ -21,7 +21,7 @@ keypadLayout = [7 8 9; 4 5 6; 1 2 3];
 
 
 % load previous data if it exists
-fileName = fullfile([getenv('OBSDATADIR') 'tracking\trainingData\pawContact\' session '_contacts.mat']);
+fileName = fullfile(getenv('OBSDATADIR'), 'tracking', 'trainingData', 'pawContact', [session '_contacts.mat']);
 if exist(fileName, 'file')
     load(fileName, 'classes', 'classNames')
     fprintf('%s: loaded previous data\n', session)
@@ -54,7 +54,7 @@ tileImg = zeros(imgDim*3, imgDim*3, 3);
 tileImgMask = ones(length(classNames), imgDim*3, imgDim*3, 3);
 
 for i = 1:length(classNames)
-    img = imread(fullfile([getenv('OBSDATADIR') 'tracking\trainingData\pawContact\exampleImgs\' classNames{i} '.jpeg']));
+    img = imread(fullfile(getenv('OBSDATADIR'), 'tracking', 'trainingData', 'pawContact', 'exampleImgs', [classNames{i} '.jpeg']));
     img = double(imresize(img, [imgDim imgDim]))/255;
     img = insertText(img, [0,0], classNames{i}, 'boxcolor', [1 1 1], 'boxopacity', 1, 'fontsize', 18);
     
