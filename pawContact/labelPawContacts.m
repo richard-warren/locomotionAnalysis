@@ -39,7 +39,7 @@ for i = 1:length(obsOnTimes)
     % time trial at wheel break
     trialBreakInd = find(breaks.times>obsOnTimes(i) & breaks.times<obsOffTimes(i), 1, 'first');
     if ~isempty(trialBreakInd)
-        trialInds = trialInds(frameTimeStamps(trialInds) < (breaks.times(trialBreakInd)+.25));
+        trialInds = trialInds(frameTimeStamps(trialInds) < (breaks.times(trialBreakInd)+.2));
     end
     
     if ~isempty(trialInds)
