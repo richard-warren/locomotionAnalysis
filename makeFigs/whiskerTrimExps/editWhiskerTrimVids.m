@@ -9,29 +9,27 @@ sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'She
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
 
 
-for i = 1:length(brainRegions)
+mice = unique(sessionInfo.mouse);
     
-    mice = unique(sessionInfo.mouse(brainRegionBins));
-    
-    for j = 1:length(mice)
-        
-        mouseBins = strcmp(sessionInfo.mouse, mice{j});
-        sessions = sessionInfo.session(mouseBins);
-        mouseDir = [dir mice{j} '\'];
-        mkdir(mouseDir);
-        
-        for k = 1:length(sessions)
-            sessionBin = strcmp(sessionInfo.session, sessions{k});
-            condition = sessionInfo.preOrPost{sessionBin};
-            
-            fileName = sprintf('%sday%i-%s-%s.avi', mouseDir, k, condition, sessions{k});
-            if overWriteVids || ~exist(fileName, 'file') % only overwrite existing vid if overWriteVids is true
-                load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], 'isLightOn');
-                makeVidWisk(fileName, sessions{k}, [-.05 .1], .15, trialPortion, {'OFF', 'ON'}, isLightOn+1);
-            end
-        end     
-    end
+for j = 1:length(mice)
+
+    mouseBins = strcmp(sessionInfo.mouse, mice{j});
+    sessions = sessionInfo.session(mouseBins);
+    mouseDir = [dir mice{j} '\'];
+    mkdir(mouseDir);
+
+    for k = 1:length(sessions)
+        sessionBin = strcmp(sessionInfo.session, sessions{k});
+        condition = sessionInfo.preOrPost{sessionBin};
+
+        fileName = sprintf('%sday%i-%s-%s.avi', mouseDir, k, condition, sessions{k});
+        if overWriteVids || ~exist(fileName, 'file') % only overwrite existing vid if overWriteVids is true
+            load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], 'isLightOn');
+            makeVidWisk(fileName, sessions{k}, [-.05 .1], .15, trialPortion, {'OFF', 'ON'}, isLightOn+1);
+        end
+    end     
 end
+
 disp('all done!')
 
 

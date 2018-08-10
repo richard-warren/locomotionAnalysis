@@ -11,12 +11,14 @@ vidDelay = .02;
 playing = true;
 paused = false;
 currentFrameInd = 1;
+% progressZoomWidth = 100;
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
 vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
 sampleFrame = rgb2gray(read(vid,currentFrameInd));
 sampleFrameBot = rgb2gray(read(vidBot,currentFrameInd));
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'obsPixPositions', 'obsOnTimes', 'obsOffTimes');
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), 'breaks');
 keypadLayout = [7 8 9; 4 5 6; 1 2 3];
 
 
@@ -30,11 +32,16 @@ else
 end
 
 % get trial inds
-% frameInds = getFramesToShow(session, true);
 frameInds = [];
 for i = 1:length(obsOnTimes)
-    trialInds= find(frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i) & ...
+    trialInds = find(frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i) & ...
                      obsPixPositions'>0 & obsPixPositions'<=vid.Width);
+    % time trial at wheel break
+    trialBreakInd = find(breaks.times>obsOnTimes(i) & breaks.times<obsOffTimes(i), 1, 'first');
+    if ~isempty(trialBreakInd)
+        trialInds = trialInds(frameTimeStamps(trialInds) < (breaks.times(trialBreakInd)+.25));
+    end
+    
     if ~isempty(trialInds)
         frameInds = [frameInds; trialInds];
     end
@@ -46,7 +53,13 @@ trialStartInds = find([0; diff(frameTimeStamps(frameInds))]>1);
 figProgress = figure('name', 'progres...', 'units', 'pixels', 'position', [601 326 898 40], 'menubar', 'none');
 progressIm = imagesc(zeros(1,length(frameInds)));
 progressLine = line([1 1], get(gca,'ylim'), 'linewidth', 5);
+line([1 1]*length(frameInds)/3, get(gca,'ylim'), 'linewidth', 5);
 set(gca, 'Position', [0 0 1 1], 'Visible', 'off');
+
+% % prepare zoomed progress bar figure
+% figProgressZoom = figure('name', 'progres...', 'units', 'pixels', 'position', [601 226 898 100], 'menubar', 'none');
+% progressZoomIm = imagesc(ones(length(classNames), progressZoomWidth));
+% set(gca, 'Position', [0 0 1 1], 'Visible', 'off');
 
 % prepare category images figures
 imgDim = 200;
@@ -129,12 +142,15 @@ function keyPress(~,~)
                 currentFrameInd = find(frameInds>=str2double(input{1}),1,'first');
                 updateFrame(1);
             
-            % 't': skip to next trial
+            % 't': skip to next trial and label all intermediate frame 'skip_frame'
             case 116
                 pause(.001);
                 paused = true;
+%                 lastFrameInd = currentFrameInd;
                 currentFrameInd = trialStartInds(find(trialStartInds>currentFrameInd,1,'first'));
+%                 classes(:,lastFrameInd:currentFrameInd-1) = repmat(skipBin',1,currentFrameInd-lastFrameInd);
                 updateFrame(0);
+            
 
             % 's': save current progress
             case 115
@@ -181,6 +197,15 @@ function updateFrame(frameStep)
     % update progress bar
     set(progressIm, 'Cdata', any(isnan(classes(:,frameInds)),1));
     set(progressLine, 'XData', [currentFrameInd currentFrameInd])
+    
+%     % update zoomed progress bar
+%     lims = round([-progressZoomWidth progressZoomWidth]*.5 + currentFrameInd);
+%     lims(lims<1) = 1;
+%     lims(lims>length(frameInds)) = length(frameInds);
+%     progressZoomImData = classes(:, frameInds(lims(1):lims(2)));
+%     progressZoomImData(progressZoomImData==0) = 0.5;
+%     progressZoomImData(isnan(progressZoomImData)) = 0;
+%     set(progressZoomIm, 'Cdata', progressZoomImData);
     
     % set current frame to 'no touch' if it has not yet been analyzed
     if all(isnan(classes(:, frameInds(currentFrameInd))))

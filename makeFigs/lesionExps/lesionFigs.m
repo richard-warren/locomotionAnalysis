@@ -348,7 +348,7 @@ brainRegions = {'sen'};
 dvs = {'success rate', ...
        'speed (m/s)', ...
        {'body angle towards contra', '(or right) side'}};
-dvYLims = [.4 1; .1 .6; -15 15];
+dvYLims = [.4 1; .1 .8; -15 15];
 minTrial = 0;
 validTrials = ~[speedAvoidanceData.isLightOn] & [speedAvoidanceData.trialNum]>=minTrial;
 
