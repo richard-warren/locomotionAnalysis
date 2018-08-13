@@ -8,7 +8,7 @@ velPrePost = [-.1 .1]; % compute trials velocity between these obstacle position
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
-noObsSteps = 5;
+noObsSteps = 3;
 controlSteps = 2; % needs to be at least 2
 
 % initializations
@@ -19,7 +19,7 @@ sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
-parfor i = 1:length(sessions)
+for i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
@@ -100,6 +100,7 @@ function sessionData = getDataForSession(session)
     trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
     
+    % get position at which wisks reach obsPos
     if exist('obsPos', 'var')
         contactPositions = ones(size(obsOnTimes))*obsPos;
         contactTimes = nan(size(obsOnTimes));
@@ -158,6 +159,7 @@ function sessionData = getDataForSession(session)
             trialTimeStampsInterp = trialTimeStamps - trialTimeStamps(minInd);
 
             % get trial data interpolated s.t. 0 is moment of wisk contact
+            % !!! should incorporate results of touch analysis here as well
             trialControlStepIds = nan(sum(trialBins), 4);
             trialModStepIds = nan(sum(trialBins), 4);
             trialNoObsStepIds = nan(sum(trialBins), 4);
@@ -200,8 +202,6 @@ function sessionData = getDataForSession(session)
             fprintf('  %s: missing steps in trial %i\n', session, j)
         else
             
-            
-            % !!! get info about whether paws are touching obs
             % find whether and where obstacle was toucheed
             isWheelBreak = any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
             trialBins = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
@@ -216,6 +216,7 @@ function sessionData = getDataForSession(session)
             isStepping = ~isnan(trialModStepIds);
             lastModStepInds = table2array(rowfun(@(x)(find(x,1,'last')), table(isStepping')));
             [~, firstPawOver] = min(lastModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
+            
             
             % determine which is paw first modified step (forepaws only)
             %
@@ -240,6 +241,7 @@ function sessionData = getDataForSession(session)
                 stanceDistance = trialLocations(trialTimeStampsInterp==0,1,stancePaw);
             else
                 stanceDistance = nan;
+                stancePaw = nan;
             end
             
             % get distance of firstModPaw to obs at the beginning of first mod step

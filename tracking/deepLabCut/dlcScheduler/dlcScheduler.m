@@ -7,7 +7,7 @@
 checkFrequency = 60; % seconds
 sessionsDir = [getenv('OBSDATADIR') 'sessions\'];
 schedulerDir = [getenv('GITDIR') 'locomotionAnalysis\tracking\deepLabCut\dlcScheduler\'];
-dlcPath = 'C:\Users\rick\Desktop\github\DeepLabCut';
+dlcPath = 'C:\Users\rick\Desktop\github\DeepLabCutBatch';
 
 % initializations
 load([schedulerDir 'analyzedSessions.mat'], 'analyzedSessions');
@@ -32,6 +32,7 @@ while true
             pause(5);
         end
         fprintf('\n\n---------%s: deteceted new session---------\n', newSessions{1});
+        pause(120); % a hack to make sure files transfer completely before starting analysis... said hack face :(
         
         
         % DeepLabCut analysis

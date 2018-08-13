@@ -24,6 +24,7 @@ wheelPoints(:,1) = round(xLocations * vid.Width)';
 
 
 % get stack of random frames
+if minFrame>=vid.NumberOfFrames; minFrame = 0; end % a hack that allows me to analyze really short test sessions
 frameInds = randperm(vid.NumberOfFrames-minFrame, frameNum) + minFrame;
 frameInds = sort(frameInds);
 

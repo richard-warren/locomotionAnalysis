@@ -31,7 +31,7 @@ for i = 1:length(obsOnTimes)
             % find id of swing that crosses obs
             overObsInd = find(frameTimeStamps>obsOnTimes(i) & ... 
                               frameTimeStamps<obsOffTimes(i) & ...
-                              locationsBotPaws(:,1,j)>=obsPixPositions', 1, 'first');
+                              locationsBotPaws(:,1,j)<obsPixPositions', 1, 'last') + 1; % finding last frame that is less than obsPos, rather than first frame that is greater than obsPos, prevents me from getting steps that go under the obs (because these have to return behind obsPos and then get over it again)
             swingOverObsIdentity = allSwingIdentities(overObsInd, j);
             
             % find id of first swing during or after obs contact with wisk

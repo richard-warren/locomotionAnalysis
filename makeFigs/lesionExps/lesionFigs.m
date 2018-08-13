@@ -8,7 +8,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 %% get kinematic data
 obsPos = -0.0087;
 kinData = getKinematicData4(sessionInfo.session, obsPos);
-data = kinData; save([getenv('OBSDATADIR') 'kinematicData\lesionKinematicData.mat'], 'data');
+tic; data = kinData; save([getenv('OBSDATADIR') 'kinematicData\lesionKinematicData.mat'], 'data'); toc
 
 
 
@@ -217,127 +217,6 @@ saveas(gcf, [getenv('OBSDATADIR') 'figures\lesionBarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\lesionBarPlots.fig'])
 
 
-
-%% plot dvs over time within sessions
-
-% settings
-trialBinSize = 40;
-conditions = {'pre', 'post'};
-brainRegions = {'sen'};
-dvs = {'success rate', ...
-       'speed (m/s)', ...
-       {'body angle towards contra', '(or right) side'}};
-dvYLims = [0 1; 0 .8; -15 15];
-xMax = 240;
-validTrials = ~[speedAvoidanceData.isLightOn];
-
-% initializations
-figure('Color', 'white', 'MenuBar', 'none', 'Position', [0 200 400*length(brainRegions) 600])
-dims = [length(dvs), length(brainRegions)]; % subplot dimensions
-colors = winter(length(conditions));
-
-% loop over brain regions
-for i = 1:length(brainRegions)
-    
-    % get max trial num
-    brainRegionBins = ismember({speedAvoidanceData.session}, sessions);
-    maxTrial = max([speedAvoidanceData(brainRegionBins).trialNum]);
-    maxTrial = min(maxTrial, xMax);
-    maxTrial = floor(maxTrial/trialBinSize) * trialBinSize;
-    trialBinEdges = 0:trialBinSize:maxTrial;
-    xInds = trialBinEdges(2:end); % the x positions will be centered within the bins
-    
-    
-    for j = 1:length(conditions)
-        
-        sessions = unique(sessionInfo.session(strcmp(sessionInfo.brainRegion, brainRegions{i}) ...
-                                            & strcmp(sessionInfo.preOrPost, conditions{j})));
-        
-        % containers for bins averages across all sessions
-        successes = nan(length(sessions), length(trialBinEdges)-1);
-        speeds = nan(length(sessions), length(trialBinEdges)-1);
-        contraBodyAngles = nan(length(sessions), length(trialBinEdges)-1);
-        
-        for k = 1:length(sessions)
-            
-            load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], ...
-                'bodyAngles', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
-            load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\run.mat'], 'breaks');
-            bodyAngles = getTrialBodyAngles(bodyAngles, obsOnTimes, obsOffTimes, frameTimeStamps, breaks);
-            sideOfBrain = sessionInfo.side{strcmp(sessionInfo.session, sessions{k})};
-            if strcmp(sideOfBrain, 'left'); bodyAngles = -bodyAngles; end
-            
-            
-            for m = 1:length(trialBinEdges)-1
-            
-                trialBinBins = strcmp({speedAvoidanceData.session}, sessions{k}) & ...
-                               [speedAvoidanceData.trialNum]>trialBinEdges(m) & ...
-                               [speedAvoidanceData.trialNum]<trialBinEdges(m+1) & ...
-                                validTrials;
-
-                % get speed, success rate, and body angle
-                successes(k,m) = mean([speedAvoidanceData(trialBinBins).isObsAvoided]);
-                speeds(k,m) = mean([speedAvoidanceData(trialBinBins).avgVel]);
-                bodyAngleBins = 1:length(bodyAngles) > trialBinEdges(m) & 1:length(bodyAngles) < trialBinEdges(m+1);
-                contraBodyAngles(k,m) = nanmean(bodyAngles(bodyAngleBins));
-            end
-            
-            
-            % plot session data
-            % plot session success
-            subplot(dims(1), dims(2), i)
-            line(xInds, successes(k,:), 'color', colors(j,:)); hold on
-
-            % plot session speed
-            subplot(dims(1), dims(2), i+1*length(brainRegions))
-            line(xInds, speeds(k,:), 'color', colors(j,:)); hold on
-
-            % plot session body angle
-            subplot(dims(1), dims(2), i+2*length(brainRegions))
-            line(xInds, contraBodyAngles(k,:), 'color', colors(j,:)); hold on
-        end
-        
-        
-        % plot condition means
-        
-        % mean successes
-        subplot(dims(1), dims(2), i)
-        line(xInds, nanmean(successes,1), 'color', colors(j,:), 'linewidth', 4); hold on
-
-        % mean speeds
-        subplot(dims(1), dims(2), i+1*length(brainRegions))
-        line(xInds, nanmean(speeds,1), 'color', colors(j,:), 'linewidth', 4); hold on
-        
-        % mean session body angle
-        subplot(dims(1), dims(2), i+2*length(brainRegions))
-        line(xInds, nanmean(contraBodyAngles,1), 'color', colors(j,:), 'linewidth', 4); hold on
-    end
-    
-    % add condition labels
-    xs = linspace(trialBinEdges(2)*1.2, trialBinEdges(end)*.8, length(conditions));
-    for j = 1:length(conditions)
-        text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, conditions{j}, 'Color', colors(j,:));
-    end
-end
-    
-
-
-% pimp figs
-ind = 1;
-for i = 1:length(dvs)
-    for j = 1:length(brainRegions)
-        subplot(dims(1), dims(2), ind);
-        
-        set(gca, 'xlim', [trialBinEdges(2) trialBinEdges(end)], 'xtick', trialBinEdges(2:end), 'YLim', dvYLims(i,:));
-        if i==1; title(brainRegions{j}); end
-        if j==1; ylabel(dvs{i}); end
-        ind = ind+1;
-    end
-end
-
-
-saveas(gcf, [getenv('OBSDATADIR') 'figures\lesionSessionProgressPlots.png']);
-savefig([getenv('OBSDATADIR') 'figures\lesionSessionProgressPlotsPlots.fig'])
 
 
 %% plot dvs across sessions
