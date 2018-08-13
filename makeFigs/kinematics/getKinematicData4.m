@@ -1,4 +1,4 @@
-function data = getKinematicData4(sessions, obsPos)
+function data = getKinematicData4(sessions, previousData, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
@@ -15,18 +15,21 @@ controlSteps = 2; % needs to be at least 2
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
 
 
+% remove previously analyzed sessions from list of sessions
+if ~isempty(previousData)
+    previousSessions = unique({previousData.session});
+    sessions = sessions(~ismember(sessions, previousSessions));
+end
+
 
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
-data = cat(2,data{:}); % concatenate together data from all sessions 
-
-
-
+data = cat(2,data{:});
 
 
 
@@ -74,11 +77,19 @@ for i = 1:length(mice)
     [data(mouseBins).predictedLengths] = predictedLengths{:};     
 end
 
+% concatenate new and previous data
+if ~isempty(previousData); data = cat(2, previousData, data); end
 
 
 
 
 
+
+
+
+% ---------
+% FUNCTIONS
+% ---------
 
 function sessionData = getDataForSession(session)
     
@@ -143,36 +154,36 @@ function sessionData = getDataForSession(session)
             % GET TRIAL DATA
             % note: i pull out trial specific data because 'find' function works much quicker on the smaller data slices // however, this feels inelegant // is there a better way of doing this?)
 
-            % find trial bins, beginning with obsOffSteps preceding
-            % obstacle and ending with obs turning off
+            % get trial bins
             if j==1; lastTrialEndTime=0; else; lastTrialEndTime = obsOffTimes(j-1); end
-
-            startInd = find(frameTimeStamps>lastTrialEndTime & any(noObsStepIdentities==1,2), 1, 'first'); % first bin where there is any obsOff step preceding obstacle
-            trialBins = (1:length(frameTimeStamps))'>=startInd & frameTimeStamps<=obsOffTimes(j);
+            startInd = find(frameTimeStamps>lastTrialEndTime & any(noObsStepIdentities==1,2), 1, 'first'); % start at first obs off step after previous trial
+            endInd = find(all(isnan(modifiedStepIdentities),2) & frameTimeStamps>obsOffTimes(j), 1, 'first'); % end when all mod steps in trial are over
+            trialInds = startInd:endInd;
 
             % get vel at moment of contact
             sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
 
             % get time stamps relative to wisk contact
-            trialTimeStamps = frameTimeStamps(trialBins)-contactTimes(j);
+            trialTimeStamps = frameTimeStamps(trialInds)-contactTimes(j);
             [~, minInd] = min(abs(trialTimeStamps));
             trialTimeStampsInterp = trialTimeStamps - trialTimeStamps(minInd);
 
             % get trial data interpolated s.t. 0 is moment of wisk contact
             % !!! should incorporate results of touch analysis here as well
-            trialControlStepIds = nan(sum(trialBins), 4);
-            trialModStepIds = nan(sum(trialBins), 4);
-            trialNoObsStepIds = nan(sum(trialBins), 4);
-            trialLocations = nan(sum(trialBins), size(locationsPaws,2), size(locationsPaws,3));
+            trialControlStepIds = nan(length(trialInds), 4);
+            trialModStepIds = nan(length(trialInds), 4);
+            trialNoObsStepIds = nan(length(trialInds), 4);
+            trialLocations = nan(length(trialInds), size(locationsPaws,2), size(locationsPaws,3));
             trialWheelVel = interp1(wheelTimes-contactTimes(j), vel, trialTimeStampsInterp);
 
             for k = 1:4
-                trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
-                trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
-                trialNoObsStepIds(:,k) = interp1(trialTimeStamps, noObsStepIdentities(trialBins,k), trialTimeStampsInterp, 'nearest');
+                trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
+                trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
+                trialNoObsStepIds(:,k) = interp1(trialTimeStamps, noObsStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
+                
 
                 for m = 1:size(locationsPaws,2)
-                    trialLocations(:,m,k) = interp1(trialTimeStamps, locationsPaws(trialBins,m,k), trialTimeStampsInterp, 'linear', 'extrap');
+                    trialLocations(:,m,k) = interp1(trialTimeStamps, locationsPaws(trialInds,m,k), trialTimeStampsInterp, 'linear', 'extrap');
                 end
             end
 
@@ -182,7 +193,7 @@ function sessionData = getDataForSession(session)
                 if ~all(any(trialControlStepIds==k,1)); missingControlStep = true; end
             end
 
-            missingObsOffStep = false; % !!! perhaps i shouldnt require that all obsOffSteps are present for a trial to be included...
+            missingObsOffStep = false; % !!! perhaps i should not require that all obsOffSteps are present for a trial to be included...
             for k = 1:noObsSteps
                 if ~all(any(trialNoObsStepIds==k,1)); missingObsOffStep = true; end
             end
@@ -204,8 +215,8 @@ function sessionData = getDataForSession(session)
             
             % find whether and where obstacle was toucheed
             isWheelBreak = any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
-            trialBins = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
-            totalTouchFramesPerPaw = sum(arePawsTouchingObs(trialBins,:),1); % get total number of obs touches in trial per paw
+            trialBinsTemp = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
+            totalTouchFramesPerPaw = sum(arePawsTouchingObs(trialBinsTemp,:),1); % get total number of obs touches in trial per paw
             
             
             % determine whether left and right forepaws are in swing at obsPos moment
@@ -304,98 +315,45 @@ function sessionData = getDataForSession(session)
             modStepNum = nan(1,4);
             pawObsPosIndInterp = nan(1,4);
             pawObsPosInd = nan(1,4);
+            
+            allLocations = {controlLocations, noObsLocations, modLocations};
+            allLocationsInterp = {controlLocationsInterp, noObsLocationsInterp, modLocationsInterp};
+            allIds = {trialControlStepIds, trialNoObsStepIds, trialModStepIds};
 
-            for k = 1:4
+            for stepType = 1:3
+                for k = 1:4
 
-                % control
-                stepNum = max(trialControlStepIds(:,k));
-                pawControlLocations = nan(stepNum, 3, swingMaxSmps);
-                pawControlLocationsInterp = nan(stepNum, 3, interpSmps);
+                    stepNum = max(allIds{stepType}(:,k));
+                    pawLocations = nan(stepNum, 3, swingMaxSmps);
+                    pawLocationsInterp = nan(stepNum, 3, interpSmps);
 
-                for m = 1:stepNum
+                    for m = 1:stepNum
 
-                    % locations
-                    startInd = find(trialControlStepIds(:,k)==m, 1, 'first');
-                    stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1)); % these inds continue past the end of swing !!! ideally they would stop at the start of the next swing
-                    stepX = trialLocations(stepIndsAll,1,k);
-                    stepY = trialLocations(stepIndsAll,2,k);
-                    stepZ = trialLocations(stepIndsAll,3,k);
-                    pawControlLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY',stepZ');
+                        % locations
+                        stepBins = allIds{stepType}(:,k)==m;
+                        startInd = find(stepBins, 1, 'first');
+                        endInd = find(stepBins, 1, 'last');
+                        stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1));
+                        
+                        stepEndInd = min(endInd-startInd+1, length(stepIndsAll));
+                        stepX = trialLocations(stepIndsAll,1,k); stepX(stepEndInd:end) = stepX(stepEndInd); % the latter statement ensures the kinematics don't bleed into the subsequent step (the step is 'frozen' at the moment swing ends)
+                        stepY = trialLocations(stepIndsAll,2,k); stepY(stepEndInd:end) = stepY(stepEndInd);
+                        stepZ = trialLocations(stepIndsAll,3,k); stepZ(stepEndInd) = stepZ(stepEndInd);
+                        pawLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY',stepZ');
 
-                    % locations interp
-                    stepBins = trialControlStepIds(:,k)==m;
-                    xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
-                    yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
-                    zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
-                    pawControlLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
-                end
-
-                controlLocations{k} = pawControlLocations;
-                controlLocationsInterp{k} = pawControlLocationsInterp;
-
-
-                % no obs
-                stepNum = max(trialNoObsStepIds(:,k));
-                pawNoObsLocations = nan(stepNum, 3, swingMaxSmps);
-                pawNoObsLocationsInterp = nan(stepNum, 3, interpSmps);
-                for m = 1:stepNum
-
-                    % locations
-                    startInd = find(trialNoObsStepIds(:,k)==m, 1, 'first');
-                    stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1)); % these inds continue past the end of swing !!! ideally they would stop at the start of the next swing
-                    stepX = trialLocations(stepIndsAll,1,k);
-                    stepY = trialLocations(stepIndsAll,2,k);
-                    stepZ = trialLocations(stepIndsAll,3,k);
-                    pawNoObsLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY',stepZ');
-
-                    % locations interp
-                    stepBins = trialNoObsStepIds(:,k)==m;
-                    xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
-                    yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
-                    zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
-                    pawNoObsLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
-                end
-                noObsLocations{k} = pawNoObsLocations;
-                noObsLocationsInterp{k} = pawNoObsLocationsInterp;
-                
-                
-                
-                % modified
-                modStepNum(k) = max(trialModStepIds(:,k));
-                pawModifiedLocations = nan(modStepNum(k), 3, swingMaxSmps);
-                pawModifiedLocationsInterp = nan(modStepNum(k), 3, interpSmps);
-
-                for m = 1:modStepNum(k)
-
-                    % locations
-                    startInd = find(trialModStepIds(:,k)==m, 1, 'first');
-                    stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1));
-                    stepX = trialLocations(stepIndsAll,1,k);
-                    stepY = trialLocations(stepIndsAll,2,k);
-                    stepZ = trialLocations(stepIndsAll,3,k);
-                    pawModifiedLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY', stepZ');
-
-                    % locations interp
-                    stepBins = trialModStepIds(:,k)==m;
-                    xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
-                    yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
-                    zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
-                    pawModifiedLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
-
-                    % get ind of obs hit in interpolated coordinates
-                    if m==1
-                        stepObsPosInd = find(trialTimeStampsInterp==0) - find(stepBins,1,'first') + 1;
-                        pawObsPosIndInterp(k) = interp1(linspace(1,sum(stepBins),interpSmps), ...
-                            1:interpSmps, stepObsPosInd, 'nearest');
-                        pawObsPosInd(k) = find(trialTimeStampsInterp==0) - find(stepBins,1,'first') + 1;
+                        % locations interp
+                        xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
+                        yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
+                        zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
+                        pawLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
                     end
+
+                    allLocations{stepType}{k} = pawLocations;
+                    allLocationsInterp{stepType}{k} = pawLocationsInterp;
                 end
-
-                modLocations{k} = pawModifiedLocations;
-                modLocationsInterp{k} = pawModifiedLocationsInterp;
-
             end
 
+            
             % STORE RESULTS
             % trial metadata
             sessionInfoBin = find(strcmp(sessionInfo.session, session),1,'first');
@@ -413,12 +371,12 @@ function sessionData = getDataForSession(session)
             sessionData(dataInd).pawObsPosIndInterp = pawObsPosIndInterp; % ind at which obs contacts wisks for interp locations for each paw
             sessionData(dataInd).timeStamps = trialTimeStamps;
             sessionData(dataInd).locations = trialLocations;
-            sessionData(dataInd).controlLocations = controlLocations;
-            sessionData(dataInd).modifiedLocations = modLocations;
-            sessionData(dataInd).noObsLocations = noObsLocations;
-            sessionData(dataInd).controlLocationsInterp = controlLocationsInterp;
-            sessionData(dataInd).modifiedLocationsInterp = modLocationsInterp;
-            sessionData(dataInd).noObsLocationsInterp = noObsLocationsInterp;
+            sessionData(dataInd).controlLocations = allLocations{1};
+            sessionData(dataInd).noObsLocations = allLocations{2};
+            sessionData(dataInd).modifiedLocations = allLocations{3};
+            sessionData(dataInd).controlLocationsInterp = allLocationsInterp{1};
+            sessionData(dataInd).noObsLocationsInterp = allLocationsInterp{2};
+            sessionData(dataInd).modifiedLocationsInterp = allLocationsInterp{3};
             sessionData(dataInd).trialControlStepIdentities = trialControlStepIds;
             sessionData(dataInd).modifiedStepIdentities = trialModStepIds;
             sessionData(dataInd).modStepNum = modStepNum;

@@ -103,8 +103,8 @@ if plotExample
             plot(frameTimeStamps(noObsBins), xLocations(noObsBins, paws(i)), ...
                 'linewidth', 5, 'color', [.5 .5 .5]); hold on
         end
-
     end
+    
     % add lines for obs position and obsContactTime
     line(get(gca,'xlim'), [0 0])
     line([contactTimes(trial) contactTimes(trial)], get(gca,'ylim'))

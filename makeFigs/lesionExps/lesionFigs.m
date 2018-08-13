@@ -7,8 +7,15 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 %% get kinematic data
 obsPos = -0.0087;
-kinData = getKinematicData4(sessionInfo.session, obsPos);
-tic; data = kinData; save([getenv('OBSDATADIR') 'kinematicData\lesionKinematicData.mat'], 'data'); toc
+loadPreviousData = true;
+
+if loadPreviousData
+    load([getenv('OBSDATADIR') 'kinematicData\lesionKinematicData.mat'], 'data');
+    kinData = getKinematicData4(sessionInfo.session, data, obsPos);
+else
+    kinData = getKinematicData4(sessionInfo.session, [], obsPos);
+end
+data = kinData; save([getenv('OBSDATADIR') 'kinematicData\lesionKinematicData.mat'], 'data');
 
 
 
