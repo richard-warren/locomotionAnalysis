@@ -256,7 +256,7 @@ function sessionData = getDataForSession(session)
             end
             
             % get distance of firstModPaw to obs at the beginning of first mod step
-            swingStartDistance = trialLocations(find(trialModStepIds(:,3)==1,1,'first'),1,firstModPaw);
+            swingStartDistance = trialLocations(find(trialModStepIds(:,firstModPaw)==1,1,'first'),1,firstModPaw);
 
 
             % get mod, control, and noObs step(s) length, duration, wheel velocity

@@ -5,9 +5,9 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 
 
-%% get kinematic data
+%% compute kinematic data
 obsPos = -0.0087;
-loadPreviousData = false;
+loadPreviousData = true;
 
 if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
@@ -16,3 +16,14 @@ else
     kinData = getKinematicData4(sessionInfo.session, [], obsPos);
 end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
+
+%% load previous data
+
+load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
+kinData = data; clear data;
+
+%% plot one step prob by obs height
+
+oneStepProbByObsHeight(kinData);
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneStepProbByObsHeight.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneStepProbByObsHeight.fig'))
