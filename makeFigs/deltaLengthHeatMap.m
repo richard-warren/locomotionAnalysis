@@ -1,6 +1,9 @@
 function deltaLengthHeatMap(data, binVar)
 
 % settings
+xVar = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to ob
+
+
 % (x is binning variable, y is delta swing length)
 xLims = [-.03 .015];
 yLims = [-.03 .04];
@@ -14,7 +17,10 @@ probColor = [0 .7 1];
 
 % initializations
 xWindowSmps = ceil(xWindowSize/dX) - (mod(xWindowSize/dX,2)==0); % round to nearest odd number
-deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths];
+deltaLengths = cellfun(@(x) x(1,3), {data.modifiedSwingLengths}) - [data.predictedLengths]; % this will likely ned to be replaced with the code below because i no longer assume 3 is first mod paw
+% deltaLengths = cellfun(@(x,ind) x(1,data(ind).firstModPaw), ... % for each trial, get length of first mod paw
+%     {data.modifiedSwingLengths}, num2cell(1:length(data))) ...    % all mod paw lengths, trial ind
+%     - [data.predictedLengths];                                    % subtract predicted lengths
 modStepNum = cellfun(@(x) x(1,3), {data.modStepNum});
 windowShift = floor(xWindowSmps/2);
 xGrid = xGridLims(1):dX:xGridLims(2);

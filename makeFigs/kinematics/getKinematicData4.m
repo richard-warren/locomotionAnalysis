@@ -312,6 +312,7 @@ function sessionData = getDataForSession(session)
             controlLocationsInterp = cell(1,4);
             modLocationsInterp = cell(1,4);
             noObsLocationsInterp = cell(1,4);
+            
             modStepNum = nan(1,4);
             pawObsPosIndInterp = nan(1,4);
             pawObsPosInd = nan(1,4);
@@ -346,6 +347,20 @@ function sessionData = getDataForSession(session)
                         yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
                         zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
                         pawLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
+                        
+                        % things to do only for modified locations
+                        if stepType==3
+                            
+                            modStepNum(k) = stepNum;
+                            
+                            % get ind of obs hit in interpolated coordinates
+                            if m==1
+                                stepObsPosInd = find(trialTimeStampsInterp==0) - find(stepBins,1,'first') + 1;
+                                pawObsPosIndInterp(k) = interp1(linspace(1,sum(stepBins), interpSmps), ...
+                                    1:interpSmps, stepObsPosInd, 'nearest');
+                                pawObsPosInd(k) = find(trialTimeStampsInterp==0) - find(stepBins,1,'first') + 1;
+                            end
+                        end
                     end
 
                     allLocations{stepType}{k} = pawLocations;
