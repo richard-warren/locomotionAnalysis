@@ -3,7 +3,7 @@ function oneStepProbByObsHeight(data)
 % settings
 xVar = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to ob
 validBins = ~[data.isLightOn] & ~[data.isWheelBreak];
-color = [255, 153, 128] / 255;
+color = [237 9 127] / 255;
 colorFading = 0;
 
 heightBinNum = 3;
@@ -51,15 +51,14 @@ for i = 1:heightBinNum
 end
 
 
-%
-close all;
+
 figure('menubar', 'none', 'color', 'white', 'Position', [600 400 475 325]);
 
 for i = 1:heightBinNum
     plot(xBinCenters, probs(i,:), 'linewidth', 3, 'Color', colors(i,:)); hold on
 end
 
-set(gca, 'box', 'off', 'XLim', xLims)
+set(gca, 'box', 'off', 'XLim', xLims, 'YLim', yLims)
 xlabel('predicted distance to obs (m)')
 ylabel('big step probability')
 legend(binLabels, 'Location', 'northwest')
