@@ -339,7 +339,7 @@ function sessionData = getDataForSession(session)
                         stepEndInd = min(endInd-startInd+1, length(stepIndsAll));
                         stepX = trialLocations(stepIndsAll,1,k); stepX(stepEndInd:end) = stepX(stepEndInd); % the latter statement ensures the kinematics don't bleed into the subsequent step (the step is 'frozen' at the moment swing ends)
                         stepY = trialLocations(stepIndsAll,2,k); stepY(stepEndInd:end) = stepY(stepEndInd);
-                        stepZ = trialLocations(stepIndsAll,3,k); stepZ(stepEndInd) = stepZ(stepEndInd);
+                        stepZ = trialLocations(stepIndsAll,3,k); stepZ(stepEndInd:end) = stepZ(stepEndInd);
                         pawLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY',stepZ');
 
                         % locations interp
