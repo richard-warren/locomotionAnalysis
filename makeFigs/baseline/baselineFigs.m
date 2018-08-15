@@ -42,6 +42,20 @@ plotOneVsTwoStepTrajectories(kinData, bins, 'averages')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneVsTwoStepTrajectories.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneVsTwoStepTrajectories.fig'))
 
+%% plot obs height kinematics
+
+binNum = 1;
+binVar = [kinData.swingStartDistance] + [kinData.predictedLengths]; % predicted distance to obs
+binVar(abs(zscore(binVar))>3) = nan; % remove outliers
+binEdges = linspace(min(binVar), max(binVar), binNum+1);
+bins = discretize(binVar, binEdges);
+binLabels = cell(1,binNum);
+for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
+
+if binNum==1; binLabels={''}; end
+close all; plotObsHeightTrajectories(kinData, bins, binLabels, 'baselineHeightKinematics')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.fig'))
 
 
 
