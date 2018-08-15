@@ -32,7 +32,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneStepProbByObsHeight.
 
 binNum = 5;
 binVar = [kinData.swingStartDistance] + [kinData.predictedLengths]; % predicted distance to obs
-binVar(abs(zscore(binVar))>3) = nan; % remove outliers
+binVar(abs(zscore(binVar))>3) = 0; % remove outliers
 binEdges = linspace(min(binVar), max(binVar), binNum+1);
 bins = discretize(binVar, binEdges);
 binLabels = cell(1,binNum);
@@ -44,18 +44,25 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneVsTwoStepTrajectorie
 
 %% plot obs height kinematics
 
-binNum = 1;
+binNum = 2;
 binVar = [kinData.swingStartDistance] + [kinData.predictedLengths]; % predicted distance to obs
-binVar(abs(zscore(binVar))>3) = nan; % remove outliers
+binVar(abs(zscore(binVar))>3) = 0; % remove outliers
 binEdges = linspace(min(binVar), max(binVar), binNum+1);
 bins = discretize(binVar, binEdges);
 binLabels = cell(1,binNum);
 for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
 
 if binNum==1; binLabels={''}; end
-close all; plotObsHeightTrajectories(kinData, bins, binLabels, 'baselineHeightKinematics')
+plotObsHeightTrajectories(kinData, bins, binLabels, 'baselineHeightKinematics')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.fig'))
+
+%% scatter obs vs paw heights
+
+scatterObsVsPawHeights(kinData, ones(1,length(data)), {''})
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/obsVsPawHeights.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/obsVsPawHeights.fig'))
+
 
 
 
