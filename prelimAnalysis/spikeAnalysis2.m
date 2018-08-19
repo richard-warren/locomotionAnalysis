@@ -276,32 +276,6 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
 
-%     % debounce touch signal and get touch on/off times
-%     if analyzeVar({'touchSig', 'touchSigTimes', 'touchOnTimes', 'touchOffTimes'}, varNames, varsToOverWrite)
-% 
-%             fprintf('%s: getting touch signal\n', session)
-%             load([sessionDir 'run.mat'], 'touch', 'breaks')
-% 
-%             % debounce touch signal
-% %             if exist('breaks', 'var')
-% %                 [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes, breaks.times);
-% %             else
-% %                 [touchSig, touchOnTimes, touchOffTimes] = debounceTouch(touch.values, touch.times, varStruct.obsOffTimes);
-% %             end
-%             touchSig = double(touch.values>2);
-%             touchOnTimes = touch.times([false; diff(touch.values>2)==1]);
-%             touchOffTimes = touch.times([diff(touch.values>2)==-1; false]);
-% 
-%             % save values
-%             varStruct.touchSig = touchSig;
-%             varStruct.touchSigTimes = touch.times;
-%             varStruct.touchOnTimes = touchOnTimes;
-%             varStruct.touchOffTimes = touchOffTimes;
-%             anythingAnalyzed = true;
-%     end
-
-
-
 
     % get frame timeStamps
     if analyzeVar({'frameTimeStamps'}, varNames, varsToOverWrite)
@@ -483,17 +457,6 @@ function spikeAnalysis2(session, varsToOverWrite)
         % 'unheadfix' the mouse later, by subtracting these obsPositions
         % from the x values of the paw on a trial by trial basis
         
-        
-        
-%         epochTimes = [0; varStruct.obsOffTimes+obsOffTimeBuffer];
-%         for i = 1:(length(epochTimes)-1)
-%             epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
-%                         varStruct.frameTimeStamps<=epochTimes(i+1);
-%             interpBins =  epochBins & isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
-%             if any(epochBins)
-%                 obsPixPositionsContinuous(interpBins) = wheelPositionsInterp(interpBins)*trialWheelMappings(i,1) + trialWheelMappings(i,2);
-%             end
-%         end
         
         % obs
         obsPixPositionsContinuous = repmat(obsPixPositions', length(varStruct.obsOnTimes), 1);

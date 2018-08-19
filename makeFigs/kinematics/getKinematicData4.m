@@ -29,7 +29,7 @@ parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
-data = cat(2,data{:});
+try; data = cat(2,data{:}); catch; keyboard; end
 
 
 
@@ -146,13 +146,9 @@ function sessionData = getDataForSession(session)
         finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
         if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
         locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-        prevInd = finalInd;
+        prevInd = finalInd+1;
     end
 %     locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositionsContinuous'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
-    
-    
-    
-    
     locationsPaws = locationsPaws / mToPixFactor; % convert to meters
     
     
@@ -261,7 +257,7 @@ function sessionData = getDataForSession(session)
 
 
             % get stance distance from obs, but only for trials in which
-            % both forepaws are not in swing at moment of contact
+            % both only if at least one paw is in stance at moment of contact
             if ~(isLeftSwingAtContact && isRightSwingAtContact)
                 if firstModPaw==2; stancePaw=3; else; stancePaw=2; end
                 stanceDistance = trialLocations(trialTimeStampsInterp==0,1,stancePaw);
@@ -275,25 +271,32 @@ function sessionData = getDataForSession(session)
 
 
             % get mod, control, and noObs step(s) length, duration, wheel velocity
+            maxModSteps = max(trialModStepIds(:));
+            
             controlSwingLengths = nan(controlSteps,4);
             noObsSwingLengths = nan(noObsSteps,4);
-            modifiedSwingLengths = nan(1,4);
+            modifiedSwingLengths = nan(maxModSteps,4);
             controlSwingDurations = nan(controlSteps,4);
             noObsSwingDurations = nan(noObsSteps,4);
-            modifiedSwingDurations = nan(1,4);
+            modifiedSwingDurations = nan(maxModSteps,4);
             controlWheelVels = nan(controlSteps,4);
             noObsWheelVels = nan(noObsSteps,4);
-            modifiedWheelVels = nan(1,4);
+            modifiedWheelVels = nan(maxModSteps,4);
+            
 
             for k = 1:4
 
                 % modified steps
-                stepBins = trialModStepIds(:,k)==1;
-                stepXLocations = trialLocations(stepBins,1,k);
-                modifiedSwingLengths(k) = stepXLocations(end) - stepXLocations(1);
-                stepTimes = trialTimeStampsInterp(stepBins);
-                modifiedSwingDurations(1,k) = stepTimes(end) - stepTimes(1);
-                modifiedWheelVels(k) = trialWheelVel(find(stepBins,1,'first'));
+                for m = 1:maxModSteps
+                    stepBins = trialModStepIds(:,k)==m;
+                    if any(stepBins)
+                        stepXLocations = trialLocations(stepBins,1,k);
+                        modifiedSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
+                        stepTimes = trialTimeStampsInterp(stepBins);
+                        modifiedSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
+                        modifiedWheelVels(m,k) = trialWheelVel(find(stepBins,1,'first'));
+                    end
+                end
 
                 % control steps
                 for m = 1:controlSteps
@@ -349,13 +352,15 @@ function sessionData = getDataForSession(session)
                         stepBins = allIds{stepType}(:,k)==m;
                         startInd = find(stepBins, 1, 'first');
                         endInd = find(stepBins, 1, 'last');
-                        stepIndsAll = startInd:min(startInd+swingMaxSmps-1, size(trialLocations,1));
+                        if endInd-startInd>=swingMaxSmps; endInd = startInd+swingMaxSmps-1; end % make sure swing is not too long
+        
                         
-                        stepEndInd = min(endInd-startInd+1, length(stepIndsAll));
-                        stepX = trialLocations(stepIndsAll,1,k); stepX(stepEndInd:end) = stepX(stepEndInd); % the latter statement ensures the kinematics don't bleed into the subsequent step (the step is 'frozen' at the moment swing ends)
-                        stepY = trialLocations(stepIndsAll,2,k); stepY(stepEndInd:end) = stepY(stepEndInd);
-                        stepZ = trialLocations(stepIndsAll,3,k); stepZ(stepEndInd:end) = stepZ(stepEndInd);
-                        pawLocations(m,:,1:length(stepIndsAll)) = cat(1,stepX',stepY',stepZ');
+                        stepEndInd = endInd-startInd+1;
+                        stepX = nan(1,swingMaxSmps); stepY = nan(1,swingMaxSmps); stepZ = nan(1,swingMaxSmps);
+                        stepX(1:stepEndInd) = trialLocations(startInd:endInd,1,k); stepX(stepEndInd:end) = stepX(stepEndInd); % the latter statement ensures the kinematics don't bleed into the subsequent step (the step is 'frozen' at the moment swing ends)
+                        stepY(1:stepEndInd) = trialLocations(startInd:endInd,2,k); stepY(stepEndInd:end) = stepY(stepEndInd);
+                        stepZ(1:stepEndInd) = trialLocations(startInd:endInd,3,k); stepZ(stepEndInd:end) = stepZ(stepEndInd);
+                        pawLocations(m,:,:) = cat(1,stepX,stepY,stepZ);
 
                         % locations interp
                         xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));

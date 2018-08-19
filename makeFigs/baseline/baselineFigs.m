@@ -13,7 +13,7 @@ if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
     kinData = getKinematicData4(sessionInfo.session, data, obsPos);
 else
-    kinData = getKinematicData4(sessionInfo.session, [], obsPos);
+    kinData = getKinematicData4(sessionInfo.session(1:8), [], obsPos);
 end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
 
