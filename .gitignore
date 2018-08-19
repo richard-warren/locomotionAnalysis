@@ -1,2 +1,3 @@
 # temporary matlab files
 *.asv
+tracking/pawContact/*
