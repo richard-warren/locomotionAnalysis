@@ -1,4 +1,2 @@
-# Tensorflow checkpoints
+# temporary matlab files
 *.asv
-
-# fastai already exists elsewhere through the pipes
