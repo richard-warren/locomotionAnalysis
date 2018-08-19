@@ -145,7 +145,7 @@ function sessionData = getDataForSession(session)
     for j = 1:length(obsOnTimes)
         finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
         if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
-        locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd);
+        locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
         prevInd = finalInd;
     end
 %     locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositionsContinuous'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
