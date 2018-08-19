@@ -1,2 +1,4 @@
 # Tensorflow checkpoints
 *.asv
+
+# fastai already exists elsewhere through the pipes

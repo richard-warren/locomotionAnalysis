@@ -19,7 +19,7 @@ contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and
 
 includeWiskCam = true;
 includeWebCam = false;
-showPawTouches = true;
+showPawTouches = false;
 showTrialInfo = true;
 showWiskTouches = false;
 drawObs = false;
@@ -36,7 +36,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
                                             'touchSig', 'touchSigTimes', 'nosePos', 'arePawsTouchingObs');
-isTouching = (sum(arePawsTouchingObs,2)>0);
+if showPawTouches; isTouching = (sum(arePawsTouchingObs,2)>0); end
 if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
 if ~exist('obsPixPositions', 'var')
     obsPositions = fixObsPositionsHacky(obsPositions);

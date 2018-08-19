@@ -446,7 +446,7 @@ function spikeAnalysis2(session, varsToOverWrite)
                     obsLowScores>0.99;
         obsPixPositions = mean([obsHighX, obsLowX], 2);
         obsPixPositions(~validInds) = nan;
-        obsPixPositionsContinuous = obsPixPositions; % these pix positions don't move back and forth along the track like the obs actually does, but simulates the obs being very far away, and continuously moving forward as the wheel progresses
+        obsPixPositionsUninterped = obsPixPositions; % these are the obsPixPositions wihtout any interpolation (only where the obs is in the frame and successfully tracked)
         obsPositionsInterp = interp1(varStruct.obsTimes, varStruct.obsPositions, varStruct.frameTimeStamps); % get position of obstacle for all frames
         wheelPositionsInterp = interp1(varStruct.wheelTimes, varStruct.wheelPositions, varStruct.frameTimeStamps); % get position of wheel for all frames
         
@@ -475,28 +475,41 @@ function spikeAnalysis2(session, varsToOverWrite)
             end
         end
         
-        % use wheel position from rotary encoder to infer 'unraveled' obs pix positions
+        % use wheel position from rotary encoder to infer 'unraveled' obs
+        % pix positions FOR EACH TRIAL
         %
-        % wheel based pix positions move forward with the wheel always, not only
-        % when obs is moving forward, and are used to subsequently
-        % 'unheadfix' the mouse by adding forward momentum of wheel to x
-        % coordinates of tracked features. pix positions are used when obs
-        % in in frame to ensure relationship between paws and obs is
-        % accurate, and mapping between wheel and pix positions is used to
-        % infer positions at all other times
-        epochTimes = [0; varStruct.obsOffTimes];
-        for i = 1:(length(epochTimes)-1)
-            epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
-                        varStruct.frameTimeStamps<=epochTimes(i+1);
-            interpBins =  epochBins & isnan(obsPixPositionsContinuous); % bins that should be interpolated over
-            if any(epochBins)    
-                obsPixPositionsContinuous(interpBins) = wheelPositionsInterp(interpBins)*trialWheelMappings(i,1) + trialWheelMappings(i,2);
+        % obsPixPositionsContinuous has one obsPixPositions per trial,
+        % where row is an 'individual obstacle'. This can be used to
+        % 'unheadfix' the mouse later, by subtracting these obsPositions
+        % from the x values of the paw on a trial by trial basis
+        
+        
+        
+%         epochTimes = [0; varStruct.obsOffTimes+obsOffTimeBuffer];
+%         for i = 1:(length(epochTimes)-1)
+%             epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
+%                         varStruct.frameTimeStamps<=epochTimes(i+1);
+%             interpBins =  epochBins & isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
+%             if any(epochBins)
+%                 obsPixPositionsContinuous(interpBins) = wheelPositionsInterp(interpBins)*trialWheelMappings(i,1) + trialWheelMappings(i,2);
+%             end
+%         end
+        
+        % obs
+        obsPixPositionsContinuous = repmat(obsPixPositions', length(varStruct.obsOnTimes), 1);
+        for i = 1:length(varStruct.obsOnTimes)
+            % interp all values expect those where obs is tracked within the trial
+            dontInterpBins =  varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
+                              varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
+                              epochBins & ~isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
+            if any(~dontInterpBins)
+                obsPixPositionsContinuous(i,~dontInterpBins) = wheelPositionsInterp(~dontInterpBins)*trialWheelMappings(i,1) + trialWheelMappings(i,2);
             end
         end
 
         % save
         varStruct.obsPixPositions = obsPixPositions';
-        varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous';
+        varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous;
         varStruct.mToPixMapping = nanmedian(trialObsMappings,1);
         anythingAnalyzed = true;
     end
@@ -523,7 +536,7 @@ function spikeAnalysis2(session, varsToOverWrite)
             
     
     % get body angle
-    if analyzeVar({'bodyAngle'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'bodyAngles'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
         
         fprintf('%s: getting body angle\n', session)
@@ -574,65 +587,65 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % neural network classifier to determine whether paw is touching obs
-    if (analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) || ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || isempty(readtable([sessionDir 'pawAnalyzed.csv']))) && ...
-        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
-        isfield(varStruct, 'obsPixPositions') && ...
-        ~isempty(varStruct.obsOnTimes)
-        
-        fprintf('%s: getting paw contacts\n', session)
-        
-        % settings
-        rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
-        pythonPath = '\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
-        confidenceThresh = .99;
-        proximityThresh = 20;
-
-        % run neural network classifier
-        if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier) || isempty(readtable([sessionDir 'pawAnalyzed.csv']))
-            fprintf('%s: running paw contact neural network\n', session)
-            save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct') % first save the file so analyzeVideo.py can access it
-            [~, ~] = system([pythonPath ' pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
-        end
-        pawAnalyzed = readtable([sessionDir 'pawAnalyzed.csv']);
-        isAnyPawTouching = false(1,length(varStruct.frameTimeStamps));
-        isAnyPawTouching(pawAnalyzed.framenum) = pawAnalyzed.forelimb>confidenceThresh | pawAnalyzed.hindlimb>confidenceThresh;
-
-        % get xz positions for paws
-        if ~exist('locationsTable', 'var'); locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); end
-        [locations, features] = fixTrackingDLC(locationsTable, varStruct.frameTimeStamps);
-        pawXZ = nan(size(locations,1), 2, 4);
-        for i = 1:4
-            pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
-            pawZBins = contains(features, ['paw' num2str(i)]) & contains(features, '_top');
-            pawXZ(:,1,i) = locations(:,1,pawXBin);
-            pawXZ(:,2,i) = locations(:,2,pawZBins);
-        end
-
-        % get obs height in pixels for each trial
-        % (replace missing values with median of tracked values for each trial)
-        obsBin = ismember(features, 'obs_top');
-        obsHeights = nan(size(locations,1),1);
-        for i = 1:length(varStruct.obsOnTimes)
-            trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
-                        varStruct.frameTimeStamps<varStruct.obsOffTimes(i);
-            medianHgt = nanmedian(locations(trialBins,2,obsBin));
-            obsHeights(trialBins) = locations(trialBins,2,obsBin);
-            obsHeights(trialBins & isnan(locations(:,2,obsBin))) = medianHgt;
-        end
-        obsHeights = medfilt1(obsHeights,5);
-
-        % get xz distance of paws to obs at all times
-        dx = squeeze(pawXZ(:,1,:)) - repmat(varStruct.obsPixPositions',1,4);
-        dz = squeeze(pawXZ(:,2,:)) - repmat(obsHeights,1,4);
-        pawDistances = sqrt(dx.^2 + dz.^2);
-
-        % determine which paws are touching obs
-        arePawsTouchingObs = repmat(isAnyPawTouching',1,4) & pawDistances<proximityThresh;
-        
-        % save
-        varStruct.arePawsTouchingObs = arePawsTouchingObs;
-        anythingAnalyzed = true;
-    end
+%     if (analyzeVar({'arePawsTouchingObs'}, varNames, varsToOverWrite) || ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || isempty(readtable([sessionDir 'pawAnalyzed.csv']))) && ...
+%         exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
+%         isfield(varStruct, 'obsPixPositions') && ...
+%         ~isempty(varStruct.obsOnTimes)
+%         
+%         fprintf('%s: getting paw contacts\n', session)
+%         
+%         % settings
+%         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
+%         pythonPath = '\Users\rick\Anaconda3\envs\fastai\python.exe';
+%         confidenceThresh = .99;
+%         proximityThresh = 20;
+% 
+%         % run neural network classifier
+%         if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier) || isempty(readtable([sessionDir 'pawAnalyzed.csv']))
+%             fprintf('%s: running paw contact neural network\n', session)
+%             save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct') % first save the file so analyzeVideo.py can access it
+%             [~, ~] = system([pythonPath ' tracking\pawContact\analyzeVideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+%         end
+%         pawAnalyzed = readtable([sessionDir 'pawAnalyzed.csv']);
+%         isAnyPawTouching = false(1,length(varStruct.frameTimeStamps));
+%         isAnyPawTouching(pawAnalyzed.framenum) = pawAnalyzed.forelimb>confidenceThresh | pawAnalyzed.hindlimb>confidenceThresh;
+% 
+%         % get xz positions for paws
+%         if ~exist('locationsTable', 'var'); locationsTable = readtable([sessionDir 'trackedFeaturesRaw.csv']); end
+%         [locations, features] = fixTrackingDLC(locationsTable, varStruct.frameTimeStamps);
+%         pawXZ = nan(size(locations,1), 2, 4);
+%         for i = 1:4
+%             pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
+%             pawZBins = contains(features, ['paw' num2str(i)]) & contains(features, '_top');
+%             pawXZ(:,1,i) = locations(:,1,pawXBin);
+%             pawXZ(:,2,i) = locations(:,2,pawZBins);
+%         end
+% 
+%         % get obs height in pixels for each trial
+%         % (replace missing values with median of tracked values for each trial)
+%         obsBin = ismember(features, 'obs_top');
+%         obsHeights = nan(size(locations,1),1);
+%         for i = 1:length(varStruct.obsOnTimes)
+%             trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
+%                         varStruct.frameTimeStamps<varStruct.obsOffTimes(i);
+%             medianHgt = nanmedian(locations(trialBins,2,obsBin));
+%             obsHeights(trialBins) = locations(trialBins,2,obsBin);
+%             obsHeights(trialBins & isnan(locations(:,2,obsBin))) = medianHgt;
+%         end
+%         obsHeights = medfilt1(obsHeights,5);
+% 
+%         % get xz distance of paws to obs at all times
+%         dx = squeeze(pawXZ(:,1,:)) - repmat(varStruct.obsPixPositions',1,4);
+%         dz = squeeze(pawXZ(:,2,:)) - repmat(obsHeights,1,4);
+%         pawDistances = sqrt(dx.^2 + dz.^2);
+% 
+%         % determine which paws are touching obs
+%         arePawsTouchingObs = repmat(isAnyPawTouching',1,4) & pawDistances<proximityThresh;
+%         
+%         % save
+%         varStruct.arePawsTouchingObs = arePawsTouchingObs;
+%         anythingAnalyzed = true;
+%     end
     
     
     

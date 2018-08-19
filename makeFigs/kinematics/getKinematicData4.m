@@ -137,7 +137,22 @@ function sessionData = getDataForSession(session)
     locationsPaws(:,3,:) = locations(:,2,topPawInds);
     locationsPaws(:,2,:) = locationsPaws(:,2,:) - nosePos(2); % subtract midline from all y values
     locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
-    locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositionsContinuous'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    
+    
+    % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    % this is done trial by trial, which each trial ending with the last ind of the last mod step over the obs
+    prevInd = 1;
+    for j = 1:length(obsOnTimes)
+        finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
+        if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
+        locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd);
+        prevInd = finalInd;
+    end
+%     locationsPaws(:,1,:) = locationsPaws(:,1,:) - obsPixPositionsContinuous'; % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    
+    
+    
+    
     locationsPaws = locationsPaws / mToPixFactor; % convert to meters
     
     
