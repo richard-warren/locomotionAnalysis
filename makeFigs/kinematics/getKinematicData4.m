@@ -29,7 +29,7 @@ parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
-try; data = cat(2,data{:}); catch; keyboard; end
+data = cat(2,data{:});
 
 
 

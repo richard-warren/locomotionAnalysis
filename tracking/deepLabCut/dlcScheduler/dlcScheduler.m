@@ -27,34 +27,34 @@ while true
     if ~isempty(newSessions)
         
         % wait for files to be transferred
-        while ~(exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file') && ...
-                exist([sessionsDir newSessions{1} '\runBot.mp4'], 'file'))
-            pause(5);
-        end
         fprintf('\n\n---------%s: deteceted new session---------\n', newSessions{1});
         pause(120); % a hack to make sure files transfer completely before starting analysis... said hack face :(
         
         
         % DeepLabCut analysis
         try
-            dlcAnalysisSuccessful = false;
-            currentTime = clock;
-            fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
-            tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
-            fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
-            dlcAnalysisSuccessful = true;
+            if (exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file') && ...
+                    exist([sessionsDir newSessions{1} '\runBot.mp4'], 'file'))
+                dlcAnalysisSuccessful = false;
+                currentTime = clock;
+                fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
+                tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
+                fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
+                dlcAnalysisSuccessful = true;
+            else
+                dlcAnalysisSuccessful = true;
+            end
         catch
             fprintf('%s: problem with DeepLabCut analysis!\n', newSessions{1})
         end
         
         
         % spike analysis
-        disp('starting to analyze sessions...')
-        try
+%         try 
             spikeAnalysis2(newSessions{1});
-        catch
-            fprintf('%s: problem with spike analysis!\n', newSessions{1})
-        end
+%         catch
+%             fprintf('%s: problem with spike analysis!\n', newSessions{1})
+%         end
         
         
         % save that session has been analyzed

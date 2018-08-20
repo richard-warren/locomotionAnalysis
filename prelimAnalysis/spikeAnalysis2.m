@@ -481,7 +481,8 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get wheel points
-    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite)
+    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite) & ...
+       exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
         
         fprintf('%s: getting wheel center and radius\n', session)
         
