@@ -64,8 +64,8 @@ print("Loaded features")
 with open(os.path.join(baseDir, session, 'pawAnalyzed.csv'), 'w') as csvfile:
     size = [168, 396]
 
-    if not os.path.exists("./tempgarbage/test"):
-        os.makedirs("./tempgarbage/test")
+    if not os.path.exists("./tempgarbage/"+session):
+        os.makedirs("./tempgarbage/"+session)
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
@@ -83,11 +83,11 @@ with open(os.path.join(baseDir, session, 'pawAnalyzed.csv'), 'w') as csvfile:
                 continue
         except ValueError:
             continue
-        if not os.path.exists("./tempgarbage/test/"+str(framenum)+".png"):
-            plt.imsave("./tempgarbage/test/"+str(framenum)+".png", cropFrame(image, obsPos, size, cropSize).astype(np.uint8))
+        if not os.path.exists("./tempgarbage/"+session+"/"+str(framenum)+".png"):
+            plt.imsave("./tempgarbage/"+session+"/"+str(framenum)+".png", cropFrame(image, obsPos, size, cropSize).astype(np.uint8))
 
     print("Running analysis")
-    data = ImageClassifierData.from_paths("./tempgarbage", bs=64, tfms=tfms, test_name="test")
+    data = ImageClassifierData.from_paths("./tempgarbage", bs=64, tfms=tfms, test_name=session)
     learn.set_data(data)
     log_preds, y = learn.TTA(is_test=True)
     probs = np.mean(np.exp(log_preds), 0)
@@ -96,4 +96,4 @@ with open(os.path.join(baseDir, session, 'pawAnalyzed.csv'), 'w') as csvfile:
     print("Saving data")
     for answer in answers:
         writer.writerow(answer)
-    shutil.rmtree("./tempgarbage/test")
+    shutil.rmtree("./tempgarbage/"+session)
