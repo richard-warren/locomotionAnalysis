@@ -1,10 +1,14 @@
 function showTrackingDLC(session, trainingDataPath)
 
+% to do: show confidence and gobal class in bottom left // think about how
+% i should handle confidence thresholds...
+
 % settings
 onlyShowFramesNearObs = true;
 vidFs = 250;
 vidDelay = .02;
-showScores = true;
+showDlcScores = false;
+showTouchData = true;
 showStance = true;
 circSize = 100;
 vidSizeScaling = 1.5;
@@ -34,7 +38,8 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', 'wheelCenter', 'wheelRadius', 'arePawsTouchingObs');
+    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', ...
+    'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences');
 locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
 locations = locations / scaling; % bring back to original resolution
@@ -90,12 +95,16 @@ if showStance
         circSize, cmap([botPawInds topPawInds],:), 'filled'); hold on
 end
 
-% set up text to show scores
+% set up text to show dlc scores
 scoreLabels = cell(1,length(features));
-if showScores
-    for i = 1:length(features)
-        scoreLabels{i} = text(0,0,'', 'color', cmap(i,:));
-    end
+if showDlcScores
+    for i = 1:length(features); scoreLabels{i} = text(0,0,'', 'color', cmap(i,:)); end
+end
+
+% set up text to show touch tracking info
+touchScoreLabels = cell(1,length(features));
+if showTouchData
+    for i = 1:4; touchScoreLabels{i} = text(0,0,'', 'color', [1 1 1], 'interpreter', 'none'); end
 end
 
 % set state variables
@@ -225,18 +234,31 @@ function updateFrame(frameStep)
     end
     
     % update paw touch scatter
-    if exist('arePawsTouchingObs', 'var')
-        touchingBins = arePawsTouchingObs(frameInds(frameInd),:);
+    if exist('touchesPerPaw', 'var')
+        touchingBins = touchesPerPaw(frameInds(frameInd),:)>0;
         x = locations(frameInds(frameInd), 1, [topPawInds(touchingBins) botPawInds(touchingBins)]);
         y = locations(frameInds(frameInd), 2, [topPawInds(touchingBins) botPawInds(touchingBins)]);
         set(obsTouchScatter, 'XData', x, 'YData', y);
     end
 
     % update scores text
-    if showScores
+    if showDlcScores
         for j = 1:length(features)
             set(scoreLabels{j}, 'position', [locations(frameInds(frameInd),1,j)+10, locations(frameInds(frameInd),2,j)], ...
                 'string', sprintf('%.2f', scores(frameInds(frameInd),j)));
+        end
+    end
+    
+    if showTouchData
+        for j = 1:4
+            classInd = touchesPerPaw(frameInds(frameInd),j);
+            if classInd==0; classInd=find(strcmp(touchClassNames, 'no_touch')); end
+            class = touchClassNames{classInd};
+            confidence = touchConfidences(frameInds(frameInd));
+            set(touchScoreLabels{j}, ...
+                'position', [locations(frameInds(frameInd),1,topPawInds(j))+10, locations(frameInds(frameInd),2,topPawInds(j))], ...
+                'string', sprintf('%s (%.2f)', class, confidence));
+            
         end
     end
 
