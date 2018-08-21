@@ -28,7 +28,7 @@ for i = 1:length(sessions)
         spikeAnalysis2(sessions{i});
     catch
         fprintf('%s: problem with spike analysis!\n', sessions{i})
-        problemSessions(end+1) = sessions{i};
+        problemSessions{end+1} = sessions{i};
     end
 end
 disp('all done!')

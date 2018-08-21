@@ -25,7 +25,7 @@ end
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
-parfor i = 1:length(sessions)
+for i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
@@ -100,7 +100,7 @@ function sessionData = getDataForSession(session)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
-            'wheelRadius', 'wheelCenter', 'obsHeightsVid');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = abs(mToPixMapping(1));
@@ -227,7 +227,7 @@ function sessionData = getDataForSession(session)
             % find whether and where obstacle was toucheed
             isWheelBreak = any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
             trialBinsTemp = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
-            totalTouchFramesPerPaw = sum(arePawsTouchingObs(trialBinsTemp,:),1); % get total number of obs touches in trial per paw
+            totalTouchFramesPerPaw = sum(touchesPerPaw(trialBinsTemp,:)>0,1); % get total number of obs touches in trial per paw
             
             
             % determine whether left and right forepaws are in swing at obsPos moment
@@ -421,7 +421,6 @@ function sessionData = getDataForSession(session)
             % trial touch info
             sessionData(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;
             sessionData(dataInd).isWheelBreak = isWheelBreak;
-            sessionData(dataInd).isObsAvoided = ~any(totalTouchFramesPerPaw);
             
             
             % info about which paws did what
