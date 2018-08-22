@@ -28,7 +28,7 @@ while true
         
         % wait for files to be transferred
         fprintf('\n\n---------%s: deteceted new session---------\n', newSessions{1});
-        pause(120); % a hack to make sure files transfer completely before starting analysis... said hack face :(
+        pause(120); % a hack to make sure files transfer completely before starting analysis... sad hack face:   :(
         
         
         % DeepLabCut analysis

@@ -47,7 +47,7 @@ function sessionData = getDataForSession(session)
     % load session data
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes',...
-            'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', 'arePawsTouchingObs');
+            'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', 'touchesPerPaw');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     wheelVel = getVelocity(wheelPositions, .5, 1/median(diff(wheelTimes)));
@@ -89,8 +89,8 @@ function sessionData = getDataForSession(session)
         end
 
         % get total number of obs touches in trial per paw
-        trialBins = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
-        totalTouchFramesPerPaw = sum(arePawsTouchingObs(trialBins,:),1);
+        trialBinsTemp = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
+        totalTouchFramesPerPaw = sum(touchesPerPaw(trialBinsTemp,:)>0,1); % get total number of obs touches in trial per paw
 
 
         % store trial info
@@ -103,7 +103,6 @@ function sessionData = getDataForSession(session)
         sessionData(dataInd).obsOnPositions = obsOnPositions(j);
         sessionData(dataInd).avgVel = avgVel;
         sessionData(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;
-        sessionData(dataInd).isObsAvoided = ~any(totalTouchFramesPerPaw);
         if includeContinuousVelocity
             sessionData(dataInd).trialVelInterp = trialVelInterp;
             sessionData(dataInd).trialPosInterp = posInterp;
