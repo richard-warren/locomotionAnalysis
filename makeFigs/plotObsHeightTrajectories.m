@@ -88,8 +88,6 @@ for i = 1:length(binNames)
     heights = [data.obsHeightsVid];
     binEdges = linspace(heightLims(1), heightLims(2), heightBinNum+1);
     heightBins = discretize(heights, binEdges);
-    binLabels = cell(1,heightBinNum);
-    for j = 1:heightBinNum; binLabels{j} = sprintf('%.1f', mean(heights(heightBins==j))); end
     
     for j = 1:heightBinNum
         xs = squeeze(locationsMod(bins==i & heightBins==j,1,:));

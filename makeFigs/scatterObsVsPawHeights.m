@@ -7,6 +7,7 @@ validBins = ~[data.isWheelBreak];
 circSize = 20;
 transparency = .2;
 xLims = [3.175 10];
+preObsLim = .005;
 
 % initializations
 bins(~validBins) = 0;
@@ -14,6 +15,12 @@ close all; figure('position', [1000 250 475 425], 'color', 'white', 'menubar', '
 
 scatters = nan(1, length(binLabels));
 lines = nan(1, length(binLabels));
+
+
+% get all paw heights at the moment paw is preObsLim in front of obs
+for i = 1:length(data)
+    
+end
 
 for h = 1:length(binLabels)
     
@@ -32,7 +39,7 @@ for h = 1:length(binLabels)
     
     % add best fit line
     fit = polyfit(obsHgts(~invalidBins), pawHgts(~invalidBins), 1);
-    lines(h) = plot(obsHgts, polyval(fit, obsHgts), 'linewidth', 5, 'color', colors(h,:)*.5);
+    lines(h) = plot(obsHgts, polyval(fit, obsHgts), 'linewidth', 5, 'color', colors(h,:)*.8);
 end
 
 % add obs height line

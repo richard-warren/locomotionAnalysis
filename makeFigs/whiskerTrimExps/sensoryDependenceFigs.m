@@ -22,7 +22,7 @@ data = kinData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinemati
 %% load previous kinematic data
 
 load([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data');
-kinData = data; clear kinData;
+kinData = data; clear data;
 
 %% get avoidance and speed data
 
@@ -35,6 +35,31 @@ for i = 1:length(speedAvoidanceData)
     preOrPost = sessionInfo.preOrPost{sessionInfoBin};
     speedAvoidanceData(i).preOrPost = preOrPost;
 end
+
+%% plot sensory dependence kinematics
+
+sensoryDependenceKinematics(kinData);
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDependenceKinematics.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDependenceKinematics.fig'))
+
+
+%% paw height by obs height
+
+wiskSessions = unique(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'pre')));
+noWiskSessions = unique(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'post')));
+wiskLightBins = ismember({kinData.session}, wiskSessions) & [kinData.isLightOn];
+wiskBins = ismember({kinData.session}, wiskSessions) & ~[kinData.isLightOn];
+lightBins = ismember({kinData.session}, noWiskSessions) & [kinData.isLightOn];
+neitherBins = ismember({kinData.session}, noWiskSessions) & ~[kinData.isLightOn];
+conditionBins = {wiskLightBins, wiskBins, lightBins, neitherBins};
+binNames = {'wisk+light', 'wisk', 'light', 'neither'};
+bins = zeros(1,length(kinData));
+for i = 1:4; bins(conditionBins{i}) = i; end
+
+scatterObsVsPawHeights(kinData, bins, binNames);
+% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDependenceKinematics.png'));
+% savefig(fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDependenceKinematics.fig'))
+
 
 %% plot baseline kinematics
 
