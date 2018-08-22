@@ -1,153 +1,138 @@
-function sensoryDependenceKinematics(data, wiskSessions, noWiskSessions)
+% function sensoryDependenceKinematics(data)
+
+% temp
+figTitle = 'temp';
 
 
-% validBins= cellfun(@(x) x(3), {data.modStepNum}) > 1;
-validBins = true(1,length(data));
+% settings
+validTrials = ~[data.isWheelBreak];
+beforeObsOnly = true; % if beforeObsOnly is true, only take kinematics up until paw is near obs in x dimension, then interpolate these trajectories of common grid
+heightBinNum = 3;
+heightLims = [3.175 10];
+obsDiam = 3.175; % (mm)
+xLims = [-.06 .04];
+zLims = [0 .015];
+lineWid = 2.5;
+colors = [.25 1 .25; 1 .25 .25]; % start and stop colors of gradient
+% colors = [0 0 1; 0 1 0];
+preObsLim = .005; % when before
+
+
+% initialiations
+if beforeObsOnly; xLims(2) = 0; end
+sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'whiskerTrimNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
+wiskSessions = unique(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'pre')));
+noWiskSessions = unique(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'post')));
+
 wiskLightBins = ismember({data.session}, wiskSessions) & [data.isLightOn] & validBins;
 wiskBins = ismember({data.session}, wiskSessions) & ~[data.isLightOn] & validBins;
 lightBins = ismember({data.session}, noWiskSessions) & [data.isLightOn] & validBins;
 neitherBins = ismember({data.session}, noWiskSessions) & ~[data.isLightOn] & validBins;
-allBins = wiskLightBins | wiskBins | lightBins | neitherBins;
-allInds = find(allBins);
+
 conditionBins = {wiskLightBins, wiskBins, lightBins, neitherBins};
-conditionNames = {'wisk+light', 'wisk', 'light', 'neither'};
-trials = 15;
-maxSmpsThoughObs = 2;
+binNames = {'wisk+light', 'wisk', 'light', 'neither'};
+bins = zeros(1,length(data));
+for i = 1:4; bins(conditionBins{i}) = i; end
 
 
+% exclude invalid trails, including those where max paw height is less than obs height
+obsHgts = [data.obsHeightsVid];
+pawHgts = cell2mat(cellfun(@(x,ind) max(squeeze(x{data(ind).firstPawOver}(end,3,:))), ...
+          {data.modifiedLocations}, num2cell(1:length(data)), 'UniformOutput', false)) * 1000;
+bins(obsHgts>pawHgts) = 0;
+bins(~validTrials) = 0;
+fprintf('%.3f of trials paw was not higher than obs..\n', ...
+    sum(obsHgts>pawHgts)/length(data));
 
-% settings
-azimuth = 0;
-elevation = 0;
-obsThickness = .003;
-obsHeight = .009;
-colors = hsv(4);
-xLims = [-.05 .04];
-yLims = [-0.0381 0.0381]; % 3 inches, which is width of wheel
-zLims = [0 .015];
-lineWid = 3;
 
 % initializations
-obsX = [0 obsThickness]-.5*obsThickness;
-obsY = yLims;
-obsZ = [0 obsHeight];
+avgColors = interp2(1:3, 1:2, colors, 1:3, linspace(1,2,heightBinNum)');
+allInds = find(bins~=0);
+obsX = [-.5*obsDiam .5*obsDiam] / 1000;
+if beforeObsOnly; xLims(2) = 0; end
 
 locationSmps = size(data(1).modifiedLocationsInterp{1},3);
 locationsMod = nan(length(data), 3, locationSmps);
 locationsControl = nan(length(data), 3, locationSmps);
-throughObsBins = nan(length(data), locationSmps);
 
 for i = allInds
     
-    % find fore paw that is first to get over osbtacle
-    isStepping = ~isnan(data(i).modifiedStepIdentities(:,:));
-    lastModStepInds = table2array(rowfun(@(x)(find(x,1,'last')), table(isStepping')));
-    [~, firstPawOverInd] = min(lastModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
+    firstPawOverInd = data(i).firstPawOver;
     
-    locationsMod(i,:,:) = squeeze(data(i).modifiedLocationsInterp{firstPawOverInd}(end,:,:));
-    locationsControl(i,:,:) = squeeze(data(i).controlLocationsInterp{firstPawOverInd}(end,:,:));
-    
-    % flip around midline if left paw is selected
-    if firstPawOverInd==2
-        locationsMod(i,2,:) = -locationsMod(i,2,:);
-        locationsControl(i,2,:) = -locationsControl(i,2,:);
+    if ~beforeObsOnly
+        locationsMod(i,:,:) = squeeze(data(i).modifiedLocationsInterp{firstPawOverInd}(end,:,:));
+        locationsControl(i,:,:) = squeeze(data(i).controlLocationsInterp{firstPawOverInd}(end,:,:));
+    else
+        % get locations up until paw is within preObsLim of obs
+        mod = squeeze(data(i).modifiedLocations{firstPawOverInd}(end,:,:));
+        control = squeeze(data(i).controlLocations{firstPawOverInd}(end,:,:));
+        lastInd = find(mod(1,:)>-preObsLim,1,'first');
+        
+        % interpolate over common grid
+        if lastInd>1
+            modInterp = interp2(1:lastInd, [1:3]', mod(:,1:lastInd), linspace(1,lastInd,locationSmps), [1:3]');
+            controlInterp = interp2(1:lastInd, [1:3]', control(:,1:lastInd), linspace(1,lastInd,locationSmps), [1:3]');
+            locationsMod(i,:,:) = modInterp;
+            locationsControl(i,:,:) = controlInterp;
+        end
     end
     
-    % check if trial passes through obstacle
-    throughObsBins(i,:) = squeeze(locationsMod(i,3,:)<obsHeight) & ... 
-                          squeeze(locationsMod(i,1,:)>obsX(1)) & ...
-                          squeeze(locationsMod(i,1,:)<obsX(2));
-    if sum(throughObsBins(i,:)) > maxSmpsThoughObs
-%         fprintf('trial %i passed though obstacle\n', i);
-        locationsMod(i,:,:) = nan;
-        locationsControl(i,:,:) = nan;
-    end
+    
 end
-fprintf('%.2f of trials passed though obs\n', ...
-    sum(sum(throughObsBins,2)>maxSmpsThoughObs) / size(throughObsBins,1));
 
 
 
-close all;
-figure('menubar', 'none', 'color', 'white', 'position', [400 50 850 950], 'InvertHardCopy', 'off');
+% plot everyting
+close all; figure('name', figTitle, 'menubar', 'none', 'color', 'white', 'position', [100 100 750 900], 'InvertHardCopy', 'off');
 
-for i = 1:length(conditionNames)
+for i = 1:length(binNames)
     
-    subaxis(length(conditionNames)+1,1,i)
+    subaxis(length(binNames)+1,1,i)
+    title(binNames{i})
     
-    xs = squeeze(locationsMod(conditionBins{i},1,:));
-    ys = squeeze(locationsMod(conditionBins{i},2,:));
-    zs = squeeze(locationsMod(conditionBins{i},3,:));
-    
-    
-    realInds = find(~isnan(xs(:,1)));
-    trialInds = randperm(length(realInds), trials);
-    for j = 1:length(trialInds)
-        plot3(xs(realInds(trialInds(j)),:), ys(realInds(trialInds(j)),:), zs(realInds(trialInds(j)),:), ...
-            'color', colors(i,:), 'linewidth', 1); hold on
-    end
     
     % plot control mean
-    xOffset = nanmean(squeeze(locationsMod(conditionBins{i},1,1)));
-    xsCtl = squeeze(locationsControl(conditionBins{i},1,:));
-    ysCtl = squeeze(locationsControl(conditionBins{i},2,:));
-    zsCtl = squeeze(locationsControl(conditionBins{i},3,:));
-    plot3(nanmean(xsCtl,1) - nanmean(xsCtl(:,1)) + xOffset, nanmean(ysCtl,1), nanmean(zsCtl,1), ...
+    xOffset = nanmean(squeeze(locationsMod(bins==i,1,1)));
+    xsCtl = squeeze(locationsControl(bins==i,1,:));
+    zsCtl = squeeze(locationsControl(bins==i,3,:));
+    plot(nanmean(xsCtl,1) - nanmean(xsCtl(:,1)) + xOffset, nanmean(zsCtl,1), ...
         'color', [0 0 0], 'linewidth', lineWid); hold on
     
-    % plot mean in final subplot
-    subaxis(length(conditionNames)+1,1,length(conditionNames)+1)
-    plot3(nanmean(xs,1), nanmean(ys,1), nanmean(zs,1), 'color', colors(i,:), 'linewidth', lineWid); hold on
-end
 
-% plot control trajectory
-xOffset = nanmean(squeeze(locationsMod(:,1,1)));
-xs = squeeze(locationsControl(allBins,1,:));
-ys = squeeze(locationsControl(allBins,2,:));
-zs = squeeze(locationsControl(allBins,3,:));
-plot3(nanmean(xs,1) - nanmean(xs(:,1)) + xOffset, nanmean(ys,1), nanmean(zs,1), ...
-    'color', [0 0 0], 'linewidth', lineWid); hold on
-
-% pimp axes
-vertices = [obsX(1) obsY(1) obsZ(1)
-            obsX(1) obsY(2) obsZ(1)
-            obsX(1) obsY(2) obsZ(2)
-            obsX(1) obsY(1) obsZ(2)
-            obsX(2) obsY(1) obsZ(1)
-            obsX(2) obsY(2) obsZ(1)
-            obsX(2) obsY(2) obsZ(2)
-            obsX(2) obsY(1) obsZ(2)];
-% specify which corners to connect for each of 6 faces (6 sides of obs)
-faces = [1 2 3 4
-         5 6 7 8
-         1 2 6 5
-         4 3 7 8
-         2 6 7 3
-         1 5 8 4];
-for i = 1:length(conditionNames)+1
+    % get bins
+    heights = [data.obsHeightsVid];
+    binEdges = linspace(heightLims(1), heightLims(2), heightBinNum+1);
+    heightBins = discretize(heights, binEdges);
+    binLabels = cell(1,heightBinNum);
+    for j = 1:heightBinNum; binLabels{j} = sprintf('%.1f', mean(heights(heightBins==j))); end
     
-    subaxis(length(conditionNames)+1,1,i)
+    for j = 1:heightBinNum
+        xs = squeeze(locationsMod(bins==i & heightBins==j,1,:));
+        zs = squeeze(locationsMod(bins==i & heightBins==j,3,:));
+        
+        plot(nanmean(xs,1), nanmean(zs,1), ...
+            'color', avgColors(j,:), 'linewidth', lineWid); hold on
+        
+        % add cylinder
+        rad = obsDiam/1000/2;
+        z = mean(heights(heightBins==j & bins==i)) / 1000;
+        circ = rectangle('position', [0-rad, z-2*rad, 2*rad, 2*rad], ...
+            'curvature', [1 1], 'facecolor', [avgColors(j,:) 1], 'edgecolor', 'none');
+    end
     
+    % add floor
+    line(xLims, [0 0], 'linewidth', 1, 'color', [0 0 0]);
+    
+    % pimp appearance
     daspect([1 1 1]);
-    set(gca, 'xlim', xLims, 'ylim', yLims, 'zlim', zLims, ...
-        'view', [azimuth elevation], 'YDir', 'reverse');
+    set(gca, 'xlim', xLims, 'ylim', zLims);
     axis off
-
-
-    patch('Vertices', vertices, 'Faces', faces);
-
-    % add lines for sides of wheel
-    line([xLims; xLims]', [yLims; yLims], zeros(2,2), ...
-        'color', [0 0 0], 'linewidth', 2) % x1
 end
 
-legend(gca, conditionNames, 'location', 'northeast');
-% pos = get(leg, 'position');
-% set(leg, 'position', [xLims(2)-pos(3) zLims(2)-pos(4) pos(3) pos(4)])
 
 blackenFig;
-saveas(gcf, [getenv('OBSDATADIR') 'figures\sensoryDependenceKinematics.png']);
-savefig([getenv('OBSDATADIR') 'figures\sensoryDependenceKinematics.fig'])
+
 
 
 

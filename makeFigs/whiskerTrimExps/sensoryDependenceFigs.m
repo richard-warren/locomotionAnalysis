@@ -7,8 +7,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 %% get kinematic data
 obsPos = -0.0087;
-kinData = getKinematicData4(sessionInfo.session, obsPos);
-data = kinData; save([getenv('OBSDATADIR') 'kinematicData\whiskerTrimKinematicData.mat'], 'data');
+kinData = getKinematicData4(sessionInfo.session, [], obsPos);
 
 % incorporate condition information into kinData struct
 for i = 1:length(kinData)
@@ -17,11 +16,18 @@ for i = 1:length(kinData)
     kinData(i).preOrPost = preOrPost;
 end
 
+data = kinData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data');
+
+
+%% load previous kinematic data
+
+load([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data');
+kinData = data; clear kinData;
 
 %% get avoidance and speed data
 
 speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, false);
-data = speedAvoidanceData; save([getenv('OBSDATADIR') 'kinematicData\whiskerTrimSpeedAvoidanceData.mat'], 'data');
+data = speedAvoidanceData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceSpeedAvoidanceData.mat'], 'data');
 
 % incorporate condition information into kinData struct
 for i = 1:length(speedAvoidanceData)

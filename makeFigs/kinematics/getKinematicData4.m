@@ -25,7 +25,7 @@ end
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end

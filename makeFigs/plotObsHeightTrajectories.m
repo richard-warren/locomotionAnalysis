@@ -1,11 +1,9 @@
 function plotObsHeightTrajectories(data, bins, binNames, figTitle)
 
 
-
 % settings
 validTrials = ~[data.isWheelBreak];
 trialsPerPlot = 100;
-maxSmpsThoughObs = 2;
 heightBinNum = 3;
 heightLims = [3.175 10];
 obsDiam = 3.175; % (mm)
@@ -13,41 +11,33 @@ xLims = [-.06 .04];
 zLims = [0 .015];
 lineWid = 2.5;
 colors = [.25 1 .25; 1 .25 .25]; % start and stop colors of gradient
-% colors = [0 0 1; 0 1 0];
+
 
 
 
 % initializations
 avgColors = interp2(1:3, 1:2, colors, 1:3, linspace(1,2,heightBinNum)');
-trialColors = nan(trialsPerPlot, 3); for i = 1:3; trialColors(:,i) = linspace(colors(1,i), colors(2,i), trialsPerPlot)'; end
-allInds = find(bins~=0);
-obsX = [-.5*obsDiam .5*obsDiam] / 1000;
 
+% exclude invalid trails, including those where max paw height is less than obs height
+obsHgts = [data.obsHeightsVid];
+pawHgts = cell2mat(cellfun(@(x,ind) max(squeeze(x{data(ind).firstPawOver}(end,3,:))), ...
+          {data.modifiedLocations}, num2cell(1:length(data)), 'UniformOutput', false)) * 1000;
+bins(obsHgts>pawHgts) = 0;
+bins(~validTrials) = 0;
+fprintf('%.3f of trials paw was not higher than obs..\n', ...
+    sum(obsHgts>pawHgts)/length(data));
+  
+
+allInds = find(bins~=0);
 locationSmps = size(data(1).modifiedLocationsInterp{1},3);
 locationsMod = nan(length(data), 3, locationSmps);
 locationsControl = nan(length(data), 3, locationSmps);
-throughObsBins = nan(length(data), locationSmps);
-
 for i = allInds
-    
     firstPawOverInd = data(i).firstPawOver;
     locationsMod(i,:,:) = squeeze(data(i).modifiedLocationsInterp{firstPawOverInd}(end,:,:));
     locationsControl(i,:,:) = squeeze(data(i).controlLocationsInterp{firstPawOverInd}(end,:,:));
-    
-    % check if trial passes through obstacle
-    throughObsBins(i,:) = squeeze(locationsMod(i,3,:))<(data(i).obsHeightsVid/1000) & ... 
-                          squeeze(locationsMod(i,1,:))>obsX(1) & ...
-                          squeeze(locationsMod(i,1,:))<obsX(2);
-    if sum(throughObsBins(i,:)) > maxSmpsThoughObs
-        locationsMod(i,:,:) = nan;
-        locationsControl(i,:,:) = nan;
-    end
 end
 
-validTrials = validTrials & (sum(throughObsBins,2)<=maxSmpsThoughObs)';
-bins(~validTrials) = 0;
-fprintf('%.2f of trials passed though obs\n', ...
-    sum(sum(throughObsBins,2)>maxSmpsThoughObs) / size(throughObsBins,1));
 
 
 

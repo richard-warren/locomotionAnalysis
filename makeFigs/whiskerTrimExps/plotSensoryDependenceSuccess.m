@@ -1,4 +1,4 @@
-function plotSensoryDependence2(sessionInfo, data)
+function plotSensoryDependenceSuccess(sessionInfo, data)
 % plot sensory dependence of obstacle avoidance
 
 % settings
