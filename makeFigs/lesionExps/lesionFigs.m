@@ -54,6 +54,7 @@ data = speedAvoidanceData; save([getenv('OBSDATADIR') 'matlabData\lesionSpeedAvo
 
 load([getenv('OBSDATADIR') 'matlabData\lesionSpeedAvoidanceData.mat'], 'data');
 speedAvoidanceData = data; clear data;
+disp('lesion speed avoidance data loaded!')
 
 %% plot baseline kinematics
 
@@ -84,14 +85,14 @@ end
 
 %% plot dv averages
 
-manipulationBarPlots(speedAvoidanceData, 'lesions');
+manipulationBarPlots(speedAvoidanceData, {'pre', 'post', 'postNoWisk'}, 'lesions');
 saveas(gcf, [getenv('OBSDATADIR') 'figures\lesions\lesionBarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\lesions\leionsBarPlots.fig'])
 
 
 %% plot dvs across sessions
 
-manipulationAcrossSessions(speedAvoidanceData, 'lesions');
+manipulationAcrossSessions(speedAvoidanceData, {'pre', 'post', 'postNoWisk'}, 'lesions');
 saveas(gcf, [getenv('OBSDATADIR') 'figures\lesions\lesionAcrossSessions.png']);
 savefig([getenv('OBSDATADIR') 'figures\lesions\lesionAcrossSessions.fig'])
 

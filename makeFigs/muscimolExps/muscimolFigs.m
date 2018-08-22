@@ -84,13 +84,13 @@ end
 
 %% plot dv averages
 
-manipulationBarPlots(speedAvoidanceData, 'muscimol');
+manipulationBarPlots(speedAvoidanceData, {'saline', 'muscimol'}, 'muscimol');
 saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimol\muscimolBarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\muscimol\muscimolBarPlots.fig'])
 
 %% plot dvs across sessions
 
-manipulationAcrossSessions(speedAvoidanceData, 'muscimol');
+manipulationAcrossSessions(speedAvoidanceData, {'saline', 'muscimol'}, 'muscimol');
 saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimol\muscimolAcrossSessions.png']);
 savefig([getenv('OBSDATADIR') 'figures\muscimol\muscimolAcrossSessions.fig'])
 

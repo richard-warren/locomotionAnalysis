@@ -1,4 +1,4 @@
-function manipulationAcrossSessions(data, figTitle)
+function manipulationAcrossSessions(data, conditions, figTitle)
 
 % settings
 dvs = {'success rate', ...
@@ -6,11 +6,10 @@ dvs = {'success rate', ...
        {'body angle towards contra', '(or right) side'}};
 dvYLims = [0 1; .1 .8; -15 15];
 minTrial = 0;
-validBins = [data.trialNum]>=minTrial;
+validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
 touchThresh = 5;
 
 % initializations
-conditions = fliplr(unique({data.condition}));
 brainRegions = unique({data.brainRegion});
 isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
 dims = [length(dvs), length(brainRegions)]; % subplot dimensions

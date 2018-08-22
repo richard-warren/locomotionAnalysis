@@ -1,4 +1,4 @@
-function manipulationBarPlots(data, figTitle)
+function manipulationBarPlots(data, conditions, figTitle)
 
 
 
@@ -11,11 +11,10 @@ dvs = {'success rate', ...
        'ipsi (or left) error rate'};
 dvYLims = [0 1; 0 .8; -15 15; 0 1; 0 1];
 minTrial = 0;
-validBins = [data.trialNum]>=minTrial;
+validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
 
 
 % initializations
-conditions = fliplr(unique({data.condition}));
 brainRegions = unique({data.brainRegion});
 isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
 dims = [length(dvs), length(brainRegions)]; % subplot grid
