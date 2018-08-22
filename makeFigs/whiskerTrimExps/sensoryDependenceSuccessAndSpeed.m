@@ -3,7 +3,7 @@ function sensoryDependenceSuccessAndSpeed(data)
 
 % settings
 touchThresh = 1; % if paw contacts obs for more than touchThresh frames, trial is considered touching
-circSize = 75;
+circSize = 40;
 lineThickness = 4;
 jitterRange = .2;
 lineEdges = [-.2 .2];
@@ -25,7 +25,7 @@ dvBins = {wiskBins & lightOnBins
           ~wiskBins & lightOnBins
           ~wiskBins & ~lightOnBins};
 
-close all; figure('color', 'white', 'menubar', 'none', 'inverthardcopy', 'off', 'position', [100 100 500 720]);
+figure('color', 'white', 'menubar', 'none', 'inverthardcopy', 'off', 'position', [100 100 500 720]);
 
 
 mice = unique({data.mouse});
@@ -41,6 +41,7 @@ for i = 1:length(conditionNames)
     clr1 = colors(i,:)+colorFading; clr1(clr1>1)=1;
     clr2 = colors(i,:)-.5*colorFading; clr2(clr2<0)=0;
     mouseColors = interp2(1:3, 1:2, cat(1,clr1,clr2), 1:3, linspace(1,2,length(mice))');
+%     mouseColors = ones(length(mice), 3)*.4;
     
     for mouse = 1:length(mice)
 

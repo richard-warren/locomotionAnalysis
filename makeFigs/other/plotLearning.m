@@ -1,4 +1,4 @@
-function data = makeSpeedAndAvoidanceFigs(mice)
+function data = plotLearning(mice)
 % make plots to show how avoidance and speed progresses over time, before
 % and after adding wheel break
 

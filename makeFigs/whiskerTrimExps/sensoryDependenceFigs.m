@@ -4,7 +4,6 @@ sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'She
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
 
 
-
 %% get kinematic data
 obsPos = -0.0087;
 kinData = getKinematicData4(sessionInfo.session, [], obsPos);
@@ -19,7 +18,7 @@ end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data'); clear data;
 
 
-%% load previous kinematic data
+%% load kinematic data
 
 load([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data');
 kinData = data; clear data;
@@ -38,6 +37,11 @@ end
 data = speedAvoidanceData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceSpeedAvoidanceData.mat'], 'data'); clear data;
 
 
+%% load speed and avoidance data
+
+load([getenv('OBSDATADIR') 'matlabData\sensoryDependenceSpeedAvoidanceData.mat'], 'data');
+speedAvoidanceData = data; clear data;
+
 %% plot speed and success
 
 sensoryDependenceSuccessAndSpeed(speedAvoidanceData);
@@ -54,8 +58,8 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDepende
 
 %% paw height by obs height
 
-wiskSessions = unique(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'pre')));
-noWiskSessions = unique(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'post')));
+wiskSessions = unique({kinData(strcmp({kinData.preOrPost}, 'pre')).session});
+noWiskSessions = unique({kinData(strcmp({kinData.preOrPost}, 'post')).session});
 wiskLightBins = ismember({kinData.session}, wiskSessions) & [kinData.isLightOn];
 wiskBins = ismember({kinData.session}, wiskSessions) & ~[kinData.isLightOn];
 lightBins = ismember({kinData.session}, noWiskSessions) & [kinData.isLightOn];
@@ -68,34 +72,3 @@ for i = 1:4; bins(conditionBins{i}) = i; end
 scatterObsVsPawHeights(kinData, bins, binNames);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/heightShapingScatter.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/heightShapingScatter.fig'))
-
-
-%% plot baseline kinematics
-
-mice = unique(sessionInfo.mouse);
-
-for j = 1:length(mice)
-    
-    mouseBins = strcmp(sessionInfo.mouse, mice{j});
-    preBins = strcmp(sessionInfo.preOrPost, 'pre');
-    postBins = strcmp(sessionInfo.preOrPost, 'post');
-    
-    preSessions = sessionInfo.session(mouseBins & preBins);
-    postSessions = sessionInfo.session(mouseBins & postBins);
-
-    conditionBins = nan(1,length(kinData));
-    conditionBins(ismember({kinData.session}, preSessions)) = 1;
-    conditionBins(ismember({kinData.session}, postSessions)) = 2;
-
-    conditionLabels = {'pre trimming', 'post trimming'};
-    plotBaselineKinematics(kinData, conditionBins, conditionLabels, mice{j})
-end
-
-
-%% plot success and speed averages
-
-
-% saveas(gcf, [getenv('OBSDATADIR') 'figures\sensoryDependencePlots.png']);
-% savefig([getenv('OBSDATADIR') 'figures\sensoryDependenceBarPlots.fig'])
-
-
