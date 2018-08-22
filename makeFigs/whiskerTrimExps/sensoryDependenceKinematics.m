@@ -10,7 +10,7 @@ xLims = [-.05 .04];
 zLims = [0 .015];
 lineWid = 2.5;
 conditionColors = hsv(4)+.2; conditionColors(conditionColors>1)=1;
-preObsLim = .005;
+preObsLim = .008;
 colorFading = 0.5;
 
 

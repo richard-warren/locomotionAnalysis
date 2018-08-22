@@ -57,8 +57,8 @@ bins = zeros(1,length(kinData));
 for i = 1:4; bins(conditionBins{i}) = i; end
 
 scatterObsVsPawHeights(kinData, bins, binNames);
-% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDependenceKinematics.png'));
-% savefig(fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/sensoryDependenceKinematics.fig'))
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/heightShapingScatter.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/sensoryDependence/heightShapingScatter.fig'))
 
 
 %% plot baseline kinematics
