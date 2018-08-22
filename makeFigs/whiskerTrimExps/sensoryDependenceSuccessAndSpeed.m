@@ -2,7 +2,7 @@ function sensoryDependenceSuccessAndSpeed(data)
 % plot sensory dependence of obstacle avoidance
 
 % settings
-touchThresh = 1; % if paw contacts obs for more than touchThresh frames, trial is considered touching
+touchThresh = 5; % if paw contacts obs for more than touchThresh frames, trial is considered touching
 circSize = 40;
 lineThickness = 4;
 jitterRange = .2;
@@ -14,7 +14,7 @@ colorFading = 0.6;
 
 
 % initializations
-totalTouches = cellfun(@mean, {data.totalTouchFramesPerPaw});
+totalTouches = cellfun(@sum, {data.totalTouchFramesPerPaw});
 isSuccess = totalTouches<touchThresh;
 
 conditionNames = {'whiskers + vision', 'whiskers', 'vision', 'neither'};

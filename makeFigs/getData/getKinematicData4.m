@@ -186,11 +186,13 @@ function sessionData = getDataForSession(session)
             trialNoObsStepIds = nan(length(trialInds), 4);
             trialLocations = nan(length(trialInds), size(locationsPaws,2), size(locationsPaws,3));
             trialWheelVel = interp1(wheelTimes-contactTimes(j), vel, trialTimeStampsInterp);
+            trialTouchesPerPaw = nan(length(trialInds), 4);
 
             for k = 1:4
                 trialControlStepIds(:,k) = interp1(trialTimeStamps, controlStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
                 trialModStepIds(:,k) = interp1(trialTimeStamps, modifiedStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
                 trialNoObsStepIds(:,k) = interp1(trialTimeStamps, noObsStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
+                trialTouchesPerPaw(:,k) = interp1(trialTimeStamps, noObsStepIdentities(trialInds,k), trialTimeStampsInterp, 'nearest');
                 
 
                 for m = 1:size(locationsPaws,2)
@@ -420,6 +422,7 @@ function sessionData = getDataForSession(session)
             
             % trial touch info
             sessionData(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;
+            sessionData(dataInd).trialTouchesPerPaw = trialTouchesPerPaw;
             sessionData(dataInd).isWheelBreak = isWheelBreak;
             
             
