@@ -29,6 +29,7 @@ data = kinData; save([getenv('OBSDATADIR') 'matlabData\muscimolKinematicData.mat
 
 load([getenv('OBSDATADIR') 'matlabData\muscimolKinematicData.mat'], 'data');
 kinData = data; clear data;
+disp('muscimol kinematic data loaded!')
 
 %% get speed and avoidance data
 
@@ -54,6 +55,7 @@ data = speedAvoidanceData; save([getenv('OBSDATADIR') 'matlabData\muscimolSpeedA
 
 load([getenv('OBSDATADIR') 'matlabData\muscimolSpeedAvoidanceData.mat'], 'data');
 speedAvoidanceData = data; clear data;
+disp('muscimol speed avoidance data loaded!')
 
 %% plot baseline kinematics
 
@@ -97,11 +99,17 @@ savefig([getenv('OBSDATADIR') 'figures\muscimol\muscimolAcrossSessions.fig'])
 
 %% paw height by obs height
 
-binNames = {'saline', 'sen muscimol', 'mtc muscimol'};
+binNames = {'saline', 'sen muscimol', 'mtc muscimol ipsi', 'mtc muscimol contra'};
+leftSideBins = strcmp({kinData.sideOfBrain}, 'left');
+contraSides = ones(1,length(kinData))*2;
+contraSides(leftSideBins) = 3;
+contraFirstBins = [kinData.firstPawOver] == contraSides;
+
 bins = zeros(1,length(kinData));
 bins(strcmp({kinData.condition}, 'saline')) = 1;
 bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'sen')) = 2;
-bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc')) = 3;
+bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc') & ~contraFirstBins) = 3;
+bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc') & contraFirstBins) = 4;
 
 scatterObsVsPawHeights(kinData, bins, binNames);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/muscimol/heightShapingScatter.png'));

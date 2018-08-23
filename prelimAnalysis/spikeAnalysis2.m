@@ -640,6 +640,26 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     
+    % run whisker contact network
+    if analyzeVar('wiskContactFrames', varNames, varsToOverWrite) && ...
+            ~isempty(varStruct.obsOnTimes) && ...
+            exist([sessionDir 'runWisk.mp4'], 'file')
+        
+        fprintf('%s: running wisk contact network\n', session)
+        pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
+        
+        % run neural network classifier
+        if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
+        [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+        wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
+        
+        % save
+        varStruct.wiskContactFrames = wiskContactData.framenum;
+        varStruct.wiskContactFramesConfidences = wiskContactData.confidence;
+        anythingAnalyzed = true;
+    end
+    
+    
     % save results
     if anythingAnalyzed
         save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct')

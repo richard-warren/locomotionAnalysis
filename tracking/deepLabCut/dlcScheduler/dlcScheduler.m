@@ -50,11 +50,11 @@ while true
         
         
         % spike analysis
-%         try 
+        try 
             spikeAnalysis2(newSessions{1});
-%         catch
-%             fprintf('%s: problem with spike analysis!\n', newSessions{1})
-%         end
+        catch
+            fprintf('%s: problem with spike analysis!\n', newSessions{1})
+        end
         
         
         % save that session has been analyzed

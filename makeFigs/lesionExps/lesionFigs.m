@@ -29,6 +29,7 @@ data = kinData; save([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat']
 
 load([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data');
 kinData = data; clear data;
+disp('lesion kinematic data loaded!')
 
 %% get speed and avoidance data
 
@@ -99,16 +100,18 @@ savefig([getenv('OBSDATADIR') 'figures\lesions\lesionAcrossSessions.fig'])
 
 %% paw height by obs height
 
-binNames = {'pre', 'sen lesion', 'mtc lesion'};
-% leftSideBins = strcmp({kinData.sideOfBrain}, 'left');
-% contraSides = ones(1,length(kinData));
-% contraSides(leftSideBins) = 3;
-% contraFirstBins = [kinData.firstPawOver] == contraSides;
+binNames = {'pre', 'sen lesion', 'mtc lesion ipsi', 'mtc lesion contra'};
+
+leftSideBins = strcmp({kinData.sideOfBrain}, 'left');
+contraSides = ones(1,length(kinData))*2;
+contraSides(leftSideBins) = 3;
+contraFirstBins = [kinData.firstPawOver] == contraSides;
 
 bins = zeros(1,length(kinData));
 bins(strcmp({kinData.condition}, 'pre')) = 1;
 bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'sen')) = 2;
-bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & contraFirstBins) = 3;
+bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & ~contraFirstBins) = 3;
+bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & contraFirstBins) = 4;
 
 scatterObsVsPawHeights(kinData, bins, binNames);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/lesions/heightShapingScatter.png'));
