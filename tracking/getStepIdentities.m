@@ -71,7 +71,7 @@ if plotExample
     trial = randperm(length(obsOnTimes)-1, 1)+1;
     trialBins = frameTimeStamps>obsOffTimes(trial-1) & frameTimeStamps<obsOffTimes(trial);
     paws = [1 2 3 4];
-    xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositionsContinuous';
+    xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositionsContinuous(trial,:);
     colors = hsv(4);
 
     figure;
