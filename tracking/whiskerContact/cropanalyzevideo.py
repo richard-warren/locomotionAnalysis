@@ -89,7 +89,10 @@ trackedFeatures = np.loadtxt(os.path.join(baseDir, session, "trackedFeaturesRaw.
 mat = scipy.io.loadmat(os.path.join(baseDir, session, "runAnalyzed.mat"))
 
 obsOnHot = np.zeros(len(mat['frameTimeStamps']))
-obsOnHot[list(map(lambda x: bisect.bisect_left(np.squeeze(mat['frameTimeStamps']), x), mat['obsOnTimes']))] = 1
+clipLen = len(mat['frameTimeStamps'])
+for obsOnTime in mat['obsOnTimes']:
+    if not obsOnTime>mat['frameTimeStamps'][-1]:
+        obsOnHot[bisect.bisect_left(np.squeeze(mat['frameTimeStamps']), obsOnTime)] = 1
 total = np.cumsum(obsOnHot)
 
 logging.info("Loaded features")
@@ -210,6 +213,10 @@ for framenum, val in enumerate(tqdm(obsOnHot)):
         predictedFrame=-1
     if predictedFrame != -1:
         answers.append({"framenum": predictedFrame, "confidence": frameProbs[predictedFrame]})
+    else:
+        answers.append({"framenum": -1, "confidence": 0})
+
+answers+=[{"framenum":-1, "confidence": 0}]*(len(mat['obsOnTimes'])-len(answers))
 
 with open(os.path.join(baseDir, sys.argv[2], "whiskerAnalyzed.csv"), 'w') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

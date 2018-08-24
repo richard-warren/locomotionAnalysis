@@ -24,7 +24,7 @@ end
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
     data{i} = feval(getDataForSessionHandle, sessions{i});
 end
@@ -105,35 +105,33 @@ function sessionData = getDataForSession(session)
     [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
-    trialVels = getTrialVels(velPrePost, obsOnTimes, obsTimes, obsPositions);
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
     
     
     
     
     % get positions and times when obs reaches obPos or touches the whisker
-
-    if exist('obsPos', 'var')
-        contactPositions = ones(size(obsOnTimes))*obsPos;
-    else
-        contactPositions = nan(size(obsOnTimes));
-    end
+    if exist('obsPos', 'var'); contactPositions = ones(size(obsOnTimes))*obsPos; else; contactPositions = nan(size(obsOnTimes)); end
     contactTimes = nan(size(obsOnTimes));
     
     for j = 1:length(obsOnTimes)
+        
+        % if obsPos is defined by user, find times at which obs reaches this position
         if exist('obsPos', 'var')
-            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j), 1, 'first');
+            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j) & obsTimes<obsOffTimes(j), 1, 'first');
             if ~isempty(indStart)
                 contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+                contactTimes(j) = frameTimeStamps(knnsearch(frameTimeStamps, contactTimes(j))); % force time to be in frameTimeStamps
             end
+            
+        % otherwise find the times and obs positions at the frames of whisker contact    
         else
-            trialStartInd = find(frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j), 1, 'first');
-            if ~isempty(trialStartInd)
-                wiskContactFrame = wiskContactFrames(find(wiskContactFrames>trialStartInd,1,'first'));
-                if ~isempty(wiskContactFrame)
-                    contactTimes(j) = frameTimeStamps(wiskContactFrame);
-                    contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
-                end
+            trialStartInd = find(frameTimeStamps>obsOnTimes(j), 1, 'first');
+            wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
+            if ~isempty(wiskContactFrameInd)
+                wiskContactFrame = wiskContactFrames(wiskContactFrameInd);
+                contactTimes(j) = frameTimeStamps(wiskContactFrame);
+                contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
             end
         end
     end
@@ -242,6 +240,7 @@ function sessionData = getDataForSession(session)
             % in swing // if both in stance at moment of contact, first mod
             % step is first to enter swing // if both in swing, first mod
             % step is first paw to land on the other side
+            try
             if xor(isLeftSwingAtContact, isRightSwingAtContact)
                 if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
             elseif isLeftSwingAtContact && isRightSwingAtContact
@@ -250,6 +249,7 @@ function sessionData = getDataForSession(session)
                 firstModStepInds = table2array(rowfun(@(x)(find(x,1,'first')), table(isStepping')));
                 [~, firstModPaw] = min(firstModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
             end
+            catch; keyboard; end
 
 
             % get stance distance from obs, but only for trials in which

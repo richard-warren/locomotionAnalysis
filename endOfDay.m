@@ -21,8 +21,8 @@ end
 
 %% analyze spike data
 disp('starting to analyze sessions...')
-problemSessions = {};
-for i = 1:length(sessions)
+% problemSessions = {};
+for i = 2:length(sessions)
     try
         spikeAnalysis2(sessions{i});
     catch

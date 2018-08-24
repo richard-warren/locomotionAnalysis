@@ -557,7 +557,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         fprintf('%s: getting paw contacts\n', session)
         
         % settings
-        rerunClassifier = true; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
+        rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = '\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
         proximityThresh = 20;
