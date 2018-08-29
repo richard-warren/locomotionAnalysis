@@ -3,12 +3,12 @@ function data = getKinematicData4(sessions, previousData, obsPos)
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
 % settings
-velPrePost = [-.1 .1]; % compute trials velocity between these obstacle positions (relative to tip of mouse's nose)
 speedTime = .02; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
 noObsSteps = 3;
 controlSteps = 2; % needs to be at least 2
+contactPosLimits = [-.02 .02]; % whisker cant only contact obs this far in front of and behind nose
 
 % initializations
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
@@ -26,10 +26,13 @@ data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
 parfor i = 1:length(sessions)
     fprintf('%s: collecting data...\n', sessions{i});
-    data{i} = feval(getDataForSessionHandle, sessions{i});
+    try
+        data{i} = feval(getDataForSessionHandle, sessions{i});
+    catch
+        fprintf('%s: unable to analyze session!\n', sessions{i});
+    end
 end
 data = cat(2,data{:});
-
 
 
 % make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
@@ -82,8 +85,6 @@ if ~isempty(previousData); data = cat(2, previousData, data); end
 
 
 
-
-
 % ---------
 % FUNCTIONS
 % ---------
@@ -97,7 +98,7 @@ function sessionData = getDataForSession(session)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
-            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'frameTimeStampsWisk');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = abs(mToPixMapping(1));
@@ -107,8 +108,7 @@ function sessionData = getDataForSession(session)
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
     
-    
-    
+        
     
     % get positions and times when obs reaches obPos or touches the whisker
     if exist('obsPos', 'var'); contactPositions = ones(size(obsOnTimes))*obsPos; else; contactPositions = nan(size(obsOnTimes)); end
@@ -126,20 +126,27 @@ function sessionData = getDataForSession(session)
             
         % otherwise find the times and obs positions at the frames of whisker contact    
         else
-            trialStartInd = find(frameTimeStamps>obsOnTimes(j), 1, 'first');
+            trialStartInd = find(frameTimeStampsWisk>obsOnTimes(j), 1, 'first');
             wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
             if ~isempty(wiskContactFrameInd)
-                wiskContactFrame = wiskContactFrames(wiskContactFrameInd);
-                contactTimes(j) = frameTimeStamps(wiskContactFrame);
+                contactTimes(j) = frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd));
                 contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
             end
         end
     end
     
+    % remove invalid contact positions
+    if ~exist('obsPos', 'var')
+        contactPositions(contactPositions<contactPosLimits(1) | contactPositions>contactPosLimits(2)) = nan;
+    end
+    
+    
+    % get step identities and wheel velocity
     [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
         getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, ...
         obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps);
     vel = getVelocity(wheelPositions, speedTime, targetFs);
+    
     
     % put together xyz for paws only
     locationsPaws = nan(size(locations,1), 3, 4);
@@ -206,16 +213,15 @@ function sessionData = getDataForSession(session)
 
             missingModStep = any(all(isnan(trialModStepIds),1));
             
-            somethingWentWrong = missingModStep || missingControlStep || missingObsOffStep || isnan(contactTimes(j));
+            somethingWentWrong = missingModStep || missingControlStep || missingObsOffStep || isnan(contactPositions(j));
         catch
             somethingWentWrong = true;
         end
 
 
-        
         % analyze trial if all steps are accounted for
         if somethingWentWrong
-            fprintf('  %s: missing steps in trial %i\n', session, j)
+%             fprintf('  %s: missing steps in trial %i\n', session, j)
         else
             
             % find whether and where obstacle was toucheed
@@ -240,7 +246,6 @@ function sessionData = getDataForSession(session)
             % in swing // if both in stance at moment of contact, first mod
             % step is first to enter swing // if both in swing, first mod
             % step is first paw to land on the other side
-            try
             if xor(isLeftSwingAtContact, isRightSwingAtContact)
                 if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
             elseif isLeftSwingAtContact && isRightSwingAtContact
@@ -249,7 +254,6 @@ function sessionData = getDataForSession(session)
                 firstModStepInds = table2array(rowfun(@(x)(find(x,1,'first')), table(isStepping')));
                 [~, firstModPaw] = min(firstModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
             end
-            catch; keyboard; end
 
 
             % get stance distance from obs, but only for trials in which
@@ -441,6 +445,8 @@ function sessionData = getDataForSession(session)
             dataInd = dataInd + 1;
         end
     end
+    fprintf('%s: finished with %.2f of trials successfully analyzed\n', ...
+        session, length(sessionData)/length(obsOnTimes));
 end
 disp('all done!');
 end

@@ -2,6 +2,7 @@ function plotObsHeightTrajectories(data, bins, binNames, figTitle)
 
 
 % settings
+limitXVals = true;
 validTrials = ~[data.isWheelBreak];
 trialsPerPlot = 100;
 heightBinNum = 3;
@@ -10,13 +11,16 @@ obsDiam = 3.175; % (mm)
 xLims = [-.06 .04];
 zLims = [0 .015];
 lineWid = 2.5;
-colors = [.25 1 .25; 1 .25 .25]; % start and stop colors of gradient
+% colors = [.25 1 .25; 1 .25 .25]; % start and stop colors of gradient
+conditionColors = hsv(length(binNames))+.2; conditionColors(conditionColors>1)=1;
+preObsLim = .008;
 
 
 
 
 % initializations
-avgColors = interp2(1:3, 1:2, colors, 1:3, linspace(1,2,heightBinNum)');
+if limitXVals; xLims(2) = preObsLim; end
+% avgColors = interp2(1:3, 1:2, colors, 1:3, linspace(1,2,heightBinNum)');
 
 % exclude invalid trails, including those where max paw height is less than obs height
 obsHgts = [data.obsHeightsVid];

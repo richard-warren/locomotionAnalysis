@@ -6,7 +6,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 
 %% compute kinematic data
-obsPos = -0.0087;
+
 loadPreviousData = false;
 
 if loadPreviousData
@@ -59,15 +59,9 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.fig'))
 
 %% scatter obs vs paw heights
 
-scatterObsVsPawHeights(kinData, ones(1,length(data)), {''})
+scatterObsVsPawHeights(kinData, ones(1,length(kinData)), {''})
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/obsVsPawHeights.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/obsVsPawHeights.fig'))
-
-
-
-
-
-
 
 
 

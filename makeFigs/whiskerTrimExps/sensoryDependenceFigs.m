@@ -5,8 +5,11 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 
 %% get kinematic data
-obsPos = -0.0087;
-kinData = getKinematicData4(sessionInfo.session, [], obsPos);
+kinDataWisk = getKinematicData4(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'pre')), []);
+obsPos = nanmedian([kinDataWisk.obsPos]);
+kinDataNoWisk = getKinematicData4(sessionInfo.session, [], obsPos);
+kinData = cat(2, kinDataWisk, kinDataNoWisk);
+
 
 % incorporate condition information into kinData struct
 for i = 1:length(kinData)
@@ -15,8 +18,8 @@ for i = 1:length(kinData)
     kinData(i).preOrPost = preOrPost;
 end
 
-data = kinData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data'); clear data;
-
+data = kinData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data');
+clear data kinDataWisk kinDataNoWisk;
 
 %% load kinematic data
 

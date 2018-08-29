@@ -3,7 +3,8 @@ function scatterObsVsPawHeights(data, bins, binLabels)
 
 % settings
 colors = hsv(length(binLabels))+.2; colors(colors>1)=1;
-validBins = ~[data.isWheelBreak];
+% validBins = ~[data.isWheelBreak];
+validBins = ones(1,length(data));
 circSize = 20;
 transparency = .2;
 xLims = [3.175 10];

@@ -6,8 +6,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 
 %% get kinematic data
-obsPos = -0.0087;
-kinData = getKinematicData4(sessionInfo.session, [], obsPos);
+kinData = getKinematicData4(sessionInfo.session, []);
 
 % incorporate condition information into kinData struct
 for i = 1:length(kinData)
