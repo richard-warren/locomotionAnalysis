@@ -1,7 +1,7 @@
 %% load session info
 
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'lesionNotes');
-sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
 
 
 
@@ -11,9 +11,9 @@ loadPreviousData = false;
 
 if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data');
-    kinData = getKinematicData4(sessionInfo.session, data);
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
 else
-    kinData = getKinematicData4(sessionInfo.session, []);
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data', '-v7.3', '-nocompression'); clear data;
 

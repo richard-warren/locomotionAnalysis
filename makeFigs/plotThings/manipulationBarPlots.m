@@ -18,7 +18,7 @@ validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
 brainRegions = unique({data.brainRegion});
 isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
 dims = [length(dvs), length(brainRegions)]; % subplot grid
-figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 500 900], 'inverthardcopy', 'off')
+figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 length(brainRegions)*250 900], 'inverthardcopy', 'off')
 
 
 
@@ -64,7 +64,7 @@ for i = 1:length(brainRegions)
                 load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\run.mat'], 'breaks');
                 bodyAngles = getTrialBodyAngles(bodyAngles, obsOnTimes, obsOffTimes, frameTimeStamps, breaks);
                 sessionContraBodyAngles(m) = nanmedian(bodyAngles);
-                sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).sideOfBrain});
+                sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
                 if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
                 
                 % get contra err rate

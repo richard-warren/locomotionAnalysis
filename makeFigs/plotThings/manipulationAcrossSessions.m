@@ -33,13 +33,15 @@ for i = 1:length(brainRegions)
         sessionSpeeds = nan(1, length(sessions));
         sessionContraBodyAngles = nan(1, length(sessions));
         conditionOneBins = false(1, length(sessions));
+        sessionNums = nan(1,length(sessions));
 
         for m = 1:length(sessions)
             % get speed and success rate
             sessionBins = strcmp({data.session}, sessions{m}) & validBins;
             sessionSuccesses(m) = nanmean(isSuccess(sessionBins));
             sessionSpeeds(m) = mean([data(sessionBins).avgVel]);
-            sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).sideOfBrain});
+            sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
+            sessionNums(m) = unique([data(sessionBins).sessionNum]);
 
             % get body angle
             load([getenv('OBSDATADIR') 'sessions\' sessions{m} '\runAnalyzed.mat'], ...
@@ -56,13 +58,12 @@ for i = 1:length(brainRegions)
         
         
         % plot mouse data
-        xInds = 1:length(sessions);
         allDvs = {sessionSuccesses, sessionSpeeds, sessionContraBodyAngles};
         for k = 1:length(allDvs)
             subplot(dims(1), dims(2), i+(k-1)*length(brainRegions))
-            line(1:length(sessions), allDvs{k}, 'color', [.5 .5 .5]); hold on
-            scatter(xInds(conditionOneBins), allDvs{k}(conditionOneBins), 50, colors(j,:), 'filled'); % muscimol
-            scatter(xInds(~conditionOneBins), allDvs{k}(~conditionOneBins), 50, colors(j,:), 'LineWidth', 2); % saline
+            line(sessionNums, allDvs{k}, 'color', [.5 .5 .5]); hold on
+            scatter(sessionNums(conditionOneBins), allDvs{k}(conditionOneBins), 50, colors(j,:), 'filled'); % muscimol
+            scatter(sessionNums(~conditionOneBins), allDvs{k}(~conditionOneBins), 50, colors(j,:), 'LineWidth', 2); % saline
         end
         
 

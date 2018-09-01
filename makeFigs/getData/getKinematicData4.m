@@ -1,4 +1,4 @@
-function data = getKinematicData4(sessions, previousData, obsPos)
+function data = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
@@ -9,9 +9,7 @@ swingMaxSmps = 50; % when averaging swing locations without interpolating don't 
 noObsSteps = 3;
 controlSteps = 2; % needs to be at least 2
 contactPosLimits = [-.02 .02]; % whisker cant only contact obs this far in front of and behind nose
-
-% initializations
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
+timeOperations = false;
 
 
 % remove previously analyzed sessions from list of sessions
@@ -24,10 +22,29 @@ end
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
+if isfield(sessionInfo, 'notes'); sessionInfo = sessionInfo(:, ~strcmp(sessionInfo.Properties.VariableNames, 'notes')); end
+metaDataFields = sessionInfo.Properties.VariableNames;
+metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
+
 parfor i = 1:length(sessions)
-    fprintf('%s: collecting data...\n', sessions{i});
     try
-        data{i} = feval(getDataForSessionHandle, sessions{i});
+        % get metadata for sessions
+        sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
+        sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
+        
+        % get sesionNum and conditionNum for mouse
+        mouseBins = strcmp(sessionInfo.mouse, sessionMetaData.mouse);
+        conditionBins = strcmp(sessionInfo.condition, sessionMetaData.condition);
+        sessionMetaData.sessionNum = find(strcmp(sessionInfo.session(mouseBins), sessionMetaData.session)); % session num is 1,2,3... for sequential sessions for a given mouse // used to plot performace across days
+        sessionMetaData.conditionNum = find(strcmp(sessionInfo.session(mouseBins & conditionBins), sessionMetaData.session)); % first session for condition pre and condition post is 1, second session for condition pre and condition post is 2, etc // used to restrict how many days post lesion to include in analysis
+        
+        % get session data
+        if sessionMetaData.include
+            fprintf('%s: collecting data...\n', sessions{i});
+            data{i} = feval(getDataForSessionHandle, sessions{i}, sessionMetaData);
+        else
+            fprintf('%s: skipped\n', sessions{i})
+        end
     catch
         fprintf('%s: unable to analyze session!\n', sessions{i});
     end
@@ -89,12 +106,18 @@ if ~isempty(previousData); data = cat(2, previousData, data); end
 % FUNCTIONS
 % ---------
 
-function sessionData = getDataForSession(session)
+function sessionData = getDataForSession(session, sessionMetaData)
     
     sessionData = struct();
     dataInd = 1;
 
     % LOAD SESSION DATA (damn that's a lot of stuff)
+    if timeOperations; tic; end
+    if ismember('side', metaDataFields) % if a neural manipulation occured, this stores information about the side of the brain
+        if strcmp(sessionMetaData.side, 'left'); contraLimb = 3;
+        elseif strcmp(sessionMetaData.side, 'right'); contraLimb = 2;
+        else; contraLimb = nan; end
+    end
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
@@ -107,10 +130,12 @@ function sessionData = getDataForSession(session)
     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
+    if timeOperations; fprintf('loading session data: %i seconds\n', round(toc)); end
     
         
     
     % get positions and times when obs reaches obPos or touches the whisker
+    if timeOperations; tic; end
     if exist('obsPos', 'var'); contactPositions = ones(size(obsOnTimes))*obsPos; else; contactPositions = nan(size(obsOnTimes)); end
     contactTimes = nan(size(obsOnTimes));
     
@@ -141,16 +166,20 @@ function sessionData = getDataForSession(session)
     if ~exist('obsPos', 'var')
         contactPositions(contactPositions<contactPosLimits(1) | contactPositions>contactPosLimits(2)) = nan;
     end
+    if timeOperations; fprintf('getting wisk contact pos/times: %i seconds\n', round(toc)); end
     
     
     % get step identities and wheel velocity
+    if timeOperations; tic; end
     [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
         getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, ...
         obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps);
     vel = getVelocity(wheelPositions, speedTime, targetFs);
+    if timeOperations; fprintf('getting step identities: %i seconds\n', round(toc)); end
     
     
     % put together xyz for paws only
+    if timeOperations; tic; end
     locationsPaws = nan(size(locations,1), 3, 4);
     locationsPaws(:,1:2,:) = locations(:,:,botPawInds);
     locationsPaws(:,3,:) = locations(:,2,topPawInds);
@@ -168,13 +197,14 @@ function sessionData = getDataForSession(session)
         prevInd = finalInd+1;
     end
     locationsPaws = locationsPaws / mToPixFactor; % convert to meters
-    
+    if timeOperations; fprintf('getting xyz coords: %i seconds\n', round(toc)); end
     
     
     
     
     
     % COLLECT DATA FOR EACH TRIAL
+    if timeOperations; tic; end
     sessionVels = nan(1,length(obsOnTimes)); % vels at moment of contact
     
     for j = 1:length(obsOnTimes)
@@ -392,13 +422,22 @@ function sessionData = getDataForSession(session)
 
             
             % STORE RESULTS
+            
+            % session metadata (determined from sessionInfo table)
+            for k = metaDataFields
+                sessionData(dataInd).(k{1}) = sessionMetaData.(k{1});
+            end
+            
             % trial metadata
-            sessionInfoBin = find(strcmp(sessionInfo.session, session),1,'first');
-            sessionData(dataInd).mouse = sessionInfo.mouse{sessionInfoBin};
-            sessionData(dataInd).session = session;
             sessionData(dataInd).trial = j;
             sessionData(dataInd).isLightOn = isLightOn(j);
             sessionData(dataInd).obsHeightsVid = obsHeightsVid(j);
+            if ismember('side', metaDataFields) % if a neural manipulation occured, this stores information about the side of the brain
+                sessionData(dataInd).contraPawFirst = firstPawOver==contraLimb;
+                sessionData(dataInd).ipsiPawFirst = firstPawOver~=contraLimb && ~isnan(contraLimb);
+            end
+
+            
 
             % bunch of thangs
             sessionData(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
@@ -447,6 +486,7 @@ function sessionData = getDataForSession(session)
             dataInd = dataInd + 1;
         end
     end
+    if timeOperations; fprintf('getting data for all trials: %i seconds\n', round(toc)); end
     fprintf('%s: finished with %.2f of trials successfully analyzed\n', ...
         session, length(sessionData)/length(obsOnTimes));
 end
