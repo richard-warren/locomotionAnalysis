@@ -3,8 +3,8 @@ function oneStepProbByObsHeight(data)
 % settings
 xVar = [data.swingStartDistance] + [data.predictedLengths]; % predicted distance to ob
 validBins = ~[data.isLightOn] & ~[data.isWheelBreak];
-color = [237 9 127] / 255;
-colorFading = 0;
+% color = [237 9 127] / 255;
+% colorFading = 0.5;
 
 heightBinNum = 3;
 yLims = [0 1];
@@ -15,7 +15,8 @@ gausKernelSig = .004; % (m)
 
 
 % initializations
-colors = repmat(color,heightBinNum,1) .* repmat(linspace(colorFading, 1, heightBinNum)',1,3);
+% colors = repmat(color,heightBinNum,1) .* repmat(linspace(colorFading, 1, heightBinNum)',1,3);
+colors = spring(heightBinNum);
 
 modStepNum = cellfun(@(x,ind) x(data(ind).firstModPaw), ...
     {data.modStepNum}, num2cell(1:length(data)));
@@ -52,7 +53,7 @@ end
 
 
 
-figure('menubar', 'none', 'color', 'white', 'Position', [600 400 475 325]);
+figure('menubar', 'none', 'color', 'white', 'Position', [600 400 475 325], 'InvertHardcopy', 'off');
 
 for i = 1:heightBinNum
     plot(xBinCenters, probs(i,:), 'linewidth', 3, 'Color', colors(i,:)); hold on
@@ -62,7 +63,7 @@ set(gca, 'box', 'off', 'XLim', xLims, 'YLim', yLims)
 xlabel('predicted distance to obs (m)')
 ylabel('big step probability')
 legend(binLabels, 'Location', 'northwest')
-
+blackenFig
 
 
 

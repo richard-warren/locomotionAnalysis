@@ -32,8 +32,12 @@ for i = 1:length(brainRegions)
             
             fileName = sprintf('%sday%i-%s-%s-%s.avi', mouseDir, k, condition, side, sessions{k});
             if overWriteVids || ~exist(fileName, 'file') % only overwrite existing vid if overWriteVids is true
-                load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], 'isLightOn');
-                makeVidWisk(fileName, sessions{k}, [-.05 .1], .15, trialPortion, {'OFF', 'ON'}, isLightOn+1);
+                try
+                    load([getenv('OBSDATADIR') 'sessions\' sessions{k} '\runAnalyzed.mat'], 'isLightOn');
+                    makeVidWisk(fileName, sessions{k}, [-.05 .1], .15, trialPortion, {'OFF', 'ON'}, isLightOn+1);
+                catch
+                    fprintf('%s: failed to edit video!\n', sessions{k})
+                end
             end
         end     
     end

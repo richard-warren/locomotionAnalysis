@@ -73,8 +73,6 @@ for i = allInds
             locationsControl(i,:,:) = controlInterp;
         end
     end
-    
-    
 end
 
 

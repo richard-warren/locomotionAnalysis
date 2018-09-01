@@ -10,19 +10,16 @@ function makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProporti
 
 
 % settings
-% editedDir = [getenv('OBSDATADIR') 'editedVid\'];
-maxTrialTime = 1.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
+maxTrialTime = 1; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
-obsBotThickness = 10;
 contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and 255
 
 includeWiskCam = true;
 includeWebCam = false;
 showPawTouches = false;
-showTrialInfo = true;
+showTrialInfo = false;
 showWiskTouches = false;
-drawObs = false;
 
 
 % initializations
@@ -108,7 +105,7 @@ else
 end
 
 
-for i = trials
+for i = trials'
     
     % find trial indices
     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
@@ -143,18 +140,11 @@ for i = trials
             
             % bot
             frameBot = rgb2gray(read(vidBot, frameInds(j)));
-            if drawObs
-                frameBot = addObsToFrame(frameBot, obsPixPositions(frameInds(j)), obsBotThickness, [1, size(frameBot,1)], 255);
-            end
             frameBot = imadjust(frameBot, contrastLims, [0 1]);
             frame(vidTop.Height+1:end, 1:vidBot.Width, :) = repmat(frameBot,1,1,3);
             
             % change color of frame if touching
             if showPawTouches
-%                 currentTouch = interp1(touchSigTimes, touchSig, frameTimeStamps(frameInds(j)));
-%                 if currentTouch
-%                     frame(:,:,3) = frame(:,:,3)*.2;
-%                 end
                 if isTouching(frameInds(j))
                 	frame(:,:,3) = frame(:,:,3)*.2;
                 end

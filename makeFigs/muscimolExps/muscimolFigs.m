@@ -7,6 +7,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 %% get kinematic data
 kinData = getKinematicData4(sessionInfo.session, []);
+data = kinData; save([getenv('OBSDATADIR') 'matlabData\muscimolKinematicData.mat'], 'data'); clear data;
 
 % incorporate condition information into kinData struct
 for i = 1:length(kinData)
@@ -15,13 +16,16 @@ for i = 1:length(kinData)
     brainRegion = sessionInfo.brainRegion{sessionInfoBin};
     sideOfBrain = sessionInfo.side{sessionInfoBin};
     condition = sessionInfo.injectedSubstance{sessionInfoBin};
+    if strcmp(sideOfBrain, 'left'); contraLimb = 3;
+    elseif strcmp(sideOfBrain, 'right'); contraLimb = 2;
+    else; contraLimb = nan; end
     
+    kinData(i).contraPawFirst = kinData(i).firstPawOver==contraLimb;
+    kinData(i).ipsiPawFirst = kinData(i).firstPawOver~=contraLimb && ~isnan(contraLimb);
     kinData(i).brainRegion = brainRegion;
     kinData(i).sideOfBrain = sideOfBrain;
     kinData(i).condition = condition;
 end
-
-data = kinData; save([getenv('OBSDATADIR') 'matlabData\muscimolKinematicData.mat'], 'data'); clear data;
 
 
 %% load kinematic data
@@ -96,19 +100,13 @@ saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimol\muscimolAcrossSessions.png']
 savefig([getenv('OBSDATADIR') 'figures\muscimol\muscimolAcrossSessions.fig'])
 
 
-%% paw height by obs height
-
-binNames = {'saline', 'sen muscimol', 'mtc muscimol ipsi', 'mtc muscimol contra'};
-leftSideBins = strcmp({kinData.sideOfBrain}, 'left');
-contraSides = ones(1,length(kinData))*2;
-contraSides(leftSideBins) = 3;
-contraFirstBins = [kinData.firstPawOver] == contraSides;
+%% paw height by obs height for mtc
 
 bins = zeros(1,length(kinData));
-bins(strcmp({kinData.condition}, 'saline')) = 1;
-bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'sen')) = 2;
-bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc') & ~contraFirstBins) = 3;
-bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc') & contraFirstBins) = 4;
+bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc') & [kinData.ipsiPawFirst]) = 1;
+bins(strcmp({kinData.condition}, 'muscimol') & strcmp({kinData.brainRegion}, 'mtc') & [kinData.contraPawFirst]) = 2;
+bins(strcmp({kinData.condition}, 'saline')) = 3;
+binNames = {'ipsi', 'contra', 'saline'};
 
 scatterObsVsPawHeights(kinData, bins, binNames);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/muscimol/heightShapingScatter.png'));
@@ -242,82 +240,72 @@ savefig([getenv('OBSDATADIR') 'figures\muscimolSessionProgressPlotsPlots.fig'])
 
 
 
-% incorporate condition information into kinData struct
-for i = 1:length(kinData)
-    sessionInfoBin = strcmp(sessionInfo.session, kinData(i).session);
-    brainRegion = sessionInfo.brainRegion{sessionInfoBin};
-    injectedSubstance = sessionInfo.injectedSubstance{sessionInfoBin};
-    if strcmp(sessionInfo.side{sessionInfoBin}, 'left')
-        contraLimb = 3;
-    elseif strcmp(sessionInfo.side{sessionInfoBin}, 'right')
-        contraLimb = 2;
-    else
-        contraLimb = nan;
-    end
-    
-    kinData(i).brainRegion = brainRegion;
-    kinData(i).injectedSubstance = injectedSubstance;
-    kinData(i).contraLimb = contraLimb;
-end
-
 % get trial bins
-
-mice = unique(sessionInfo.mouse);
-
-firstPawContraBins = [kinData.firstPawOver]==[kinData.contraLimb];
-firstPawIpsiBins = [kinData.firstPawOver]~=[kinData.contraLimb];
-musBins = strcmp({kinData.injectedSubstance}, 'muscimol');
-vehBins = strcmp({kinData.injectedSubstance}, 'saline');
+contraFirstBins = [kinData.contraPawFirst];
+ipsiFirstBins = [kinData.ipsiPawFirst];
+musBins = strcmp({kinData.condition}, 'muscimol');
+vehBins = strcmp({kinData.condition}, 'saline');
 lightOnBins = [kinData.isLightOn];
 mtcBins = strcmp({kinData.brainRegion}, 'mtc');
 senBins = strcmp({kinData.brainRegion}, 'sen');
-% validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
-validBins = ~[kinData.isWheelBreak] & ~[kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
 
-% mtc, light on
+% mtc
 bins = zeros(1,length(kinData));
-figBins = mtcBins & validBins;
-bins(firstPawIpsiBins & musBins & figBins) = 1; % ipsi
-bins(firstPawContraBins & musBins & figBins) = 2; % contra
-bins(vehBins & figBins) = 3; % vehicle
-binLabels = {'ipsi', 'contra', 'vehicle ipsi'};
-plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light on')
-
-% mtc, light off
-bins = zeros(1,length(kinData));
-figBins = mtcBins & ~lightOnBins & validBins;
-bins(firstPawIpsiBins & musBins & figBins) = 1; % ipsi
-bins(firstPawContraBins & musBins & figBins) = 2; % contra
-bins(vehBins & figBins) = 3; % vehicle
+bins(mtcBins & musBins & ipsiFirstBins) = 1; % ipsi mus
+bins(mtcBins & musBins & contraFirstBins) = 2; % contra mus
+bins(mtcBins & vehBins) = 3; % vehicle
 binLabels = {'ipsi', 'contra', 'vehicle'};
-plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light off')
+plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex muscimol')
+saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimol\motorCortexMusKinematics.png']);
+savefig([getenv('OBSDATADIR') 'figures\muscimol\motorCortexMusKinematics.fig'])
 
-% % sen, light on
+% % mtc light off
 % bins = zeros(1,length(kinData));
-% figBins = senBins & lightOnBins & validBins;
-% bins(musBins & figBins) = 1; % mus
-% bins(vehBins & figBins) = 2; % vehicle
-% binLabels = {'muscimol', 'vehicle'};
-% plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light on')
+% bins(mtcBins & musBins & ~contraFirstBins & ~lightOnBins) = 1; % ipsi mus
+% bins(mtcBins & musBins & contraFirstBins & ~lightOnBins) = 2; % contra mus
+% bins(mtcBins & vehBins & ~lightOnBins) = 3; % vehicle
+% binLabels = {'ipsi', 'contra', 'vehicle'};
+% plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex muscimol, light off')
 % 
-% % sen, light off
+% % mtc light on
 % bins = zeros(1,length(kinData));
-% figBins = senBins & ~lightOnBins & validBins;
-% bins(musBins & figBins) = 1; % mus
-% bins(vehBins & figBins) = 2; % vehicle
-% binLabels = {'muscimol', 'vehicle'};
-% plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light off')
+% bins(mtcBins & musBins & ~contraFirstBins & lightOnBins) = 1; % ipsi mus
+% bins(mtcBins & musBins & contraFirstBins & lightOnBins) = 2; % contra mus
+% bins(mtcBins & vehBins & ~lightOnBins) = 3; % vehicle
+% binLabels = {'ipsi', 'contra', 'vehicle'};
+% plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex muscimol, light on')
 
 
 
+% sen
+% bins = zeros(1,length(kinData));
+% bins(senBins & musBins) = 1; % mus
+% bins(senBins & vehBins) = 2; % veh
+% bins(strcmp({kinData.mouse}, 'sen5')) = 0;
+% binLabels = {'mus', 'vehicle'};
+% plotObsHeightTrajectories(kinData, bins, binLabels, 'sen cortex muscimol')
+% saveas(gcf, [getenv('OBSDATADIR') 'figures\muscimol\sensoryCortexMusKinematics.png']);
+% savefig([getenv('OBSDATADIR') 'figures\muscimol\sensoryCortexMusKinematics.fig'])
+
+% % sen (with light off/on comparison)
+% bins = zeros(1,length(kinData));
+% bins(senBins & musBins & ~lightOnBins) = 1; % mus light off
+% bins(senBins & musBins & lightOnBins) = 2; % mus light on
+% bins(senBins & vehBins & ~lightOnBins) = 3; % mus light off
+% bins(senBins & vehBins & lightOnBins) = 4; % mus light on
+% binLabels = {'mus light off', 'mus light on', 'vehicle light off', 'vehicle light on'};
+% plotObsHeightTrajectories(kinData, bins, binLabels, 'sen cortex muscimol')
 
 
+%% edit little vids for talks
 
-
-
-
-
-
+dir = 'C:\Users\rick\Desktop\talkVids\';
+startTrial = 150;
+trialsToShow = 10;
+iti = 5;
+trials = startTrial:iti:startTrial+trialsToShow*5;
+makeVidWisk(fullfile(dir, 'muscimol'), '180707_003', [-.05 .1], .1, trials');
+makeVidWisk(fullfile(dir, 'saline'), '180709_003', [-.05 .1], .1, trials');
 
 
 

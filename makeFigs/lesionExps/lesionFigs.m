@@ -1,27 +1,22 @@
 %% load session info
 
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'lesionNotes');
-sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
 
 
 
-%% get kinematic data
-kinData = getKinematicData4(sessionInfo.session, []);
+%% compute kinematic data
 
-% incorporate condition information into kinData struct
-for i = 1:length(kinData)
-    sessionInfoBin = strcmp(sessionInfo.session, kinData(i).session);
-    
-    brainRegion = sessionInfo.brainRegion{sessionInfoBin};
-    sideOfBrain = sessionInfo.side{sessionInfoBin};
-    condition = sessionInfo.preOrPost{sessionInfoBin};
-    
-    kinData(i).brainRegion = brainRegion;
-    kinData(i).sideOfBrain = sideOfBrain;
-    kinData(i).condition = condition;
+loadPreviousData = false;
+
+if loadPreviousData
+    load([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data');
+    kinData = getKinematicData4(sessionInfo.session, data);
+else
+    kinData = getKinematicData4(sessionInfo.session, []);
 end
+data = kinData; save([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data', '-v7.3', '-nocompression'); clear data;
 
-data = kinData; save([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data'); clear data;
 
 
 %% load kinematic data
@@ -29,6 +24,32 @@ data = kinData; save([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat']
 load([getenv('OBSDATADIR') 'matlabData\lesionKinematicData.mat'], 'data');
 kinData = data; clear data;
 disp('lesion kinematic data loaded!')
+
+
+%% incorporate condition information into kinData struct
+for i = 1:length(kinData)
+    sessionInfoBin = strcmp(sessionInfo.session, kinData(i).session);
+    
+    brainRegion = sessionInfo.brainRegion{sessionInfoBin};
+    sideOfBrain = sessionInfo.side{sessionInfoBin};
+    condition = sessionInfo.preOrPost{sessionInfoBin};
+    
+    % get which number session post lesion
+    mouse = sessionInfo.mouse{sessionInfoBin};
+    mousePostSessions = sessionInfo.session(strcmp(sessionInfo.mouse, mouse) & strcmp(sessionInfo.preOrPost, 'post'));
+    postSessionNum = find(strcmp(mousePostSessions, sessionInfo.session{sessionInfoBin}));
+    
+    if strcmp(sideOfBrain, 'left'); contraLimb = 3;
+    elseif strcmp(sideOfBrain, 'right'); contraLimb = 2;
+    else; contraLimb = nan; end
+    
+    kinData(i).contraPawFirst = kinData(i).firstPawOver==contraLimb;
+    kinData(i).ipsiPawFirst = kinData(i).firstPawOver~=contraLimb && ~isnan(contraLimb);
+    kinData(i).brainRegion = brainRegion;
+    kinData(i).sideOfBrain = sideOfBrain;
+    kinData(i).condition = condition;
+    kinData(i).postSessionNum = postSessionNum;
+end
 
 %% get speed and avoidance data
 
@@ -85,7 +106,7 @@ end
 
 %% plot dv averages
 
-manipulationBarPlots(speedAvoidanceData, {'pre', 'post', 'postNoWisk'}, 'lesions');
+manipulationBarPlots(speedAvoidanceData, {'pre', 'post'}, 'lesions');
 saveas(gcf, [getenv('OBSDATADIR') 'figures\lesions\lesionBarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\lesions\leionsBarPlots.fig'])
 
@@ -97,20 +118,14 @@ saveas(gcf, [getenv('OBSDATADIR') 'figures\lesions\lesionAcrossSessions.png']);
 savefig([getenv('OBSDATADIR') 'figures\lesions\lesionAcrossSessions.fig'])
 
 
-%% paw height by obs height
+%% paw height by obs height for mtc
 
-binNames = {'pre', 'sen lesion', 'mtc lesion ipsi', 'mtc lesion contra'};
-
-leftSideBins = strcmp({kinData.sideOfBrain}, 'left');
-contraSides = ones(1,length(kinData))*2;
-contraSides(leftSideBins) = 3;
-contraFirstBins = [kinData.firstPawOver] == contraSides;
+binNames = {'ipsi', 'contra', 'pre'};
 
 bins = zeros(1,length(kinData));
-bins(strcmp({kinData.condition}, 'pre')) = 1;
-bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'sen')) = 2;
-bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & ~contraFirstBins) = 3;
-bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & contraFirstBins) = 4;
+bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & [kinData.ipsiPawFirst]) = 1;
+bins(strcmp({kinData.condition}, 'post') & strcmp({kinData.brainRegion}, 'mtc') & [kinData.contraPawFirst]) = 2;
+bins(strcmp({kinData.condition}, 'pre')) = 3;
 
 scatterObsVsPawHeights(kinData, bins, binNames);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/lesions/heightShapingScatter.png'));
@@ -119,75 +134,35 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/lesions/heightShapingScatter.fig
 
 %% plot kinematics
 
-
-
-% incorporate condition information into kinData struct
-for i = 1:length(kinData)
-    sessionInfoBin = strcmp(sessionInfo.session, kinData(i).session);
-    brainRegion = sessionInfo.brainRegion{sessionInfoBin};
-    preOrPost = sessionInfo.preOrPost{sessionInfoBin};
-    if strcmp(sessionInfo.side{sessionInfoBin}, 'left')
-        contraLimb = 3;
-    elseif strcmp(sessionInfo.side{sessionInfoBin}, 'right')
-        contraLimb = 2;
-    else
-        contraLimb = nan;
-    end
-    
-    kinData(i).brainRegion = brainRegion;
-    kinData(i).preOrPost = preOrPost;
-    kinData(i).contraLimb = contraLimb;
-end
-
 % get trial bins
-
-mice = unique(sessionInfo.mouse);
-
-firstPawContraBins = [kinData.firstPawOver]==[kinData.contraLimb];
-firstPawIpsiBins = [kinData.firstPawOver]~=[kinData.contraLimb];
-preBins = strcmp({kinData.preOrPost}, 'pre');
-postBins = strcmp({kinData.preOrPost}, 'post');
+contraFirstBins = [kinData.contraPawFirst];
+ipsiFirstBins = [kinData.ipsiPawFirst];
+preBins = strcmp({kinData.condition}, 'pre');
+postBins = strcmp({kinData.condition}, 'post');
 lightOnBins = [kinData.isLightOn];
 mtcBins = strcmp({kinData.brainRegion}, 'mtc');
 senBins = strcmp({kinData.brainRegion}, 'sen');
-validBins = ~[kinData.isWheelBreak] & [kinData.isObsAvoided] & ismember({kinData.mouse}, mice);
 
-% % mtc, light on
-% bins = zeros(1,length(kinData));
-% figBins = mtcBins & validBins;
-% bins(firstPawIpsiBins & preBins & figBins) = 1; % ipsi
-% bins(firstPawContraBins & preBins & figBins) = 2; % contra
-% bins(postBins & figBins) = 3; % vehicle
-% binLabels = {'ipsi', 'contra', 'vehicle ipsi'};
-% plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light on')
-% 
-% % mtc, light off
-% bins = zeros(1,length(kinData));
-% figBins = mtcBins & ~lightOnBins & validBins;
-% bins(firstPawIpsiBins & preBins & figBins) = 1; % ipsi
-% bins(firstPawContraBins & preBins & figBins) = 2; % contra
-% bins(postBins & figBins) = 3; % vehicle
-% binLabels = {'ipsi', 'contra', 'vehicle'};
-% plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions, light off')
-
-% sen, light on
+% mtc
 bins = zeros(1,length(kinData));
-figBins = senBins & lightOnBins & validBins;
-bins(preBins & figBins) = 1;
-bins(postBins & figBins) = 2;
-binLabels = {'pre', 'post'};
-plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light on')
-
-% sen, light off
-bins = zeros(1,length(kinData));
-figBins = senBins & ~lightOnBins & validBins;
-bins(preBins & figBins) = 1;
-bins(postBins & figBins) = 2;
-binLabels = {'pre', 'post'};
-plotObsHeightTrajectories(kinData, bins, binLabels, 'sensory cortex lesions, light off')
+bins(mtcBins & ipsiFirstBins & postBins) = 1; % ipsi
+bins(mtcBins & contraFirstBins & postBins) = 2; % contra
+bins(mtcBins & preBins) = 3; % pre
+binLabels = {'ipsi', 'contra', 'pre'};
+plotObsHeightTrajectories(kinData, bins, binLabels, 'motor cortex lesions')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/lesions/lesionKinematics.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/lesions/lesionKinematics.fig'))
 
 
+%% edit example videos for talks
 
+dir = 'C:\Users\rick\Desktop\talkVids\';
+startTrial = 150;
+trialsToShow = 10;
+iti = 5;
+trials = startTrial:iti:startTrial+trialsToShow*5;
+makeVidWisk(fullfile(dir, 'preLesion'), '180808_000', [-.05 .1], .1, trials');
+makeVidWisk(fullfile(dir, 'postLesion'), '180811_000', [-.05 .1], .1, trials');
 
 
 

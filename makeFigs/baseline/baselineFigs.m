@@ -30,7 +30,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneStepProbByObsHeight.
 
 %% plot one vs two step trajectories
 
-binNum = 5;
+binNum = 3;
 binVar = [kinData.swingStartDistance] + [kinData.predictedLengths]; % predicted distance to obs
 binVar(abs(zscore(binVar))>3) = 0; % remove outliers
 binEdges = linspace(min(binVar), max(binVar), binNum+1);
@@ -44,7 +44,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/oneVsTwoStepTrajectorie
 
 %% plot obs height kinematics
 
-binNum = 2;
+binNum = 1;
 binVar = [kinData.swingStartDistance] + [kinData.predictedLengths]; % predicted distance to obs
 binVar(abs(zscore(binVar))>3) = 0; % remove outliers
 binEdges = linspace(min(binVar), max(binVar), binNum+1);

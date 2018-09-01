@@ -127,10 +127,12 @@ function sessionData = getDataForSession(session)
         % otherwise find the times and obs positions at the frames of whisker contact    
         else
             trialStartInd = find(frameTimeStampsWisk>obsOnTimes(j), 1, 'first');
-            wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
-            if ~isempty(wiskContactFrameInd)
-                contactTimes(j) = frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd));
-                contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
+            if ~isempty(trialStartInd)
+                wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
+                if ~isempty(wiskContactFrameInd)
+                    contactTimes(j) = frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd));
+                    contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
+                end
             end
         end
     end
