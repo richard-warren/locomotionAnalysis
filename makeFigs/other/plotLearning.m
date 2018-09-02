@@ -3,7 +3,7 @@ function data = plotLearning(mice)
 % and after adding wheel break
 
 % settings
-% mice = {'sen2', 'sen3', 'sen4', 'sen5', 'sen6'};
+touchThresh = 5;
 subplotNames = {'success rate', 'velocity (m/s)'};
 noBreakExpName = 'obsNoBrBar';
 breakExpName = 'obsBrBar';
@@ -13,13 +13,12 @@ mouseScatSize = 50;
 
 % initializations
 xInds = 1:(noBrSessions + brSessions); % session inds for plots
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx']);
+sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'sheet', 'sessions');
 sessionBins = ismember(sessionInfo.mouse, mice) &...
               ismember(sessionInfo.experiment, {noBreakExpName, breakExpName}) &...
               sessionInfo.include;
 sessionInfo = sessionInfo(sessionBins, :);
 mouseColors = hsv(length(mice));
-
 
 
 
@@ -43,13 +42,13 @@ end
 
 % get session data
 allSessions = vertcat(mouseSessions{1,:});
-data = getSpeedAndObsAvoidanceData(allSessions, false);
-
+data = getSpeedAndObsAvoidanceData(allSessions, sessionInfo, false);
+isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
 
 
 % prepare figure
 figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', ...
-    'position', [-1000 300 900 600], 'color', [1 1 1], 'inverthardcopy', 'off');
+    'position', [100 300 900 600], 'color', [1 1 1], 'inverthardcopy', 'off');
 
 
 
@@ -65,8 +64,8 @@ for i = 1:length(mice)
         
         avgVels(i,j,1) = nanmean([data(onBins).avgVel]);
         avgVels(i,j,2) = nanmean([data(offBins).avgVel]);
-        successRates(i,j,1) = sum([data(onBins).isObsAvoided]) / sum(onBins);
-        successRates(i,j,2) = sum([data(offBins).isObsAvoided]) / sum(offBins);
+        successRates(i,j,1) = mean(isSuccess(onBins));
+        successRates(i,j,2) = mean(isSuccess(offBins));;
     end
     
     % plot avoidance
@@ -102,7 +101,7 @@ for i = 1:length(mice)
     text(xInds(end), ys(i), mice{i}, 'Color', mouseColors(i,:));
 end
 
-savefig([getenv('OBSDATADIR') 'speedAndAvoidance.fig'])
-saveas(gcf, [getenv('OBSDATADIR') 'figures\speedAndAvoidance.png']);
+savefig([getenv('OBSDATADIR') 'learningProgress.fig'])
+saveas(gcf, [getenv('OBSDATADIR') 'figures\learningProgress.png']);
 
 

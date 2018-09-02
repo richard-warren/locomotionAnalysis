@@ -22,7 +22,9 @@ end
 % collect data for all sessions
 data = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
-if isfield(sessionInfo, 'notes'); sessionInfo = sessionInfo(:, ~strcmp(sessionInfo.Properties.VariableNames, 'notes')); end
+if any(strcmp(sessionInfo.Properties.VariableNames, 'notes'))
+    sessionInfo = sessionInfo(:, ~strcmp(sessionInfo.Properties.VariableNames, 'notes'));
+end
 metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 

@@ -7,7 +7,7 @@
 checkFrequency = 60; % seconds
 sessionsDir = [getenv('OBSDATADIR') 'sessions\'];
 schedulerDir = [getenv('GITDIR') 'locomotionAnalysis\tracking\deepLabCut\dlcScheduler\'];
-dlcPath = 'C:\Users\rick\Desktop\github\DeepLabCutBatch';
+dlcPath = [getenv('GITDIR') 'DeepLabCutBatch'];
 
 % initializations
 load([schedulerDir 'analyzedSessions.mat'], 'analyzedSessions');
@@ -38,7 +38,7 @@ while true
                 dlcAnalysisSuccessful = false;
                 currentTime = clock;
                 fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
-                tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]);
+                tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
                 fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
                 dlcAnalysisSuccessful = true;
             else

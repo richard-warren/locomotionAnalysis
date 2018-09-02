@@ -2,8 +2,8 @@
 
 
 % settings
-manipulation = 'muscimol';
-maxLesionSession = 3;
+manipulation = 'lesion';
+maxLesionSession = 4;
 
 
 if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
@@ -15,7 +15,7 @@ sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessi
 
 %% compute kinematic data
 
-loadPreviousData = false;
+loadPreviousData = true;
 
 if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\' manipulation 'kinematicData.mat'], 'data');
@@ -111,10 +111,6 @@ binLabels = {'ipsi', 'contra', 'pre'};
 plotObsHeightTrajectories(kinData, bins.*includeTrial, binLabels, ['motor cortex ' manipulation])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.fig'))
-
-
-
-
 
 
 
