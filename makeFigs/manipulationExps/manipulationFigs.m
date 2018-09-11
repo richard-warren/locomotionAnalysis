@@ -9,7 +9,8 @@ maxLesionSession = 4;
 if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
 elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post'}; end
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
+% sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:);
 
 
 
@@ -56,7 +57,7 @@ disp([manipulation ' speed avoidance data loaded!'])
 
 % don't include too many post lesion sessions if manipulation=='lesion'
 if strcmp(manipulation, 'lesion'); includeTrial = [speedAvoidanceData.conditionNum]<=maxLesionSession;
-else; includeTrial = ones(1,length(speedAvoidanceData)); end
+else; includeTrial = true(1,length(speedAvoidanceData)); end
 
 manipulationBarPlots(speedAvoidanceData(includeTrial), conditions, manipulation);
 saveas(gcf, [getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'BarPlots.png']);
@@ -89,10 +90,13 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShaping
 
 %% plot kinematics
 
+% settings
+miceToExclude = {'sen5'};
+
 % get trial bins
 contraFirstBins = [kinData.contraPawFirst];
 ipsiFirstBins = [kinData.ipsiPawFirst];
-contorolBins = strcmp({kinData.condition}, conditions{1});
+controlBins = strcmp({kinData.condition}, conditions{1});
 manipBins = strcmp({kinData.condition}, conditions{2});
 lightOnBins = [kinData.isLightOn];
 mtcBins = strcmp({kinData.brainRegion}, 'mtc');
@@ -106,11 +110,20 @@ else; includeTrial = ones(1,length(kinData)); end
 bins = zeros(1,length(kinData));
 bins(mtcBins & ipsiFirstBins & manipBins) = 1; % ipsi
 bins(mtcBins & contraFirstBins & manipBins) = 2; % contra
-bins(mtcBins & contorolBins) = 3; % pre
+bins(mtcBins & controlBins) = 3; % pre
 binLabels = {'ipsi', 'contra', 'pre'};
 plotObsHeightTrajectories(kinData, bins.*includeTrial, binLabels, ['motor cortex ' manipulation])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.fig'))
 
+% sen
+bins = zeros(1,length(kinData));
+bins(senBins & controlBins) = 1; % control
+bins(senBins & manipBins) = 2; % manipluation
+bins(ismember({kinData.mouse}, miceToExclude)) = 0; 
+binLabels = conditions;
+plotObsHeightTrajectories(kinData, bins.*includeTrial, binLabels, ['sensory cortex ' manipulation])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'SenKinematics.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'SenKinematics.fig'))
 
 

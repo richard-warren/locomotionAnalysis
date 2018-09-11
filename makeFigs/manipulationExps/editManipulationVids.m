@@ -1,10 +1,10 @@
 
-manipulation = 'lesion';
+manipulation = 'muscimol';
 
 % settings
 dir = ['Z:\RAW\sharing\experimentVids\' manipulation 'Vids\'];
 trialPortion = .1;
-overWriteVids = false;
+overWriteVids = true;
 
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:);
@@ -28,7 +28,7 @@ for i = 1:length(brainRegions)
         
         for k = 1:length(sessions)
             sessionBin = strcmp(sessionInfo.session, sessions{k});
-            if sessionInfo.include(sessionInfoBin)
+            if sessionInfo.include(sessionBin)
                 condition = sessionInfo.condition{sessionBin};
                 side = sessionInfo.side{sessionBin};
 

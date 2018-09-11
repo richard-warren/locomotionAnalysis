@@ -3,12 +3,12 @@ function data = plotLearning(mice)
 % and after adding wheel break
 
 % settings
-touchThresh = 5;
+touchThresh = 1;
 subplotNames = {'success rate', 'velocity (m/s)'};
 noBreakExpName = 'obsNoBrBar';
 breakExpName = 'obsBrBar';
 noBrSessions = 2; % uses the most recent noBrSessions 
-brSessions = 5; % uses the first (oldest) brSessions
+brSessions = 10; % uses the first (oldest) brSessions
 mouseScatSize = 50;
 
 % initializations
@@ -43,8 +43,8 @@ end
 % get session data
 allSessions = vertcat(mouseSessions{1,:});
 data = getSpeedAndObsAvoidanceData(allSessions, sessionInfo, false);
-isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
-
+ventralTouchInds = find(contains(data(1).touchClassNames, {'fore_ventral', 'hind_ventral_low'}));
+isSuccess = cellfun(@(x) sum(ismember(x, ventralTouchInds)), {data.trialTouches}) < touchThresh;
 
 % prepare figure
 figure('name', 'obsAvoidanceLearningSummary', 'menubar', 'none', 'units', 'pixels', ...
@@ -65,7 +65,7 @@ for i = 1:length(mice)
         avgVels(i,j,1) = nanmean([data(onBins).avgVel]);
         avgVels(i,j,2) = nanmean([data(offBins).avgVel]);
         successRates(i,j,1) = mean(isSuccess(onBins));
-        successRates(i,j,2) = mean(isSuccess(offBins));;
+        successRates(i,j,2) = mean(isSuccess(offBins));
     end
     
     % plot avoidance

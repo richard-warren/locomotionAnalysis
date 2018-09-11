@@ -5,12 +5,12 @@ sessions = selectSessions;
 
 
 %% run DeepLabCut analysis
-dlcPath = 'C:\Users\rick\Desktop\github\DeepLabCut';
+dlcPath = [getenv('GITDIR') 'DeepLabCutBatch'];
 for i = 1:length(sessions)
     try
         currentTime = clock;
         fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', sessions{i}, currentTime(4), currentTime(5))
-        tic; [~,~] = system(['cd ' dlcPath ' && batchDLC.bat ' sessions{i}]);
+        tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' sessions{i}]);
         fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', sessions{i}, toc/60/60)
     catch
         fprintf('%s: problem with DeepLabCut analysis!\n', sessions{i})

@@ -31,8 +31,7 @@ if includeWebCam; vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsPixPositions',...
                                             'wheelPositions', 'wheelTimes',...
                                             'obsOnTimes', 'obsOffTimes',...
-                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', ...
-                                            'touchSig', 'touchSigTimes', 'nosePos', 'arePawsTouchingObs');
+                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', 'nosePos');
 if showPawTouches; isTouching = (sum(arePawsTouchingObs,2)>0); end
 if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
 if ~exist('obsPixPositions', 'var')
@@ -105,7 +104,7 @@ else
 end
 
 
-for i = trials'
+for i = trials
     
     % find trial indices
     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');

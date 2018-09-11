@@ -558,7 +558,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         
         % settings
         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
-        pythonPath = '\Users\rick\Anaconda3\envs\fastai\python.exe';
+        pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
         proximityThresh = 20;
         classesToAssignToPaw = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
