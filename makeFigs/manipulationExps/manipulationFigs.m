@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'lesion';
+manipulation = 'muscimol';
 maxLesionSession = 4;
 
 
@@ -81,7 +81,7 @@ bins(strcmp({kinData.condition}, conditions{1})) = 3;
 
 % don't include too many post lesion sessions if manipulation=='lesion'
 if strcmp(manipulation, 'lesion'); includeTrial = [kinData.conditionNum]<=maxLesionSession;
-else; includeTrial = ones(1,length(speedAvoidanceData)); end
+else; includeTrial = ones(1,length(kinData)); end
 
 scatterObsVsPawHeights(kinData, bins.*includeTrial, binNames);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterMtc.png'));

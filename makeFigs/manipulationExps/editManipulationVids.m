@@ -4,7 +4,7 @@ manipulation = 'muscimol';
 % settings
 dir = ['Z:\RAW\sharing\experimentVids\' manipulation 'Vids\'];
 trialPortion = .1;
-overWriteVids = true;
+overWriteVids = false;
 
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:);
