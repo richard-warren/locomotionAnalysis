@@ -21,6 +21,7 @@ ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 openEphysObsOnTimes = openEphysObsOnTimes(logical(info.eventId) & channel==obsOnChannel); % only take rising edge of event channel // !!! is the first variablee returned from load_open_ephys_data_faster really the identity of the event channel???
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsOnTimes');
 
+
 if length(openEphysObsOnTimes)~=obsOnTimes
     fprintf('WARNDING: different number of obsOnTimes detected in spike and openEphys...')
     
