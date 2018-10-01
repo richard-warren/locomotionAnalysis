@@ -15,5 +15,5 @@ for i = 1:length(wiskContactFrames)
     end
 end
 
-montage(allImgs, 'DisplayRange', [0 255]);
+figure; montage(allImgs, 'DisplayRange', [0 255]);
 set(gcf, 'name', session, 'units', 'normalized', 'position', [0 0 1 1])
