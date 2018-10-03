@@ -1,6 +1,10 @@
 function allCellsData = plotPSTH(sessions, eventTimes, figTitle)
 
-% to do: compute std witin time window?
+% to do: interp all cells within a session at the same time (to speed
+% things up) // plot multiple thing on top of eachother, which would let me
+% get rid of bootstrapping too... // add vertical line option for epoch
+% mode, eg to show swing and stance // accept previously computed data, and
+% replot only, mwahahahaha // number plots
 
 % sessions: cell array of session names
 % eventTimes: cell array with every entry a vector of event times in a
@@ -10,9 +14,11 @@ function allCellsData = plotPSTH(sessions, eventTimes, figTitle)
 
 % settings
 yLimsNormalized = [-2 2];
+yLims = [0 100];
 stimPrePost = [-.5 2];
 fs = 1000;
 normalize = false;
+sem = false;
 plotTrials = false;
 plotStd = true;
 plotControlDistribution = true;
@@ -46,8 +52,9 @@ for ses = 1:length(sessions)
     allSpkRates{ses} = temp.spkRates;
 end
 totalCells = sum(cellfun(@(x) size(x,1), allSpkRates));
+rows = min(totalCells, rows);
 allCellsData = cell(1, totalCells);
-if plotControlDistribution; allCellsControlData = cell(1, totalCells); end
+plotControlDistribution; allCellsControlData = cell(1, totalCells);
 
 
 
@@ -63,6 +70,7 @@ for ses = 1:length(sessions)
     
     % get events for each neuron
     for neuron = 1:size(allSpkRates{ses},1)
+        fprintf('%.2f... ', cellInd/totalCells);
         cellData = nan(length(eventTimes{ses}), xGridLength); % event X time
         cellControlData = nan(length(eventTimes{ses}), xGridLength); % event X time
         
@@ -113,15 +121,16 @@ for ses = 1:length(sessions)
         cellInd = cellInd+1;
     end
 end
-
+fprintf('\n');
 
 
 % compute means and standard deviations
 cellAvgs = cellfun(@(x) squeeze(nanmean(x,1)), allCellsData, 'UniformOutput', 0); cellAvgs = cat(1, cellAvgs{:});
-cellStds = cellfun(@(x) squeeze(nanstd(x,1)), allCellsData, 'UniformOutput', 0); cellStds = cat(1, cellStds{:});
 cellControlAvgs = cellfun(@(x) squeeze(nanmean(x,1)), allCellsControlData, 'UniformOutput', 0); cellControlAvgs = cat(1, cellControlAvgs{:});
-cellControlStds = cellfun(@(x) squeeze(nanstd(x,1)), allCellsControlData, 'UniformOutput', 0); cellControlStds = cat(1, cellControlStds{:});
-
+cellStd = cellfun(@(x) squeeze(nanstd(x,1)), allCellsData, 'UniformOutput', 0); cellStd = cat(1, cellStd{:});
+% cellStd = cellfun(@(x) squeeze(nanstd(x,1) / sqrt(size(x,1))), allCellsData, 'UniformOutput', 0); cellStd = cat(1, cellStd{:});
+cellControlStd = cellfun(@(x) squeeze(nanstd(x,1)), allCellsControlData, 'UniformOutput', 0); cellControlStd = cat(1, cellControlStd{:});
+% cellControlStd = cellfun(@(x) squeeze(nanstd(x,1) / sqrt(size(x,1))), allCellsControlData, 'UniformOutput', 0); cellControlStd = cat(1, cellControlStd{:});
 
 
 
@@ -146,20 +155,20 @@ for i = 1:totalCells
     % plot bootstrap mean and std
     if plotControlDistribution
         plot(x, cellControlAvgs(i,:), 'linewidth', 3, 'color', controlColor); hold on
-        plot(x, cellControlAvgs(i,:)+cellControlStds(i,:), 'linewidth', 0.5, 'color', controlColor)
-        plot(x, cellControlAvgs(i,:)-cellControlStds(i,:), 'linewidth', 0.5, 'color', controlColor)
+        plot(x, cellControlAvgs(i,:)+cellControlStd(i,:), 'linewidth', 0.5, 'color', controlColor)
+        plot(x, cellControlAvgs(i,:)-cellControlStd(i,:), 'linewidth', 0.5, 'color', controlColor)
     end
     
     % plot mean and std
     plot(x, cellAvgs(i,:), 'linewidth', 3, 'color', lineColor); hold on
     if plotStd
-        plot(x, cellAvgs(i,:)+cellStds(i,:), 'linewidth', 0.5, 'color', lineColor)
-        plot(x, cellAvgs(i,:)-cellStds(i,:), 'linewidth', 0.5, 'color', lineColor)
+        plot(x, cellAvgs(i,:)+cellStd(i,:), 'linewidth', 0.5, 'color', lineColor)
+        plot(x, cellAvgs(i,:)-cellStd(i,:), 'linewidth', 0.5, 'color', lineColor)
     end
     
     
-    try; set(gca, 'box', 'off', 'XLim', [x(1) x(end)]); catch; keyboard; end
-    if normalize; set(gca, 'YLim', yLimsNormalized); end
+    set(gca, 'box', 'off', 'XLim', [x(1) x(end)]);
+    if normalize; set(gca, 'YLim', yLimsNormalized); end % else; set(gca, 'YLim', yLims); end
     if (row~=rows || col~=1) && ~plotEpochs; set(gca, 'XColor', [1 1 1]); end
     line([0 0], get(gca, 'YLim'), 'color', controlColor)
 end

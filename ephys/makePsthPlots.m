@@ -1,14 +1,13 @@
-
+%% select sessions
 
 
 
 
 %% make PSTHs
 
-eventName = 'rewardTimes'; % rewardTimes, wiskContacts, obsOnTimes, obsLightOnTimes
+eventName = 'wiskContacts'; % rewardTimes, wiskContacts, obsOnTimes, obsLightOnTimes
+sessions = {'180917_002', '180920_002', '180922_001', '181001_002'};
 
-sessions = {'180917_002', '180920_002', '180922_001'};
-% sessions = {'180922_001'};
 eventTimes = cell(1,length(sessions));
 for i = 1:length(sessions)
     
@@ -28,9 +27,9 @@ end
 plotPSTH(sessions, eventTimes, eventName);
 
 
-%% plot inter-reward epoches
+%% plot inter-reward epochs
 
-sessions = {'180917_002', '180920_002', '180922_001'};
+sessions = {'180917_002', '180920_002', '180922_001', '181001_002'};
 eventTimes = cell(1,length(sessions));
 
 for i = 1:length(sessions)        
@@ -45,8 +44,7 @@ plotPSTH(sessions, eventTimes, 'rewardEpochs');
 
 %% plot time between obsOn and wisk contact
 
-sessions = {'180917_002', '180920_002', '180922_001'};
-% sessions = {'180920_002', '180922_001'};
+sessions = {'180917_002', '180920_002', '180922_001', '181001_002'};
 eventTimes = cell(1,length(sessions));
 
 for i = 1:length(sessions)
@@ -60,8 +58,6 @@ for i = 1:length(sessions)
             wiskTime = temp.frameTimeStamps(temp.wiskContactFrames(j));
             if wiskTime>temp.obsOnTimes(j)
                 sessionEvents(end+1,:) = [temp.obsOnTimes(j) wiskTime];
-            else
-                fprintf('%s: oh fuck! whisker contact time earlier than obs on time!\n', sessions{i});
             end
         end
     end
@@ -69,3 +65,49 @@ for i = 1:length(sessions)
 end
 
 plotPSTH(sessions, eventTimes, 'obsOnToWiskContact');
+
+
+
+%% plot step tuning
+
+sessions = {'180917_002', '180920_002', '180922_001', '181001_002'};
+% sessions = {'181001_002'};
+eventTimes = cell(1,length(sessions));
+paw = 4;
+percentileLimits = [40 60]; % only include swings within these percentile limits
+
+for i = 1:length(sessions)
+    
+    fprintf('%s: loading data...\n', sessions{i})
+    load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'],...
+            'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'wheelCenter', 'wheelRadius', 'mToPixMapping');
+    locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' sessions{i} '\trackedFeaturesRaw.csv']); % get raw tracking data
+    [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
+    topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
+    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
+    
+    % get swing start and end times
+    swingStartInds = find(diff(~stanceBins(:,paw))==1);
+    swingStartTimes = frameTimeStamps(swingStartInds(1:end-1));
+    swingEndTimes = frameTimeStamps(swingStartInds(2:end)-1);
+    sessionEvents = cat(2, swingStartTimes, swingEndTimes);
+    sessionEvents = sessionEvents(~isnan(sum(sessionEvents,2)),:); % remove nan entries
+    
+    % remove steps that take to long
+    durations = diff(sessionEvents,1,2);
+    durationLimits = prctile(durations, percentileLimits);
+    sessionEvents = sessionEvents(durations>durationLimits(1) & durations<durationLimits(2), :);
+    
+    eventTimes{i} = sessionEvents;
+end
+
+%%
+plotPSTH(sessions, eventTimes, sprintf('paw%iSwingStartToStanceEnd', paw));
+
+
+
+
+
+
+
+
