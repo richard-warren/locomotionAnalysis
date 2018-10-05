@@ -2,14 +2,14 @@
 
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 maxLesionSession = 4;
 
 
 if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
 elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post'}; end
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
-% sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
+% sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:);
 
 

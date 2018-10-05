@@ -37,7 +37,11 @@ for i = 1:length(sessions)
         
         % get sesionNum and conditionNum for mouse
         mouseBins = strcmp(sessionInfo.mouse, sessionMetaData.mouse);
-        conditionBins = strcmp(sessionInfo.condition, sessionMetaData.condition);
+        if isfield(sessionInfo, 'condition')
+            conditionBins = strcmp(sessionInfo.condition, sessionMetaData.condition);
+        else
+            conditionBins = false(1,height(sessionInfo));
+        end
         sessionMetaData.sessionNum = find(strcmp(sessionInfo.session(mouseBins), sessionMetaData.session)); % session num is 1,2,3... for sequential sessions for a given mouse // used to plot performace across days
         sessionMetaData.conditionNum = find(strcmp(sessionInfo.session(mouseBins & conditionBins), sessionMetaData.session)); % first session for condition pre and condition post is 1, second session for condition pre and condition post is 2, etc // used to restrict how many days post lesion to include in analysis
         
@@ -97,8 +101,19 @@ for i = 1:length(mice)
     [data(mouseBins).predictedLengths] = predictedLengths{:};     
 end
 
-% concatenate new and previous data
-if ~isempty(previousData); data = cat(2, previousData, data); end
+% concatenate new and previous data, first removing fields that don't align
+keyboard
+mismatches = setdiff(fieldnames(data), fieldnames(previousData));
+for i = 1:length(mismatches)
+    fprintf('WARNING: remove field "%s" due to mismatch in previous and newly computed data...', mismatches{i})
+    if ismember(mismatches{i}, fieldnames(data))
+        data = rmfield(data, mismatches{i});
+    else
+        previousData = rmfield(previousData, mismatches{i});
+    end
+end
+
+try if ~isempty(previousData); data = cat(2, previousData, data); end; catch; keyboard; end
 
 
 
@@ -449,6 +464,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
             sessionData(dataInd).pawObsPosInd = pawObsPosInd;% ind at which obs contacts wisks for locations for each paw
             sessionData(dataInd).pawObsPosIndInterp = pawObsPosIndInterp; % ind at which obs contacts wisks for interp locations for each paw
             sessionData(dataInd).timeStamps = trialTimeStamps;
+            sessionData(dataInd).frameTimeStamps = frameTimeStamps(trialInds); % in original frameTimeStamps reference point
             sessionData(dataInd).locations = trialLocations;
             sessionData(dataInd).controlLocations = allLocations{1};
             sessionData(dataInd).noObsLocations = allLocations{2};

@@ -4,7 +4,8 @@ function allCellsData = plotPSTH(sessions, eventTimes, figTitle)
 % things up) // plot multiple thing on top of eachother, which would let me
 % get rid of bootstrapping too... // add vertical line option for epoch
 % mode, eg to show swing and stance // accept previously computed data, and
-% replot only, mwahahahaha // number plots
+% replot only, mwahahahaha // number plots // add buffer to begining and
+% end of epoch plots
 
 % sessions: cell array of session names
 % eventTimes: cell array with every entry a vector of event times in a

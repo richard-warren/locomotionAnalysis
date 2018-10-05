@@ -20,7 +20,7 @@ for i = 1:length(brainRegions)
     
     brainRegionBins = strcmp({data.brainRegion}, brainRegions{i});
     mice = unique({data(brainRegionBins).mouse});
-    colors = winter(length(mice));
+    colors = hsv(length(mice));
     
     
     for j = 1:length(mice)
@@ -70,11 +70,11 @@ for i = 1:length(brainRegions)
     end
     
 %     % add mouse labels
-%     xLims = get(gca, 'xlim');
-%     xs = linspace(1, xLims(2)*.8, length(mice));
-%     for j = 1:length(mice)
-%         text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, mice{j}, 'Color', colors(j,:));
-%     end
+    xLims = get(gca, 'xlim');
+    xs = linspace(1, xLims(2)*.8, length(mice));
+    for j = 1:length(mice)
+        text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, mice{j}, 'Color', colors(j,:));
+    end
 end
     
 
@@ -93,5 +93,5 @@ for i = 1:length(dvs)
     end
 end
 
-blackenFig
+% blackenFig
 

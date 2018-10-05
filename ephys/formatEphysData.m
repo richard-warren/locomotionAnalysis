@@ -23,7 +23,7 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'ob
 
 
 if length(openEphysObsOnTimes)~=obsOnTimes
-    fprintf('WARNDING: different number of obsOnTimes detected in spike and openEphys...')
+    fprintf('WARNING: different number of obsOnTimes detected in spike and openEphys...')
     
     validOpenEBins = false(1,length(openEphysObsOnTimes));
     validSpikeBins = false(1, length(obsOnTimes));
