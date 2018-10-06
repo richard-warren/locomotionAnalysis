@@ -1,4 +1,4 @@
-function plotAxis = plotPSTH2(session, cellNum, eventTimes, conditions)
+function plotPSTH2(session, cellNum, eventTimes, conditionNames)
 
 % to do: interp all cells within a session at the same time (to speed
 % things up) // plot multiple thing on top of eachother, which would let me
@@ -11,12 +11,14 @@ function plotAxis = plotPSTH2(session, cellNum, eventTimes, conditions)
 
 
 % settings
+showFigure = false; % set to false if using this function to create subplots using separate code
 yLimsNormalized = [-2 2];
 yLims = [0 100];
-stimPrePost = [-.5 2];
+stimPrePost = [-.1 .5];
 fs = 1000;
 normalize = false;
-plotTrials = true;
+plotTrials = false;
+trialsToPlot = 10;
 plotStd = true;
 plotControlDistribution = false;
 colors = hsv(length(eventTimes))*.8;
@@ -46,29 +48,21 @@ spkTimes = temp.spkTimes;
 spkRates = temp.spkRates(cellNum, :);
 
 
-% create PSTH matrices
-
-
-
-    
 % get neural data for session
 if round(1/median(diff(spkTimes)))~=fs; disp('WARNING: expected frequency for instantaneous firing rate was not met!'); keyboard; end
 if normalize; spkRates = zscore(spkRates); end
-
-
-
 cellData = cell(1, length(eventTimes));
 if plotControlDistribution; cellControlData = cell(1, length(eventTimes)); end
 
-% get spike rates for each event
 for eventType = 1:length(eventTimes)
-    disp(eventType)
     
+    % initialize data containers
     eventData = nan(length(eventTimes{eventType}), xGridLength);
     if plotControlDistribution
         eventControlData = nan(length(eventTimes(eventType)), xGridLength);
     end
     
+    % get response for each trial of given eventType
     for event = 1:length(eventTimes{eventType})
 
         % get event responses
@@ -117,7 +111,8 @@ end
 
 
 % plot!
-figure('color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 400 500 300]); hold on
+% figure('Visible', showFigure, 'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 400 500 300]); hold on
+% axes(parent)
 if ~plotEpochs; x=times; else; x = mean(cat(1, times{:}),1); end % use average x axis across all conditions
 meanTraces = cell(1, length(eventTimes));
 
@@ -141,7 +136,9 @@ for i = 1:numConditions
     
     % plot individual trials
     if plotTrials
-        for trial = 1:size(cellData{i})
+        randTrials = randperm(size(cellData{i},1));
+        randTrials = randTrials(1:min(trialsToPlot, size(cellData{i},1)));
+        for trial = randTrials
             plot(x, cellData{i}(trial,:), 'linewidth', 1, 'color', [colors(i,:) 0.1]); hold on
         end
     end
@@ -158,6 +155,6 @@ end
 set(gca, 'box', 'off', 'XLim', [x(1) x(end)]);
 if normalize; set(gca, 'YLim', yLimsNormalized); end % else; set(gca, 'YLim', yLims); end
 if ~plotEpochs; line([0 0], get(gca, 'YLim'), 'color', controlColor); end
-
-plotAxis = gca;
 if numConditions>1; legend([meanTraces{:}], conditionNames, 'Box', 'off'); end
+
+

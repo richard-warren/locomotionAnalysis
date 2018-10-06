@@ -12,7 +12,7 @@ eventName = 'obsOnToObsOff'; % rewardTimes, wiskContacts, obsOnTimes, obsLightOn
 if strcmp(eventName, 'wiskContacts')
     temp = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
         'wiskContactFrames', 'frameTimeStamps');
-    sessionEvents = temp.frameTimeStamps(temp.wiskContactFrames(temp.wiskContactFrames>0));
+    sessionEvents = temp.frameTimeStampsWisk(temp.wiskContactFrames(temp.wiskContactFrames>0));
 elseif strcmp(eventName, 'obsOnToObsOff')
     temp = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
         'obsOnTimes', 'obsOffTimes');

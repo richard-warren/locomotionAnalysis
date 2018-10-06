@@ -1,4 +1,4 @@
-function data = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
+function [data, stanceBins] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 
@@ -102,18 +102,18 @@ for i = 1:length(mice)
 end
 
 % concatenate new and previous data, first removing fields that don't align
-keyboard
-mismatches = setdiff(fieldnames(data), fieldnames(previousData));
-for i = 1:length(mismatches)
-    fprintf('WARNING: remove field "%s" due to mismatch in previous and newly computed data...', mismatches{i})
-    if ismember(mismatches{i}, fieldnames(data))
-        data = rmfield(data, mismatches{i});
-    else
-        previousData = rmfield(previousData, mismatches{i});
+if ~isempty(previousData)
+    mismatches = setdiff(fieldnames(data), fieldnames(previousData));
+    for i = 1:length(mismatches)
+        fprintf('WARNING: remove field "%s" due to mismatch in previous and newly computed data...', mismatches{i})
+        if ismember(mismatches{i}, fieldnames(data))
+            data = rmfield(data, mismatches{i});
+        else
+            previousData = rmfield(previousData, mismatches{i});
+        end
     end
+    data = cat(2, previousData, data);
 end
-
-try if ~isempty(previousData); data = cat(2, previousData, data); end; catch; keyboard; end
 
 
 
@@ -172,7 +172,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
             trialStartInd = find(frameTimeStampsWisk>obsOnTimes(j), 1, 'first');
             if ~isempty(trialStartInd)
                 wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
-                if ~isempty(wiskContactFrameInd)
+                if ~isempty(wiskContactFrameInd) && frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd))<obsOffTimes(j)
                     contactTimes(j) = frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd));
                     contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
                 end

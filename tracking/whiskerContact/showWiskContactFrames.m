@@ -10,7 +10,8 @@ allImgs = zeros(vid.Height, vid.Width, length(wiskContactFrames));
 for i = 1:length(wiskContactFrames)
     if wiskContactFrames(i)>0
         frame = read(vid, wiskContactFrames(i));
-        insertText(frame, [0 0], num2str(i));
+        frame = insertText(frame, [0 0], num2str(i), ...
+            'FontSize', 40, 'BoxColor', [0 0 0], 'TextColor', 'white', 'BoxOpacity', 1);
         allImgs(:,:,i) = squeeze(frame(:,:,1));
     end
 end

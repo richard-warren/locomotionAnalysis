@@ -28,7 +28,8 @@ if len(sys.argv)!=3:
     print("Usage: python cropanalyzevideo.py baseDir session")
     exit()
 
-os.chdir(os.path.split(sys.argv[0])[0])
+if os.path.split(sys.argv[0])[0] != '':
+    os.chdir(os.path.split(sys.argv[0])[0])
 
 session = sys.argv[2]
 baseDir = sys.argv[1]
@@ -40,6 +41,8 @@ input_size = (280,336)
 color_mode = "grayscale"
 numFeatures = 5408
 bs = 64
+
+print("Loading models")
 
 def meanError(y_true, y_pred):
     groundTruth = K.argmax(y_true, axis=-1)
@@ -62,11 +65,13 @@ cropModel = keras.models.load_model(os.path.join("models", cropModelName+".h5"),
 
 model = keras.models.load_model(os.path.join("models", modelName+".h5"), custom_objects={"meanError": meanError, "meanSquared": meanSquared, "meanAbsError": meanAbsError})
 
+print("Assembling end-to-end model")
+
 convNet = model.layers[1].layer
 v = cropModel.output
 v = Maxima2D()(v)
 v = PointCrop2D(crop_size=200, mean=0.257, std=0.288, wOffset=-50, hOffset=-75)([v, cropModel.input])
-v = MaxPooling2D((2,2), padding='same', name='downsampler')(v) 
+v = MaxPooling2D((2,2), padding='same', name='downsampler')(v)
 v = convNet(v)
 
 visual_model = Model(inputs=cropModel.input, outputs=v)
@@ -80,35 +85,60 @@ linear_model = Model(inputs=interm_input, outputs=x)
 
 logging.basicConfig(level=logging.INFO)
 
+print("Loading session metadata")
+
 frames = {}
 softmaxs = {}
 clip = VideoFileClip(os.path.join(baseDir, session, "runWisk.mp4"))
-logging.info("Duration of video (s): ",clip.duration,", FPS: ",clip.fps,", Dimensions: ",clip.size)
+print("Duration of video (s): ",clip.duration,", FPS: ",clip.fps,", Dimensions: ",clip.size)
 
 trackedFeatures = np.loadtxt(os.path.join(baseDir, session, "trackedFeaturesRaw.csv"), delimiter=",",skiprows=1)
 mat = scipy.io.loadmat(os.path.join(baseDir, session, "runAnalyzed.mat"))
 
-obsOnHot = np.zeros(len(mat['frameTimeStamps']))
-clipLen = len(mat['frameTimeStamps'])
-for obsOnTime in mat['obsOnTimes']:
-    if not obsOnTime>mat['frameTimeStamps'][-1]:
-        obsOnHot[bisect.bisect_left(np.squeeze(mat['frameTimeStamps']), obsOnTime)] = 1
-total = np.cumsum(obsOnHot)
+obsOnTimes = np.squeeze(mat['obsOnTimes'])
+obsOnFrames = []
+clipLen = len(mat['frameTimeStampsWisk'])
+for i in range(len(mat['frameTimeStampsWisk'])):
+    if np.isnan(mat['frameTimeStampsWisk'][i][0]):
+        mat['frameTimeStampsWisk'][i][0]=-1
+firstTime = mat['frameTimeStampsWisk'][bisect.bisect(np.squeeze(mat['frameTimeStampsWisk']), -1)][0]
+for i, obsOnTime in enumerate(obsOnTimes):
+    if not (obsOnTime>mat['frameTimeStampsWisk'][-1] or obsOnTime<firstTime):
+        obsOnFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOnTime)))
+    else:
+        obsOnFrames.append((i, -1))
+
+obsOffTimes = np.squeeze(mat['obsOffTimes'])
+obsOffFrames = []
+for i, obsOffTime in enumerate(obsOffTimes):
+    if not (obsOffTime>mat['frameTimeStampsWisk'][-1] or obsOffTime<firstTime):
+        obsOffFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOffTime)))
+    else:
+        obsOffFrames.append((i, -1))
+
+if len(obsOnTimes) != len(obsOffTimes):
+    raise ValueError('obsOnTimes and obsOffTimes have different lengths! Please check no trials have been skipped')
+
+temptrialFrames = list(zip(obsOnFrames, obsOffFrames))
+trialFrames = []
+for temp in temptrialFrames:
+    if temp[0][0] != temp[1][0]:
+        raise ValueError('some trial got shifted somewhere, exiting')
+    trialFrames.append((temp[0][0], temp[0][1], temp[1][1]))
 
 logging.info("Loaded features")
 
 size = [clip.size[1], clip.size[0]]
 
 fieldnames = ["framenum", "confidence"]
-answers = []
+answers = [{"framenum":-1, "confidence": 0}]*len(mat['obsOnTimes'])
+print("Analyzing")
 
-for framenum, val in enumerate(tqdm(obsOnHot)):
-    if val==0:
-        continue
-    if total[framenum]==total[-1]:
-        break
+for idx, framenum, endframe in tqdm(trialFrames):
     #logging.info("Obstacle on")
     #logging.info(str(framenum))
+    if framenum == -1:
+        continue
     findTime = 0
     initialStart = time.time()
     start = time.time()
@@ -126,6 +156,9 @@ for framenum, val in enumerate(tqdm(obsOnHot)):
         image = clip.get_frame(framenum * (1 / clip.fps))
     frameProbs = {}
     oldFrame = framenum
+    if framenum >= endframe:
+        print("Could not find obstacle within session. Skipping session...")
+        continue
     #logging.info("Found frame!")
     #logging.info(framenum)
     findTime = time.time()-start
@@ -136,7 +169,7 @@ for framenum, val in enumerate(tqdm(obsOnHot)):
     cacheTime = 0
     incrementTime = 0
     needFrames = deque()
-    while nosePos[0]-obsPos[0]<50 or obsConf!=1:
+    while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
         needFrames.append(framenum)
         framenum+=1
         features = trackedFeatures[framenum]
@@ -163,7 +196,7 @@ for framenum, val in enumerate(tqdm(obsOnHot)):
     obsConf = features[24]
     nosePos = list(map(int, [features[19], features[20]]))
     needAnal = deque()
-    while nosePos[0]-obsPos[0]<50 or obsConf!=1:
+    while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
         session = []
         if framenum<timesteps:
             framenum+=1
@@ -212,11 +245,9 @@ for framenum, val in enumerate(tqdm(obsOnHot)):
     except ValueError:
         predictedFrame=-1
     if predictedFrame != -1:
-        answers.append({"framenum": predictedFrame, "confidence": frameProbs[predictedFrame]})
-    else:
-        answers.append({"framenum": -1, "confidence": 0})
+        answers[idx] = {"framenum": predictedFrame, "confidence": frameProbs[predictedFrame]}
 
-answers+=[{"framenum":-1, "confidence": 0}]*(len(mat['obsOnTimes'])-len(answers))
+print("Writing data")
 
 with open(os.path.join(baseDir, sys.argv[2], "whiskerAnalyzed.csv"), 'w') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
