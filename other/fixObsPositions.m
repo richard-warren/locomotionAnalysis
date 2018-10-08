@@ -1,5 +1,8 @@
 function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, noseX)
 
+% !!! what did this function do again??? i think it reformats obs positions
+% so zero is where obs is under nose
+
 
 obsPositionsFixed = nan(size(obsPositions));
 epochTimes = [obsOnTimes; obsTimes(end)];

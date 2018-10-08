@@ -30,7 +30,7 @@ metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 % parfor (i = 1:length(sessions), numWorkers)
 for i = 1:length(sessions)
-%     try
+    try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
         sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
@@ -52,9 +52,9 @@ for i = 1:length(sessions)
         else
             fprintf('%s: skipped\n', sessions{i})
         end
-%     catch
-%         fprintf('%s: unable to analyze session!\n', sessions{i});
-%     end
+    catch
+        fprintf('%s: unable to analyze session!\n', sessions{i});
+    end
 end
 data = cat(2,data{:});
 

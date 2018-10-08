@@ -641,23 +641,49 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % run whisker contact network
-    if analyzeVar('wiskContactFrames', varNames, varsToOverWrite) && ...
+    if analyzeVar({'wiskContactFrames', 'wiskContactPositions', 'wiskContactTimes'}, varNames, varsToOverWrite) && ...
             ~isempty(varStruct.obsOnTimes) && ...
             exist([sessionDir 'runWisk.mp4'], 'file')
         
-        fprintf('%s: running wisk contact network\n', session)
+        % settings
+        rerunWiskNetwork = false;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
-        if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-        [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+        if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
+            fprintf('%s: running wisk contact network\n', session)
+            if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
+            [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+        end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
+        
+        % extract contact positions and times
+        obsPositions = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, varStruct.obsPixPositions, ...
+            varStruct.frameTimeStamps, varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.nosePos(1));
+        contactTimes = nan(1,length(varStruct.obsOnTimes));
+        contactPositions = nan(1,length(varStruct.obsOnTimes));
+        
+        for i = 1:length(varStruct.obsOnTimes)
+            if wiskContactData.frameNum(i)>0
+                time = varStruct.frameTimeStampsWisk(wiskContactData.framenum(i));
+                if time>varStruct.obsOnTimes(i) && time<varStruct.obsOffTimes(i)
+                    contactTimes(i) = time;
+                    contactPositions(i) = interp1(obsTimes, obsPositions, contactTimes(i));
+                else
+                    fprintf('%s: WARNING - wisk contact detected when obstacle not on!\n', session)
+                end
+            end
+        end
         
         % save
         varStruct.wiskContactFrames = wiskContactData.framenum;
         varStruct.wiskContactFramesConfidences = wiskContactData.confidence;
+        varStruct.wiskContactTimes = contactTimes;
+        varStruct.wiskContactPositions = contactPositions;
         anythingAnalyzed = true;
     end
+    
+    
     
     
     % save results
