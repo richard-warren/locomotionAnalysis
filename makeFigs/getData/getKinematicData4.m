@@ -30,7 +30,7 @@ metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 % parfor (i = 1:length(sessions), numWorkers)
 for i = 1:length(sessions)
-    try
+%     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
         sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
@@ -52,9 +52,9 @@ for i = 1:length(sessions)
         else
             fprintf('%s: skipped\n', sessions{i})
         end
-    catch
-        fprintf('%s: unable to analyze session!\n', sessions{i});
-    end
+%     catch
+%         fprintf('%s: unable to analyze session!\n', sessions{i});
+%     end
 end
 data = cat(2,data{:});
 
@@ -137,11 +137,14 @@ function sessionData = getDataForSession(session, sessionMetaData)
         else; contraLimb = nan; end
     end
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
-            'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsContinuous', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
-            'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', ...
+            'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsUninterped', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
+            'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', 'obsPosToWheelPosMappings', ...
             'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'frameTimeStampsWisk');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
-    obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+    obsPixPositionsContinuous = getObsPixPositionsContinuous(...
+        obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
+        obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes);
+    obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     mToPixFactor = abs(mToPixMapping(1));
     locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
     [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
@@ -161,9 +164,9 @@ function sessionData = getDataForSession(session, sessionMetaData)
         
         % if obsPos is defined by user, find times at which obs reaches this position
         if exist('obsPos', 'var')
-            indStart = find(obsPositions>=contactPositions(j) & obsTimes>obsOnTimes(j) & obsTimes<obsOffTimes(j), 1, 'first');
+            indStart = find(obsPositionsFixed>=contactPositions(j) & obsTimes>obsOnTimes(j) & obsTimes<obsOffTimes(j), 1, 'first');
             if ~isempty(indStart)
-                contactTimes(j) = interp1(obsPositions(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
+                contactTimes(j) = interp1(obsPositionsFixed(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
                 contactTimes(j) = frameTimeStamps(knnsearch(frameTimeStamps, contactTimes(j))); % force time to be in frameTimeStamps
             end
             
@@ -174,7 +177,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
                 wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
                 if ~isempty(wiskContactFrameInd) && frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd))<obsOffTimes(j)
                     contactTimes(j) = frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd));
-                    contactPositions(j) = interp1(obsTimes, obsPositions, contactTimes(j));
+                    contactPositions(j) = interp1(obsTimes, obsPositionsFixed, contactTimes(j));
                 end
             end
         end

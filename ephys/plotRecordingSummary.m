@@ -164,7 +164,7 @@ for cellNum = cells
     
     plotInd = plotInd + 1; subplot(rows, cols, plotInd);
     plotPSTH2(session, cellNum, times, {'first paw over', 'second paw over'});
-    xlabel(sprintf('%s: swing start -> swing end', pawNames{paw}))
+    xlabel(sprintf('swing start -> swing end'))
     pause(.1)
 end
 

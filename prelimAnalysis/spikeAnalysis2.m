@@ -2,7 +2,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
     % performs preliminary analyses on spike data and saves results in runAnalyzed.mat
     %
-    % computes the following:
+    % computes the following (list is not up to date):
     %         reward times
     %         debounced touch signal and touch on/off times
     %         decoding stepper motor commands
@@ -396,7 +396,8 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
-    if analyzeVar({'obsPixPositions', 'obsPixPositionsContinuous', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'obsPixPositions', 'trialObsMobsPosToObsPixPosMappingsappings', ...
+            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
        ~isempty(varStruct.obsOnTimes)
 
@@ -423,15 +424,15 @@ function spikeAnalysis2(session, varsToOverWrite)
         
         % determine mappings between obs pix positions (x) and both wheel
         % positions and obs positions (both from independent rotary encoders)
-        trialObsMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and obsPos from rotary encoder
-        trialWheelMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and wheel pos from wheel rotary encoder
+        obsPosToObsPixPosMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and obsPos from rotary encoder
+        obsPosToWheelPosMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and wheel pos from wheel rotary encoder
         for i = 1:length(varStruct.obsOnTimes)
             getMappingBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
                              varStruct.frameTimeStamps<=varStruct.obsOffTimes(i) & ...
                              ~isnan(obsPixPositions);
             if any(getMappingBins)
-                trialObsMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
-                trialWheelMappings(i,:) = polyfit(wheelPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
+                obsPosToObsPixPosMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
+                obsPosToWheelPosMappings(i,:) = polyfit(wheelPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
             end          
         end
         
@@ -442,35 +443,40 @@ function spikeAnalysis2(session, varsToOverWrite)
                         varStruct.frameTimeStamps<=epochTimes(i+1);
             interpBins =  epochBins & isnan(obsPixPositions); % bins that should be interpolated over
             if any(epochBins)
-                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*trialObsMappings(i,1) + trialObsMappings(i,2);
+                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*obsPosToObsPixPosMappings(i,1) + obsPosToObsPixPosMappings(i,2);
             end
         end
         
-        % use wheel position from rotary encoder to infer 'unraveled' obs
-        % pix positions FOR EACH TRIAL
-        %
-        % obsPixPositionsContinuous has one obsPixPositions per trial,
-        % where row is an 'individual obstacle'. This can be used to
-        % 'unheadfix' the mouse later, by subtracting these obsPositions
-        % from the x values of the paw on a trial by trial basis
-        
-        
-        % obs
-        obsPixPositionsContinuous = repmat(obsPixPositions', length(varStruct.obsOnTimes), 1);
-        for i = 1:length(varStruct.obsOnTimes)
-            % interp all values expect those where obs is tracked within the trial
-            dontInterpBins =  varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
-                              varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
-                              epochBins & ~isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
-            if any(~dontInterpBins)
-                obsPixPositionsContinuous(i,~dontInterpBins) = wheelPositionsInterp(~dontInterpBins)*trialWheelMappings(i,1) + trialWheelMappings(i,2);
-            end
-        end
+%         % use wheel position from rotary encoder to infer 'unraveled' obs
+%         % pix positions FOR EACH TRIAL
+%         %
+%         % obsPixPositionsContinuous has one obsPixPositions per trial,
+%         % where row is an 'individual obstacle'. This can be used to
+%         % 'unheadfix' the mouse later, by subtracting these obsPositions
+%         % from the x values of the paw on a trial by trial basis
+%         
+%         
+%         % obs
+%         obsPixPositionsContinuous = repmat(obsPixPositions', length(varStruct.obsOnTimes), 1);
+%         for i = 1:length(varStruct.obsOnTimes)
+%             % interp all values expect those where obs is tracked within the trial
+%             dontInterpBins =  varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
+%                               varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
+%                               epochBins & ~isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
+%             if any(~dontInterpBins)
+%                 obsPixPositionsContinuous(i,~dontInterpBins) = wheelPositionsInterp(~dontInterpBins)*obsPosToWheelPosMappings(i,1) + obsPosToWheelPosMappings(i,2);
+%             end
+%         end
 
         % save
         varStruct.obsPixPositions = obsPixPositions';
-        varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous;
-        varStruct.mToPixMapping = nanmedian(trialObsMappings,1);
+        varStruct.obsPixPositionsUninterped = obsPixPositionsUninterped;
+%         varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous;
+        if isfield(varStruct, 'obsPixPositionsContinuous'); varStruct = rmfield(varStruct, 'obsPixPositionsContinuous'); fprintf('%s: removed obsPixPositionsContinuous...\n', session); end % !!! temp to fix something...
+        varStruct.obsPosToObsPixPosMappings = obsPosToObsPixPosMappings;
+        varStruct.obsPosToWheelPosMappings = obsPosToWheelPosMappings;
+        varStruct.mToPixMapping = nanmedian(obsPosToObsPixPosMappings,1);
+        
         anythingAnalyzed = true;
     end
     
@@ -478,7 +484,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get wheel points
-    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite) & ...
+    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file')
         
         fprintf('%s: getting wheel center and radius\n', session)
@@ -658,17 +664,17 @@ function spikeAnalysis2(session, varsToOverWrite)
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         
         % extract contact positions and times
-        obsPositions = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, varStruct.obsPixPositions, ...
+        obsPositionsFixed = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, varStruct.obsPixPositions, ...
             varStruct.frameTimeStamps, varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.nosePos(1));
         contactTimes = nan(1,length(varStruct.obsOnTimes));
         contactPositions = nan(1,length(varStruct.obsOnTimes));
         
         for i = 1:length(varStruct.obsOnTimes)
-            if wiskContactData.frameNum(i)>0
+            if wiskContactData.framenum(i)>0
                 time = varStruct.frameTimeStampsWisk(wiskContactData.framenum(i));
                 if time>varStruct.obsOnTimes(i) && time<varStruct.obsOffTimes(i)
                     contactTimes(i) = time;
-                    contactPositions(i) = interp1(obsTimes, obsPositions, contactTimes(i));
+                    contactPositions(i) = interp1(varStruct.obsTimes, obsPositionsFixed, contactTimes(i));
                 else
                     fprintf('%s: WARNING - wisk contact detected when obstacle not on!\n', session)
                 end
