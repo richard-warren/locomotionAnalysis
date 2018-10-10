@@ -396,7 +396,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
-    if analyzeVar({'obsPixPositions', 'trialObsMobsPosToObsPixPosMappingsappings', ...
+    if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', ...
             'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
        ~isempty(varStruct.obsOnTimes)
@@ -472,7 +472,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         varStruct.obsPixPositions = obsPixPositions';
         varStruct.obsPixPositionsUninterped = obsPixPositionsUninterped;
 %         varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous;
-        if isfield(varStruct, 'obsPixPositionsContinuous'); varStruct = rmfield(varStruct, 'obsPixPositionsContinuous'); fprintf('%s: removed obsPixPositionsContinuous...\n', session); end % !!! temp to fix something...
+%         if isfield(varStruct, 'obsPixPositionsContinuous'); varStruct = rmfield(varStruct, 'obsPixPositionsContinuous'); fprintf('%s: removed obsPixPositionsContinuous...\n', session); end % !!! temp to fix something...
         varStruct.obsPosToObsPixPosMappings = obsPosToObsPixPosMappings;
         varStruct.obsPosToWheelPosMappings = obsPosToWheelPosMappings;
         varStruct.mToPixMapping = nanmedian(obsPosToObsPixPosMappings,1);
@@ -647,12 +647,12 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % run whisker contact network
-    if analyzeVar({'wiskContactFrames', 'wiskContactPositions', 'wiskContactTimes'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes'}, varNames, varsToOverWrite) && ...
             ~isempty(varStruct.obsOnTimes) && ...
             exist([sessionDir 'runWisk.mp4'], 'file')
         
         % settings
-        rerunWiskNetwork = false;
+        rerunWiskNetwork = true;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier

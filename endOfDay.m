@@ -21,13 +21,13 @@ end
 
 %% analyze spike data
 disp('starting to analyze sessions...')
-problemSessions = {};
-for i = 1:length(sessions)
+% problemSessions = {};
+parfor i = 91:length(sessions)
     try
         spikeAnalysis2(sessions{i}, {'obsPixPositions'});
     catch
-        fprintf('%s: problem with spike analysis!\n', sessions{i})
-        problemSessions{end+1} = sessions{i};
+%         fprintf('%s: problem with spike analysis!\n', sessions{i})
+%         problemSessions{end+1} = sessions{i};
     end
 end
 disp('all done!')

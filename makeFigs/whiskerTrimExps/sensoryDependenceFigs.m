@@ -5,18 +5,14 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 
 
 %% get kinematic data
-kinDataWisk = getKinematicData4(sessionInfo.session(strcmp(sessionInfo.preOrPost, 'pre')), []);
+
+wiskBins = strcmp(sessionInfo.preOrPost, 'pre');
+noWiskBins = strcmp(sessionInfo.preOrPost, 'post');
+
+kinDataWisk = getKinematicData4(sessionInfo.session(wiskBins), sessionInfo, []);
 obsPos = nanmedian([kinDataWisk.obsPos]);
-kinDataNoWisk = getKinematicData4(sessionInfo.session, [], obsPos);
+kinDataNoWisk = getKinematicData4(sessionInfo.session(noWiskBins), sessionInfo, [], obsPos);
 kinData = cat(2, kinDataWisk, kinDataNoWisk);
-
-
-% incorporate condition information into kinData struct
-for i = 1:length(kinData)
-    sessionInfoBin = strcmp(sessionInfo.session, kinData(i).session);
-    preOrPost = sessionInfo.preOrPost{sessionInfoBin};
-    kinData(i).preOrPost = preOrPost;
-end
 
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceKinematicData.mat'], 'data');
 clear data kinDataWisk kinDataNoWisk;
@@ -28,15 +24,7 @@ kinData = data; clear data;
 
 %% get speed and avoidance data
 
-speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, false);
-
-% incorporate condition information into kinData struct
-for i = 1:length(speedAvoidanceData)
-    sessionInfoBin = strcmp(sessionInfo.session, speedAvoidanceData(i).session);
-    preOrPost = sessionInfo.preOrPost{sessionInfoBin};
-    speedAvoidanceData(i).preOrPost = preOrPost;
-end
-
+speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, false);
 data = speedAvoidanceData; save([getenv('OBSDATADIR') 'matlabData\sensoryDependenceSpeedAvoidanceData.mat'], 'data'); clear data;
 
 

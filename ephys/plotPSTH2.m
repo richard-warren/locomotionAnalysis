@@ -21,7 +21,7 @@ plotTrials = false;
 trialsToPlot = 10;
 plotStd = true;
 plotControlDistribution = false;
-colors = hsv(length(eventTimes))*.8;
+colors = hsv(length(eventTimes));
 controlColor = [0 0 0 .4];
 xGridLength = 100; % number of points per trial for epoch interpolation
 

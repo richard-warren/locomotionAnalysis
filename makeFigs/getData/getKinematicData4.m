@@ -21,6 +21,7 @@ end
 
 % collect data for all sessions
 data = cell(1,length(sessions));
+stanceBins = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
 if any(strcmp(sessionInfo.Properties.VariableNames, 'notes'))
     sessionInfo = sessionInfo(:, ~strcmp(sessionInfo.Properties.VariableNames, 'notes'));
@@ -28,16 +29,17 @@ end
 metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
-% parfor (i = 1:length(sessions), numWorkers)
-for i = 1:length(sessions)
-%     try
+
+parfor (i = 1:length(sessions), numWorkers)
+% for i = 1:length(sessions)
+    try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
         sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
         
         % get sesionNum and conditionNum for mouse
         mouseBins = strcmp(sessionInfo.mouse, sessionMetaData.mouse);
-        if isfield(sessionInfo, 'condition')
+        if contains('condition', sessionInfo.Properties.VariableNames)
             conditionBins = strcmp(sessionInfo.condition, sessionMetaData.condition);
         else
             conditionBins = false(1,height(sessionInfo));
@@ -48,15 +50,22 @@ for i = 1:length(sessions)
         % get session data
         if sessionMetaData.include
             fprintf('%s: collecting data...\n', sessions{i});
-            data{i} = feval(getDataForSessionHandle, sessions{i}, sessionMetaData);
+            [data{i}, stanceBins{i}] = feval(getDataForSessionHandle, sessions{i}, sessionMetaData);
         else
             fprintf('%s: skipped\n', sessions{i})
         end
-%     catch
-%         fprintf('%s: unable to analyze session!\n', sessions{i});
-%     end
+    catch
+        fprintf('%s: unable to analyze session!\n', sessions{i});
+    end
 end
-data = cat(2,data{:});
+
+% concatenate data across sessions
+try
+    data = cat(2,data{:});
+catch
+    disp('error concatenating data across sessions! entering debug mode...')
+    keyboard;
+end
 
 
 % make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
@@ -124,7 +133,7 @@ end
 % FUNCTIONS
 % ---------
 
-function sessionData = getDataForSession(session, sessionMetaData)
+function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
     
     sessionData = struct();
     dataInd = 1;
@@ -139,7 +148,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsUninterped', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', 'obsPosToWheelPosMappings', ...
-            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'frameTimeStampsWisk');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'wiskContactTimes', 'frameTimeStampsWisk');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPixPositionsContinuous = getObsPixPositionsContinuous(...
         obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
@@ -157,8 +166,13 @@ function sessionData = getDataForSession(session, sessionMetaData)
     
     % get positions and times when obs reaches obPos or touches the whisker
     if timeOperations; tic; end
-    if exist('obsPos', 'var'); contactPositions = ones(size(obsOnTimes))*obsPos; else; contactPositions = nan(size(obsOnTimes)); end
-    contactTimes = nan(size(obsOnTimes));
+    if exist('obsPos', 'var')
+        contactPositions = ones(size(obsOnTimes))*obsPos;
+        contactTimes = nan(size(obsOnTimes));
+    else
+        contactPositions = nan(size(obsOnTimes));
+        contactTimes = wiskContactTimes;
+    end
     
     for j = 1:length(obsOnTimes)
         
@@ -169,16 +183,11 @@ function sessionData = getDataForSession(session, sessionMetaData)
                 contactTimes(j) = interp1(obsPositionsFixed(indStart-1:indStart), obsTimes(indStart-1:indStart), contactPositions(j));
                 contactTimes(j) = frameTimeStamps(knnsearch(frameTimeStamps, contactTimes(j))); % force time to be in frameTimeStamps
             end
-            
+        
         % otherwise find the times and obs positions at the frames of whisker contact    
         else
-            trialStartInd = find(frameTimeStampsWisk>obsOnTimes(j), 1, 'first');
-            if ~isempty(trialStartInd)
-                wiskContactFrameInd = find(wiskContactFrames>trialStartInd,1,'first');
-                if ~isempty(wiskContactFrameInd) && frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd))<obsOffTimes(j)
-                    contactTimes(j) = frameTimeStampsWisk(wiskContactFrames(wiskContactFrameInd));
-                    contactPositions(j) = interp1(obsTimes, obsPositionsFixed, contactTimes(j));
-                end
+            if ~isnan(wiskContactTimes(j))
+                contactPositions(j) = interp1(obsTimes, obsPositionsFixed, wiskContactTimes(j));
             end
         end
     end

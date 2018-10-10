@@ -11,9 +11,9 @@ loadPreviousData = false;
 
 if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
-    kinData = getKinematicData4(sessionInfo.session, data);
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
 else
-    kinData = getKinematicData4(sessionInfo.session, []);
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
 
@@ -55,7 +55,7 @@ for i = 1:binNum; binLabels{i} = sprintf('%.3f', mean(binVar(bins==i))); end
 if binNum==1; binLabels={''}; end
 plotObsHeightTrajectories(kinData, bins, binLabels, 'baselineHeightKinematics')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures/baseline/heightKinematics.fig'))
+savefig(fullfile(Wgetenv('OBSDATADIR'), 'figures/baseline/heightKinematics.fig'))
 
 %% scatter obs vs paw heights
 

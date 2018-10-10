@@ -2,24 +2,25 @@
 
 
 % settings
-manipulation = 'lesion';
+manipulation = 'muscimol';
 maxLesionSession = 4;
 
 
 if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
 elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post'}; end
-% sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
+sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & logical([sessionInfo.include]),:);
 
 
 
 %% compute kinematic data
 
-loadPreviousData = true;
+loadPreviousData = false;
 
-if loadPreviousData
-    load([getenv('OBSDATADIR') 'matlabData\' manipulation 'kinematicData.mat'], 'data');
+fileName = [getenv('OBSDATADIR') 'matlabData\' manipulation 'kinematicData.mat'];
+if loadPreviousData && exist(fileName, 'file')
+    load(fileName, 'data');
     kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
 else
     kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
@@ -48,9 +49,7 @@ speedAvoidanceData = data; clear data;
 disp([manipulation ' speed avoidance data loaded!'])
 
 %% ----------
-
 % PLOT THINGS
-
 %  ----------
 
 %% plot dv averages
