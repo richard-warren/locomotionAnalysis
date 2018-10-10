@@ -1,33 +1,44 @@
-function makeSetupExampleVid
+function makeSetupExampleVid(filename, session, trials)
 % this make a wide vid with top view plus drawing of obs off screen, intended to explain how obs appears and is controlled by the speed of the wheel
 % should use trials in which there is variability in wheel speed, and ideally some in which mouse moves both forwards and backwards
 
 % settings
-session = '180225_000';
-trials = [34 50 29 60 110]; % back and forth trials: 34 3 6 57 87
-prePostTime = [-.25 0]; % (s) time to add to beginning and end of a trial (before and after obs is engaged)
+prePostTime = [-.1 0]; % (s) time to add to beginning and end of a trial (before and after obs is engaged)
 playbackSpeed = 0.15;
 fps = 250;
-obsYLims = [71 107];
-obsThickness = 12;
+obsRadius = 8;
 constrastLims = [.2 1]; % pixels at these proportional values are mapped to 0 and 255
-obsFadePixels = 50; % when obs enter right side of vid frame, fade out drawing of obs over the course of this many pixels
+obsFadePixels = 100; % when obs enter right side of vid frame, fade out drawing of obs over the course of this many pixels
+obsXOffset = 12; % draw obs this many pixels to the right to account forthe pix positions being based on the bottom rather than the top view
 
 % initializations
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'obsPixPositions', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps');
+locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']);
+obsTopY = locationsTable.obs_top_1;
+clear locationsTable
 vid = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
-frameDims = [vid.Height round(max(obsPixPositions))];
-vidWriter = VideoWriter([getenv('OBSDATADIR') 'editedVid\' sprintf('setupExample%strials%s', session, num2str(trials))], 'MPEG-4');
+frameDims = [vid.Height round(max(obsPixPositions)*.9)];
+
+
+vidWriter = VideoWriter([getenv('OBSDATADIR') 'editedVid\' filename '.mp4'], 'MPEG-4');
 set(vidWriter, 'FrameRate', round(fps*playbackSpeed));
 open(vidWriter);
 
+% define lookup vector for obstacle opacity (it will fade out as it enters right side of screen)
+transparencyGradient = ones(1, frameDims(2)*2); % make this unnecessarily long, trailing ones at the end
+gradInds = round(vid.Width-.5*obsFadePixels) : round(vid.Width+.5*obsFadePixels);
+transparencyGradient(1:gradInds(1)) = 0;
+transparencyGradient(gradInds) = linspace(0,1,length(gradInds));
+
 
 % iterate through trials
-for i = 1%:length(trials)
+for i = 1:length(trials)
+    disp(i/length(trials))
     
     trialBins = frameTimeStamps>=(obsOnTimes(trials(i))+prePostTime(1)) & ...
                 frameTimeStamps<=(obsOffTimes(trials(i))+prePostTime(2));
+    obsHeight = median(obsTopY(trialBins' & obsPixPositions>0 & obsPixPositions<vid.Width));
     trialInds = find(trialBins);
     
     % iterate through frames within trial
@@ -40,17 +51,17 @@ for i = 1%:length(trials)
         frame(:,1:vid.Width) = vidFrame;
         
         % add obs to frame
-        obsPos = round(obsPixPositions(trialInds(j)));
-        if obsPos>=(vid.Width-obsFadePixels)
-            brightness = ((obsPos)-(vid.Width-.5*obsFadePixels)) / obsFadePixels; % fade occurs on the left and right sides of frame edge
-            brightness = min(brightness,1); brightness = max(brightness,0);
-            frameObs = addObsToFrame(frame, obsPos, obsThickness, obsYLims, 255);
-            frame = (1-brightness)*frame + (brightness)*frameObs;
+        pixPos = round(obsPixPositions(trialInds(j)))+obsXOffset;
+        if pixPos>0 && pixPos<(frameDims(2)+2*obsRadius)
+            opacity = transparencyGradient(pixPos);
+            frame = insertShape(frame, 'FilledCircle', ...
+                [pixPos obsHeight+obsRadius obsRadius], ...
+                'opacity', opacity);
         end
+        
         
         % write to video
         writeVideo(vidWriter, frame);
-%         if j==49; break; end
     end
 end
 

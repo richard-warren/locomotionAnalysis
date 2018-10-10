@@ -16,7 +16,7 @@ validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
 
 % initializations
 brainRegions = unique({data.brainRegion});
-isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
+isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh; % !!! this isn't quite right, because frames where multiple paws are touching at once get counted multiple times
 dims = [length(dvs), length(brainRegions)]; % subplot grid
 figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 length(brainRegions)*250 900], 'inverthardcopy', 'off')
 
@@ -28,7 +28,7 @@ for i = 1:length(brainRegions)
     brainRegionBins = strcmp({data.brainRegion}, brainRegions{i});
     mice = unique({data(brainRegionBins).mouse});
     xJitters = linspace(-.1,.1,length(mice)); xJitters = xJitters-mean(xJitters); % jitters x position of scatter points
-    colors = winter(length(mice));
+    colors = hsv(length(mice));
     
     % containers for averages for each mouse for each condition across all sessions
     speeds = nan(length(mice), length(conditions)); % rows are mice, columns are conditions (saline, muscimol)

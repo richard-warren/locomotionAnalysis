@@ -17,9 +17,9 @@ contrastLims = [.1 1]; % pixels at these proportional values are mapped to 0 and
 
 includeWiskCam = true;
 includeWebCam = false;
-showPawTouches = false;
+showPawTouches = true;
 showTrialInfo = false;
-showWiskTouches = false;
+showWiskTouches = true;
 
 
 % initializations
@@ -32,8 +32,14 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPosition
                                             'wheelPositions', 'wheelTimes',...
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', 'nosePos');
-if showPawTouches; isTouching = (sum(arePawsTouchingObs,2)>0); end
-if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\wiskContactData.mat'], 'contactTimes'); end
+if showPawTouches
+    load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+        'touches', 'touchClassNames')
+    ventralClassBins = find(contains(touchClassNames, 'ventral'));
+    isTouchingVentral = ismember(touches, ventralClassBins);
+%     isTouchingVentral = touches<6; % temp
+end
+if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'wiskContactFrames'); end
 if ~exist('obsPixPositions', 'var')
     obsPositions = fixObsPositionsHacky(obsPositions);
 else
@@ -144,7 +150,7 @@ for i = trials
             
             % change color of frame if touching
             if showPawTouches
-                if isTouching(frameInds(j))
+                if isTouchingVentral(frameInds(j))
                 	frame(:,:,3) = frame(:,:,3)*.2;
                 end
             end
@@ -167,7 +173,7 @@ for i = trials
 
                     frameWisk = repmat(frameWisk,1,1,3);
                     if showWiskTouches
-                        if frameTimeStampsWisk(wiskFrameInd)>=contactTimes(i) && ...
+                        if wiskFrameInd>=wiskContactFrames(i) && ...
                                 obsPixPositions(frameInds(j))>=xWiskPos % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
                             frameWisk(:,:,3) = frameWisk(:,:,3) * .2;
                         end

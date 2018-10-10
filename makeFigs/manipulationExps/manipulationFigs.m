@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 maxLesionSession = 4;
 
 
@@ -34,7 +34,6 @@ data = kinData; save([getenv('OBSDATADIR') 'matlabData\' manipulation 'Kinematic
 load([getenv('OBSDATADIR') 'matlabData\' manipulation 'KinematicData.mat'], 'data');
 kinData = data; clear data;
 disp([manipulation ' kinematic data loaded!'])
-
 
 %% compute speed and avoidance data
 
@@ -124,5 +123,101 @@ binLabels = conditions;
 plotObsHeightTrajectories(kinData, bins.*includeTrial, binLabels, ['sensory cortex ' manipulation])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'SenKinematics.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'SenKinematics.fig'))
+
+
+%%
+
+
+
+
+
+% explore relationship between speed, success, and manipulation
+
+
+
+
+
+
+%% plot histograms
+controlBins = strcmp({speedAvoidanceData.condition}, conditions{1});
+manipBins = strcmp({speedAvoidanceData.condition}, conditions{2});
+
+figure;
+histogram([speedAvoidanceData(controlBins).avgVel], 50); hold on
+histogram([speedAvoidanceData(manipBins).avgVel], 50);
+legend(conditions)
+
+%% plot succcses vs speed
+
+dv = .01;
+width = .05;
+velLims = [0 1];
+successThresh = 5;
+validBins = strcmp({speedAvoidanceData.condition}, conditions{1}); % only look at control condition trials
+
+isSuccess = cellfun(@sum, {speedAvoidanceData.totalTouchFramesPerPaw}) < successThresh;
+binCenters = velLims(1)+.5*width : dv : velLims(2)-.5*width;
+
+successRates = nan(1, length(binCenters));
+
+for i = 1:length(binCenters)
+    
+    trialBins = (validBins & ...
+                 [speedAvoidanceData.avgVel] > binCenters(i)-.5*width & ...
+                 [speedAvoidanceData.avgVel] < binCenters(i)+.5*width);
+    if any(trialBins)
+        successRates(i) = mean(isSuccess(trialBins));
+    end
+end
+
+figure; plot(binCenters, successRates)
+
+%% find matched bins
+
+tolerance = .02;
+
+binEdges = 0:tolerance:max([speedAvoidanceData.avgVel]);
+[counts, binEdges, bins] = histcounts([speedAvoidanceData.avgVel], binEdges);
+
+
+if strcmp(manipulation, 'lesion'); includeTrial = [speedAvoidanceData.conditionNum]<=maxLesionSession;
+else; includeTrial = true(1,length(speedAvoidanceData)); end
+
+controlBins = strcmp({speedAvoidanceData.condition}, conditions{1});
+manipBins = strcmp({speedAvoidanceData.condition}, conditions{2});
+matchedBins = false(1,length(speedAvoidanceData));
+mice = unique({speedAvoidanceData.mouse});
+
+for i = 1:length(binEdges-1)
+    for j = 1:length(mice)
+    
+        mouseBins = strcmp({speedAvoidanceData.mouse}, mice{j});
+        binControlTrials = find(bins==i & controlBins & mouseBins & includeTrial);
+        binManipTrials = find(bins==i & manipBins & mouseBins & includeTrial);
+
+        if ~isempty(binControlTrials) && ~isempty(binManipTrials)
+            minCount = min(length(binControlTrials), length(binManipTrials));
+            matchedBins(binControlTrials(randperm(length(binControlTrials), minCount))) = true;
+            matchedBins(binManipTrials(randperm(length(binManipTrials), minCount))) = true;
+        end
+    end
+end
+
+
+% plot histograms
+figure;
+histogram([speedAvoidanceData(controlBins & matchedBins).avgVel], 50); hold on
+histogram([speedAvoidanceData(manipBins & matchedBins).avgVel], 50);
+legend(conditions)
+
+
+
+
+
+
+
+
+
+
 
 

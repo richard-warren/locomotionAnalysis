@@ -499,7 +499,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             
             % info about which paws did what
             sessionData(dataInd).isLeftSwingAtContact = isLeftSwingAtContact;
-            sessionData(dataInd).isLeftRightAtContact = isRightSwingAtContact;
+            sessionData(dataInd).isRightSwingAtContact = isRightSwingAtContact;
             sessionData(dataInd).firstPawOver = firstPawOver;
             sessionData(dataInd).firstModPaw = firstModPaw;
 

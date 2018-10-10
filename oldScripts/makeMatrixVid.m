@@ -1,4 +1,4 @@
-function makeMatrixVid
+% function makeMatrixVid
 % make sweet vid with mouse running at real splayback speed then going super slow mo at moment of wisk contact, and drawing kinematic traces on top of image // dope
 
 % settings
