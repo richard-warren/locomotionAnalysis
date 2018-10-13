@@ -148,7 +148,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsUninterped', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', 'obsPosToWheelPosMappings', ...
-            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'wiskContactTimes', 'frameTimeStampsWisk');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'wiskContactTimes', 'frameTimeStampsWisk', 'bodyAngles');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPixPositionsContinuous = getObsPixPositionsContinuous(...
         obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
@@ -261,7 +261,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             trialLocations = locationsPaws(trialInds,:,:);
             trialWheelVel = vel(trialInds);
             trialTouchesPerPaw = touchesPerPaw(trialInds, 4);
-
+            
             % check whether any control or modified or obsOff steps are missing
             missingControlStep = false;
             for k = 1:controlSteps
@@ -290,6 +290,18 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             isWheelBreak = any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
             trialBinsTemp = frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j);
             totalTouchFramesPerPaw = sum(touchesPerPaw(trialBinsTemp,:)>0,1); % get total number of obs touches in trial per paw
+            
+            % get trial velocity and body angle
+            if isWheelBreak
+                endTime = breaks.times(find(breaks.times>obsOnTimes(j),1,'first'));
+            else
+                endTime = obsOffTimes(j);
+            end
+            wheelInds = find(wheelTimes>=obsOnTimes(j) & wheelTimes<endTime);
+            dp = wheelPositions(wheelInds(end)) - wheelPositions(wheelInds(1));
+            dt = wheelTimes(wheelInds(end)) - wheelTimes(wheelInds(1));
+            avgVel = dp/dt;
+            avgAngle = nanmedian(bodyAngles(frameTimeStamps>obsOnTimes(j) & frameTimeStamps<endTime));
             
             
             % determine whether left and right forepaws are in swing at obsPos moment
@@ -471,6 +483,8 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
 
             % bunch of thangs
             sessionData(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
+            sessionData(dataInd).avgVel = avgVel;
+            sessionData(dataInd).avgAngle = avgAngle;
             sessionData(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact
             sessionData(dataInd).obsPosInd = find(trialTimeStamps==0); % ind at which obs contacts wisks for trial
             sessionData(dataInd).pawObsPosInd = pawObsPosInd;% ind at which obs contacts wisks for locations for each paw

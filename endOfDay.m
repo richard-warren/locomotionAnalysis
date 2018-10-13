@@ -34,9 +34,9 @@ disp('all done!')
 
 
 %% make video with trials labelled by condition
-vidTrialProportion = 0.2;
+vidTrialProportion = 0.1;
 
-for i = 2%1:length(sessions)
+for i = 1:length(sessions)
 %     try
         load([getenv('OBSDATADIR') 'sessions\' sessions{i} '\runAnalyzed.mat'], 'isLightOn');
         makeVidWisk([getenv('OBSDATADIR') 'editedVid\' sessions{i}], sessions{i}, [-.05 .1], .15, vidTrialProportion, {'OFF', 'ON'}, isLightOn+1);

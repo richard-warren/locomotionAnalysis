@@ -69,7 +69,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes',...
             'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', ...
-            'touches', 'touchesPerPaw', 'touchClassNames');
+            'touches', 'touchesPerPaw', 'touchClassNames', 'bodyAngles');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     wheelVel = getVelocity(wheelPositions, .5, 1/median(diff(wheelTimes)));
@@ -83,7 +83,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
         % find whether and where obstacle was toucheed
         isWheelBreak = any(breaks.times>obsOnTimes(j) & breaks.times<obsOffTimes(j));
 
-        % get trial velocity
+        % get trial velocity and body angle
         if isWheelBreak
             endTime = breaks.times(find(breaks.times>obsOnTimes(j),1,'first'));
         else
@@ -93,6 +93,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
         dp = wheelPositions(wheelInds(end)) - wheelPositions(wheelInds(1));
         dt = wheelTimes(wheelInds(end)) - wheelTimes(wheelInds(1));
         avgVel = dp/dt;
+        avgAngle = nanmedian(bodyAngles(frameTimeStamps>obsOnTimes(j) & frameTimeStamps<endTime));
 
 
         % get speed as a function of position
@@ -129,6 +130,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
         sessionData(dataInd).isWheelBreak = isWheelBreak;
         sessionData(dataInd).obsOnPositions = obsOnPositions(j);
         sessionData(dataInd).avgVel = avgVel;
+        sessionData(dataInd).avgAngle = avgAngle;
         sessionData(dataInd).trialTouches = trialTouches;
         sessionData(dataInd).trialTouchesPerPaw = trialTouchesPerPaw;
         sessionData(dataInd).totalTouchFramesPerPaw = totalTouchFramesPerPaw;

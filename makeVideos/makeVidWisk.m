@@ -174,7 +174,8 @@ for i = trials
                     frameWisk = repmat(frameWisk,1,1,3);
                     if showWiskTouches
                         if wiskFrameInd>=wiskContactFrames(i) && ...
-                                obsPixPositions(frameInds(j))>=xWiskPos % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
+                                obsPixPositions(frameInds(j))>=xWiskPos && ...
+                                wiskContactFrames(i)>0 % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
                             frameWisk(:,:,3) = frameWisk(:,:,3) * .2;
                         end
                     end

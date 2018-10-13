@@ -36,6 +36,7 @@ for i = 1:length(brainRegions)
         sessionNums = nan(1,length(sessions));
 
         for m = 1:length(sessions)
+            
             % get speed and success rate
             sessionBins = strcmp({data.session}, sessions{m}) & validBins;
             sessionSuccesses(m) = nanmean(isSuccess(sessionBins));
