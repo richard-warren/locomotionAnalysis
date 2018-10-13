@@ -6,6 +6,7 @@ function [matchedBins, weights] = findMatchedBins(data, conditions, velTolerance
 % how close in vel and angle two trials have to be to be considered
 % 'matched'
 
+
 % get vel and angle bins
 velBinEdges = 0:velTolerance:max([data.avgVel]);
 [~, velBinEdges, velBins] = histcounts([data.avgVel], velBinEdges);

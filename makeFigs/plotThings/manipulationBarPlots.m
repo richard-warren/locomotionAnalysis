@@ -9,15 +9,16 @@ dvs = {'success rate', ...
        {'body angle towards contra', '(or right) side'}, ...
        'contra (or right) error rate', ...
        'ipsi (or left) error rate'};
-dvYLims = [0 1; 0 .8; -15 15; 0 1; 0 1];
+dvYLims = [0 1; 0 .8; -15 15; 0 .5; 0 .5];
 minTrial = 0;
 validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
+sessionTrialMin = 0; % require at least this many trials in a session for it to be included
 
 
 % initializations
-if ~exist(weights, 'var'); weights = ones(1,length(data)); end
+if ~exist('weights', 'var'); weights = ones(1,length(data)); end
 brainRegions = unique({data.brainRegion});
-isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh; % !!! this isn't quite right, because frames where multiple paws are touching at once get counted multiple times
+isSuccess = cellfun(@(x) sum(any(x,2)), {data.trialTouchesPerPaw}) < touchThresh;
 dims = [length(dvs), length(brainRegions)]; % subplot grid
 figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 length(brainRegions)*250 900], 'inverthardcopy', 'off')
 
@@ -58,22 +59,29 @@ for i = 1:length(brainRegions)
                 
                 sessionBins = strcmp({data.session}, sessions{m}) & validBins;
                 
-                % get speed, success rate
-                sessionSuccesses(m) = mean(isSuccess(sessionBins));
-                sessionSpeeds(m) = mean([data(sessionBins).avgVel]);
+                if sum(weights(sessionBins))>sessionTrialMin
                 
-                % get body angle
-                sessionContraBodyAngles(m) = mean([data(sessionBins).avgAngle]);
-                sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
-                if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
-                
-                % get contra err rate
-                leftErrorRate = mean(cellfun(@(x) any(any(x(:,[1 2]))), {data(sessionBins).trialTouchesPerPaw}));
-                rightErrorRate = mean(cellfun(@(x) any(any(x(:,[3 4]))), {data(sessionBins).trialTouchesPerPaw}));
-                if strcmp(sideOfBrain, 'left')
-                    [sessionContraErrRates, sessionIpsiErrRates] = deal(rightErrorRate, leftErrorRate);
+                    % get speed, success rate
+                    sessionSuccesses(m) = sum(isSuccess(sessionBins).*weights(sessionBins)) / sum(weights(sessionBins));
+                    sessionSpeeds(m) = sum([data(sessionBins).avgVel].*weights(sessionBins)) / sum(weights(sessionBins));
+
+                    % get body angle
+                    sessionContraBodyAngles(m) = sum([data(sessionBins).avgAngle].*weights(sessionBins)) / sum(weights(sessionBins));
+                    sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
+                    if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
+
+                    % get contra err rate
+                    leftErrorRate = sum(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {data(sessionBins).trialTouchesPerPaw}) ...
+                        .* weights(sessionBins)) / sum(weights(sessionBins));
+                    rightErrorRate = sum(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {data(sessionBins).trialTouchesPerPaw}) ...
+                        .* weights(sessionBins)) / sum(weights(sessionBins));
+                    if strcmp(sideOfBrain, 'left')
+                        [sessionContraErrRates, sessionIpsiErrRates] = deal(rightErrorRate, leftErrorRate);
+                    else
+                        [sessionContraErrRates, sessionIpsiErrRates] = deal(leftErrorRate, rightErrorRate);
+                    end
                 else
-                    [sessionContraErrRates, sessionIpsiErrRates] = deal(leftErrorRate, rightErrorRate);
+                    fprintf('%s: skipped because too few trials\n', sessions{m})
                 end
             end
             
@@ -101,35 +109,36 @@ for i = 1:length(brainRegions)
         avg = nanmean(successes(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
         [~,p] = ttest(successes(:,1), successes(:,2));
-        text(.01, .1, sprintf('p=%.3f', p), 'units', 'normalized', 'FontSize', 8)
+%         text(.01, .1, sprintf('p=%.3f', p), 'units', 'normalized', 'FontSize', 8)
+        xlabel(sprintf('p=%.3f', p))
         
         % speed
         subplot(dims(1), dims(2), i+1*length(brainRegions))
         avg = nanmean(speeds(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
         [~,p] = ttest(speeds(:,1), speeds(:,2));
-        text(.01, .1, sprintf('p=%.3f', p), 'units', 'normalized', 'FontSize', 8)
+        xlabel(sprintf('p=%.3f', p))
         
         % contra body angles
         subplot(dims(1), dims(2), i+2*length(brainRegions))
         avg = nanmean(contraBodyAngles(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
         [~,p] = ttest(contraBodyAngles(:,1), contraBodyAngles(:,2));
-        text(.01, .1, sprintf('p=%.3f', p), 'units', 'normalized', 'FontSize', 8)
+        xlabel(sprintf('p=%.3f', p))
         
         % contra err rates
         subplot(dims(1), dims(2), i+3*length(brainRegions))
         avg = nanmean(contraErrRates(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
         [~,p] = ttest(contraErrRates(:,1), contraErrRates(:,2));
-        text(.01, .1, sprintf('p=%.3f', p), 'units', 'normalized', 'FontSize', 8)
+        xlabel(sprintf('p=%.3f', p))
         
         % ipsi err rates
         subplot(dims(1), dims(2), i+4*length(brainRegions))
         avg = nanmean(ipsiErrRates(:,k));
         line([k-.1 k+.1], [avg avg], 'linewidth', 3, 'color', 'black')
         [~,p] = ttest(ipsiErrRates(:,1), ipsiErrRates(:,2));
-        text(.01, .1, sprintf('p=%.3f', p), 'units', 'normalized', 'FontSize', 8)
+        xlabel(sprintf('p=%.3f', p))
     end
     
 %     % add mouse labels

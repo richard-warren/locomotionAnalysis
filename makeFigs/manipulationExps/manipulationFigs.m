@@ -76,7 +76,12 @@ angleTolerance = 2;
 
 %% plot dv averages
 
-manipulationBarPlots(speedAvoidanceData(matchedBinsSpeedAvoidance), conditions, manipulation);
+matchDistributions = true;
+
+
+if matchDistributions; weights = weightsSpeedAvoidance; else; weights = ones(1,length(speedAvoidanceData)); end
+
+manipulationBarPlots(speedAvoidanceData, conditions, manipulation, weights);
 saveas(gcf, [getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'BarPlots.png']);
 savefig([getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'BarPlots.fig'])
 
