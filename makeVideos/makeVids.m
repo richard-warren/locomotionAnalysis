@@ -59,7 +59,7 @@ makeTrackingVidDLC(session, frameInds);
 
 
 
-%% make vids with no obstacle, only locomotion
+%% make vids with no obstacle, only locomotion (for KineMouse Wheel demonstration)
 
 session = '180125_000';
 trialNum = 3;
@@ -91,3 +91,75 @@ end
 
 
 makeTrackingVidDLC(session, frameInds');
+
+
+
+%% make matched trials vids for muscimol and lesion experiments
+
+
+% settings
+manipulation = 'lesion';
+maxLesionSession = 3;
+params = {'vel', 'avgVel', 'avgAngle', 'firstModPaw', 'swingStartDistance', 'obsPos'}; % params to match across trials
+tolerances = [.05, .01, 2, .5, .01, .005]; % trials are only matched if they are within this range on a given parameter
+mice = unique({kinData.mouse});
+maxTrials = 15;
+
+
+
+
+% initializations
+load([getenv('OBSDATADIR') 'matlabData\' manipulation 'KinematicData.mat'], 'data');
+kinData = data; clear data;
+if strcmp(manipulation, 'lesion'); kinData = kinData([kinData.conditionNum]<=maxLesionSession); end
+disp([manipulation ' kinematic data loaded!'])
+
+if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
+elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post'}; end
+controlBins = strcmp({kinData.condition}, conditions{1});
+manipBins = strcmp({kinData.condition}, conditions{2});
+
+% get trial bins for each parameter
+binIds = nan(length(kinData), length(params));
+for i = 1:length(params)
+    binEdges = min([kinData.(params{i})]) : tolerances(i) : max([kinData.(params{i})]+tolerances(i));
+    [~,~,binIds(:,i)] = histcounts([kinData.(params{i})], binEdges);
+end
+
+
+% get trial pairs
+for i = 3:length(mice)
+    
+    mouseBins = strcmp({kinData.mouse}, mice{i});
+    uniqueTrialTypes = unique(binIds(mouseBins,:), 'rows');
+    
+    sessions = cell(2,0);
+    trials = nan(2,0);
+    trialText = cell(2,0);
+    
+    for j = 1:size(uniqueTrialTypes,1)
+        manipInds = find(ismember(binIds, uniqueTrialTypes(j,:), 'rows')' & mouseBins & manipBins);
+        controlInds = find(ismember(binIds, uniqueTrialTypes(j,:), 'rows')' & mouseBins & controlBins);
+        
+        if ~isempty(manipInds) && ~isempty(controlInds)
+            sessions(:,end+1) = {kinData(controlInds(1)).session; kinData(manipInds(1)).session};
+            trials(:,end+1) = [kinData(controlInds(1)).trial; kinData(manipInds(1)).trial];
+            
+            control = kinData(controlInds(1));
+            manip = kinData(manipInds(1));
+            trialText(:,end+1) = ...
+                {sprintf('%s, %s, %s, %s, light:%i, trial:%i', control.mouse, control.condition, control.side, control.session, control.isLightOn, manip.trial); ...
+                sprintf('%s, %s, %s, %s, light:%i, trial:%i', manip.mouse, manip.condition, manip.side, manip.session, manip.isLightOn, manip.trial)};
+            
+            if size(sessions,2)>=maxTrials; break; end
+        end
+    end
+    
+    makeTrialPairsVid(['Z:\RAW\sharing\experimentVids\' manipulation 'Vids\' mice{i} 'MatchedTrials.mp4'], sessions, trials, trialText)
+end
+
+
+
+
+
+

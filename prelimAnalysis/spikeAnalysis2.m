@@ -113,7 +113,7 @@ function spikeAnalysis2(session, varsToOverWrite)
 
         load([sessionDir 'run.mat'], 'obEncodA', 'obEncodB')
 
-        if exist('obEncodA', 'var') && ~isempty(obEncodA.times)
+        if exist('obEncodA', 'var') && ~isempty(obEncodA.times) && ~isempty(obEncodB.times)
             fprintf('%s: decoding obstacle position\n', session)
             [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
                                                      obEncodB.times, obEncodB.level,...

@@ -3,6 +3,7 @@ function manipulationBarPlots(data, conditions, figTitle, weights)
 
 
 % settings
+poolSessions = true; % pool trials across sessions for given mouse if true
 touchThresh = 5; % if paw contacts obs for more than touchThresh frames, trial is considered touching
 dvs = {'success rate', ...
        'speed (m/s)', ...
@@ -11,8 +12,8 @@ dvs = {'success rate', ...
        'ipsi (or left) error rate'};
 dvYLims = [0 1; 0 .8; -15 15; 0 .5; 0 .5];
 minTrial = 0;
-validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
 sessionTrialMin = 0; % require at least this many trials in a session for it to be included
+validBins = [data.trialNum]>=minTrial;
 
 
 % initializations
@@ -42,39 +43,44 @@ for i = 1:length(brainRegions)
     for j = 1:length(mice)
         for k = 1:length(conditions)
             
+            mouseBins = strcmp({data.mouse}, mice{j});
             conditionBins = brainRegionBins & ...
                             strcmp({data.condition}, conditions{k}) & ...
-                            strcmp({data.mouse}, mice{j});
+                            mouseBins & ...
+                            validBins;
             sessions = unique({data(conditionBins).session});
             
-            % containers for session averages for all session for a given mouse in a given condition
-            sessionSuccesses = nan(1, length(sessions));
-            sessionSpeeds = nan(1, length(sessions));
-            sessionContraBodyAngles = nan(1, length(sessions));
-            sessionContraErrRates = nan(1, length(sessions));
-            sessionIpsiErrRates = nan(1, length(sessions));
             
-            % get session means
-            for m = 1:length(sessions)
+            % containers for session averages for all session for a given mouse in a given condition
+            if poolSessions; iters=1; else; iters=length(sessions); end
+            [sessionSuccesses, sessionSpeeds, sessionContraBodyAngles, ...
+                sessionContraErrRates, sessionIpsiErrRates] = deal(nan(1, iters));
+            
+            % get means
+            for m = 1:iters
                 
-                sessionBins = strcmp({data.session}, sessions{m}) & validBins;
+                if poolSessions
+                    bins = conditionBins;
+                else
+                    bins = strcmp({data.session}, sessions{m});
+                end
                 
-                if sum(weights(sessionBins))>sessionTrialMin
+                if sum(weights(bins))>sessionTrialMin
                 
                     % get speed, success rate
-                    sessionSuccesses(m) = sum(isSuccess(sessionBins).*weights(sessionBins)) / sum(weights(sessionBins));
-                    sessionSpeeds(m) = sum([data(sessionBins).avgVel].*weights(sessionBins)) / sum(weights(sessionBins));
+                    sessionSuccesses(m) = sum(isSuccess(bins).*weights(bins)) / sum(weights(bins));
+                    sessionSpeeds(m) = sum([data(bins).avgVel].*weights(bins)) / sum(weights(bins));
 
                     % get body angle
-                    sessionContraBodyAngles(m) = sum([data(sessionBins).avgAngle].*weights(sessionBins)) / sum(weights(sessionBins));
+                    sessionContraBodyAngles(m) = sum([data(bins).avgAngle].*weights(bins)) / sum(weights(bins));
                     sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
                     if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
 
                     % get contra err rate
-                    leftErrorRate = sum(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {data(sessionBins).trialTouchesPerPaw}) ...
-                        .* weights(sessionBins)) / sum(weights(sessionBins));
-                    rightErrorRate = sum(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {data(sessionBins).trialTouchesPerPaw}) ...
-                        .* weights(sessionBins)) / sum(weights(sessionBins));
+                    leftErrorRate = sum(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {data(bins).trialTouchesPerPaw}) ...
+                        .* weights(bins)) / sum(weights(bins));
+                    rightErrorRate = sum(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {data(bins).trialTouchesPerPaw}) ...
+                        .* weights(bins)) / sum(weights(bins));
                     if strcmp(sideOfBrain, 'left')
                         [sessionContraErrRates, sessionIpsiErrRates] = deal(rightErrorRate, leftErrorRate);
                     else

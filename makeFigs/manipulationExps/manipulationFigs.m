@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 maxLesionSession = 3;
 
 
@@ -57,8 +57,7 @@ disp([manipulation ' speed avoidance data loaded!'])
 velTolerance = .05;
 angleTolerance = 2;
 
-% matchedBinsKin = findMatchedBins(kinData, conditions, velTolerance, angleTolerance);
-[matchedBinsSpeedAvoidance, weightsSpeedAvoidance] = findMatchedBins(speedAvoidanceData, conditions, velTolerance, angleTolerance);
+[matchedBinsSpeedAvoidanceBins, weightsSpeedAvoidance] = findMatchedBins(speedAvoidanceData, conditions, velTolerance, angleTolerance);
 
 
 % % plot matched bins histogram

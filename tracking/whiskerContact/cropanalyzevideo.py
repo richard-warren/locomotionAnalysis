@@ -101,9 +101,13 @@ clipLen = len(mat['frameTimeStampsWisk'])
 for i in range(len(mat['frameTimeStampsWisk'])):
     if np.isnan(mat['frameTimeStampsWisk'][i][0]):
         mat['frameTimeStampsWisk'][i][0]=-1
+for i in range(len(mat['frameTimeStamps'])):
+    if np.isnan(mat['frameTimeStamps'][i][0]):
+        mat['frameTimeStamps'][i][0] = -1
+otherFirstTime = mat['frameTimeStamps'][bisect.bisect(np.squeeze(mat['frameTimeStamps']), -1)][0]
 firstTime = mat['frameTimeStampsWisk'][bisect.bisect(np.squeeze(mat['frameTimeStampsWisk']), -1)][0]
 for i, obsOnTime in enumerate(obsOnTimes):
-    if not (obsOnTime>mat['frameTimeStampsWisk'][-1] or obsOnTime<firstTime):
+    if not (obsOnTime>min(mat['frameTimeStampsWisk'][-1], mat['frameTimeStamps'][-1]) or obsOnTime<max(firstTime, otherFirstTime)):
         obsOnFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOnTime)))
     else:
         obsOnFrames.append((i, -1))
@@ -111,7 +115,7 @@ for i, obsOnTime in enumerate(obsOnTimes):
 obsOffTimes = np.squeeze(mat['obsOffTimes'])
 obsOffFrames = []
 for i, obsOffTime in enumerate(obsOffTimes):
-    if not (obsOffTime>mat['frameTimeStampsWisk'][-1] or obsOffTime<firstTime):
+    if not (obsOffTime>min(mat['frameTimeStampsWisk'][-1], mat['frameTimeStamps'][-1]) or obsOffTime<max(firstTime, otherFirstTime)):
         obsOffFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOffTime)))
     else:
         obsOffFrames.append((i, -1))
@@ -130,6 +134,10 @@ logging.info("Loaded features")
 
 size = [clip.size[1], clip.size[0]]
 
+def convertWiskStamps(wiskframe):
+    time = mat['frameTimeStampsWisk'][wiskframe][0]
+    return bisect.bisect_left(np.squeeze(mat['frameTimeStamps']), time)
+
 fieldnames = ["framenum", "confidence"]
 answers = [{"framenum":-1, "confidence": 0}]*len(mat['obsOnTimes'])
 print("Analyzing")
@@ -137,23 +145,27 @@ print("Analyzing")
 for idx, framenum, endframe in tqdm(trialFrames):
     #logging.info("Obstacle on")
     #logging.info(str(framenum))
-    if framenum == -1:
+    if framenum == -1 or endframe == -1:
         continue
     findTime = 0
     initialStart = time.time()
     start = time.time()
-    features = trackedFeatures[framenum]
+    features = trackedFeatures[convertWiskStamps(framenum)]
     obsPos = list(map(int, [features[22], features[23]]))
     obsConf = features[24]
     nosePos = list(map(int, [features[19], features[20]]))
     image = clip.get_frame(framenum * (1 / clip.fps))
     while sum(sum(i<10 for i in image[:, (size[1]-2):, 0]))<40:
-        framenum+=1
-        features = trackedFeatures[framenum]
-        obsPos = list(map(int,[features[22],features[23]]))
-        obsConf = features[24]
-        nosePos = list(map(int, [features[19], features[20]]))
-        image = clip.get_frame(framenum * (1 / clip.fps))
+        try:
+            framenum+=1
+            features = trackedFeatures[convertWiskStamps(framenum)]
+            obsPos = list(map(int,[features[22],features[23]]))
+            obsConf = features[24]
+            nosePos = list(map(int, [features[19], features[20]]))
+            image = clip.get_frame(framenum * (1 / clip.fps))
+        except IndexError:
+            framenum = endframe+1
+            break
     frameProbs = {}
     oldFrame = framenum
     if framenum >= endframe:
@@ -172,7 +184,7 @@ for idx, framenum, endframe in tqdm(trialFrames):
     while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
         needFrames.append(framenum)
         framenum+=1
-        features = trackedFeatures[framenum]
+        features = trackedFeatures[convertWiskStamps(framenum)]
         obsPos = list(map(int, [features[22], features[23]]))
         obsConf = features[24]
         nosePos = list(map(int, [features[19], features[20]]))
@@ -191,7 +203,7 @@ for idx, framenum, endframe in tqdm(trialFrames):
         predBatch = visual_model.predict(actualBatch)
         frames.update({i:j for (i, j) in zip(frameBatch, predBatch)})
     framenum = oldFrame
-    features = trackedFeatures[framenum]
+    features = trackedFeatures[convertWiskStamps(framenum)]
     obsPos = list(map(int, [features[22], features[23]]))
     obsConf = features[24]
     nosePos = list(map(int, [features[19], features[20]]))
@@ -200,14 +212,14 @@ for idx, framenum, endframe in tqdm(trialFrames):
         session = []
         if framenum<timesteps:
             framenum+=1
-            features = trackedFeatures[framenum]
+            features = trackedFeatures[convertWiskStamps(framenum)]
             obsPos = list(map(int, [features[22], features[23]]))
             obsConf = features[24]
             nosePos = list(map(int, [features[19], features[20]]))
             continue
         if framenum>int(clip.duration*clip.fps-50):
             framenum+=1
-            features = trackedFeatures[framenum]
+            features = trackedFeatures[convertWiskStamps(framenum)]
             obsPos = list(map(int, [features[22], features[23]]))
             obsConf = features[24]
             nosePos = list(map(int, [features[19], features[20]]))
@@ -217,7 +229,7 @@ for idx, framenum, endframe in tqdm(trialFrames):
             session.append(frame)
         needAnal.append(session)
         framenum+=1
-        features = trackedFeatures[framenum]
+        features = trackedFeatures[convertWiskStamps(framenum)]
         obsPos = list(map(int, [features[22], features[23]]))
         obsConf = features[24]
         nosePos = list(map(int, [features[19], features[20]]))

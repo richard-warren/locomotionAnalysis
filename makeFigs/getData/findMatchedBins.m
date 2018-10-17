@@ -10,7 +10,7 @@ function [matchedBins, weights] = findMatchedBins(data, conditions, velTolerance
 % get vel and angle bins
 velBinEdges = 0:velTolerance:max([data.avgVel]);
 [~, velBinEdges, velBins] = histcounts([data.avgVel], velBinEdges);
-angleBinEdges = 0:angleTolerance:max(([data.avgAngle]));
+angleBinEdges = min(([data.avgAngle])):angleTolerance:max(([data.avgAngle]));
 [~, angleBinEdges, angleBins] = histcounts(([data.avgAngle]), angleBinEdges);
 
 controlBins = strcmp({data.condition}, conditions{1});
@@ -25,7 +25,6 @@ for i = 1:length(velBinEdges)-1
         for k = 1:length(mice)
 
             mouseBins = strcmp({data.mouse}, mice{k});
-%             mouseBins = true(1,length(data));
             binControlTrials = find(velBins==i & angleBins==j & controlBins & mouseBins);
             binManipTrials   = find(velBins==i & angleBins==j & manipBins & mouseBins);
 
