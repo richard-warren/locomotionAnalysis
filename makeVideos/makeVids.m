@@ -62,7 +62,8 @@ makeTrackingVidDLC(session, frameInds);
 %% make vids with no obstacle, only locomotion (for KineMouse Wheel demonstration)
 
 session = '180125_000';
-trialNum = 3;
+trialNum = 100;
+maxFrames = 10000;
 obsOffBuffer = 1; % (s)
 rewardBuffer = 4;
 
@@ -90,8 +91,24 @@ for i = trials
 end
 
 
-makeTrackingVidDLC(session, frameInds');
+makeTrackingVidDLC(session, frameInds'); % make vid with markers
 
+
+%% simply concatenate top and bot only including frameInds(1:maxFrames)
+filename = ['noObsVid' session];
+vidTop = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runTop.mp4']);
+vidBot = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runBot.mp4']);
+vidWrite = VideoWriter([getenv('OBSDATADIR') '\editedVid\' filename 'trackingSample.mp4'], 'MPEG-4');
+set(vidWrite, 'Quality', 50, 'FrameRate', 100);
+open(vidWrite);
+
+for i = 1:maxFrames
+    disp(i/maxFrames)
+    frame = cat(1, read(vidTop, frameInds(i)), read(vidBot, frameInds(i)));
+    writeVideo(vidWrite, frame);
+end
+
+close(vidWrite)
 
 
 %% make matched trials vids for muscimol and lesion experiments

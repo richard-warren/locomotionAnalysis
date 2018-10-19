@@ -652,7 +652,7 @@ function spikeAnalysis2(session, varsToOverWrite)
             exist([sessionDir 'runWisk.mp4'], 'file')
         
         % settings
-        rerunWiskNetwork = false;
+        rerunWiskNetwork = true;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
