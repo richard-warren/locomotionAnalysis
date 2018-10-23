@@ -1,6 +1,9 @@
-function [data, stanceBins] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
+function [data, stanceBins, touchClassNames] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
+% note: stanceBins is only for the LAST analyzed session // only useful when calling this for a single session
+% note: touchClassNames is for the last sessions, AND ASSUMES THEY ARE
+% THE SAME FOR ALL SESSIONS ANALYZED
 
 % settings
 speedTime = .02; % compute velocity over this interval
@@ -148,7 +151,8 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'obsPixPositionsUninterped', 'frameTimeStamps', 'mToPixMapping', 'isLightOn', ...
             'obsOnTimes', 'obsOffTimes', 'nosePos', 'targetFs', 'wheelPositions', 'wheelTimes', 'targetFs', 'obsPosToWheelPosMappings', ...
-            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'wiskContactFrames', 'wiskContactTimes', 'frameTimeStampsWisk', 'bodyAngles');
+            'wheelRadius', 'wheelCenter', 'obsHeightsVid', 'touchesPerPaw', 'touchClassNames', 'wiskContactFrames', 'wiskContactTimes', ...
+            'frameTimeStampsWisk', 'bodyAngles');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPixPositionsContinuous = getObsPixPositionsContinuous(...
         obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
@@ -235,7 +239,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
     
     % COLLECT DATA FOR EACH TRIAL
     if timeOperations; tic; end
-    sessionVels = nan(1,length(obsOnTimes)); % vels at moment of contact
     
     for j = 1:length(obsOnTimes)
         try
@@ -248,8 +251,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             endInd = find(all(isnan(modifiedStepIdentities),2) & frameTimeStamps>obsOffTimes(j), 1, 'first'); % end when all mod steps in trial are over
             trialInds = startInd:endInd;
 
-            % get vel at moment of contact
-            sessionVels(j) = interp1(wheelTimes, vel, contactTimes(j));
 
             % get time stamps relative to wisk contact
             trialTimeStamps = frameTimeStamps(trialInds)-contactTimes(j);
@@ -260,7 +261,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             trialNoObsStepIds = noObsStepIdentities(trialInds,:);
             trialLocations = locationsPaws(trialInds,:,:);
             trialWheelVel = vel(trialInds);
-            trialTouchesPerPaw = touchesPerPaw(trialInds, 4);
+            trialTouchesPerPaw = touchesPerPaw(trialInds, :);
             
             % check whether any control or modified or obsOff steps are missing
             missingControlStep = false;
@@ -482,7 +483,8 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             
 
             % bunch of thangs
-            sessionData(dataInd).vel = sessionVels(j);  % mouse vel at moment of wisk contact
+            sessionData(dataInd).vel = interp1(wheelTimes, vel, contactTimes(j));  % mouse vel at moment of wisk contact
+            sessionData(dataInd).angle = interp1(frameTimeStamps(~isnan(frameTimeStamps)), bodyAngles(~isnan(frameTimeStamps)), contactTimes(j));  % body angle at moment of wisk contact
             sessionData(dataInd).avgVel = avgVel;
             sessionData(dataInd).avgAngle = avgAngle;
             sessionData(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact

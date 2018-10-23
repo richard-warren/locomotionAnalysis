@@ -11,11 +11,11 @@ loadPreviousData = false;
 
 if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
-    kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
+    [kinData, ~, touchClassNames] = getKinematicData4(sessionInfo.session, sessionInfo, data);
 else
-    kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
+    [kinData, ~, touchClassNames] = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
-data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
+data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data', 'touchClassNames'); clear data;
 
 %% load previous data
 

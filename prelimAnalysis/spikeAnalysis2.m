@@ -636,6 +636,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         
         
         % save
+        if isfield(varStruct, 'obsPixPositionsContinuous'); varStruct = rmfield(varStruct, 'obsPixPositionsContinuous'); end % this is a hack to remove an old variable that took up too much space in the .mat file
         varStruct.touches = touches;
         varStruct.touchesPerPaw = touchesPerPaw;
         varStruct.touchClassNames = touchClassNames;
