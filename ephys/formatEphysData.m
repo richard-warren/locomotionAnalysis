@@ -7,7 +7,7 @@ function formatEphysData(session)
 % settings
 spkRateFs = 1000;     % sampling frequency of instantaneous firing rate
 spkRateKernSig = .02; % kernel used to determine instantaneous firing rate
-obsOnChannel = 6;
+obsOnChannel = 0;
 
 % initializations
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
@@ -20,7 +20,7 @@ ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 [channel, openEphysObsOnTimes, info] = load_open_ephys_data_faster(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
 openEphysObsOnTimes = openEphysObsOnTimes(logical(info.eventId) & channel==obsOnChannel); % only take rising edge of event channel // !!! is the first variablee returned from load_open_ephys_data_faster really the identity of the event channel???
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsOnTimes');
-keyboard
+
 
 if length(openEphysObsOnTimes)~=length(obsOnTimes)
     fprintf('WARNING: %i obsOnTimes in spike and %i obsOnTimes in openEphys...', length(obsOnTimes), length(openEphysObsOnTimes))
@@ -37,6 +37,9 @@ if length(openEphysObsOnTimes)~=length(obsOnTimes)
     end
     
     fprintf(' but fixed using a hacky hack')
+else
+    [validOpenEBins, validSpikeBins] = deal(true(1,length(openEphysObsOnTimes)));
+    disp('correct number of events detected!')
 end
 fprintf('\n')
 
