@@ -14,10 +14,8 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'sessions');
 [data, stanceBins] = getKinematicData4({session}, sessionInfo, []);
 stanceBins = stanceBins{1}; % stanceBins will always have only a single entry when getKinematicData is called with a single session
-if ~exist('cells', 'var')
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'spkRates');
-    cells = 1:size(spkRates,1);
-end
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'spkRates');
+if ~exist('cells', 'var'); cells = 1:size(spkRates,1); end
 
 for cellNum = cells
     

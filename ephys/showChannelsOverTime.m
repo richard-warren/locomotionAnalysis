@@ -1,49 +1,93 @@
+function showChannelsOverTime(session, minuteIntervals)
+
+% given session name, shows traces of all channels on a probe as rows in a
+% large column // does this for evenly spaced intervals over the duration
+% of recording // use to assess drift!
+
+% !!! fix dorsovental sequencing!
 
 
 % settings
-channels = 1:2:64; % 4
-highPass = 300;
-fs = 30000;
-folder = 'Y:\obstacleData\sessions\181030_000\ephys_2018-10-30_18-27-21';
-yLims = [-500 500];
-windowSize = .5;
-timeIntervals = 5*60;
+highPassFreq = 300;
+yLims = [-400 400]; % microvols
+windowSize = .5; % length of window in which to show spikes
 
-% mapping
-% channelIn = [31 27 22 18 28 23 21 26 29 24 20 25 30 19 32 17 1 16 3 14 9 10 8 2 7 15 11 12 6 13 5 4];
-% channelOut = [31 28 25 22 19 16 13 10 7 4 32 26 20 14 8 2 1 5 11 17 23 29 3 6 9 12 15 18 21 24 27 30];
-channelIn = 1:64;
-channelOut = 1:64;
 
 % initializations
-addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
-[~, times] = load_open_ephys_data_faster(fullfile(folder, '107_CH1.continuous'));
+timeIntervals = minuteIntervals*60; % convert to seconds
+disp('initializing data...')
+files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
+ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
+contFiles = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '*.continuous'));
+channelNum = length(contFiles);
+fileNameBase = contFiles(1).name(1:3);
+
+% get channel mapping
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+mapFile = ephysInfo.map{strcmp(session, ephysInfo.session)};
+load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
+    'xcoords', 'ycoords')
+[~, sortInds] = sort(ycoords);
+
+
+% get fs, microvolts conversion factor, and number of samples
+[~, ~, info] = load_open_ephys_data_faster(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, [fileNameBase '_CH1.continuous']));
+fs = info.header.sampleRate;
+bitVolts = info.header.bitVolts;
+file = fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, [fileNameBase '_CHs.dat']);
+temp = dir(file);
+smps = temp.bytes/2/channelNum; % 2 bytes per sample
+times = linspace(0,smps/fs,smps);
+timesSub = linspace(0,windowSize/fs,windowSize*fs);
+
+% function to extract voltage from binary file
+getVoltage = @(data, channel, inds) ...
+    highpass(double(data.Data.Data(channel,inds))*bitVolts, highPassFreq, fs); % extract voltage from memmapfile, converting to votlage, highpassing, and only return specific channel
+
+% load data
+data = memmapfile(file, 'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
+
+
+% plot all channels at dft time intervals
+figure('color', 'white', 'Units', 'pixels', 'Position', [2000 20 1800 950]);
 timeStarts = min(times):timeIntervals:max(times);
+traces = nan(channelNum, length(timeStarts), windowSize*fs);
 
-figure('color', 'white', 'Units', 'normalized', 'Position', [0 0 1 1]);
-
-for i = 1:length(channels)
-    disp(i)
-    chan = channelOut(find(channelIn==i,1,'first'));
-    
-    [data, times, info] = load_open_ephys_data_faster(fullfile(folder, ['107_CH' num2str(channels(i)) '.continuous']));
-    dataHpf = highpass(data, highPass, fs);
-    
+% get traces in parallel
+disp('collecting traces...')
+parfor i = 1:channelNum
+    tracesSub = nan(length(timeStarts), windowSize*fs);
     for j = 1:length(timeStarts)
-        bins = times>timeStarts(j) & times<timeStarts(j)+windowSize;
-        subplot(1,length(timeStarts),j);
-        plot(times(bins), dataHpf(bins) + (32-chan-1)*(range(yLims))); hold on;
+        startInd = find(times>timeStarts(j));
+        inds = startInd:startInd+windowSize*fs-1;
+        tracesSub(j,:) = feval(getVoltage, data, i, inds);
     end
-    pause(.5)
+    traces(i,:,:) = tracesSub;
 end
 
+
+% plot traces
+disp('plotting...')
+for i = 1:channelNum
+    for j = 1:length(timeStarts)
+        subplot(1,length(timeStarts),j); hold on
+        plot(timesSub, squeeze(traces(i,j,:)) + find(i==sortInds)*(range(yLims)));
+    end
+end
 
 % pimp fig
 for i = 1:length(timeStarts)
     subplot(1,length(timeStarts),i);
-    bins = times>timeStarts(i) & times<timeStarts(i)+windowSize;
-    set(gca, 'XLim', [min(times(bins)) max(times(bins))], ...
-        'YLim', [yLims(1) (yLims(1)+range(yLims)*length(channels))], ...
+    
+    set(gca, 'XLim', [0 timesSub(end)], ...
+        'YLim', [0 (channelNum+.5)*range(yLims)], ...
         'Visible', 'off')
-    text(min(times(bins)), 32*(range(yLims)), [num2str(round((timeStarts(i)-min(timeStarts))/60)) ' minutes'])
+    
+    text(0, (channelNum+1)*(range(yLims)), ...
+        [num2str(round((timeStarts(i)-min(timeStarts))/60)) ' minutes'])
 end
+
+% save that ish
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'ephysDrift', [session '.png']));
+disp('all done!')
+

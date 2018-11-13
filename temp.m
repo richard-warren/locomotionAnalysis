@@ -1,12 +1,12 @@
 
 
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 
-sessions = {'180917_002', '180920_002', '180922_001', '181001_002', '181002_002', '181003_002', '181004_003'};
-
-for i = 1:length(sessions)
+for i = 1:height(ephysInfo)
+    disp(ephysInfo.session{i})
     try
-        plotRecordingSummary(sessions{i})
+        showChannelsOverTime(ephysInfo.session{i}, 8)
     catch
-        fprintf('%s: PROBLEM ANALYZING SESSION!\n', sessions{i})
+        fprintf('problem with session %s\n', ephysInfo.session{i})
     end
 end

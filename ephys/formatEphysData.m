@@ -17,7 +17,8 @@ ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 
 
 % get mapping from open ephys to spike times
-[channel, openEphysObsOnTimes, info] = load_open_ephys_data_faster(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
+[channel, openEphysObsOnTimes, info] = load_open_ephys_data_faster(...
+    fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
 openEphysObsOnTimes = openEphysObsOnTimes(logical(info.eventId) & channel==obsOnChannel); % only take rising edge of event channel // !!! is the first variablee returned from load_open_ephys_data_faster really the identity of the event channel???
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsOnTimes');
 

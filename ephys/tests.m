@@ -11,68 +11,72 @@ addpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 npyFiles = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '*.npy'));
 channelNum = length(dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '*.continuous')));
-getVoltage = @(data, channel) highpass(double(data.Data.Data(channel,:))*info.header.bitVolts, highPassFreq, fs);
 
-% % load all npy files
-% npyData = struct();
-% for i = 1:length(npyFiles)
-%     npyData.(npyFiles(i).name(1:end-4)) = ...
-%         readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, npyFiles(i).name));
-% end
+% get fs and microvolts conversion factor
+[~, ~, info] = load_open_ephys_data_faster(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '107_CH1.continuous'));
+fileFs = info.header.sampleRate;
+bitVolts = info.header.bitVolts;
+if fileFs~=fs; disp('sampling freq error! abandon ship!'); keyboard; end
 
-% close all; figure
-% scatter(npyData.spike_times, npyData.amplitudes)
-% figure; histogram(npyData.amplitudes)
-
-%% play with continuous data
-
-% the following puts data into a convenient memory map file 
-
-% create copy of binary file to play with
-file = fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '107_CHs');
-copyfile([file '.dat'], [file 'Normalized.dat'])
+% function to extract voltage from binary file
+getVoltage = @(data, channel, inds) ...
+    highpass(double(data.Data.Data(channel,inds))*bitVolts, highPassFreq, fs); % extract voltage from memmapfile, converting to votlage, highpassing, and only return specific channel
 
 % get total number of samples
-temp = dir([file 'Normalized.dat']);
+file = fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '107_CHs.dat');
+temp = dir(file);
 smps = temp.bytes/2/channelNum; % 2 bytes per sample
 
-% acquire and normalize data
-data = memmapfile([file 'Normalized.dat'], ...
-    'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', true);
+% load data
+data = memmapfile(file, 'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
 
 
-%% plot all channels for brief window
+
+%% plot sample
 time = 5; % seconds
 close all; figure;
 offset = 500;
 
 for i = 1:32
-    trace = double(data.Data.Data(i,1:time*fs)) * info.header.bitVolts;
-    trace = highpass(double(trace), highPassFreq, fs);
-    plot(trace + offset*i); hold on
+    plot(getVoltage(data,i,1:time*fs) + offset*i); hold on
     text(0, offset*i, num2str(i))
+    pause(.01)
 end
 
 set(gca, 'Visible', 'off', 'YLim', [0 offset*(i+1)])
 pimpFig
 
 
-%% plot single trace amplitude metric over time
+%% get binned spike rates over recording duration
 
 % settings
-% timeToSample = 60; % randomly
+timeToSmp = 60;
 channel = 25;
 spkThresh = 4;
+timeBins = 100;
+
 
 getSpikeThresh = @(x) -(median(abs(x))/.6745) * spkThresh;
-thresh = getSpikeThresh(getVoltage(data,channel));
-spkBins = logical([0, diff(getVoltage(data,channel)>thresh)==1]);
+rates = nan(32, timeBins);
 
+for i = 1:32
+    disp(i)
+    channelTrace = getVoltage(data,channel,1:smps);
+    thresh = getSpikeThresh(channelTrace);
+    spkBins = logical([0, diff(channelTrace<thresh)==1]);
+    times = linspace(0,smps/fs,smps);
+    spkTimes = times(spkBins);
+    [counts, edges] = histcounts(spkTimes, timeBins);
+    rates(i,:) = counts / median(diff(edges));
+end
+
+
+%% sort channels by depth and show rates in heat map
 
 figure;
-plot(getVoltage(data,channel)); hold on;
+plot(channelTrace); hold on;
 line(get(gca, 'XLim'), [thresh thresh])
-scatter(find(spkBins), repmat(thresh,1,sum(spkBins)))
+scatter(find(spkBins), channelTrace(spkBins))
 pimpFig
 
 
