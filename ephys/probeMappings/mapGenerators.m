@@ -18,18 +18,18 @@ siteLocations = repmat(siteLocations,4,1);
 siteLocations(:,1) = siteLocations(:,1) + repelem(1:4,16)'.*shankSeparation;
 
 
-% visualize final mapping results
-close all; figure;
-scatter(siteLocations(:,1), siteLocations(:,2))
-for i = 1:size(siteLocations,1)
-    text(siteLocations(i,1), siteLocations(i,2), num2str(i))
-end
-
 % apply channel mapping to site locations
 siteLocationsRemapped = nan(size(siteLocations));
 for i = 1:64
     shankLocation = siteLocations(kiloSortInds(i),:);
     siteLocationsRemapped(intanInds(i),:) = shankLocation;
+end
+
+% visualize final mapping results
+close all; figure('Position', [134 119 1595 807]);
+scatter(siteLocations(:,1), siteLocations(:,2))
+for i = 1:size(siteLocations,1)
+    text(siteLocations(i,1), siteLocations(i,2), [num2str(i) ' (' num2str(intanInds(kiloSortInds==i)) ')'])
 end
 daspect([1 1 1])
 
@@ -41,10 +41,18 @@ chanMap0ind = chanMap - 1;
 xcoords   = siteLocationsRemapped(:,1);
 ycoords   = siteLocationsRemapped(:,2);
 kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
-
 fs = 30000; % sampling frequency
-save('Y:\obstacleData\ephys\channelMaps\kilosort\mapNeuronexusA4x16-Poly2Intan.mat', ...
+
+
+% probe BDFD // original mapping
+save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+% probe BDFD // after right most shank broken
+connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
+save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
+    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
 
 %% NeuronexusA1x32Poly3, intan
 
@@ -67,12 +75,6 @@ siteLocations(4:3:31, :) = cat(2, ones(10,1)*-18, fliplr(12.5 : 25 : (12.5+25*9)
 siteLocations([1 2:3:32], :) = cat(2, zeros(12,1), fliplr(0 : 25 : (25*11))'); % xy values for right column
 siteLocations(3:3:30, :) = cat(2, ones(10,1)*18, fliplr(12.5 : 25 : (12.5+25*9))'); % xy values for right column
 
-% visualize final mapping results
-close all; figure;
-scatter(siteLocations(:,1), siteLocations(:,2))
-for i = 1:size(siteLocations,1)
-    text(siteLocations(i,1), siteLocations(i,2), num2str(i))
-end
 
 % apply channel mapping to site locations
 siteLocationsRemapped = nan(size(siteLocations));
@@ -81,6 +83,12 @@ for i = 1:32
     siteLocationsRemapped(intanInds(i),:) = shankLocation;
 end
 
+% visualize final mapping results
+close all; figure('Position', [134 119 400 807]);
+scatter(siteLocations(:,1), siteLocations(:,2))
+for i = 1:size(siteLocations,1)
+    text(siteLocations(i,1), siteLocations(i,2), [num2str(i) ' (' num2str(intanInds(kiloSortInds==i)) ')'])
+end
 
 
 Nchannels = 32;
@@ -90,11 +98,15 @@ chanMap0ind = chanMap - 1;
 xcoords   = siteLocationsRemapped(:,1);
 ycoords   = siteLocationsRemapped(:,2);
 kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
-
 fs = 30000; % sampling frequency
-save('Y:\obstacleData\ephys\channelMaps\kilosort\mapNeuronexusA1x32Poly3Intan.mat', ...
+
+% probe C6CE
+save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
+% probe D55F // nine sites defective?
+% save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
+%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 
 

@@ -7,7 +7,7 @@ function plotQualityMetrics(session)
 % general
 spkWindow = [-.5 1.5]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
-highPassFreq = 300;
+% highPassFreq = 300;
 
 % snr settings
 snrYLims = [0 20];
@@ -73,7 +73,7 @@ spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
 
 % function to extract voltage from binary file
 getVoltage = @(data, channel, inds) ...
-    double(data.Data.Data(channel,inds))*bitVolts; % extract voltage from memmapfile, converting to votlage, highpassing, and only return specific channel
+    double(data.Data.Data(channel,inds))*bitVolts; % extract voltage from memmapfile, converting to votlage, and only return specific channel
 
 % load data
 data = memmapfile(file, 'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
@@ -100,10 +100,10 @@ for cell = 1:length(unit_ids)
     % find best channel and get voltage for that channel
     meanWaveform = squeeze(mean(allWaveforms,1));
     [~, bestChannel] = max(peak2peak(meanWaveform,2));
-    channelDataRaw = getVoltage(data, bestChannel, 1:smps);
-    [NN, Wn] = buttord(highPassFreq*2/fs, highPassFreq*2/fs*0.75, 3, 20); % create high pass filter
-    [B1,A1] = butter(NN,Wn,'high');
-    channelData = filtfilt(B1,A1,channelDataRaw);
+    channelData = getVoltage(data, bestChannel, 1:smps);
+%     [NN, Wn] = buttord(highPassFreq*2/fs, highPassFreq*2/fs*0.75, 3, 20); % create high pass filter
+%     [B1,A1] = butter(NN,Wn,'high');
+%     channelData = filtfilt(B1,A1,channelDataRaw);
     
 
 
