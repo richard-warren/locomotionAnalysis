@@ -105,8 +105,9 @@ save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 % probe D55F // nine sites defective?
-% save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
-%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+connected([18 28 14 9 10 2 7 15 11]) = false;
+save('Y:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
+    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 
 

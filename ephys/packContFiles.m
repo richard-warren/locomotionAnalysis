@@ -4,7 +4,7 @@ function packContFiles(sessions)
 
 % settings
 pythonPath = 'C:\Users\rick\Anaconda3\python.exe';
-highPassFreq = 300;
+highPassFreq = 0; % 0 to skip highpass
 referencing = 'med';
 
 % initializations

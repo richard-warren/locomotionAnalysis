@@ -15,7 +15,6 @@ timeBins = 5;
 
 
 % initializations
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
 ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
@@ -24,7 +23,9 @@ channelNum = length(contFiles);
 fileNameBase = contFiles(1).name(1:3);
 
 % get channel mapping
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 mapFile = ephysInfo.map{strcmp(session, ephysInfo.session)};
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
     'xcoords', 'ycoords', 'connected')
@@ -87,5 +88,3 @@ end
 
 % save that ish
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'drift', [session '.png']));
-disp('all done!')
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
