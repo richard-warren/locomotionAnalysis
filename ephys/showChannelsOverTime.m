@@ -4,8 +4,6 @@ function showChannelsOverTime(session)
 % large column // does this for evenly spaced intervals over the duration
 % of recording // use to assess drift!
 
-% !!! fix dorsovental sequencing!
-
 
 % settings
 % highPassFreq = 300;

@@ -1,12 +1,12 @@
 function plotQualityMetrics(session)
 
-% TO DO: fix multishank probe view
 
 
 % SETTINGS
 % general
 spkWindow = [-.5 1.5]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
+showFigures = 'off';
 % highPassFreq = 300;
 
 % snr settings
@@ -16,6 +16,7 @@ snrYLims = [0 20];
 xSpacing = 4;
 ySpacing = 30;
 timeBinNum = 4;
+minFiringRate = 0.5; % (hz) time bins with firing rate less than minFr will not display average trace
 
 % spike trace settings
 sampleTraceLength = .15;
@@ -38,14 +39,13 @@ xcorrWidth = .04;
 
 
 % COLLECT SESSION DATA
-fprintf('%s: collecting data...\n', session)
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+fprintf('%s: collecting data... ', session)
+ephysInfo = getSessionEphysInfo(session);
+for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
 meanColor = mean(copper(3),1);
-files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
-ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
-contFiles = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '*.continuous'));
-channelNum = length(contFiles);
-fileNameBase = contFiles(1).name(1:3);
+spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
+load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
+    'xcoords', 'ycoords')
 
 
 % get spike times for good units
@@ -56,35 +56,26 @@ clusters = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFold
 clusterGroups = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_groups.csv'));
 unit_ids = clusterGroups.cluster_id(strcmp(clusterGroups.group, 'good'));
 
-% get channel mapping
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-mapFile = ephysInfo.map{strcmp(session, ephysInfo.session)};
-load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
-    'xcoords', 'ycoords')
-
-% get fs, microvolts conversion factor, and number of samples
-[~, timeStamps, info] = load_open_ephys_data_faster(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, [fileNameBase '_CH1.continuous']));
-fs = info.header.sampleRate;
-bitVolts = info.header.bitVolts;
-file = fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, [fileNameBase '_CHs.dat']);
-temp = dir(file);
-smps = temp.bytes/2/channelNum; % 2 bytes per sample
-spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
 
 % function to extract voltage from binary file
 getVoltage = @(data, channel, inds) ...
     double(data.Data.Data(channel,inds))*bitVolts; % extract voltage from memmapfile, converting to votlage, and only return specific channel
 
 % load data
-data = memmapfile(file, 'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
+data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, [fileNameBase '_CHs.dat']), ...
+    'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
 
-
+% create folder for figures, deleting old one if it already exists
+folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics', session);
+if isfolder(folder); cmd_rmdir(folder); end % delete folder if already exists
+mkdir(folder);
 
 
 for cell = 1:length(unit_ids)
 
-    fprintf('%s: plotting cell %i...\n', session, cell)
-    figure('Name', sprintf('%s cell %i', session, cell), 'Color', 'white', 'Position', [2000 45 1601 865]); hold on
+    fprintf('plotting cell %i... ', unit_ids(cell))
+    figure('Name', sprintf('%s cell %i', session, unit_ids(cell)), 'Visible', showFigures, ...
+        'Color', 'white', 'Position', [2000 45 1601 865]); hold on
     spkInds = allSpkInds(clusters==unit_ids(cell));
 
     
@@ -101,10 +92,6 @@ for cell = 1:length(unit_ids)
     meanWaveform = squeeze(mean(allWaveforms,1));
     [~, bestChannel] = max(peak2peak(meanWaveform,2));
     channelData = getVoltage(data, bestChannel, 1:smps);
-%     [NN, Wn] = buttord(highPassFreq*2/fs, highPassFreq*2/fs*0.75, 3, 20); % create high pass filter
-%     [B1,A1] = butter(NN,Wn,'high');
-%     channelData = filtfilt(B1,A1,channelDataRaw);
-    
 
 
     % PLOT SPIKE SHAPES ON PROBE
@@ -115,10 +102,13 @@ for cell = 1:length(unit_ids)
     
     for j = sameShankInds'
         for i = 1:timeBinNum
-            trace = squeeze(mean(allWaveforms(timeBins==i,j,:),1));
-            plot(xcoords(j)*xSpacing + spkWindowInds, ...
-                ycoords(j)*ySpacing + trace, ...
-                'Color', colors(i,:), 'LineWidth', 2)
+            firingRate = sum(timeBins==i) / (range(timeStamps)/timeBinNum);
+            if firingRate>minFiringRate % don't plot average trace if rate of spikes in bin is too low, which happens when the unit is lost
+                trace = squeeze(mean(allWaveforms(timeBins==i,j,:),1));
+                plot(xcoords(j)*xSpacing + spkWindowInds, ...
+                    ycoords(j)*ySpacing + trace, ...
+                    'Color', colors(i,:), 'LineWidth', 2)
+            end
         end
         text(double(xcoords(j)*xSpacing+spkWindowInds(1)), ...
                 ycoords(j)*ySpacing, ...
@@ -149,7 +139,7 @@ for cell = 1:length(unit_ids)
                 'Color', colors(i,:), 'LineWidth', 2); % overlay spikes! lol
         end
     end
-    set(gca, 'visible', 'off')
+    set(gca, 'visible', 'off', 'XLim', [0 range(times)])
 
 
 
@@ -218,8 +208,8 @@ for cell = 1:length(unit_ids)
     
     
     % save figures
-    savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics', [session 'cell' num2str(cell)]))
-    saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics', [session 'cell' num2str(cell) '.png']))
+    savefig(fullfile(folder, [session 'cell' num2str(unit_ids(cell))]))
+    saveas(gcf, fullfile(folder, [session 'cell' num2str(unit_ids(cell)) '.png']))
 end
 disp('all done!')
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
