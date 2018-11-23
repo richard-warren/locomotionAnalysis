@@ -7,7 +7,7 @@ function formatEphysData(session)
 % settings
 spkRateFs = 1000;     % sampling frequency of instantaneous firing rate
 spkRateKernSig = .02; % kernel used to determine instantaneous firing rate
-obsOnChannel = 0;
+% obsOnChannel = 0;
 
 % initializations
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
@@ -19,6 +19,7 @@ ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 % get mapping from open ephys to spike times
 [channel, openEphysObsOnTimes, info] = load_open_ephys_data_faster(...
     fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
+obsOnChannel = unique(channel); % assumes only one digital input is used!
 openEphysObsOnTimes = openEphysObsOnTimes(logical(info.eventId) & channel==obsOnChannel); % only take rising edge of event channel // !!! is the first variablee returned from load_open_ephys_data_faster really the identity of the event channel???
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsOnTimes');
 
@@ -42,7 +43,7 @@ else
     [validOpenEBins, validSpikeBins] = deal(true(1,length(openEphysObsOnTimes)));
     disp('correct number of events detected!')
 end
-fprintf('\n')
+% fprintf('\n')
 
 
 openEphysToSpikeMapping = polyfit(openEphysObsOnTimes(validOpenEBins), obsOnTimes(validSpikeBins), 1); % get linear mapping from open ephys to spike
@@ -58,43 +59,50 @@ end
 
 
 % get spike times for good units
-spkTimes = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_times.npy'));
-clusters = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_clusters.npy'));
-clusterGroups = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_groups.csv'));
-unit_ids = clusterGroups.cluster_id(strcmp(clusterGroups.group, 'good'));
+[spkInds, unit_ids] = getGoodSpkInds(session);
+cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
+if ~all(cellData.unit_id==unit_ids); disp('WARNING: callData.csv unit_ids do not match those in ephysFolder'); keyboard; end
+ephysInfo = getSessionEphysInfo(session);
 
-unitTimes = cell(1, length(unit_ids));
-[~, timeStamps] = load_open_ephys_data_faster(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, '107_CH1.continuous')); % assumes timestamps for all channels are the same... this is an okay assumption, right???
+% restrict to good units
+goodBins = logical([cellData.include]);
+unit_ids = unit_ids(goodBins);
+spkInds = spkInds(goodBins);
+cellData = cellData(goodBins,:);
+
+spkTimes = cell(1, length(unit_ids));
 for i = 1:length(unit_ids)
-    unitSmps = spkTimes(clusters==unit_ids(i));
-    unitTimes{i}  = polyval(openEphysToSpikeMapping, timeStamps(unitSmps));
+    spkTimes{i}  = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps(spkInds{i}));
 end
 
 
 % convert to instantaneous firing rate
+minTime = min(cellfun(@(x) x(1), spkTimes)); % latest spike across all neurons
+maxTime = max(cellfun(@(x) x(end), spkTimes)); % latest spike across all neurons
 
-minTime = min(cellfun(@(x) x(1), unitTimes)); % latest spike across all neurons
-maxTime = max(cellfun(@(x) x(end), unitTimes)); % latest spike across all neurons
+[~, timeStamps] = getFiringRate(spkTimes{1}, spkRateFs, spkRateKernSig, [minTime maxTime]);
+spkRates = nan(length(spkTimes), length(timeStamps));
 
-[spkRatesTemp, spkTimes] = getFiringRate(unitTimes{1}, spkRateFs, spkRateKernSig, [minTime maxTime]);
-spkRates = nan(length(unitTimes), length(spkTimes));
-spkRates(1,:) = spkRatesTemp;
-for i = 2:length(unitTimes)
-    spkRates(i,:) = getFiringRate(unitTimes{i}, spkRateFs, spkRateKernSig, [minTime maxTime]);
+for i = 1:length(spkTimes)
+    spkRates(i,:) = getFiringRate(spkTimes{i}, spkRateFs, spkRateKernSig, [minTime maxTime]);
+    
+    % get min and max time for cell
+    cellMinTime = polyval(openEphysToSpikeMapping, cellData.timeStart(i)*60);
+    if strcmp(cellData.timeEnd(i), 'max')
+        cellMaxTime = timeStamps(end);
+    else
+        cellMaxTime = polyval(openEphysToSpikeMapping, cellData.timeEnd(i)*60);
+    end
+    
+    % remove spikes that are out of min and max times
+    spkRates(i, timeStamps<cellMinTime | timeStamps>cellMaxTime) = nan;
+    spkTimes{i} = spkTimes{i}(spkTimes{i}>cellMinTime & spkTimes{i}<cellMaxTime);
+    
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'spkRates', 'spkTimes', 'unitTimes')
-% rmpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
-% rmpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
-
-
-
-
-
-
-
-
+    'spkRates', 'spkTimes', 'timeStamps')
+disp('all done!')
 
 
 

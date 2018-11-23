@@ -1,4 +1,4 @@
-% PERFORM OPERATIONS ON ALL EPHYS RECORDINGS
+t% PERFORM OPERATIONS ON ALL EPHYS RECORDINGS
 
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 % ephysInfo = ephysInfo([strcmp(ephysInfo.map, 'D55F')], :); % uncomment to reanalyze data from specific probe

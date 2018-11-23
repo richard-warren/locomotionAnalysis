@@ -4,13 +4,15 @@ function plotQualityMetrics(session)
 
 % SETTINGS
 % general
-spkWindow = [-.5 1.5]; % ms pre and post spike time to plot
+spkWindow = [-.5 1.0]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
-showFigures = 'off';
+showFigures = 'on';
 % highPassFreq = 300;
 
-% snr settings
+% SNR settings
 snrYLims = [0 20];
+snrDt = 1; % (s)
+snrWindow = 30; % (s)
 
 % probe view settings
 xSpacing = 4;
@@ -24,8 +26,7 @@ verticalSpacing = 800;
 traceTimeBins = 6;
 
 % firing rate settings
-frTimeBinNum = 1000;
-binSmoothing = 10;
+frWindow = 30; % seconds
 
 % false positive settings
 fpTimeBinNum = 200;
@@ -42,19 +43,10 @@ xcorrWidth = .04;
 fprintf('%s: collecting data... ', session)
 ephysInfo = getSessionEphysInfo(session);
 for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
-meanColor = mean(copper(3),1);
 spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
     'xcoords', 'ycoords')
-
-
-% get spike times for good units
-addpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
-addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
-allSpkInds = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_times.npy'));
-clusters = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_clusters.npy'));
-clusterGroups = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_groups.csv'));
-unit_ids = clusterGroups.cluster_id(strcmp(clusterGroups.group, 'good'));
+[allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
 
 
 % function to extract voltage from binary file
@@ -71,12 +63,15 @@ if isfolder(folder); cmd_rmdir(folder); end % delete folder if already exists
 mkdir(folder);
 
 
-for cell = 1:length(unit_ids)
+cellColors = hsv(length(unit_ids))*.8;
+getColors = @(length, color) interp2(1:3, [1:2]', cat(1,[0 0 0], color), 1:3, linspace(1,2,length)'); % creates gradient from black to color
 
-    fprintf('plotting cell %i... ', unit_ids(cell))
-    figure('Name', sprintf('%s cell %i', session, unit_ids(cell)), 'Visible', showFigures, ...
+for c = 1:length(unit_ids)
+
+    fprintf('plotting cell %i... ', unit_ids(c))
+    figure('Name', sprintf('%s cell %i', session, unit_ids(c)), 'Visible', showFigures, ...
         'Color', 'white', 'Position', [2000 45 1601 865]); hold on
-    spkInds = allSpkInds(clusters==unit_ids(cell));
+    spkInds = allSpkInds{c};
 
     
     % EXTRACT WAVEFORM ACROSS CHANNELS
@@ -90,15 +85,19 @@ for cell = 1:length(unit_ids)
     
     % find best channel and get voltage for that channel
     meanWaveform = squeeze(mean(allWaveforms,1));
-    [~, bestChannel] = max(peak2peak(meanWaveform,2));
-    channelData = getVoltage(data, bestChannel, 1:smps);
+%     [~, bestChannel] = max(peak2peak(meanWaveform,2));
+%     if bestChannel==bestChannels(c); disp('best channels match!'); end
+    channelData = getVoltage(data, bestChannels(c), 1:smps);
+    templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'templates.npy'));
+    spike_templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_templates.npy'));
+    
 
 
     % PLOT SPIKE SHAPES ON PROBE
     subplot(4,4,[1 5 9]); hold on
     timeBins = discretize(double(spkIndsSub), timeBinNum);
-    colors = copper(timeBinNum);
-    sameShankInds = find(abs(xcoords - xcoords(bestChannel))<50);
+    colors = getColors(timeBinNum, cellColors(c,:));
+    sameShankInds = find(abs(xcoords - xcoords(bestChannels(c)))<50);
     
     for j = sameShankInds'
         for i = 1:timeBinNum
@@ -110,9 +109,10 @@ for cell = 1:length(unit_ids)
                     'Color', colors(i,:), 'LineWidth', 2)
             end
         end
+        if j==bestChannels(c); textColor='red'; else; textColor='black'; end
         text(double(xcoords(j)*xSpacing+spkWindowInds(1)), ...
                 ycoords(j)*ySpacing, ...
-                num2str(j))
+                num2str(j), 'Color', textColor)
     end
     set(gca, 'visible', 'off')
 
@@ -120,7 +120,7 @@ for cell = 1:length(unit_ids)
 
     % PLOT SAMPLE TRACES
     subplot(4,4,14:16)
-    colors = copper(traceTimeBins);
+    colors = getColors(traceTimeBins, cellColors(c,:));
 
     traceTimes = linspace(timeStamps(1), timeStamps(end), traceTimeBins+1);
     for i = 1:traceTimeBins
@@ -146,32 +146,33 @@ for cell = 1:length(unit_ids)
 
     % AMP OVER TIME
     subplot(4,4,2:4)
-    xLims = [0 range(timeStamps)/60];
+    xLims = [min(timeStamps) max(timeStamps)]/60;
 
-    amplitudes = peak2peak(squeeze(allWaveforms(:,bestChannel,:)),2);
+    amplitudes = peak2peak(squeeze(allWaveforms(:,bestChannels(c),:)),2);
     stdev = std(channelData);
-    minutes = (timeStamps(spkIndsSub)-timeStamps(1)) / 60;
-    scatter(minutes, amplitudes/stdev, 20, copper(length(spkIndsSub)));
+    
+    scatter(timeStamps(spkIndsSub)/60, amplitudes/stdev, ...
+        20, getColors(length(spkIndsSub), cellColors(c,:)), 'MarkerEdgeAlpha', .4);
     set(gca, 'XLim', xLims, 'YLim', snrYLims, 'XColor', get(gcf, 'color'))
-    ylabel(sprintf('channel %i SNR', bestChannel))
+    ylabel(sprintf('channel %i SNR', bestChannels(c)))
     xlabel('time (min)')
 
 
     % FIRING RATE OVER TIME
     subplot(4,4,6:8)
-    [counts, edges] = histcounts(timeStamps(spkInds), frTimeBinNum);
+    [counts, edges] = histcounts(timeStamps(spkInds), min(timeStamps):1:max(timeStamps));
     binWidth = median(diff(edges));
     spkRates = counts / binWidth;
-    spkRates = smooth(spkRates, binSmoothing);
-    minutes = (edges(1:end-1) + .5*binWidth - timeStamps(1)) / 60; % get bin centers and convert from seconds to minutes
-    plot(minutes, spkRates, 'LineWidth', 2, 'Color', meanColor)
+    spkRates = smooth(spkRates, frWindow/binWidth);
+    minutes = (edges(1:end-1) + .5*binWidth) / 60; % get bin centers and convert from seconds to minutes
+    plot(minutes, spkRates, 'LineWidth', 2, 'Color', cellColors(c,:))
     ylabel('firing rate (Hz)')
     set(gca, 'Box', 'off', 'XLim', xLims, 'XColor', get(gcf, 'color'))
 
 
     % FALSE POSITIVE RATE
     subplot(4,4,10:12)
-
+    yyaxis right
     fpRates = nan(1,fpTimeBinNum);
     centers = linspace(0, timeStamps(spkInds(end)), fpTimeBinNum);
 
@@ -190,10 +191,26 @@ for cell = 1:length(unit_ids)
         end
     end
 
-    plot((centers-timeStamps(1))/60, fpRates, 'LineWidth', 2, 'Color', meanColor)
-    set(gca, 'box', 'off', 'XLim', xLims, 'YLim', [0 .05])
+    plot(centers/60, fpRates, 'LineWidth', 2, 'Color', 'black')
+    set(gca, 'box', 'off', 'XLim', xLims, 'YLim', [0 .05], 'YColor', 'black')
     ylabel('false positive rate')
     xlabel('time (min)')
+    
+    
+    % 5th percentile SNR
+    times = min(timeStamps):snrDt:max(timeStamps);
+    percentiles = nan(1,length(times));
+    for i = 1:length(times)
+        spkBins = timeStamps(spkIndsSub)>times(i)-snrWindow*.5 & timeStamps(spkIndsSub)<=times(i)+snrWindow*.5;
+        binSnrs = amplitudes(spkBins) / stdev;
+        if sum(spkBins)/snrWindow > minFiringRate
+            percentiles(i) = prctile(binSnrs, 5);
+        end
+    end
+    yyaxis left
+    plot(times/60, percentiles, 'LineWidth', 2, 'Color', cellColors(c,:))
+    ylabel('5th percentile SNR')
+    set(gca, 'YColor', cellColors(c,:), 'YLim', snrYLims*.5, 'Box', 'off');
 
 
 
@@ -202,16 +219,38 @@ for cell = 1:length(unit_ids)
     spksBinary = histcounts(timeStamps(spkInds), 0:xcorrBinWidth:timeStamps(end));
     autocorr = xcorr(spksBinary, round(xcorrWidth/2/xcorrBinWidth), 'coeff');
     autocorr(autocorr==1) = nan;
-    bar(autocorr, 'BarWidth', 1, 'EdgeColor', 'none', 'FaceColor', mean(copper(3),1))
+    bar(autocorr, 'BarWidth', 1, 'EdgeColor', 'none', 'FaceColor', cellColors(c,:))
     set(gca, 'visible', 'off')
     
     
-    
     % save figures
-    savefig(fullfile(folder, [session 'cell' num2str(unit_ids(cell))]))
-    saveas(gcf, fullfile(folder, [session 'cell' num2str(unit_ids(cell)) '.png']))
+    savefig(fullfile(folder, [session 'cell' num2str(unit_ids(c))]))
+    saveas(gcf, fullfile(folder, [session 'cell' num2str(unit_ids(c)) '.png']))
 end
+
+% plotting all channels
+showChannelsOverTime(session, 3, true, fullfile(folder, [session 'allUnits.png']), bestChannels);
+
+
+% check if these unit_ids have already been written to cellData.csv file
+fileName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv');
+alreadyWritten = false;
+if exist(fileName, 'file')
+    csvTable = readtable(fileName);
+    alreadyWritten = all(csvTable.unit_id==unit_ids);
+end
+
+% make new cellData.csv file if it doesn't already exist
+if ~alreadyWritten
+    disp('writing cellData.csv metadata file...')
+    csvTable = cell2table(cell(0,6), ...
+        'VariableNames', {'unit_id', 'include', 'timeStart', 'timeEnd', 'location', 'notes'});
+    warning('off', 'MATLAB:table:RowsAddedExistingVars')
+    csvTable(1:length(unit_ids),1) = table(unit_ids);
+    writetable(csvTable, fileName)
+    warning('on', 'MATLAB:table:RowsAddedExistingVars')
+end
+
 disp('all done!')
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 
 

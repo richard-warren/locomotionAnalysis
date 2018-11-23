@@ -1,6 +1,9 @@
 function sessionEphysInfo = getSessionEphysInfo(session)
 
 
+% gets ephys folder name, base name for recording, number of channels,
+% sampling frequency, number of samples, bitvols conversion factor
+
 % get name of ephys folder
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
 sessionEphysInfo.ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
@@ -28,3 +31,15 @@ sessionEphysInfo.bitVolts = info.header.bitVolts;
 file = fullfile(getenv('OBSDATADIR'), 'sessions', session, sessionEphysInfo.ephysFolder, [sessionEphysInfo.fileNameBase '_CHs.dat']);
 temp = dir(file);
 sessionEphysInfo.smps = temp.bytes/2/sessionEphysInfo.channelNum; % 2 bytes per sample
+
+
+
+
+
+
+
+
+
+
+
+
