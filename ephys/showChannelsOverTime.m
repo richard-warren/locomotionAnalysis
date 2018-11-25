@@ -11,8 +11,8 @@ function showChannelsOverTime(session, timeBinNum, showSortedSpikes, figureName,
 % highPassFreq = 300;
 yLims = [-400 400]; % microvols
 if ~exist('timeBinNum', 'var'); timeBinNum = 4; end
-if ~exist('showSpikesSorted', 'var'); showSpikesSorted = false; end
-windowSize = .1/timeBinNum; % length of window in which to show spikes
+if ~exist('showSpikesSorted', 'var'); showSortedSpikes = false; end
+windowSize = .2/timeBinNum; % length of window in which to show spikes
 if ~exist('figureName', 'var'); figureName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'drift', [session '.png']); end
 spkWindow = [-.5 1]; % ms pre and post spike time to plot
 
@@ -68,32 +68,34 @@ for i = 1:channelNum
         plot(timesSub, squeeze(traces(i,j,:)) + offsets(i), 'Color', color);
         
         if connected(i); color='black'; else; color='red'; end
-        text(timesSub(1), find(i==sortInds)*(range(yLims)), num2str(i), 'Color', color)
+        text(timesSub(1), offsets(i), num2str(i), 'Color', color)
     end
 end
 
 
 % plot spikes on top of traces (if showSortedSpikes)
-lines = nan(1, length(unit_ids));
-for i = 1:length(unit_ids)
-    for j = 1:length(timeStarts)
-        subplot(1,length(timeStarts),j); hold on
-        startInd = int64(find(timeStamps>timeStarts(j),1,'first'));
-        
-        % overlay spikes
-        traceSpkInds = spkInds{i}(timeStamps(spkInds{i})>=timeBinEdges(j) & timeStamps(spkInds{i})<timeBinEdges(j)+windowSize);
-        spkBins = repmat(spkWindowInds,length(traceSpkInds),1) + int64(traceSpkInds); % matrix where each row is inds for given spike
-        spkBins = reshape(spkBins',[],1);
-        spkBins = spkBins-startInd;
-        spkBins = spkBins(spkBins<size(traces,3) & spkBins>0);
-        
-        if exist('bestChannels', 'var'); channelsToShow=bestChannels(i); else; channelsToShow=1:channelNum; end
-        for k = channelsToShow
-            spikesTrace = nan(1,size(traces,3));
-            
-            spikesTrace(spkBins) = traces(k,j,spkBins);
-            lines(i) = plot(timesSub, spikesTrace + offsets(k), ...
-                'Color', [colors(i,:) .6], 'LineWidth', 1.5); % overlay spikes! lol
+if showSortedSpikes
+    lines = nan(1, length(unit_ids));
+    for i = 1:length(unit_ids)
+        for j = 1:length(timeStarts)
+            subplot(1,length(timeStarts),j); hold on
+            startInd = int64(find(timeStamps>timeStarts(j),1,'first'));
+
+            % overlay spikes
+            traceSpkInds = spkInds{i}(timeStamps(spkInds{i})>=timeBinEdges(j) & timeStamps(spkInds{i})<timeBinEdges(j)+windowSize);
+            spkBins = repmat(spkWindowInds,length(traceSpkInds),1) + int64(traceSpkInds); % matrix where each row is inds for given spike
+            spkBins = reshape(spkBins',[],1);
+            spkBins = spkBins-startInd;
+            spkBins = spkBins(spkBins<size(traces,3) & spkBins>0);
+
+            if exist('bestChannels', 'var'); channelsToShow=bestChannels(i); else; channelsToShow=1:channelNum; end
+            for k = channelsToShow
+                spikesTrace = nan(1,size(traces,3));
+
+                spikesTrace(spkBins) = traces(k,j,spkBins);
+                lines(i) = plot(timesSub, spikesTrace + offsets(k), ...
+                    'Color', [colors(i,:) .6], 'LineWidth', 1.5); % overlay spikes! lol
+            end
         end
     end
 end
@@ -111,7 +113,7 @@ for i = 1:length(timeStarts)
         [num2str(round((timeStarts(i)-min(timeStarts))/60)) ' minutes'], ...
         'FontWeight', 'bold')
 end
-legend(lines, cellstr(num2str(unit_ids)), 'location', 'northeast')
+if showSortedSpikes; legend(lines, cellstr(num2str(unit_ids)), 'location', 'northeast'); end
 
 
 % save that ish

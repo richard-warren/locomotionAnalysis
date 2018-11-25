@@ -22,7 +22,7 @@ minFiringRate = 0.5; % (hz) time bins with firing rate less than minFr will not 
 
 % spike trace settings
 sampleTraceLength = .15;
-verticalSpacing = 800;
+verticalSpacing = 400;
 traceTimeBins = 6;
 
 % firing rate settings
@@ -46,7 +46,8 @@ for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extra
 spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
     'xcoords', 'ycoords')
-[allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
+[allSpkInds, unit_ids] = getGoodSpkInds(session); % get spike times for good units
+bestChannels = getBestChannels(session, ephysInfo);
 
 
 % function to extract voltage from binary file
@@ -81,12 +82,11 @@ for c = 1:length(unit_ids)
     allWaveforms = getVoltage(data, 1:channelNum, spkIndsSubAll);
     allWaveforms = reshape(allWaveforms, channelNum, length(spkWindowInds), []);
     allWaveforms = permute(allWaveforms, [3 1 2]);
-    allWaveforms = allWaveforms - allWaveforms(:,:,1); % subtract beginning of trace from rest of trace (a hack of a high pass filter, lol)
+%     allWaveforms = allWaveforms - allWaveforms(:,:,1); % subtract beginning of trace from rest of trace (a hack of a high pass filter, lol)
     
     % find best channel and get voltage for that channel
     meanWaveform = squeeze(mean(allWaveforms,1));
 %     [~, bestChannel] = max(peak2peak(meanWaveform,2));
-%     if bestChannel==bestChannels(c); disp('best channels match!'); end
     channelData = getVoltage(data, bestChannels(c), 1:smps);
     templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'templates.npy'));
     spike_templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_templates.npy'));
@@ -129,7 +129,7 @@ for c = 1:length(unit_ids)
         traceBins = timeStamps>=traceTimes(i) & timeStamps<traceTimes(i)+sampleTraceLength;
         times = timeStamps(traceBins);
         trace = channelData(traceBins);
-        plot(times-times(1), trace + (traceTimeBins-i)*verticalSpacing, 'Color', [.5 .5 .5], 'LineWidth', 1); hold on % plot raw trace
+        plot(times-times(1), trace + (traceTimeBins-i)*verticalSpacing, 'Color', [.5 .5 .5], 'LineWidth', 0.5); hold on % plot raw trace
 
         % overlay spikes
         traceSpkInds = spkInds(timeStamps(spkInds)>=traceTimes(i) & timeStamps(spkInds)<traceTimes(i)+sampleTraceLength);

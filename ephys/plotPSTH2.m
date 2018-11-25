@@ -13,7 +13,7 @@ function plotPSTH2(session, cellNum, eventTimes, conditionNames, conditionColors
 % settings
 showFigure = false; % set to false if using this function to create subplots using separate code
 yLimsNormalized = [-2 2];
-yLims = [0 100];
+yLims = [0 200];
 stimPrePost = [-.1 .5];
 fs = 1000;
 normalize = false;
@@ -153,7 +153,7 @@ end
 
 % pimp fig
 set(gca, 'box', 'off', 'XLim', [x(1) x(end)]);
-if normalize; set(gca, 'YLim', yLimsNormalized); end % else; set(gca, 'YLim', yLims); end
+if normalize; set(gca, 'YLim', yLimsNormalized); else; set(gca, 'YLim', yLims); end
 if ~plotEpochs; line([0 0], get(gca, 'YLim'), 'color', controlColor); end
 if numConditions>1; legend([meanTraces{:}], conditionNames, 'Box', 'off'); end
 

@@ -4,7 +4,7 @@ function plotRecordingSummary(session, cells)
 % settings
 rows = 4;
 cols = 4;
-stepPercentiles = [.4 .6]; % only include steps with durations in between these percentile limits
+stepPercentiles = [40 60]; % only include steps with durations in between these percentile limits
 pawNames = {'left hind', 'left fore', 'right fore', 'right hind'};
 pawColors = hsv(4);
 mainColor = [.8 .4 1];
@@ -17,13 +17,13 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'sessions');
 [data, stanceBins] = getKinematicData4({session}, sessionInfo, []);
 stanceBins = stanceBins{1}; % stanceBins will always have only a single entry when getKinematicData is called with a single session
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'spkRates');
-if ~exist('cells', 'var'); cells = 1:size(spkRates,1); end
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'unit_ids');
+if ~exist('cells', 'var'); cells = 1:length(unit_ids); end
 
 for cellNum = cells
     
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(cells))
-    fig = figure('name', sprintf('%s - cell %i', session, cellNum), ...
+    fig = figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
         'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 20 1800 1000]); hold on
     plotInd = 0;
     
@@ -81,12 +81,6 @@ for cellNum = cells
     plotInd = plotInd + 1; subplot(rows, cols, plotInd);
     times = cell(1,4);
     for paw = 1:4
-        % get swing start and end times
-        swingStartInds = find(diff(~stanceBins(:,paw))==1);
-        swingStartTimes = frameTimeStamps(swingStartInds(1:end-1));
-        swingEndTimes = frameTimeStamps(swingStartInds(2:end)-1);
-        sessionEvents = cat(2, swingStartTimes, swingEndTimes);
-        sessionEvents = sessionEvents(~isnan(sum(sessionEvents,2)),:); % remove nan entries
         
         % get swing start and end times
         swingStartInds = find(diff(~stanceBins(:,paw))==1);
@@ -95,7 +89,7 @@ for cellNum = cells
         sessionEvents = cat(2, swingStartTimes, swingEndTimes);
         sessionEvents = sessionEvents(~isnan(sum(sessionEvents,2)),:); % remove nan entries
 
-        % remove steps that take to long
+        % only take steps in middle of duration distribution
         durations = diff(sessionEvents,1,2);
         durationLimits = prctile(durations, stepPercentiles);
         sessionEvents = sessionEvents(durations>durationLimits(1) & durations<durationLimits(2), :);
@@ -127,7 +121,7 @@ for cellNum = cells
         % plot it!
         plotInd = plotInd + 1; subplot(rows, cols, plotInd);
         plotPSTH2(session, cellNum, times, {'step over', 'control'}, [pawColors(paw,:); .6 .6 .6]);
-        xlabel(sprintf('%s: swing start -> stance end', pawNames{paw}))
+        xlabel(sprintf('%s: swing start -> swing end', pawNames{paw}))
     end
     
     
@@ -165,14 +159,14 @@ for cellNum = cells
     end
     
     plotInd = plotInd + 1; subplot(rows, cols, plotInd);
-    plotPSTH2(session, cellNum, times, {'first paw over', 'second paw over'}, [mean(pawColors([2 3],:),1); .6 .6 .6]);
+    plotPSTH2(session, cellNum, times, {'first paw over', 'second paw over'}, [mainColor; .6 .6 .6]);
     xlabel(sprintf('swing start -> swing end'))
     pause(.01)
     
     % save
-    fileName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'PSTHs', [session 'cell' num2str(cellNum)]);
+    fileName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'PSTHs', [session 'unit' num2str(unit_ids(cellNum))]);
 %     savefig(fileName)
     saveas(gcf, [fileName '.png'])
 end
-
+disp('all done!')
 

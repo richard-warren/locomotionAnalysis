@@ -38,7 +38,7 @@ if length(openEphysObsOnTimes)~=length(obsOnTimes)
         end
     end
     
-    fprintf(' but fixed using a hacky hack')
+    fprintf(' but fixed using a hacky hack\n')
 else
     [validOpenEBins, validSpikeBins] = deal(true(1,length(openEphysObsOnTimes)));
     disp('correct number of events detected!')
@@ -91,7 +91,7 @@ for i = 1:length(spkTimes)
     if strcmp(cellData.timeEnd(i), 'max')
         cellMaxTime = timeStamps(end);
     else
-        cellMaxTime = polyval(openEphysToSpikeMapping, cellData.timeEnd(i)*60);
+        cellMaxTime = polyval(openEphysToSpikeMapping, str2num(cellData.timeEnd{i})*60);
     end
     
     % remove spikes that are out of min and max times
@@ -101,7 +101,7 @@ for i = 1:length(spkTimes)
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'spkRates', 'spkTimes', 'timeStamps')
+    'spkRates', 'spkTimes', 'timeStamps', 'unit_ids')
 disp('all done!')
 
 
