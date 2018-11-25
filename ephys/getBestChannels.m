@@ -1,4 +1,4 @@
-function bestChannels = getBestChannels(session, ephysInfo)
+function [bestChannels, unit_ids] = getBestChannels(session, ephysInfo)
 
 % takes a sample of all spikes, computes median waveform, and picks
 % channels with best peak to peak amplitude

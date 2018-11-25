@@ -101,7 +101,7 @@ for i = 1:length(spkTimes)
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'spkRates', 'spkTimes', 'timeStamps', 'unit_ids')
+    'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping')
 disp('all done!')
 
 
