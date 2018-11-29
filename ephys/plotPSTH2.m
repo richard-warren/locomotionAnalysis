@@ -13,7 +13,7 @@ function plotPSTH2(session, cellNum, eventTimes, conditionNames, conditionColors
 % settings
 showFigure = false; % set to false if using this function to create subplots using separate code
 yLimsNormalized = [-2 2];
-yLims = [0 200];
+yLims = [0 250];
 stimPrePost = [-.1 .5];
 fs = 1000;
 normalize = false;

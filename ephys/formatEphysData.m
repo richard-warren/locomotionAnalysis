@@ -91,7 +91,8 @@ for i = 1:length(spkTimes)
     if strcmp(cellData.timeEnd(i), 'max')
         cellMaxTime = timeStamps(end);
     else
-        cellMaxTime = polyval(openEphysToSpikeMapping, str2num(cellData.timeEnd{i})*60);
+        if iscell(cellData.timeEnd(i)); timeEnd = str2double(cellData.timeEnd(i)); else; timeEnd = cellData.timeEnd(i); end
+        cellMaxTime = polyval(openEphysToSpikeMapping, timeEnd*60);
     end
     
     % remove spikes that are out of min and max times

@@ -11,7 +11,7 @@ function showChannelsOverTime(session, timeBinNum, showSortedSpikes, figureName,
 % highPassFreq = 300;
 yLims = [-400 400]; % microvols
 if ~exist('timeBinNum', 'var'); timeBinNum = 4; end
-if ~exist('showSpikesSorted', 'var'); showSortedSpikes = false; end
+if ~exist('showSortedSpikes', 'var'); showSortedSpikes = false; end
 windowSize = .2/timeBinNum; % length of window in which to show spikes
 if ~exist('figureName', 'var'); figureName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'drift', [session '.png']); end
 spkWindow = [-.5 1]; % ms pre and post spike time to plot

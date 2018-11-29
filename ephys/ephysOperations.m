@@ -6,11 +6,11 @@ ephysInfo = ephysInfo([strcmp(ephysInfo.spikesSorted, 'yes')], :); % uncomment t
 
 for i = 1:height(ephysInfo)
     try
-        formatEphysData(ephysInfo.session{i});
+%         formatEphysData(ephysInfo.session{i});
 %         plotQualityMetrics(ephysInfo.session{i})
 %         tic; packContFiles(ephysInfo.session{i}); fprintf('%s: finished in %.1f minutes\n', ephysInfo.session{i}, toc/60)
 %         showChannelsOverTime(ephysInfo.session{i})
-%         plotRecordingSummary(ephysInfo.session{i});
+        plotManyPSTHs(ephysInfo.session{i}); close all
     catch
         fprintf('problem with session %s\n', ephysInfo.session{i})
     end

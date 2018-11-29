@@ -4,7 +4,7 @@ function plotQualityMetrics(session)
 
 % SETTINGS
 % general
-spkWindow = [-.5 1.0]; % ms pre and post spike time to plot
+spkWindow = [-.5 .75]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
 showFigures = 'on';
 % highPassFreq = 300;
@@ -31,8 +31,8 @@ frWindow = 30; % seconds
 % false positive settings
 fpTimeBinNum = 200;
 fpBinSize = 5*60; % s
-refractoryPeriod = .003;
-censoredPeriod = .001;
+refractoryPeriod = .002;
+% censoredPeriod = .001;
 
 % autocorrelogram
 xcorrBinWidth = .001;
@@ -85,11 +85,11 @@ for c = 1:length(unit_ids)
 %     allWaveforms = allWaveforms - allWaveforms(:,:,1); % subtract beginning of trace from rest of trace (a hack of a high pass filter, lol)
     
     % find best channel and get voltage for that channel
-    meanWaveform = squeeze(mean(allWaveforms,1));
+%     meanWaveform = squeeze(mean(allWaveforms,1));
 %     [~, bestChannel] = max(peak2peak(meanWaveform,2));
     channelData = getVoltage(data, bestChannels(c), 1:smps);
-    templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'templates.npy'));
-    spike_templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_templates.npy'));
+%     templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'templates.npy'));
+%     spike_templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_templates.npy'));
     
 
 
@@ -183,16 +183,17 @@ for c = 1:length(unit_ids)
 
         spkBins = timeStamps(spkInds)>=binMin & timeStamps(spkInds)<binMax;
         violations = sum(diff(timeStamps(spkInds(spkBins)))<refractoryPeriod);
-        if violations>0
-            rhs = 2 * (refractoryPeriod-censoredPeriod) * length(spkInds)^2 / violations / (binMax-binMin); % what the fuck is this math about??? is this really correct???
-            fpRates(i) = .5 - .5*sqrt((rhs-4)/rhs);
-        else
-            fpRates(i) = 0;
-        end
+%         if violations>0
+%             rhs = 2 * (refractoryPeriod-censoredPeriod) * sum(spkBins)^2 / violations / (binMax-binMin); % what the fuck is this math about??? is this really correct???
+%             fpRates(i) = .5 - .5*sqrt((rhs-4)/rhs);
+%         else
+%             fpRates(i) = 0;
+%         end
+        fpRates(i) = violations/sum(spkBins);
     end
 
     plot(centers/60, fpRates, 'LineWidth', 2, 'Color', 'black')
-    set(gca, 'box', 'off', 'XLim', xLims, 'YLim', [0 .05], 'YColor', 'black')
+    set(gca, 'box', 'off', 'XLim', xLims, 'YLim', [0 .05], 'YColor', 'black');
     ylabel('false positive rate')
     xlabel('time (min)')
     
@@ -202,7 +203,7 @@ for c = 1:length(unit_ids)
     percentiles = nan(1,length(times));
     for i = 1:length(times)
         spkBins = timeStamps(spkIndsSub)>times(i)-snrWindow*.5 & timeStamps(spkIndsSub)<=times(i)+snrWindow*.5;
-        binSnrs = amplitudes(spkBins) / stdev;
+        binSnrs = amplitudes(spkBins) / stdev; % !!! change to bin std, not global std?
         if sum(spkBins)/snrWindow > minFiringRate
             percentiles(i) = prctile(binSnrs, 5);
         end
@@ -237,7 +238,7 @@ fileName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv');
 alreadyWritten = false;
 if exist(fileName, 'file')
     csvTable = readtable(fileName);
-    alreadyWritten = all(csvTable.unit_id==unit_ids);
+    alreadyWritten = isequal(csvTable.unit_id, unit_ids);
 end
 
 % make new cellData.csv file if it doesn't already exist

@@ -1,4 +1,4 @@
-function plotRecordingSummary(session, cells)
+function plotManyPSTHs(session, cells)
 
 
 % settings
@@ -23,7 +23,7 @@ if ~exist('cells', 'var'); cells = 1:length(unit_ids); end
 for cellNum = cells
     
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(cells))
-    fig = figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
+    figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
         'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 20 1800 1000]); hold on
     plotInd = 0;
     

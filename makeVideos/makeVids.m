@@ -177,6 +177,24 @@ end
 
 
 
+%% make video with neural firing for reward times
+
+session = '180920_002';
+unit_id = 67;
+trialDuration = 2;
+
+
+% load reward times
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'rewardTimes')
+timeEpochs = cat(2, rewardTimes, rewardTimes+trialDuration);
+
+% make video
+makeUnitVid(session, unit_id, timeEpochs)
+
+
+
+
+
 
 
 
