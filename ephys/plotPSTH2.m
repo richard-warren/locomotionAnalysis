@@ -12,8 +12,8 @@ function plotPSTH2(session, cellNum, eventTimes, conditionNames, conditionColors
 
 % settings
 showFigure = false; % set to false if using this function to create subplots using separate code
-yLimsNormalized = [-2 2];
-yLims = [0 250];
+yLimsNormalized = [-2.5 2.5]; % plot mean +- yLimsNormalized*std
+% yLims = [0 250];
 stimPrePost = [-.1 .5];
 fs = 1000;
 normalize = false;
@@ -50,7 +50,14 @@ spkRates = temp.spkRates(cellNum, :);
 
 % get neural data for session
 if round(1/median(diff(timeStamps)))~=fs; disp('WARNING: expected frequency for instantaneous firing rate was not met!'); keyboard; end
-if normalize; spkRates = zscore(spkRates); end
+if normalize
+    spkRates = zscore(spkRates);
+    yLims = yLimsNormalized;
+else
+    rateMean = nanmean(spkRates);
+    rateStd = nanstd(spkRates);
+    yLims = [rateMean+yLimsNormalized(1)*rateStd, rateMean+yLimsNormalized(2)*rateStd];
+end
 cellData = cell(1, length(eventTimes));
 if plotControlDistribution; cellControlData = cell(1, length(eventTimes)); end
 
@@ -153,7 +160,7 @@ end
 
 % pimp fig
 set(gca, 'box', 'off', 'XLim', [x(1) x(end)]);
-if normalize; set(gca, 'YLim', yLimsNormalized); else; set(gca, 'YLim', yLims); end
+set(gca, 'YLim', yLims);
 if ~plotEpochs; line([0 0], get(gca, 'YLim'), 'color', controlColor); end
 if numConditions>1; legend([meanTraces{:}], conditionNames, 'Box', 'off'); end
 

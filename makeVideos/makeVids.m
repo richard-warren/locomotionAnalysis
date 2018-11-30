@@ -179,9 +179,9 @@ end
 
 %% make video with neural firing for reward times
 
-session = '180920_002';
-unit_id = 67;
-trialDuration = 2;
+session = '181001_002';
+unit_id = 6;
+trialDuration = 5;
 
 
 % load reward times

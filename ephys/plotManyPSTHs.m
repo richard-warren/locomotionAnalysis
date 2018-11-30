@@ -5,7 +5,7 @@ function plotManyPSTHs(session, cells)
 rows = 4;
 cols = 4;
 stepPercentiles = [40 60]; % only include steps with durations in between these percentile limits
-pawNames = {'left hind', 'left fore', 'right fore', 'right hind'};
+pawNames = {'LH', 'LF', 'RF', 'RH'};
 pawColors = hsv(4);
 mainColor = [.8 .4 1];
 
