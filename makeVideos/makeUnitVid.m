@@ -9,25 +9,22 @@ function makeUnitVid(session, unit_id, timeEpochs)
 
 % TO DO:
 % accept inds for specific trials
-% accept time epochs to use intead of obs on/off (so i can lot reward times, lick epochs, etc)
-% fade in/out sound
 % gate sound of spikes
 % add paw markers?
 
-% temp
-% session = '181019_002';
-% unit_id = 67;
+
 
 % settings
 trialsToShow = 5;
 timePrePost = [-.2 0]; % time before obsOn and after obOff to show
 maxTrialTime = 2.5; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
-playbackSpeed = .25;
+playbackSpeed = 0.25;
 voltageWindow = .8;
 audioGain = 15;
-yLims = [-800 800]; %[-400 400];
+yLims = [-800 800];
 wiskBorder = 2;
+lowPassFreq = 6000; % [passBand, stopBand] // set to false to turn off lowpass
 
 includeWiskCam = true;
 compressVideo = true;
@@ -84,11 +81,22 @@ bestChannel = bestChannels(unit_id==unit_ids_all);
 getVoltage = @(data, channel, inds) data.Data.Data(channel,inds);
 data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.ephysFolder, [ephysInfo.fileNameBase '_CHs.dat']), ...
     'Format', {'int16', [ephysInfo.channelNum, ephysInfo.smps], 'Data'}, 'Writable', false);
-% voltage = getVoltage(data, bestChannel, 1:ephysInfo.smps); % !!! this is too slow
+% voltage = double(getVoltage(data, bestChannel, 1:ephysInfo.smps)) * ephysInfo.bitVolts; % maybe replace this by reading data within trial prior to writing each trials data...
+
+
+% create low pass filter
+if lowPassFreq
+    lp = lowPassFreq * 2 / ephysInfo.fs;
+    ls = lowPassFreq * 4 / ephysInfo.fs; % one octave above pass band
+    ls = min(ls, .999); % make sure stopband freq doesn't exceed nyquist freqency
+    [NN, Wn] = buttord(lp, ls, 3, 60);
+    [B1,A1] = butter(NN, Wn, 'low');
+end
+
 
 % other initializations
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'openEphysToSpikeMapping', 'spkRates', 'timeStamps', 'unit_ids', 'spkTimes', 'rewardTimes')
+    'openEphysToSpikeMapping', 'spkRates', 'timeStamps', 'unit_ids', 'spkTimes')
 timeStampsMapped = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps);
 audioSmpsPerFrame = round((1/initialFs) * ephysInfo.fs);
 wiskContactTimes = frameTimeStampsWisk(wiskContactFrames(wiskContactFrames>0));
@@ -137,6 +145,18 @@ for i = 1:length(trials)
     % get trial frame indices
     trialInds = find(frameTimeStamps>timeEpochs(trials(i),1)+timePrePost(1) & ...
                      frameTimeStamps<timeEpochs(trials(i),2)+timePrePost(2));
+                 
+    % get voltage for entire trial
+    voltageBins = timeStampsMapped>timeEpochs(trials(i),1)+timePrePost(1)-voltageWindow-1 & ...
+                  timeStampsMapped<timeEpochs(trials(i),2)+timePrePost(2)+1; % add and subtract 1 as a buffer
+    timeStampsSub = timeStampsMapped(voltageBins);
+    voltageRaw = getVoltage(data, bestChannel, voltageBins); % maybe replace this by reading data within trial prior to writing each trials data...
+    if lowPassFreq
+        voltageRaw = filter(B1, A1, voltageRaw); % filter forwards then backwards to avoid phase shifts
+        voltageRaw = int16(fliplr(filter(B1, A1, fliplr(voltageRaw))));
+    end
+    voltage = double(voltageRaw) * ephysInfo.bitVolts; % convert to microvolts
+    
     
     % update obstacle and whisker contact lines
     if isLightOn(trials(i)); obsOnString = 'obstacle (light on)'; else; obsOnString = 'obstacle (light off)'; end
@@ -147,13 +167,13 @@ for i = 1:length(trials)
     % get frames for trials
     for j = trialInds'
 
-        % get frame
+        % get run frame
         frame = uint8(zeros(frameDim));
         topBotFrame = cat(1, rgb2gray(read(vidTop, j)), rgb2gray(read(vidBot, j)));
         topBotFrame = imadjust(topBotFrame, contrastLims, [0 1]); % adjust contrast
         frame(:,1:vidBot.Width) = topBotFrame;
         
-        % wisk
+        % get wisk frame
         if includeWiskCam
             wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(j), 1, 'first');
 
@@ -174,23 +194,31 @@ for i = 1:length(trials)
             end
         end
         
-        
+        % update frame
         set(im, 'CData', frame);
 
         % get voltage
-        traceStartInd = find(timeStampsMapped>(frameTimeStamps(j)-voltageWindow), 1, 'first');
+        traceStartInd = find(timeStampsSub>(frameTimeStamps(j)-voltageWindow), 1, 'first');
         traceInds = traceStartInd:traceStartInd+traceLength-1;
-    %     trace = voltage(traceStartInd:traceStartInd+traceLength-1);
-        trace = double(getVoltage(data, bestChannel, traceInds)) * ephysInfo.bitVolts;
-        times = timeStampsMapped(traceInds)';
+        trace = voltage(traceInds);
+%         trace = double(getVoltage(data, bestChannel, traceInds)) * ephysInfo.bitVolts;
+        times = timeStampsSub(traceInds)';
         set(tracePlot, 'xdata', times, 'ydata', trace);
         set(gca, 'xlim', [times(1) times(end)])
 
         % get audio
-        audioStartInd = find(timeStampsMapped>=frameTimeStamps(j), 1, 'first');
-        audio = getVoltage(data, bestChannel, audioStartInd:audioStartInd+audioSmpsPerFrame-1)';
-    %     audio = voltage(audioStartInd:audioStartInd+audioSmpsPerFrame-1)';
+        audioStartInd = find(timeStampsSub>=frameTimeStamps(j), 1, 'first');
+%         audio = getVoltage(data, bestChannel, audioStartInd:audioStartInd+audioSmpsPerFrame-1)';
+        audio = voltageRaw(audioStartInd:audioStartInd+audioSmpsPerFrame-1)';
         audio = audio * audioGain;
+        
+        % add fade in/out for first and last sample
+        if i==1 && j==trialInds(1)
+            audio = int16(double(audio) .* linspace(0,1,length(audio))'); % fade in on first sample
+        elseif i==length(trials) && j==trialInds(end)
+            audio = int16(double(audio) .* linspace(1,0,length(audio))'); % fade out on last sample
+        end
+            
 
         % write to file
         frame = getframe(fig);

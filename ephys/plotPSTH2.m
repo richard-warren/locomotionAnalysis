@@ -56,7 +56,7 @@ if normalize
 else
     rateMean = nanmean(spkRates);
     rateStd = nanstd(spkRates);
-    yLims = [rateMean+yLimsNormalized(1)*rateStd, rateMean+yLimsNormalized(2)*rateStd];
+    yLims = [max(rateMean+yLimsNormalized(1)*rateStd,0), rateMean+yLimsNormalized(2)*rateStd];
 end
 cellData = cell(1, length(eventTimes));
 if plotControlDistribution; cellControlData = cell(1, length(eventTimes)); end
