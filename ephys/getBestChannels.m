@@ -20,23 +20,26 @@ data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.
 
 [allSpkInds, unit_ids] = getGoodSpkInds(session); % get spike times for good units
 
+% get channel map
+load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kiloSort', [ephysInfo.mapFile '.mat']), 'connected');
+connectedChannels = find(connected);
 bestChannels = nan(1,length(unit_ids));
 
 for c = 1:length(unit_ids)
     
-    % extract waveform across all channels
+    % extract waveform across all connected channels
     spkIndsSub = allSpkInds{c}(round(linspace(2, length(allSpkInds{c}), spkNum))); % get subpopulation of spikes evenly spaced out
     spkIndsSubAll = uint64(repmat(spkWindowInds,1,length(spkIndsSub)) + int64(repelem(spkIndsSub, length(spkWindowInds)))'); % inds for all all smps within all spikes
-    allWaveforms = getVoltage(data, 1:ephysInfo.channelNum, spkIndsSubAll);
+    allWaveforms = getVoltage(data, connectedChannels, spkIndsSubAll);
     
     % reshape
-    allWaveforms = reshape(allWaveforms, ephysInfo.channelNum, length(spkWindowInds), []);
+    allWaveforms = reshape(allWaveforms, length(connectedChannels), length(spkWindowInds), []);
     allWaveforms = permute(allWaveforms, [3 1 2]);
     
     % get best channel
     medianWaveform = squeeze(mean(allWaveforms,1));
-    [~, bestChannels(c)] = max(peak2peak(medianWaveform,2));
-%     try; bestChannels(c) = channel_map(ind); catch; keyboard; end
+    [~, maxInd] = max(peak2peak(medianWaveform,2));
+    bestChannels(c) = connectedChannels(maxInd);
 end
 
 

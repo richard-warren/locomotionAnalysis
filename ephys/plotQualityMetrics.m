@@ -22,7 +22,7 @@ minFiringRate = 0.5; % (hz) time bins with firing rate less than minFr will not 
 
 % spike trace settings
 sampleTraceLength = .15;
-verticalSpacing = 400;
+verticalSpacing = 300;
 traceTimeBins = 6;
 
 % firing rate settings
