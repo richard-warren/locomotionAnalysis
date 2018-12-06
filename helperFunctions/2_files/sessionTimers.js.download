@@ -1,0 +1,222 @@
+/*
+ * Copyright (C) 2014 Columbia University - RASCAL. All Rights Reserved.
+ */
+
+// "Timeout" the session after XXX ms. Really we just inform the user their session has timed out.
+// If the HTML element with id TIMEOUT_SESSION_ID has a "timeout" attribute, storing minutes 
+// to timeout, it will override this value. 
+var TIMEOUT_TIME 					= 2700000; // 45 min
+// How many ms before the timeout should we show the warning? This can overridden like TIMEOUT_TIME
+// above if TIMEOUT_SESSION_WARNING_ID has a "timeout_warning" attribute (in minutes).
+var TIMEOUT_WARNING_TIME 			= 600000; // 10 min
+
+// Do we want to show the mouse follower? If not, the follower will be placed
+// in the upper-right side of the page and stay there as the page scrolls.
+// The follower is more noticeable, but potentially intrusive and it can cause the browser
+// to use more CPU during the warning period.
+var FOLLOW_MOUSE 					= false;
+
+// Do we want to show the "Your session has timed out" dialog? If not, the page will re-load
+// after the session times out to show the system session timeout page.
+var SHOW_TIMEOUT_NOTICE				= true;
+
+// IDs of the dialogs and countdown clocks
+var TIMEOUT_WARNING_DIV_ID			= 'timeout_warning_dialog';
+var TIMEOUT_WARNING_CLOCK_ID 		= 'timeout_warning_clock';
+var TIMEOUT_WARNING_FOLLOW_ID 		= 'timeout_warning_follow';
+var TIMEOUT_WARNING_FOLLOW_CLOCK_ID = 'timeout_warning_follow_clock';
+var TIMEOUT_DIV_ID					= 'timeout_dialog';
+var TIMEOUT_SESSION_ID				= 'session_timeout';
+var TIMEOUT_SESSION_WARNING_ID		= 'session_timeout_warning';
+
+// The offset from the mouse for the warning follower
+var TIMEOUT_WARNING_FOLLOW_OFFSET	= {x:10, y:20};
+
+// No need to edit this...
+var TIMEOUT_WARNING_START = TIMEOUT_TIME - TIMEOUT_WARNING_TIME;
+
+var mouseCursorPos = {x:0,y:0};
+var timeoutWarningTimer;
+var timeoutWarningFollow;
+var timeoutWarningFollowHandle;
+var timeoutWarningFollowIntervalHandle;
+var timeoutWarningFollowClock;
+var timeoutWarningClock;
+var timeoutTimer;
+
+dojo.require('dojox.timing');
+
+// Provide nice countdown text
+function updateTimeoutWarningDisplay(sec, id) {
+	totalsec = sec;
+	var hr = Math.floor(sec / 3600);
+	var min = Math.floor((sec - (hr * 3600))/60);
+	sec -= ((hr * 3600) + (min * 60));
+	sec += ''; min += '';
+	if (min && min != '0') { while (min.length < 2) {min = '0' + min;}}
+	if (sec && sec != '0') { while (sec.length < 2) {sec = '0' + sec;}}
+	hr = (hr)?hr + ' hour' + (hr>0?'s ':' '):'';
+	min = (min && min != '0')?min + ' minute' + (min>1?'s ':' ') :'';
+	dojo.html.set(dojo.byId(id),'<span style="font-weight:bold;' + (totalsec<60?'color:red;':'') + '">' + hr + min + sec + ' second' + (sec>1?'s':'') + '</span>');
+}
+
+// Handle the hide event for the warning dialog
+function hideTimeoutWarning(from_event) {
+	timeoutWarningClock.stop();
+	if ( !from_event ) {
+		dijit.byId(TIMEOUT_WARNING_DIV_ID).hide();		
+	}
+}
+
+//Handle the hide event for the notice dialog
+function hideTimeoutNotice(from_event) {
+	dijit.byId(TIMEOUT_DIV_ID).hide();
+}
+
+// Update the follower to be near the mouse cursor. This can be called for every
+// mouse move, or on a delay to improve performance
+function timeoutWarningFollowMouse() {
+	var x = TIMEOUT_WARNING_FOLLOW_OFFSET.x;
+	var y = TIMEOUT_WARNING_FOLLOW_OFFSET.y;
+	x += mouseCursorPos.x;
+	y += mouseCursorPos.y;	
+    dojo.style(dojo.byId(TIMEOUT_WARNING_FOLLOW_ID),{left: x+"px",top: y+"px"});
+}
+
+// Update the follow to scroll with the page.
+function timeoutWarningFollowScroll() {
+	var x = TIMEOUT_WARNING_FOLLOW_OFFSET.x;
+	var y = TIMEOUT_WARNING_FOLLOW_OFFSET.y;
+	y += dojo.position(dojo.body()).y;
+    dojo.style(dojo.byId(TIMEOUT_WARNING_FOLLOW_ID),{left: x+"px",top: y+"px"});
+}
+
+// Show the timeout warning. This will show the dialog and start a couple of timers
+// to show a countdown until the session times out.
+function handleTimeoutWarning() {
+	
+	clearTimeout(timeoutWarningTimer);
+
+	// Show the dialog, and bind the "hide" action
+	dijit.byId(TIMEOUT_WARNING_DIV_ID).show();
+	dijit.byId(TIMEOUT_WARNING_DIV_ID).connect(dijit.byId(TIMEOUT_WARNING_DIV_ID), "hide", function(e) {
+		hideTimeoutWarning(true);
+	});
+	
+	// Create the warning dialog clock
+	timeoutWarningClock = new dojox.timing.Timer(1000);
+
+	timeoutWarningClock.onTick = function() {
+		var t = dojo.attr(TIMEOUT_WARNING_CLOCK_ID,'t')-1;
+		if (t < 0) {
+			timeoutWarningClock.stop();
+		} else {
+			dojo.attr(TIMEOUT_WARNING_CLOCK_ID,'t',t);
+			updateTimeoutWarningDisplay(t,TIMEOUT_WARNING_CLOCK_ID);			
+		}
+	};
+	timeoutWarningClock.onStart = function() {
+		dojo.attr(TIMEOUT_WARNING_CLOCK_ID,'t',TIMEOUT_WARNING_TIME/1000);
+		updateTimeoutWarningDisplay(TIMEOUT_WARNING_TIME/1000,TIMEOUT_WARNING_CLOCK_ID);		
+	};
+	
+	// Create and show the mouse following dialog
+	timeoutWarningFollow = dojo.create("div",null,dojo.body());
+	dojo.place("<div id=\"" + TIMEOUT_WARNING_FOLLOW_ID + "\" style=\"position:absolute;opacity:1;z-index:1000;background-color:white;border:1px solid #7EABCD;padding:4px;\">Session Timeout in <span id=\"" + TIMEOUT_WARNING_FOLLOW_CLOCK_ID + "\">10 minutes 00 seconds</span></div>",dojo.body());
+
+	// Create the warning follower clock
+	timeoutWarningFollowClock = new dojox.timing.Timer(1000);
+	timeoutWarningFollowClock.onTick = function() {
+		var t = dojo.attr(TIMEOUT_WARNING_FOLLOW_CLOCK_ID,'t')-1;
+		if (t < 0) {
+			timeoutWarningFollowClock.stop();
+		} else {
+			dojo.attr(TIMEOUT_WARNING_FOLLOW_CLOCK_ID,'t',t);
+			updateTimeoutWarningDisplay(t,TIMEOUT_WARNING_FOLLOW_CLOCK_ID);			
+		}
+	};
+	timeoutWarningFollowClock.onStart = function() {
+		dojo.attr(TIMEOUT_WARNING_FOLLOW_CLOCK_ID,'t',TIMEOUT_WARNING_TIME/1000);
+		updateTimeoutWarningDisplay(TIMEOUT_WARNING_TIME/1000,TIMEOUT_WARNING_CLOCK_ID);		
+	};
+
+	// Start the clocks
+	timeoutWarningClock.start();
+	timeoutWarningFollowClock.start();
+
+	// Handle the position of the follower
+	if ( FOLLOW_MOUSE ) {
+		// Bind the mouse follower
+		timeoutWarningFollowHandle = dojo.connect(dojo.doc, "onmousemove", function(ev) {
+			// This is a separate step just in case we want to call
+			// timeoutWarningFollowMouse with a delay to help performance.
+	        mouseCursorPos.x = ev.pageX;
+	        mouseCursorPos.y = ev.pageY;
+	        //timeoutWarningFollowMouse();
+		});
+		// Delay the actual following by a bit
+		timeoutWarningFollowIntervalHandle = setInterval(timeoutWarningFollowMouse,50);
+	} else {
+		timeoutWarningFollowScroll();
+		timeoutWarningFollowHandle = dojo.connect(window,"onscroll",timeoutWarningFollowScroll);
+	}
+}
+
+// Display the timeout message. If the user tries to close we re-load the page, which will show the 
+// more "official" timeout message. Hmm.
+function handleTimeout() {
+
+	clearTimeout(timeoutTimer);
+
+	if ( FOLLOW_MOUSE ) {
+		clearInterval(timeoutWarningFollowIntervalHandle);		
+	}
+	// Remove the follow hook
+	dojo.disconnect(timeoutWarningFollowHandle);
+	
+	// Stop the clocks
+	timeoutWarningClock.stop();
+	timeoutWarningFollowClock.stop();
+
+	// Hide the follower
+    dojo.style(dojo.byId(TIMEOUT_WARNING_FOLLOW_ID),{display: "none", visibility: "hidden"});
+
+	// Hide the warning dialog
+	dijit.byId(TIMEOUT_WARNING_DIV_ID).hide();
+
+	// Show the timeout dialog, or reload the page.
+	if ( SHOW_TIMEOUT_NOTICE ) {
+		// Show the timeout dialog.
+		dijit.byId(TIMEOUT_DIV_ID).show();
+	} else {
+		// Reload the page
+		window.location.reload(true);
+	}
+}
+
+// Start the timers
+dojo.addOnLoad(function() {
+	
+
+	// Check if TIMEOUT_SESSION_ID has a "timeout" attribute
+	if ( dojo.byId(TIMEOUT_SESSION_ID) != null ) {
+		var timeout_attr = dojo.attr(TIMEOUT_SESSION_ID,'timeout');
+		if ( timeout_attr ) {
+			// timeout_attr is in minutes
+			TIMEOUT_TIME = timeout_attr * 60 * 1000;
+			TIMEOUT_WARNING_START = TIMEOUT_TIME - TIMEOUT_WARNING_TIME;
+		}
+	}
+	// Check if TIMEOUT_SESSION_WARNING_ID has a "timeoutWarning" attribute
+	if ( dojo.byId(TIMEOUT_SESSION_WARNING_ID) != null ) {
+		var timeout_warning_attr = dojo.attr(TIMEOUT_SESSION_WARNING_ID,'timeoutWarning');
+		if ( timeout_warning_attr ) {
+			TIMEOUT_WARNING_TIME = timeout_warning_attr * 60 * 1000;
+			TIMEOUT_WARNING_START = TIMEOUT_TIME - TIMEOUT_WARNING_TIME;
+		}		
+	}
+	
+	// Start the timers.
+	timeoutWarningTimer = setTimeout(handleTimeoutWarning, TIMEOUT_WARNING_START + 10000);
+	timeoutTimer = setTimeout(handleTimeout, TIMEOUT_TIME + 10000);
+});

@@ -22,7 +22,7 @@ minFiringRate = 0.5; % (hz) time bins with firing rate less than minFr will not 
 
 % spike trace settings
 sampleTraceLength = .15;
-verticalSpacing = 300;
+verticalSpacing = 200;
 traceTimeBins = 6;
 
 % firing rate settings
@@ -225,6 +225,7 @@ for c = 1:length(unit_ids)
     
     
     % save figures
+    blackenFig
     savefig(fullfile(folder, [session 'cell' num2str(unit_ids(c))]))
     saveas(gcf, fullfile(folder, [session 'cell' num2str(unit_ids(c)) '.png']))
 end
