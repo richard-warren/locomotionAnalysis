@@ -106,8 +106,10 @@ for i = 1:length(binNames)
         
         % add cylinder
         z = mean(heights(heightBins==j & bins==i)) / 1000;
+        try
         rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
             'curvature', [1 1], 'facecolor', [colors(j,:) 1], 'edgecolor', 'none');
+        catch; keyboard; end
     end
     
     % add floor
@@ -154,7 +156,7 @@ if multiCondition
     axis off
 end
 
-blackenFig;
+% blackenFig;
 
 
 

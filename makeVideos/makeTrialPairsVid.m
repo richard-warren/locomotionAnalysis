@@ -38,7 +38,7 @@ open(vidWriter);
 % iterate through trials
 for i = repelem(1:numTrials,showTrialsTwice+1)
     
-    disp(i/numTrials)
+%     disp(i/numTrials)
     
     % get frame inds for each row of video
     trialInds = nan(rows, length(times));

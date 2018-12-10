@@ -27,7 +27,7 @@ data = cell(1,length(sessions));
 stanceBins = cell(1,length(sessions));
 getDataForSessionHandle = @getDataForSession;
 if any(strcmp(sessionInfo.Properties.VariableNames, 'notes'))
-    sessionInfo = sessionInfo(:, ~strcmp(sessionInfo.Properties.VariableNames, 'notes'));
+    sessionInfo = sessionInfo(:, ~strcmp(sessionInfo.Properties.VariableNames, 'notes')); % remove 'notes' field
 end
 metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
@@ -51,7 +51,7 @@ parfor (i = 1:length(sessions), numWorkers)
         sessionMetaData.conditionNum = find(strcmp(sessionInfo.session(mouseBins & conditionBins), sessionMetaData.session)); % first session for condition pre and condition post is 1, second session for condition pre and condition post is 2, etc // used to restrict how many days post lesion to include in analysis
         
         % get session data
-        if sessionMetaData.include
+        if sessionMetaData.include % !!! restrict sessions if conditionNum too high here???
             fprintf('%s: collecting data...\n', sessions{i});
             [data{i}, stanceBins{i}] = feval(getDataForSessionHandle, sessions{i}, sessionMetaData);
         else

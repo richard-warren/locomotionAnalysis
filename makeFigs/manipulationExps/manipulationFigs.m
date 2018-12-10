@@ -7,15 +7,16 @@ maxLesionSession = 3;
 
 
 if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
-elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post'}; end
+elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post', 'postNoWisk'}; end
 sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & logical([sessionInfo.include]),:);
+% sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
+% sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'sen'),:);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & [sessionInfo.include]==1,:); % remove empty entires in spreadsheet
 
 
 
 %% compute kinematic data
-
+tic
 loadPreviousData = false;
 
 fileName = [getenv('OBSDATADIR') 'matlabData\' manipulation 'kinematicData.mat'];
@@ -28,7 +29,7 @@ end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\' manipulation 'KinematicData.mat'], 'data', '-v7.3', '-nocompression'); clear data;
 
 if strcmp(manipulation, 'lesion'); kinData = kinData([kinData.conditionNum]<=maxLesionSession); end
-
+toc
 
 %% load kinematic data
 
@@ -98,7 +99,7 @@ binNames = {'ipsi', 'contra', conditions{1}};
 velBins = zeros(1,length(kinData));
 velBins(strcmp({kinData.condition}, conditions{2}) & strcmp({kinData.brainRegion}, 'mtc') & [kinData.ipsiPawFirst]) = 1;
 velBins(strcmp({kinData.condition}, conditions{2}) & strcmp({kinData.brainRegion}, 'mtc') & [kinData.contraPawFirst]) = 2;
-velBins(strcmp({kinData.condition}, conditions{1})) = 3;
+velBins(strcmp({kinData.condition}, conditions{1}) & strcmp({kinData.brainRegion}, 'mtc')) = 3;
 
 % don't include too many post lesion sessions if manipulation=='lesion'
 if strcmp(manipulation, 'lesion'); includeTrial = [kinData.conditionNum]<=maxLesionSession;
@@ -109,16 +110,36 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightSha
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterMtc.fig'))
 
 
+%% paw height by obs height for sen
+
+binNames = conditions;
+
+velBins = zeros(1,length(kinData));
+velBins(strcmp({kinData.condition}, conditions{1}) & strcmp({kinData.brainRegion}, 'sen')) = 1; % pre
+velBins(strcmp({kinData.condition}, conditions{2}) & strcmp({kinData.brainRegion}, 'sen')) = 2; % post
+if length(conditions)==3; velBins(strcmp({kinData.condition}, conditions{3}) & strcmp({kinData.brainRegion}, 'sen')) = 3; end % post no wisk
+
+% don't include too many post lesion sessions if manipulation=='lesion'
+if strcmp(manipulation, 'lesion'); includeTrial = [kinData.conditionNum]<=maxLesionSession;
+else; includeTrial = ones(1,length(kinData)); end
+
+scatterObsVsPawHeights(kinData, velBins.*includeTrial, binNames);
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterSen.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterSend.fig'))
+
+
 %% plot kinematics
 
 % settings
-miceToExclude = {'sen5'};
+% miceToExclude = {'sen5'};
+miceToExclude = {''};
 
 % get trial bins
 contraFirstBins = [kinData.contraPawFirst];
 ipsiFirstBins = [kinData.ipsiPawFirst];
 controlBins = strcmp({kinData.condition}, conditions{1});
 manipBins = strcmp({kinData.condition}, conditions{2});
+noWiskBins = strcmp({kinData.condition}, 'postNoWisk');
 lightOnBins = [kinData.isLightOn];
 mtcBins = strcmp({kinData.brainRegion}, 'mtc');
 senBins = strcmp({kinData.brainRegion}, 'sen');
@@ -137,10 +158,11 @@ plotObsHeightTrajectories(kinData, velBins.*includeTrial, binLabels, ['motor cor
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.fig'))
 
-% sen
+%% sen
 velBins = zeros(1,length(kinData));
 velBins(senBins & controlBins) = 1; % control
 velBins(senBins & manipBins) = 2; % manipluation
+velBins(senBins & noWiskBins) = 3; % post no wisk
 velBins(ismember({kinData.mouse}, miceToExclude)) = 0; 
 binLabels = conditions;
 plotObsHeightTrajectories(kinData, velBins.*includeTrial, binLabels, ['sensory cortex ' manipulation])

@@ -116,10 +116,10 @@ close(vidWrite)
 
 % settings
 manipulation = 'lesion';
+brainRegion = 'sen';
 maxLesionSession = 3;
 params = {'vel', 'avgVel', 'avgAngle', 'firstModPaw', 'swingStartDistance', 'obsPos'}; % params to match across trials
 tolerances = [.05, .01, 2, .5, .01, .005]; % trials are only matched if they are within this range on a given parameter
-mice = unique({kinData.mouse});
 maxTrials = 15;
 
 
@@ -135,6 +135,8 @@ if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
 elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post'}; end
 controlBins = strcmp({kinData.condition}, conditions{1});
 manipBins = strcmp({kinData.condition}, conditions{2});
+brainRegionBins = strcmp({kinData.brainRegion}, brainRegion);
+mice = unique({kinData(brainRegionBins).mouse});
 
 % get trial bins for each parameter
 binIds = nan(length(kinData), length(params));
@@ -144,7 +146,7 @@ for i = 1:length(params)
 end
 
 
-% get trial pairs
+%% get trial pairs
 for i = 3:length(mice)
     
     mouseBins = strcmp({kinData.mouse}, mice{i});
@@ -165,14 +167,16 @@ for i = 3:length(mice)
             control = kinData(controlInds(1));
             manip = kinData(manipInds(1));
             trialText(:,end+1) = ...
-                {sprintf('%s, %s, %s, %s, light:%i, trial:%i', control.mouse, control.condition, control.side, control.session, control.isLightOn, manip.trial); ...
-                sprintf('%s, %s, %s, %s, light:%i, trial:%i', manip.mouse, manip.condition, manip.side, manip.session, manip.isLightOn, manip.trial)};
+                {sprintf('%s, %s, %s, %s, %s, light:%i, trial:%i', control.mouse, manip.brainRegion, control.condition, control.side, control.session, control.isLightOn, manip.trial); ...
+                sprintf('%s, %s, %s, %s, %s, light:%i, trial:%i', manip.mouse, manip.brainRegion, manip.condition, manip.side, manip.session, manip.isLightOn, manip.trial)};
             
             if size(sessions,2)>=maxTrials; break; end
         end
     end
     
-    makeTrialPairsVid(['Z:\RAW\sharing\experimentVids\' manipulation 'Vids\' mice{i} 'MatchedTrials.mp4'], sessions, trials, trialText)
+    fprintf('making video for mouse %s...\n', mice{i})
+    makeTrialPairsVid(fullfile(getenv('OBSDATADIR'), 'editedVid', 'matchedTrials', [mice{i} '_' manipulation '_' brainRegion '.mp4']), ...
+        sessions, trials, trialText);
 end
 
 

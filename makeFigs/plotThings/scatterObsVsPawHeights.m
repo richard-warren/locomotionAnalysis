@@ -46,7 +46,7 @@ for h = 1:length(binLabels)
     
     % add best fit line
     fit = polyfit(obsHgtsBin, pawHgtsBin, 1);
-    lines(h) = plot(obsHgtsBin, polyval(fit, obsHgtsBin), 'linewidth', 4, 'color', colors(h,:));
+    try; lines(h) = plot(obsHgtsBin, polyval(fit, obsHgtsBin), 'linewidth', 4, 'color', colors(h,:)); catch; keyboard; end
 %     lines(h) = plot(obsHgtsBin, polyval(fit, obsHgtsBin), 'linewidth', 4, 'color', 'black');
 end
 
@@ -61,7 +61,7 @@ if length(binLabels)>1; legend(lines, binLabels, 'location', 'northwest', 'box',
 set(gca, 'XLim', xLims)
 pbaspect([1 1 1])
 
-blackenFig
+% blackenFig
 
 
 

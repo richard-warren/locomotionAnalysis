@@ -51,51 +51,53 @@ for i = 1:length(brainRegions)
             sessions = unique({data(conditionBins).session});
             
             
-            % containers for session averages for all session for a given mouse in a given condition
-            if poolSessions; iters=1; else; iters=length(sessions); end
-            [sessionSuccesses, sessionSpeeds, sessionContraBodyAngles, ...
-                sessionContraErrRates, sessionIpsiErrRates] = deal(nan(1, iters));
-            
-            % get means
-            for m = 1:iters
-                
-                if poolSessions
-                    bins = conditionBins;
-                else
-                    bins = strcmp({data.session}, sessions{m});
-                end
-                
-                if sum(weights(bins))>sessionTrialMin
-                
-                    % get speed, success rate
-                    sessionSuccesses(m) = sum(isSuccess(bins).*weights(bins)) / sum(weights(bins));
-                    sessionSpeeds(m) = sum([data(bins).avgVel].*weights(bins)) / sum(weights(bins));
+            if ~isempty(sessions)
+                % containers for session averages for all session for a given mouse in a given condition
+                if poolSessions; iters=1; else; iters=length(sessions); end
+                [sessionSuccesses, sessionSpeeds, sessionContraBodyAngles, ...
+                    sessionContraErrRates, sessionIpsiErrRates] = deal(nan(1, iters));
 
-                    % get body angle
-                    sessionContraBodyAngles(m) = sum([data(bins).avgAngle].*weights(bins)) / sum(weights(bins));
-                    sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
-                    if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
+                % get means
+                for m = 1:iters
 
-                    % get contra err rate
-                    leftErrorRate = sum(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {data(bins).trialTouchesPerPaw}) ...
-                        .* weights(bins)) / sum(weights(bins));
-                    rightErrorRate = sum(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {data(bins).trialTouchesPerPaw}) ...
-                        .* weights(bins)) / sum(weights(bins));
-                    if strcmp(sideOfBrain, 'left')
-                        [sessionContraErrRates, sessionIpsiErrRates] = deal(rightErrorRate, leftErrorRate);
+                    if poolSessions
+                        bins = conditionBins;
                     else
-                        [sessionContraErrRates, sessionIpsiErrRates] = deal(leftErrorRate, rightErrorRate);
+                        bins = strcmp({data.session}, sessions{m});
                     end
-                else
-                    fprintf('%s: skipped because too few trials\n', sessions{m})
+
+                    if sum(weights(bins))>sessionTrialMin
+
+                        % get speed, success rate
+                        sessionSuccesses(m) = sum(isSuccess(bins).*weights(bins)) / sum(weights(bins));
+                        sessionSpeeds(m) = sum([data(bins).avgVel].*weights(bins)) / sum(weights(bins));
+
+                        % get body angle
+                        sessionContraBodyAngles(m) = sum([data(bins).avgAngle].*weights(bins)) / sum(weights(bins));
+                        sideOfBrain = unique({data(strcmp({data.session}, sessions{m})).side});
+                        if strcmp(sideOfBrain, 'left'); sessionContraBodyAngles(m) = -sessionContraBodyAngles(m); end
+
+                        % get contra err rate
+                        leftErrorRate = sum(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {data(bins).trialTouchesPerPaw}) ...
+                            .* weights(bins)) / sum(weights(bins));
+                        rightErrorRate = sum(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {data(bins).trialTouchesPerPaw}) ...
+                            .* weights(bins)) / sum(weights(bins));
+                        if strcmp(sideOfBrain, 'left')
+                            [sessionContraErrRates, sessionIpsiErrRates] = deal(rightErrorRate, leftErrorRate);
+                        else
+                            [sessionContraErrRates, sessionIpsiErrRates] = deal(leftErrorRate, rightErrorRate);
+                        end
+                    else
+                        fprintf('%s: skipped because too few trials\n', sessions{m})
+                    end
                 end
+
+                successes(j,k) = nanmean(sessionSuccesses);
+                speeds(j,k) = nanmean(sessionSpeeds);
+                contraBodyAngles(j,k) = nanmean(sessionContraBodyAngles);
+                contraErrRates(j,k) = nanmean(sessionContraErrRates);
+                ipsiErrRates(j,k) = nanmean(sessionIpsiErrRates);
             end
-            
-            successes(j,k) = nanmean(sessionSuccesses);
-            speeds(j,k) = nanmean(sessionSpeeds);
-            contraBodyAngles(j,k) = nanmean(sessionContraBodyAngles);
-            contraErrRates(j,k) = nanmean(sessionContraErrRates);
-            ipsiErrRates(j,k) = nanmean(sessionIpsiErrRates);
         end
         
         
@@ -147,12 +149,13 @@ for i = 1:length(brainRegions)
         xlabel(sprintf('p=%.3f', p))
     end
     
-%     % add mouse labels
-%     xLims = get(gca, 'xlim');
-%     xs = linspace(xLims(1)*1.2, xLims(2)*.8, length(mice));
-%     for j = 1:length(mice)
+    % add mouse labels
+    xLims = get(gca, 'xlim');
+    xs = linspace(xLims(1), xLims(2)*.8, length(mice));
+    for j = 1:length(mice)
 %         text(xs(j), dvYLims(end,1)+(dvYLims(end,2)-dvYLims(end,1))*.2, mice{j}, 'Color', colors(j,:));
-%     end
+        text(xs(j), dvYLims(end,2), mice{j}, 'Color', colors(j,:));
+    end
 
 end
 
@@ -171,4 +174,4 @@ for i = 1:length(dvs)
     end
 end
 
-blackenFig
+% blackenFig
