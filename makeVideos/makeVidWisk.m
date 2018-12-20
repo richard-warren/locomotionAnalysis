@@ -113,7 +113,7 @@ end
 for i = trials
     
     % find trial indices
-    startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
+    try; startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first'); catch; keyboard; end
     endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
     
     % get frame indices

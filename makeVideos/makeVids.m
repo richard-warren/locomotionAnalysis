@@ -196,7 +196,15 @@ timeEpochs = cat(2, rewardTimes, rewardTimes+trialDuration);
 makeUnitVid(session, unit_id, timeEpochs)
 
 
+%% make video of all wheel break trials for a session
 
+sessions = selectSessions;
+
+for i = 1:length(sessions)
+    wheelBreakTrials = find(getIsWheelBreak(sessions{i}))';
+    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'wheelBreakOnlyVids', [sessions{i} 'WheelBreaks']), ...
+        sessions{i}, [-.05 .1], .2, wheelBreakTrials);
+end
 
 
 
