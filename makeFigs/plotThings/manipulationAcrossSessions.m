@@ -10,7 +10,6 @@ validBins = [data.trialNum]>=minTrial & ~[data.isLightOn];
 touchThresh = 5;
 
 % initializations
-brainRegions = unique({data.brainRegion});
 isSuccess = cellfun(@sum, {data.totalTouchFramesPerPaw}) < touchThresh;
 dims = [length(dvs), length(brainRegions)]; % subplot dimensions
 figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 200 800 600], 'InvertHardcopy', 'off')

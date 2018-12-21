@@ -34,11 +34,11 @@ if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
             frameTrialStartInds = frameTrialStartInds([1:i-1 i+1:end]);
         end
     end
-    fprintf('  %s: same number of rewards not detected! WTF!!! BUT WAS ABLE TO FIX THIS WITH A HACK!!!', session)
+    fprintf('  %s: same number of rewards not detected! WTF!!! BUT WAS ABLE TO FIX THIS WITH A HACK!!!\n', session)
     
     
     if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
-        fprintf('  %s: same number of rewards not detected! WTF!!! STOPPING ANALYSIS!!!', session)
+        fprintf('  %s: same number of rewards not detected! WTF!!!\n', session)
         %     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
         return
     end

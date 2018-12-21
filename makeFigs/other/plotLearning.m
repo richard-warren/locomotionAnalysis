@@ -13,7 +13,7 @@ mouseScatSize = 50;
 
 % initializations
 xInds = 1:(noBrSessions + brSessions); % session inds for plots
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'sheet', 'sessions');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'sessions');
 sessionBins = ismember(sessionInfo.mouse, mice) &...
               ismember(sessionInfo.experiment, {noBreakExpName, breakExpName}) &...
               sessionInfo.include;
