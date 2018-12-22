@@ -27,6 +27,11 @@ load(fullfile(getenv('OBSDATADIR'), 'matlabData','whiskerTrimSpeedAvoidanceData.
 speedAvoidanceData = data; clear data;
 
 
+%%  compute dependent measures
+
+getSessionDvs(speedAvoidanceData, kinData);
+
+
 %% bar plots
 
 whiskerTrimBarPlots(speedAvoidanceData, 'test')
