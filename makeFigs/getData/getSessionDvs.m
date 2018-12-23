@@ -29,6 +29,7 @@ for i = 1:length(sessions)
     sessionDvs(i).mouse = speedAvoidanceData(find(sessionBinsSpdAv,1,'first')).mouse;
     sessionDvs(i).condition = speedAvoidanceData(find(sessionBinsSpdAv,1,'first')).condition;
     sessionDvs(i).conditionNum = speedAvoidanceData(find(sessionBinsSpdAv,1,'first')).conditionNum;
+    sessionDvs(i).sessionNum= speedAvoidanceData(find(sessionBinsSpdAv,1,'first')).sessionNum;
     
     % store dependent variables
     for j = 1:length(dvs)
@@ -57,12 +58,17 @@ function dv = getDv(dvName)
         case 'conditionNum'
             dv = unique([speedAvoidanceData(sessionBinsSpdAv).conditionNum]);
             
-        case 'ipsiContraErrRate'
+        case 'ipsiErrRate'
             side = unique({speedAvoidanceData(sessionBinsSpdAv).side});
             leftErrorRate = nanmean(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {speedAvoidanceData(sessionBinsSpdAv).trialTouchesPerPaw}));
             rightErrorRate = nanmean(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {speedAvoidanceData(sessionBinsSpdAv).trialTouchesPerPaw}));
-            dv = [leftErrorRate, rightErrorRate];
-            if strcmp(side, 'right'); dv = fliplr(dv); end
+            if strcmp(side, 'left'); dv = leftErrorRate; else; dv = rightErrorRate; end
+        
+        case 'contraErrRate'
+            side = unique({speedAvoidanceData(sessionBinsSpdAv).side});
+            leftErrorRate = nanmean(cellfun(@(x) sum(any(x(:,[1 2]),2))>=touchThresh, {speedAvoidanceData(sessionBinsSpdAv).trialTouchesPerPaw}));
+            rightErrorRate = nanmean(cellfun(@(x) sum(any(x(:,[3 4]),2))>=touchThresh, {speedAvoidanceData(sessionBinsSpdAv).trialTouchesPerPaw}));
+            if strcmp(side, 'left'); dv = rightErrorRate; else; dv = leftErrorRate; end
     end
 end
 

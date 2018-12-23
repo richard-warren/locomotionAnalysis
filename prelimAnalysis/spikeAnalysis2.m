@@ -287,8 +287,24 @@ function spikeAnalysis2(session, varsToOverWrite)
 
             % get camera metadata and spike timestamps
             camMetadata = dlmread([sessionDir '\run.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+            frameCounts = camMetadata(:,2);
             timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
-            frameTimeStamps = getFrameTimes3(exposure.times, timeStampsFlir);
+
+            frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session);
+
+            % !!! the following should fix sessions where spike is stopped
+            % before the camera is stopped // not sure it will worked if
+            % camera is started before spike is started
+            if length(exposure.times) < length(frameCounts)
+                disp('  there are more frames than exposure TTLs...')
+                if mean(isnan(frameTimeStamps))<.05 % if most of the frame times were successfully determined
+                    frameTimeStamps(end+1:length(frameCounts)) = nan; % fill in missing timeStamps for all frames at the end of the session (presumably) with unreconstructable times
+                    disp('  reconstructed frameTimes assuming missing TTLs were at the end of the session (this will happen when spike is stopped before the camera)...')
+                else
+                    frameTimeStamps = [];
+                    disp('  saving frameTimeStamps as an emtpy vector...')
+                end
+            end
             
             % save values
             varStruct.frameTimeStamps = frameTimeStamps;
@@ -309,8 +325,21 @@ function spikeAnalysis2(session, varsToOverWrite)
 
             % get camera metadata and spike timestamps
             camMetadataWisk = dlmread([sessionDir '\wisk.csv']); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+            frameCountsWisk = camMetadataWisk(:,1);
             timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
-            frameTimeStampsWisk = getFrameTimes3(exposure.times, timeStampsFlirWisk);
+
+            frameTimeStampsWisk = getFrameTimes2(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+
+            if length(exposure.times) < length(frameCountsWisk)
+                disp('  there are more frames than exposure TTLs...')
+                if mean(isnan(frameTimeStampsWisk))<.05 % if most of the frame times were successfully determined
+                    frameTimeStampsWisk(end+1:length(frameCountsWisk)) = nan; % fill in missing timeStamps for all frames at the end of the session (presumably) with unreconstructable times
+                    disp('  reconstructed frameTimes assuming missing TTLs were at the end of the session (this will happen when spike is stopped before the camera)...')
+                else
+                    frameTimeStampsWisk = [];
+                    disp('  saving frameTimeStamps as an emtpy vector...')
+                end
+            end
             
             % save values
             varStruct.frameTimeStampsWisk = frameTimeStampsWisk;

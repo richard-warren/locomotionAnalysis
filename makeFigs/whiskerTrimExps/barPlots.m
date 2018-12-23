@@ -4,6 +4,7 @@ function barPlots(data, dvs)
 
 
 % settings
+addLegend = false;
 columns = 3;
 minConditionNum = 2; % only use a condition after the minConditionNum day of that condition
 
@@ -52,4 +53,4 @@ for i = 1:length(dvs)
     ylabel(dvs{i});
 end
 
-legend(scatters, mice, 'Location', 'northeast', 'color', 'none')
+if addLegend; legend(scatters, mice, 'Location', 'northeastoutside', 'color', 'none'); end

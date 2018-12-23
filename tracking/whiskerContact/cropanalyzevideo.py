@@ -98,14 +98,21 @@ mat = scipy.io.loadmat(os.path.join(baseDir, session, "runAnalyzed.mat"))
 obsOnTimes = np.squeeze(mat['obsOnTimes'])
 obsOnFrames = []
 clipLen = len(mat['frameTimeStampsWisk'])
+otherclipLen = len(mat['frameTimeStamps'])
 for i in range(len(mat['frameTimeStampsWisk'])):
     if np.isnan(mat['frameTimeStampsWisk'][i][0]):
         mat['frameTimeStampsWisk'][i][0]=-1
 for i in range(len(mat['frameTimeStamps'])):
     if np.isnan(mat['frameTimeStamps'][i][0]):
         mat['frameTimeStamps'][i][0] = -1
-otherFirstTime = mat['frameTimeStamps'][bisect.bisect(np.squeeze(mat['frameTimeStamps']), -1)][0]
-firstTime = mat['frameTimeStampsWisk'][bisect.bisect(np.squeeze(mat['frameTimeStampsWisk']), -1)][0]
+firstIdx = bisect.bisect(np.squeeze(mat['frameTimeStamps']), -1)
+if firstIdx == clipLen:
+    firstIdx = 0
+otherfirstIdx = bisect.bisect(np.squeeze(mat['frameTimeStampsWisk']), -1)
+if otherfirstIdx == otherclipLen:
+    otherfirstIdx = 0
+otherFirstTime = mat['frameTimeStamps'][firstIdx][0]
+firstTime = mat['frameTimeStampsWisk'][otherfirstIdx][0]
 for i, obsOnTime in enumerate(obsOnTimes):
     if not (obsOnTime>min(mat['frameTimeStampsWisk'][-1], mat['frameTimeStamps'][-1]) or obsOnTime<max(firstTime, otherFirstTime)):
         obsOnFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOnTime)))
