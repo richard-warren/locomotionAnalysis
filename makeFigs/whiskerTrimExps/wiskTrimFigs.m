@@ -8,7 +8,7 @@ sessionInfo.condition = cellfun(@(x,y) [x ' ' y], sessionInfo.whiskerSides, sess
 
 %% compute kinematic data
 
-loadPreviousData = false;
+loadPreviousData = true;
 
 fileName = fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrimKinematicData.mat');
 if loadPreviousData && exist(fileName, 'file')
@@ -41,21 +41,20 @@ speedAvoidanceData = data; clear data;
 
 %%  compute dependent measures
 
-dvs = {'success', 'speed', 'body_angle', 'ipsiErrRate', 'contraErrRate'};
-sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData);
+dvs = {'success', 'speed', 'bodyAngleContra', 'ipsiErrRate', 'contraErrRate', 'contraFirstRate'};
+sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData); disp('done!')
+% sessionDvs = getSessionDvs(dvs, speedAvoidanceData);
 
 %% bar plots
 
-% whiskerTrimBarPlots(speedAvoidanceData, 'test')
-barPlots(sessionDvs, dvs)
+barPlots(sessionDvs, dvs, 'whiskerTrimming')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.fig'))
 %% sessions over time plots
 
-% whiskerTrimAcrossSessions(speedAvoidanceData, 'test')
-plotAcrossSessions(sessionDvs, dvs)
-% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimAcrossSessions.png'));
-% savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimAcrossSessions.fig'))
+plotAcrossSessions(sessionDvs, dvs, 'whiskerTrimming')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimAcrossSessions.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimAcrossSessions.fig'))
 %% paw height by obs height
 
 binNames = {'ipsi', 'contra'};

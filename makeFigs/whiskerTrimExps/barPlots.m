@@ -1,22 +1,29 @@
-function barPlots(data, dvs)
+function barPlots(data, dvs, figTitle)
 
-% TO DO: work with ipsi/contra dvs // 
+% TO DO: add pairwise significance tests
 
 
 % settings
-addLegend = false;
-columns = 3;
-minConditionNum = 2; % only use a condition after the minConditionNum day of that condition
+addLegend = true;
+addStats = true; % peform paired ttests for each pair of conditions
+pThresh = .05; % p value threshold for significance
+columns = 4;
+minConditionNum = 0; % only use a condition after the minConditionNum day of that condition
 
 
 % initializations
 conditions = unique({data.condition});
-rows = ceil(length(dvs)/columns);
-figure('Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 300*columns 250*rows], 'inverthardcopy', 'off')
+rows = ceil((length(dvs)+addLegend)/columns); % last subplot will contain legend if addLegend
+figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 300*columns 250*rows], 'inverthardcopy', 'off')
 mice = unique({data.mouse});
 xJitters = linspace(-.1,.1,length(mice)); xJitters = xJitters-mean(xJitters); % jitters x position of scatter points
 colors = hsv(length(mice));
-scatters = nan(1,length(mice));
+if addStats
+    conditionPairs = nchoosek(1:length(conditions), 2);
+    [~, sortInds] = sort(diff(conditionPairs,[],2));
+    conditionPairs = conditionPairs(sortInds,:); % sort s.t. more distant comparisons are last
+    yPosits = linspace(1.1, 1.2, size(conditionPairs,1)); % vertical position of each line, expressed as fraction of y range
+end % matrix containing all condition pairs where is row is a pair of conditions
 
 
 for i = 1:length(dvs)
@@ -34,23 +41,38 @@ for i = 1:length(dvs)
         
         % plot mouse means    
         line([1:length(conditions)] + xJitters(j), mouseDvAvgs(j,:), 'color', [.2 .2 .2]); hold on
-        scatters(j) = scatter([1:length(conditions)] + xJitters(j), mouseDvAvgs(j,:), 50, colors(j,:), 'filled');
+        scatter([1:length(conditions)] + xJitters(j), mouseDvAvgs(j,:), 50, colors(j,:), 'filled', 'MarkerFaceAlpha', .6);
     end
     
     % plot condition means
     for j = 1:length(conditions)
         avg = nanmean(mouseDvAvgs(:,j),1);
         line([j-.1 j+.1], [avg avg], 'linewidth', 3, 'color', 'black')
-        [~,p] = ttest(mouseDvAvgs(:,1), mouseDvAvgs(:,2));
-        xlabel(sprintf('p=%.3f', p))
+    end
+    
+    % add statistics
+    if addStats
+        yLims = get(gca, 'ylim');
+        for j = 1:length(conditionPairs)
+            [~,p] = ttest(mouseDvAvgs(:,conditionPairs(j,1)), mouseDvAvgs(:,conditionPairs(j,2)));
+            if p<pThresh; lineColor = 'red'; else; lineColor = [.5 .5 .5]; end
+            line([conditionPairs(j,:)], yLims(2)*[yPosits(j) yPosits(j)], ...
+                'color', lineColor, 'linewidth', 1.0);
+        end
+        set(gca, 'ylim', [yLims(1) yLims(2)*max(yPosits)]) % set y axis s.t. highest line is at top of y axis
     end
 end
 
 % pimp figs
 for i = 1:length(dvs)
     subplot(rows, columns, i);
-    set(gca, 'xlim', [0.75 length(conditions)+0.25], 'xtick', 1:length(conditions), 'XTickLabel', conditions);
-    ylabel(dvs{i});
+    set(gca, 'xlim', [0.75 length(conditions)+0.25], ...
+        'xtick', 1:length(conditions), 'XTickLabel', conditions, 'XTickLabelRotation', 45);
+    ylabel(dvs{i}, 'interpreter', 'none');
 end
 
-if addLegend; legend(scatters, mice, 'Location', 'northeastoutside', 'color', 'none'); end
+if addLegend
+    subplot(rows, columns, length(dvs)+1, 'visible', 'off'); hold on
+    for i = 1:length(mice); scatters(i) = scatter(nan,nan,50,colors(i,:), 'filled'); end % create dummy scatters
+    legend(scatters, mice);
+end
