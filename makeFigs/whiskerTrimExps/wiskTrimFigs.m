@@ -41,12 +41,16 @@ speedAvoidanceData = data; clear data;
 
 %%  compute dependent measures
 
-dvs = {'success', 'speed', 'bodyAngleContra', 'ipsiErrRate', 'contraErrRate', 'contraFirstRate'};
+dvs = {'success', 'forePawErrRate', 'speed', 'bodyAngleContra', 'contraFirstRate', 'bigStepProb', 'pawHgt', 'hgtShaping'};
 sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData); disp('done!')
 % sessionDvs = getSessionDvs(dvs, speedAvoidanceData);
 
 %% bar plots
 
+dvs = {'success', 'speed', 'bodyAngleContra', 'forePawErrRateIpsi', 'forePawErrRateContra', ...
+    'contraFirstRate', 'bigStepProbIpsi', 'bigStepProbContra', 'pawHgtIpsi', 'pawHgtContra', ...
+    'hgtShapingIpsi', 'hgtShapingContra'};
+% dvs = {'hgtShaping', 'hgtShapingIpsi', 'hgtShapingContra'};
 barPlots(sessionDvs, dvs, 'whiskerTrimming')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.fig'))

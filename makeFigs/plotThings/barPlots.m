@@ -7,7 +7,7 @@ function barPlots(data, dvs, figTitle)
 addLegend = true;
 addStats = true; % peform paired ttests for each pair of conditions
 pThresh = .05; % p value threshold for significance
-columns = 4;
+columns = 5;
 minConditionNum = 0; % only use a condition after the minConditionNum day of that condition
 
 

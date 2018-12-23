@@ -2,7 +2,7 @@ function plotAcrossSessions(data, dvs, figTitle)
 
 % settings
 addLegend = true;
-columns = 1;
+columns = 2;
 mouseSymbols = {'o', '+', '*', '.', 'x', 's', 'd'};
 
 % initializations
