@@ -11,7 +11,11 @@ function frameTimes = getFrameTimes3(ttlTimes, frameTimesRaw)
 % xcorr between the two signals is determined // after these offset and
 % drift corrections, the correct time for each frame is determined to be
 % the ttlTime that is nearest the corrected frameTimesRaw, so long as it is
-% within .001 seconds
+% less than half a dt
+
+% note!!! this script appears to fail on some sessions, probably because
+% stretching assumes clocks are constant by differ by scaling factor // if
+% a clock has a 'hiccup' this method doesn't work :(
 
 
 % stretch frameTimesRaw to compensate for differences in clock speeds for spike and camera
@@ -47,17 +51,17 @@ lag = lags(maxLagInd) * dt;
 
 
 % plot camera and spike times after corrections
-% figure;
-% scatter(ttlTimes, zeros(1,length(ttlTimes)), 100); hold on
-% scatter(frameTimesRaw+lag, zeros(1,length(frameTimesRaw)), 'filled');
-% pimpFig; legend({'spike times', 'frame times'})
+figure;
+scatter(ttlTimes, zeros(1,length(ttlTimes)), 100); hold on
+scatter(frameTimesRaw+lag, zeros(1,length(frameTimesRaw)), 'filled');
+pimpFig; legend({'spike times', 'frame times'})
 
 
 % assign each frame time to the nearest spike time
 
 [ids, diffs] = knnsearch(ttlTimes, frameTimesRaw+lag);
 frameTimes = ttlTimes(ids);
-frameTimes(diffs>.001) = nan; % set to nan frames where there is no close ttl
+frameTimes(diffs>=medianDt*.25) = nan; % set to nan frames where there is no close ttl
 
 if sum(~isnan(frameTimes)) ~= length(unique(frameTimes(~isnan(frameTimes))))
     disp('WARNING! same timestamp assigned to multiple frames!')

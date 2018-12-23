@@ -5,11 +5,20 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 sessionInfo.condition = cellfun(@(x,y) [x ' ' y], sessionInfo.whiskerSides, sessionInfo.whiskers, 'UniformOutput', false);
 
 
-%% get kinematic data
+%% compute kinematic data
 
-kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
-data = kinData; save(fullfile(getenv('OBSDATADIR'), 'matlabData','whiskerTrimKinematicData.mat'), 'data');
-clear data;
+loadPreviousData = true;
+
+fileName = fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrimKinematicData.mat');
+if loadPreviousData && exist(fileName, 'file')
+    load(fileName, 'data');
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
+else
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
+end
+kinData = kinData(~[kinData.isLightOn]); % use only light off trials for these analyses
+data = kinData; save(fileName, 'data', '-v7.3', '-nocompression'); clear data;
+
 
 %% load kinematic data
 
@@ -19,7 +28,9 @@ kinData = data; clear data;
 %% get speed and avoidance data
 
 speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, true);
+speedAvoidanceData = speedAvoidanceData(~[speedAvoidanceData.isLightOn]); % use only light off trials for these analyses
 data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData','whiskerTrimSpeedAvoidanceData.mat'), 'data'); clear data;
+
 
 %% load speed and avoidance data
 
@@ -29,12 +40,14 @@ speedAvoidanceData = data; clear data;
 
 %%  compute dependent measures
 
-getSessionDvs(speedAvoidanceData, kinData);
-
+% dvs = {'conditionNum', 'success', 'speed', 'body_angle', 'ipsiContraErrRate'};
+dvs = {'success', 'speed', 'body_angle'};
+sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData);
 
 %% bar plots
 
-whiskerTrimBarPlots(speedAvoidanceData, 'test')
+% whiskerTrimBarPlots(speedAvoidanceData, 'test')
+barPlots(sessionDvs, dvs)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.fig'))
 %% sessions over time plots

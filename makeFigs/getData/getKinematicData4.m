@@ -33,8 +33,8 @@ metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 
-parfor (i = 1:length(sessions), numWorkers)
-% for i = 1:length(sessions)
+% parfor (i = 1:length(sessions), numWorkers)
+for i = 1:length(sessions)
     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
@@ -67,7 +67,6 @@ try
     data = cat(2,data{:});
 catch
     disp('error concatenating data across sessions! entering debug mode...')
-    keyboard;
 end
 
 
