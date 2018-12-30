@@ -56,8 +56,8 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerT
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.fig'))
 %% sessions over time plots
 
-% miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
-miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
+miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
+% miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
 
 if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
 plotAcrossSessions(sessionDvs(bins), dvs, 'whiskerTrimming')
