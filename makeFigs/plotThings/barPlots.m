@@ -1,4 +1,4 @@
-function barPlots(data, dvs, figTitle)
+function barPlots(data, dvs, figTitle, conditions)
 
 % TO DO: add pairwise significance tests
 
@@ -12,7 +12,7 @@ minConditionNum = 0; % only use a condition after the minConditionNum day of tha
 
 
 % initializations
-conditions = unique({data.condition});
+if ~exist('conditions', 'var'); conditions = unique({data.condition}); end
 rows = ceil((length(dvs)+addLegend)/columns); % last subplot will contain legend if addLegend
 figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 300*columns 250*rows], 'inverthardcopy', 'off')
 mice = unique({data.mouse});
@@ -22,7 +22,7 @@ if addStats
     conditionPairs = nchoosek(1:length(conditions), 2);
     [~, sortInds] = sort(diff(conditionPairs,[],2));
     conditionPairs = conditionPairs(sortInds,:); % sort s.t. more distant comparisons are last
-    yPosits = linspace(1.1, 1.2, size(conditionPairs,1)); % vertical position of each line, expressed as fraction of y range
+    yPosits = linspace(1.1, 1.1+.025*size(conditionPairs,1), size(conditionPairs,1)); % vertical position of each line, expressed as fraction of y range
 end % matrix containing all condition pairs where is row is a pair of conditions
 
 

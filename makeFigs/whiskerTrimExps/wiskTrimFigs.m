@@ -18,13 +18,13 @@ else
     kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
 kinData = kinData(~[kinData.isLightOn]); % use only light off trials for these analyses
-data = kinData; save(fileName, 'data', '-v7.3', '-nocompression'); clear data;
+data = kinData; fprintf('saving kinematic data... '); save(fileName, 'data', '-v7.3', '-nocompression'); clear data; fprintf('kinematic data saved!\n')
 
 
 %% load kinematic data
 
 load(fullfile(getenv('OBSDATADIR'), 'matlabData','whiskerTrimKinematicData.mat'), 'data');
-kinData = data; clear data;
+kinData = data; clear data; disp('kinematic data loaded!')
 
 %% get speed and avoidance data
 
@@ -36,7 +36,7 @@ data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData','whi
 %% load speed and avoidance data
 
 load(fullfile(getenv('OBSDATADIR'), 'matlabData','whiskerTrimSpeedAvoidanceData.mat'), 'data');
-speedAvoidanceData = data; clear data;
+speedAvoidanceData = data; clear data; disp('speed avoidance data loaded!')
 
 
 %%  compute dependent measures
@@ -51,13 +51,14 @@ disp('finished computing dependent measures!')
 dvs = {'success', 'speed', 'bodyAngleContra', 'forePawErrRateIpsi', 'forePawErrRateContra', ...
     'contraFirstRate', 'bigStepProbIpsi', 'bigStepProbContra', 'pawHgtIpsi', 'pawHgtContra', ...
     'hgtShapingIpsi', 'hgtShapingContra'};
-barPlots(sessionDvs, dvs, 'whiskerTrimming')
+conditions = {'bilateral full', 'unilateral full', 'unilateral int1', 'unilateral int2', 'unilateral int3', 'unilateral deltaOnly'};
+barPlots(sessionDvs, dvs, 'whiskerTrimming', conditions)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.fig'))
 %% sessions over time plots
 
-miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
-% miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
+% miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
+miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
 
 if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
 plotAcrossSessions(sessionDvs(bins), dvs, 'whiskerTrimming')

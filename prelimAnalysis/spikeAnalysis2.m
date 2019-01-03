@@ -638,7 +638,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         touchesToAssignToPaws = touches .* ismember(touches, classesToAssignToPawInds);
         touchesPerPaw = repmat(touchesToAssignToPaws',1,4) .* double(pawDistances<proximityThresh);
         
-        % only only fore paw classes for forepaws annd hind paw classes for hind paws
+        % only only fore paw classes for forepaws and hind paw classes for hind paws
         foreClassInds = find(contains(touchClassNames, 'fore'));
         hindClassInds = find(contains(touchClassNames, 'hind'));
         touchesPerPaw(:,[2,3]) = touchesPerPaw(:,[2,3]) .* double(ismember(touchesPerPaw(:,[2,3]), foreClassInds));
