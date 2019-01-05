@@ -41,6 +41,7 @@ input_size = (280,336)
 color_mode = "grayscale"
 numFeatures = 5408
 bs = 64
+INF = sys.maxsize
 
 print("Loading models")
 
@@ -99,22 +100,43 @@ obsOnTimes = np.squeeze(mat['obsOnTimes'])
 obsOnFrames = []
 clipLen = len(mat['frameTimeStampsWisk'])
 otherclipLen = len(mat['frameTimeStamps'])
+beforeAfter = True
 for i in range(len(mat['frameTimeStampsWisk'])):
     if np.isnan(mat['frameTimeStampsWisk'][i][0]):
-        mat['frameTimeStampsWisk'][i][0]=-1
+        if beforeAfter:
+            mat['frameTimeStampsWisk'][i][0]=-1
+        else:
+            mat['frameTimeStampsWisk'][i][0]=INF
+    else:
+        beforeAfter = False
+beforeAfter = True
 for i in range(len(mat['frameTimeStamps'])):
     if np.isnan(mat['frameTimeStamps'][i][0]):
-        mat['frameTimeStamps'][i][0] = -1
+        if beforeAfter:
+            mat['frameTimeStamps'][i][0] = -1
+        else:
+            mat['frameTimeStampsWisk'][i][0]=INF
+    else:
+        beforeAfter = False
 firstIdx = bisect.bisect(np.squeeze(mat['frameTimeStamps']), -1)
 if firstIdx == clipLen:
     firstIdx = 0
 otherfirstIdx = bisect.bisect(np.squeeze(mat['frameTimeStampsWisk']), -1)
 if otherfirstIdx == otherclipLen:
     otherfirstIdx = 0
+
+lastIdx = -1
+otherlastIdx = -1
+
+while mat['frameTimeStamps'][lastIdx][0]==INF:
+    lastIdx-=1
+while mat['frameTimeStampsWisk'][otherlastIdx][0]==INF:
+    otherlastIdx-=1
+    
 otherFirstTime = mat['frameTimeStamps'][firstIdx][0]
 firstTime = mat['frameTimeStampsWisk'][otherfirstIdx][0]
 for i, obsOnTime in enumerate(obsOnTimes):
-    if not (obsOnTime>min(mat['frameTimeStampsWisk'][-1], mat['frameTimeStamps'][-1]) or obsOnTime<max(firstTime, otherFirstTime)):
+    if not (obsOnTime>min(mat['frameTimeStampsWisk'][otherlastIdx][0], mat['frameTimeStamps'][lastIdx][0]) or obsOnTime<max(firstTime, otherFirstTime)):
         obsOnFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOnTime)))
     else:
         obsOnFrames.append((i, -1))
@@ -122,7 +144,7 @@ for i, obsOnTime in enumerate(obsOnTimes):
 obsOffTimes = np.squeeze(mat['obsOffTimes'])
 obsOffFrames = []
 for i, obsOffTime in enumerate(obsOffTimes):
-    if not (obsOffTime>min(mat['frameTimeStampsWisk'][-1], mat['frameTimeStamps'][-1]) or obsOffTime<max(firstTime, otherFirstTime)):
+    if not (obsOffTime>min(mat['frameTimeStampsWisk'][otherlastIdx][0], mat['frameTimeStamps'][lastIdx][0]) or obsOffTime<max(firstTime, otherFirstTime)):
         obsOffFrames.append((i, bisect.bisect_left(np.squeeze(mat['frameTimeStampsWisk']), obsOffTime)))
     else:
         obsOffFrames.append((i, -1))
@@ -147,124 +169,127 @@ def convertWiskStamps(wiskframe):
 
 fieldnames = ["framenum", "confidence"]
 answers = [{"framenum":-1, "confidence": 0}]*len(mat['obsOnTimes'])
-print("Analyzing")
 
+print("Analyzing")
 for idx, framenum, endframe in tqdm(trialFrames):
-    #logging.info("Obstacle on")
-    #logging.info(str(framenum))
-    if framenum == -1 or endframe == -1:
-        continue
-    findTime = 0
-    initialStart = time.time()
-    start = time.time()
-    features = trackedFeatures[convertWiskStamps(framenum)]
-    obsPos = list(map(int, [features[22], features[23]]))
-    obsConf = features[24]
-    nosePos = list(map(int, [features[19], features[20]]))
-    image = clip.get_frame(framenum * (1 / clip.fps))
-    while sum(sum(i<10 for i in image[:, (size[1]-2):, 0]))<40:
-        try:
-            framenum+=1
-            features = trackedFeatures[convertWiskStamps(framenum)]
-            obsPos = list(map(int,[features[22],features[23]]))
-            obsConf = features[24]
-            nosePos = list(map(int, [features[19], features[20]]))
-            image = clip.get_frame(framenum * (1 / clip.fps))
-        except IndexError:
-            framenum = endframe+1
-            break
-    frameProbs = {}
-    oldFrame = framenum
-    if framenum >= endframe:
-        print("Could not find obstacle within session. Skipping session...")
-        continue
-    #logging.info("Found frame!")
-    #logging.info(framenum)
-    findTime = time.time()-start
-    loadTime = 0
-    resizeTime = 0
-    bottleneckTime = 0
-    predictTime = 0
-    cacheTime = 0
-    incrementTime = 0
-    needFrames = deque()
-    while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
-        needFrames.append(framenum)
-        framenum+=1
-        features = trackedFeatures[convertWiskStamps(framenum)]
-        obsPos = list(map(int, [features[22], features[23]]))
-        obsConf = features[24]
-        nosePos = list(map(int, [features[19], features[20]]))
-    for i in range(timesteps):
-        needFrames.append(framenum)
-        framenum+=1
-    frames.clear()
-    while needFrames:
-        frameBatch = []
-        for i in range(bs):
-            if not needFrames:
-                break
-            frameBatch.append(needFrames.popleft())
-        actualBatch = [((1.-np.reshape((clip.get_frame(i*1./clip.fps)/255.)[:,:,0], input_size+(1,)))-0.257)/0.288 for i in frameBatch]
-        actualBatch = np.asarray(actualBatch)
-        predBatch = visual_model.predict(actualBatch)
-        frames.update({i:j for (i, j) in zip(frameBatch, predBatch)})
-    framenum = oldFrame
-    features = trackedFeatures[convertWiskStamps(framenum)]
-    obsPos = list(map(int, [features[22], features[23]]))
-    obsConf = features[24]
-    nosePos = list(map(int, [features[19], features[20]]))
-    needAnal = deque()
-    while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
-        session = []
-        if framenum<timesteps:
-            framenum+=1
-            features = trackedFeatures[convertWiskStamps(framenum)]
-            obsPos = list(map(int, [features[22], features[23]]))
-            obsConf = features[24]
-            nosePos = list(map(int, [features[19], features[20]]))
-            continue
-        if framenum>int(clip.duration*clip.fps-50):
-            framenum+=1
-            features = trackedFeatures[convertWiskStamps(framenum)]
-            obsPos = list(map(int, [features[22], features[23]]))
-            obsConf = features[24]
-            nosePos = list(map(int, [features[19], features[20]]))
-            continue
-        for i in range(timesteps):
-            frame = framenum+i
-            session.append(frame)
-        needAnal.append(session)
-        framenum+=1
-        features = trackedFeatures[convertWiskStamps(framenum)]
-        obsPos = list(map(int, [features[22], features[23]]))
-        obsConf = features[24]
-        nosePos = list(map(int, [features[19], features[20]]))
-    softmaxs.clear()
-    while needAnal:
-        frameBatch = []
-        for i in range(bs):
-            if not needAnal:
-                break
-            frameBatch.append(needAnal.popleft())
-        actualBatch = np.asarray([[frames[i] for i in j] for j in frameBatch])
-        predBatch = linear_model.predict(actualBatch)
-        softmaxs.update({i[0]:j for (i,j) in zip(frameBatch, predBatch)})
-    for framenum in softmaxs:
-        softmax = softmaxs[framenum]
-        prediction = np.argmax(softmax)
-        if prediction == timesteps:
-            continue
-        if framenum+prediction in frameProbs:
-            frameProbs[framenum+prediction]+=probDistribution[prediction]
-        else:
-            frameProbs[framenum+prediction]=probDistribution[prediction]
     try:
-        predictedFrame = max(frameProbs.items(), key=operator.itemgetter(1))[0]
-    except ValueError:
-        predictedFrame=-1
-    if predictedFrame != -1:
-        answers[idx] = {"framenum": predictedFrame, "confidence": frameProbs[predictedFrame]}
+        #logging.info("Obstacle on")
+        #logging.info(str(framenum))
+        if framenum == -1 or endframe == -1:
+            continue
+        findTime = 0
+        initialStart = time.time()
+        start = time.time()
+        features = trackedFeatures[convertWiskStamps(framenum)]
+        obsPos = list(map(int, [features[22], features[23]]))
+        obsConf = features[24]
+        nosePos = list(map(int, [features[19], features[20]]))
+        image = clip.get_frame(framenum * (1 / clip.fps))
+        while sum(sum(i<10 for i in image[:, (size[1]-2):, 0]))<40:
+            try:
+                framenum+=1
+                features = trackedFeatures[convertWiskStamps(framenum)]
+                obsPos = list(map(int,[features[22],features[23]]))
+                obsConf = features[24]
+                nosePos = list(map(int, [features[19], features[20]]))
+                image = clip.get_frame(framenum * (1 / clip.fps))
+            except IndexError:
+                framenum = endframe+1
+                break
+        frameProbs = {}
+        oldFrame = framenum
+        if framenum >= endframe:
+            print("Could not find obstacle within session. Skipping session...")
+            continue
+        #logging.info("Found frame!")
+        #logging.info(framenum)
+        findTime = time.time()-start
+        loadTime = 0
+        resizeTime = 0
+        bottleneckTime = 0
+        predictTime = 0
+        cacheTime = 0
+        incrementTime = 0
+        needFrames = deque()
+        while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
+            needFrames.append(framenum)
+            framenum+=1
+            features = trackedFeatures[convertWiskStamps(framenum)]
+            obsPos = list(map(int, [features[22], features[23]]))
+            obsConf = features[24]
+            nosePos = list(map(int, [features[19], features[20]]))
+        for i in range(timesteps):
+            needFrames.append(framenum)
+            framenum+=1
+        frames.clear()
+        while needFrames:
+            frameBatch = []
+            for i in range(bs):
+                if not needFrames:
+                    break
+                frameBatch.append(needFrames.popleft())
+            actualBatch = [((1.-np.reshape((clip.get_frame(i*1./clip.fps)/255.)[:,:,0], input_size+(1,)))-0.257)/0.288 for i in frameBatch]
+            actualBatch = np.asarray(actualBatch)
+            predBatch = visual_model.predict(actualBatch)
+            frames.update({i:j for (i, j) in zip(frameBatch, predBatch)})
+        framenum = oldFrame
+        features = trackedFeatures[convertWiskStamps(framenum)]
+        obsPos = list(map(int, [features[22], features[23]]))
+        obsConf = features[24]
+        nosePos = list(map(int, [features[19], features[20]]))
+        needAnal = deque()
+        while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
+            session = []
+            if framenum<timesteps:
+                framenum+=1
+                features = trackedFeatures[convertWiskStamps(framenum)]
+                obsPos = list(map(int, [features[22], features[23]]))
+                obsConf = features[24]
+                nosePos = list(map(int, [features[19], features[20]]))
+                continue
+            if framenum>int(clip.duration*clip.fps-50):
+                framenum+=1
+                features = trackedFeatures[convertWiskStamps(framenum)]
+                obsPos = list(map(int, [features[22], features[23]]))
+                obsConf = features[24]
+                nosePos = list(map(int, [features[19], features[20]]))
+                continue
+            for i in range(timesteps):
+                frame = framenum+i
+                session.append(frame)
+            needAnal.append(session)
+            framenum+=1
+            features = trackedFeatures[convertWiskStamps(framenum)]
+            obsPos = list(map(int, [features[22], features[23]]))
+            obsConf = features[24]
+            nosePos = list(map(int, [features[19], features[20]]))
+        softmaxs.clear()
+        while needAnal:
+            frameBatch = []
+            for i in range(bs):
+                if not needAnal:
+                    break
+                frameBatch.append(needAnal.popleft())
+            actualBatch = np.asarray([[frames[i] for i in j] for j in frameBatch])
+            predBatch = linear_model.predict(actualBatch)
+            softmaxs.update({i[0]:j for (i,j) in zip(frameBatch, predBatch)})
+        for framenum in softmaxs:
+            softmax = softmaxs[framenum]
+            prediction = np.argmax(softmax)
+            if prediction == timesteps:
+                continue
+            if framenum+prediction in frameProbs:
+                frameProbs[framenum+prediction]+=probDistribution[prediction]
+            else:
+                frameProbs[framenum+prediction]=probDistribution[prediction]
+        try:
+            predictedFrame = max(frameProbs.items(), key=operator.itemgetter(1))[0]
+        except ValueError:
+            predictedFrame=-1
+        if predictedFrame != -1:
+            answers[idx] = {"framenum": predictedFrame, "confidence": frameProbs[predictedFrame]}
+    except:
+        print("exception in trial, skipping")
 
 print("Writing data")
 

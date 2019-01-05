@@ -94,7 +94,9 @@ for i = 1:length(mice)
     
     % make linear model
     validInds = ~isnan(prevLengths) & ~isnan(vel);
+    try
     models{i} = fitlm(cat(1,prevLengths(validInds),vel(validInds))', lengths, 'Linear', 'RobustOpts', 'on');
+    catch; keyboard; end
     
     % generate control length predictions (this is used to validate method)
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));

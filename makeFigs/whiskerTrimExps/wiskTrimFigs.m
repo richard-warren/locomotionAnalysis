@@ -53,17 +53,17 @@ dvs = {'success', 'speed', 'bodyAngleContra', 'forePawErrRateIpsi', 'forePawErrR
     'hgtShapingIpsi', 'hgtShapingContra'};
 conditions = {'bilateral full', 'unilateral full', 'unilateral int1', 'unilateral int2', 'unilateral int3', 'unilateral deltaOnly'};
 barPlots(sessionDvs, dvs, 'whiskerTrimming', conditions)
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimBarPlots.fig'))
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrimBarPlots.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrimBarPlots.fig'))
 %% sessions over time plots
 
-% miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
-miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
+miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
+% miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
 
 if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
 plotAcrossSessions(sessionDvs(bins), dvs, 'whiskerTrimming')
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimAcrossSessions.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/whiskerTrimAcrossSessions.fig'))
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrimAcrossSessions.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrimAcrossSessions.fig'))
 %% paw height by obs height
 
 binNames = {'ipsi', 'contra'};
@@ -81,6 +81,6 @@ conditionBins([kinData.conditionNum]==1) = 0; % restrict trials
 % conditionBins(~strcmp({kinData.mouse}, 'den10')) = 0; % restrict trialsr
 
 scatterObsVsPawHeights(kinData, conditionBins, conditionNames);
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/heightShapingScatter.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures/', 'whiskerTrim', '/heightShapingScatter.fig'))
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'heightShapingScatter.png'));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'heightShapingScatter.fig'))
 
