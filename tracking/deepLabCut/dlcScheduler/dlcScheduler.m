@@ -11,7 +11,7 @@ dlcPath = [getenv('GITDIR') 'DeepLabCutBatch'];
 
 % initializations
 load([schedulerDir 'analyzedSessions.mat'], 'analyzedSessions');
-
+    
 
 % start scheduling
 fprintf('waiting for new files to analyze...')

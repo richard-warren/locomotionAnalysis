@@ -581,6 +581,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
+        confidenceThreshForeDorsal = .9; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
         proximityThresh = 20;
         classesToAssignToPaw = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
 
@@ -597,9 +598,14 @@ function spikeAnalysis2(session, varsToOverWrite)
         allScores = table2array(pawAnalyzed(:,2:end));
         [touchConfidences, classInds] = max(allScores, [], 2);
         noTouchInd = find(strcmp(touchClassNames, 'no_touch'));
-        classInds(touchConfidences<confidenceThresh) = noTouchInd;
+        
+        % remove low confidence touches
+        foreDorsalInd = find(strcmp(touchClassNames, 'fore_dorsal'));
+        classInds(touchConfidences<confidenceThresh & classInds~=foreDorsalInd) = noTouchInd;
+        classInds(touchConfidences<confidenceThreshForeDorsal & classInds==foreDorsalInd) = noTouchInd;
+        
         touches = ones(1,length(varStruct.frameTimeStamps))*noTouchInd;
-        touches(pawAnalyzed.framenum) = classInds;
+        touches(pawAnalyzed.framenum) = classInds; % not all frames are analyzed // only those whethere paws are close to obstacle
         
         
         % figure out which paws are touching obs in each touch frame

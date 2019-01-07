@@ -20,16 +20,18 @@ end
 
 
 %% analyze spike data
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
 disp('starting to analyze sessions...')
-problemSessions = {};
-for i = 1:length(sessions)
-    disp(i)
+problemSessions = cell(1,length(sessions));
+parfor i = 1:length(sessions)
     try
-        spikeAnalysis2(sessions{i}, {'wiskContactFrames'});
+        if sessionInfo.include(strcmp(sessionInfo.session, sessions{i}))
+            spikeAnalysis2(sessions{i}, {'touches'});
+        end
 %         try; showWiskContactFrames(sessions{i}); catch; end
     catch
         fprintf('%s: problem with spike analysis!\n', sessions{i})
-        problemSessions{end+1} = sessions{i};
+        problemSessions{i} = sessions{i};
     end
 end
 disp('all done!')

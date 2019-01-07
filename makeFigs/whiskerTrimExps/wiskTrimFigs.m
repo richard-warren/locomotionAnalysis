@@ -28,7 +28,7 @@ kinData = data; clear data; disp('kinematic data loaded!')
 
 %% get speed and avoidance data
 
-speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, true);
+speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, false);
 speedAvoidanceData = speedAvoidanceData(~[speedAvoidanceData.isLightOn]); % use only light off trials for these analyses
 data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData','whiskerTrimSpeedAvoidanceData.mat'), 'data'); clear data;
 
