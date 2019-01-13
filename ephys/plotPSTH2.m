@@ -22,6 +22,7 @@ trialsToPlot = 10;
 plotControlDistribution = false;
 controlColor = [0 0 0 .4];
 xGridLength = 100; % number of points per trial for epoch interpolation
+showSampleSize = true;
 
 % initializations
 if ~exist('conditionColors', 'var'); colors = hsv(length(eventTimes)); else; colors = conditionColors; end
@@ -118,8 +119,6 @@ end
 
 
 % plot!
-% figure('Visible', showFigure, 'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 400 500 300]); hold on
-% axes(parent)
 if ~plotEpochs; x=times; else; x = mean(cat(1, times{:}),1); end % use average x axis across all conditions
 meanTraces = cell(1, length(eventTimes));
 
@@ -162,6 +161,17 @@ end
 set(gca, 'box', 'off', 'XLim', [x(1) x(end)]);
 set(gca, 'YLim', yLims);
 if ~plotEpochs; line([0 0], get(gca, 'YLim'), 'color', controlColor); end
-if numConditions>1; legend([meanTraces{:}], conditionNames, 'Box', 'off'); end
+
+if numConditions>1 || showSampleSize
+    sampleSizes = nan(1,numConditions);
+    if isempty(conditionNames); conditionNames = cell(1,numConditions); end
+    
+    for i = 1:numConditions
+        sampleSizes(i) = sum(~all(isnan(cellData{i}),2)); % number of trials where all of the entries in the firing rate matrix are not nan
+        if showSampleSize; conditionNames{i} = sprintf('%s (%i)', conditionNames{i}, sampleSizes(i)); end
+    end 
+    
+    legend([meanTraces{:}], conditionNames, 'Box', 'off');
+end
 
 

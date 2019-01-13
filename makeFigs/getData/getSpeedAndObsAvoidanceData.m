@@ -29,7 +29,7 @@ metaDataFields = cat(2, metaDataFields, {'sessionNum'});
 if ismember('condition', metaDataFields); metaDataFields = cat(2, metaDataFields, {'conditionNum'}); end
 
 parfor i = 1:length(sessions)
-    try
+%     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
         sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
@@ -49,9 +49,9 @@ parfor i = 1:length(sessions)
             fprintf('%s: skipped\n', sessions{i})
         end
         
-    catch
-        fprintf('%s: unable to analyze session!\n', sessions{i});
-    end
+%     catch
+%         fprintf('%s: unable to analyze session!\n', sessions{i});
+%     end
 end
 data = cat(2,data{:}); % concatenate together data from all sessions 
 

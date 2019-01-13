@@ -55,7 +55,7 @@ for i = 1:length(dvs)
     % add statistics
     if addStats
         yLims = get(gca, 'ylim');
-        for j = 1:length(conditionPairs)
+        for j = 1:size(conditionPairs,1)
             [~,p] = ttest(mouseDvAvgs(:,conditionPairs(j,1)), mouseDvAvgs(:,conditionPairs(j,2)));
             if p<pThresh; lineColor = 'red'; else; lineColor = [.5 .5 .5]; end
             line([conditionPairs(j,:)], yLims(2)*[yPosits(j) yPosits(j)], ...

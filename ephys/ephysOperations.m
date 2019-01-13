@@ -1,6 +1,6 @@
 % PERFORM OPERATIONS ON ALL EPHYS RECORDINGS
 
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 % ephysInfo = ephysInfo([strcmp(ephysInfo.map, 'D55F')], :); % uncomment to reanalyze data from specific probe
 ephysInfo = ephysInfo([strcmp(ephysInfo.spikesSorted, 'yes')], :); % uncomment to reanalyze data that were already spike sorted
 

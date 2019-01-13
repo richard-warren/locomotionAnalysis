@@ -2,38 +2,36 @@
 
 
 % settings
-manipulation = 'lesion';
+manipulation = 'muscimol';
+brainRegion = 'mtc';
 maxLesionSession = 3;
 
 
-if strcmp(manipulation, 'muscimol'); conditions = {'saline', 'muscimol'};
-elseif strcmp(manipulation, 'lesion'); conditions = {'pre', 'post', 'postNoWisk'}; end
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', [manipulation 'Notes']);
-% sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'mtc'),:);
-% sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & strcmp(sessionInfo.brainRegion, 'sen'),:);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & [sessionInfo.include]==1,:); % remove empty entires in spreadsheet
-
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows
+sessionInfo = sessionInfo(strcmp(sessionInfo.brainRegion, brainRegion),:); % keep data for single brain region only
+conditions = unique(sessionInfo.condition(logical([sessionInfo.include])));
 
 
 %% compute kinematic data
 tic
 loadPreviousData = false;
 
-fileName = [getenv('OBSDATADIR') 'matlabData\' manipulation 'kinematicData.mat'];
+fileName = fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_kinematicData.mat']);
 if loadPreviousData && exist(fileName, 'file')
     load(fileName, 'data');
     kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
 else
     kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
-data = kinData; save([getenv('OBSDATADIR') 'matlabData\' manipulation 'KinematicData.mat'], 'data', '-v7.3', '-nocompression'); clear data;
+data = kinData; save(fileName, 'data', '-v7.3', '-nocompression'); clear data;
 
 if strcmp(manipulation, 'lesion'); kinData = kinData([kinData.conditionNum]<=maxLesionSession); end
 toc
 
 %% load kinematic data
 
-load([getenv('OBSDATADIR') 'matlabData\' manipulation 'KinematicData.mat'], 'data');
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_kinematicData.mat']), 'data');
 kinData = data; clear data;
 if strcmp(manipulation, 'lesion'); kinData = kinData([kinData.conditionNum]<=maxLesionSession); end
 disp([manipulation ' kinematic data loaded!'])
@@ -41,13 +39,13 @@ disp([manipulation ' kinematic data loaded!'])
 %% compute speed and avoidance data
 
 speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, false);
-data = speedAvoidanceData; save([getenv('OBSDATADIR') 'matlabData\' manipulation 'SpeedAvoidanceData.mat'], 'data'); clear data;
+data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data'); clear data;
 if strcmp(manipulation, 'lesion'); kinData = speedAvoidanceData([speedAvoidanceData.conditionNum]<=maxLesionSession); end
 
 
 %% load speed and avoidance data
 
-load([getenv('OBSDATADIR') 'matlabData\' manipulation 'SpeedAvoidanceData.mat'], 'data');
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data');
 speedAvoidanceData = data; clear data;
 if strcmp(manipulation, 'lesion'); kinData = speedAvoidanceData([speedAvoidanceData.conditionNum]<=maxLesionSession); end
 disp([manipulation ' speed avoidance data loaded!'])
@@ -68,29 +66,34 @@ angleTolerance = 2;
 % hist3([angle(controlBins & matchedBins)', speed(controlBins & matchedBins)'], 'FaceColor', [1 0 0], 'FaceAlpha', 0.5); hold on
 % hist3([angle(manipBins & matchedBins)', speed(manipBins & matchedBins)'], 'FaceColor', [0 1 0], 'FaceAlpha', 0.5);
 
+%%  compute dependent measures
 
+dvs = {'success', 'forePawErrRate', 'speed', 'bodyAngleContra', 'contraFirstRate', 'bigStepProb', 'pawHgt', 'hgtShaping'};
+sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData);
+disp('finished computing dependent measures!')
 
 %% ----------
 % PLOT THINGS
 %  ----------
 
-%% plot dv averages
+%% bar plots
 
-matchDistributions = true;
-
-
-if matchDistributions; weights = weightsSpeedAvoidance; else; weights = ones(1,length(speedAvoidanceData)); end
-
-manipulationBarPlots(speedAvoidanceData, conditions, manipulation, weights);
-saveas(gcf, [getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'BarPlots.png']);
-savefig([getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'BarPlots.fig'])
+dvs = {'success', 'speed', 'bodyAngleContra', 'forePawErrRateIpsi', 'forePawErrRateContra', ...
+    'contraFirstRate', 'bigStepProbIpsi', 'bigStepProbContra', 'pawHgtIpsi', 'pawHgtContra', ...
+    'hgtShapingIpsi', 'hgtShapingContra'};
+barPlots(sessionDvs, dvs, [brainRegion '_' manipulation], flipud(conditions))
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'BarPlots.png']));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'BarPlots.fig']));
 
 
-%% plot dvs across sessions
+%% sessions over time plots
 
-manipulationAcrossSessions(speedAvoidanceData, conditions, manipulation);
-saveas(gcf, [getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'AcrossSession.png']);
-savefig([getenv('OBSDATADIR') 'figures\' manipulation '\' manipulation 'AcrossSessions.fig'])
+miceToShow = 'all'; % set to 'all' to show all mice
+
+if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
+plotAcrossSessions(sessionDvs(bins), dvs, [brainRegion '_' manipulation])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.png']));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.fig']));
 
 %% paw height by obs height for mtc
 
@@ -110,25 +113,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightSha
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterMtc.fig'))
 
 
-%% paw height by obs height for sen
-
-binNames = conditions;
-
-velBins = zeros(1,length(kinData));
-velBins(strcmp({kinData.condition}, conditions{1}) & strcmp({kinData.brainRegion}, 'sen')) = 1; % pre
-velBins(strcmp({kinData.condition}, conditions{2}) & strcmp({kinData.brainRegion}, 'sen')) = 2; % post
-if length(conditions)==3; velBins(strcmp({kinData.condition}, conditions{3}) & strcmp({kinData.brainRegion}, 'sen')) = 3; end % post no wisk
-
-% don't include too many post lesion sessions if manipulation=='lesion'
-if strcmp(manipulation, 'lesion'); includeTrial = [kinData.conditionNum]<=maxLesionSession;
-else; includeTrial = ones(1,length(kinData)); end
-
-scatterObsVsPawHeights(kinData, velBins.*includeTrial, binNames);
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterSen.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterSend.fig'))
-
-
-%% plot kinematics
+%% !!! plot kinematics
 
 % settings
 % miceToExclude = {'sen5'};
@@ -158,32 +143,15 @@ plotObsHeightTrajectories(kinData, velBins.*includeTrial, binLabels, ['motor cor
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.png'));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.fig'))
 
-%% sen
-velBins = zeros(1,length(kinData));
-velBins(senBins & controlBins) = 1; % control
-velBins(senBins & manipBins) = 2; % manipluation
-velBins(senBins & noWiskBins) = 3; % post no wisk
-velBins(ismember({kinData.mouse}, miceToExclude)) = 0; 
-binLabels = conditions;
-plotObsHeightTrajectories(kinData, velBins.*includeTrial, binLabels, ['sensory cortex ' manipulation])
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'SenKinematics.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'SenKinematics.fig'))
-
-
-%%
-
-
-
-
-
-% explore relationship between speed, success, and manipulation
 
 
 
 
 
 
-%% plot histograms
+%% explore relationship between speed, success, and manipulation
+
+% plot histograms
 controlBins = strcmp({speedAvoidanceData.condition}, conditions{1});
 manipBins = strcmp({speedAvoidanceData.condition}, conditions{2});
 

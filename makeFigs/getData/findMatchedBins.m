@@ -5,6 +5,8 @@ function [matchedBins, weights] = findMatchedBins(data, conditions, velTolerance
 % terms of velocity and body angle // velTolerance and angleTolerance is
 % how close in vel and angle two trials have to be to be considered
 % 'matched'
+% TO DO: perhaps make this more general, s.t. arbitrary variables of
+% interest can be matched, and arbitrary number of variables...
 
 
 % get vel and angle bins

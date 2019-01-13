@@ -11,7 +11,7 @@ function sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData)
 % contra trials (e.g. leading limb paw height overall, and broken down by
 % ipsi/contra)
 
-% TO DO: add minTrial criterion // make this work when only speedAvoidanceData is given // add ability to avg using weights to create matched distributions
+% TO DO: add ability to avg using weights to create matched distributions // add minTrial criterion
 
 
 % settings

@@ -44,7 +44,6 @@ speedAvoidanceData = data; clear data; disp('speed avoidance data loaded!')
 dvs = {'success', 'forePawErrRate', 'speed', 'bodyAngleContra', 'contraFirstRate', 'bigStepProb', 'pawHgt', 'hgtShaping'};
 sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData);
 disp('finished computing dependent measures!')
-% sessionDvs = getSessionDvs(dvs, speedAvoidanceData);
 
 %% bar plots
 
@@ -57,8 +56,9 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTri
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrimBarPlots.fig'))
 %% sessions over time plots
 
-miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
+% miceToShow = {'den17', 'den18', 'den19'}; % set to 'all' to show all mice
 % miceToShow = {'den10', 'den12'}; % set to 'all' to show all mice
+miceToShow = {'den10', 'den12', 'den17', 'den18', 'den19'}; % set to 'all' to show all mice
 
 if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
 plotAcrossSessions(sessionDvs(bins), dvs, 'whiskerTrimming')

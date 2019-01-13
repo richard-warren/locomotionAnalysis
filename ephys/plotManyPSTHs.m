@@ -3,7 +3,7 @@ function plotManyPSTHs(session, cells)
 
 % settings
 rows = 4;
-cols = 4;
+cols = 5;
 stepPercentiles = [40 60]; % only include steps with durations in between these percentile limits
 pawNames = {'LH', 'LF', 'RF', 'RH'};
 pawColors = hsv(4);
@@ -13,8 +13,9 @@ mainColor = [.8 .4 1];
 
 % initializations
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-        'obsOnTimes', 'obsOffTimes',  'wiskContactFrames', 'frameTimeStamps', 'frameTimeStampsWisk', 'rewardTimes', 'isLightOn');
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'sessions');
+        'obsOnTimes', 'obsOffTimes',  'wiskContactFrames', 'frameTimeStamps', ...
+        'frameTimeStampsWisk', 'rewardTimes', 'isLightOn', 'touches', 'touchesPerPaw', 'touchClassNames');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
 [data, stanceBins] = getKinematicData4({session}, sessionInfo, []);
 stanceBins = stanceBins{1}; % stanceBins will always have only a single entry when getKinematicData is called with a single session
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'unit_ids');
@@ -161,9 +162,32 @@ for cellNum = cells
     plotInd = plotInd + 1; subplot(rows, cols, plotInd);
     plotPSTH2(session, cellNum, times, {'first paw over', 'second paw over'}, [mainColor; .6 .6 .6]);
     xlabel(sprintf('swing start -> swing end'))
-    pause(.01)
+    
+    % ventral paw contacts
+    minTouchInds = 1; % paw must be touching for at least this many inds for trial to be included
+    contactsToInclude = {'fore_ventral', 'hind_ventral_low'};
+%     contactsToInclude = {'hind_ventral_low'};
+    classInds = find(ismember(touchClassNames, contactsToInclude));
+    
+    for paw = 1:4
+        plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+        times = [];
+        
+        % get first contact for paw on each trial
+        for i = 1:length(obsOnTimes)
+            trialBins = frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i);
+            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds)';
+            pawTouchInd = find(pawTouchBins, 1, 'first');
+            if sum(pawTouchBins)>=minTouchInds; times(end+1) = frameTimeStamps(pawTouchInd); end
+        end
+        
+        plotPSTH2(session, cellNum, times, {}, pawColors(paw,:));
+        xlabel(sprintf('%s: ventral touch', pawNames{paw}))
+    end
+    
     
     % save
+    pause(.01)
     fileName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'PSTHs', [session 'unit' num2str(unit_ids(cellNum))]);
 %     savefig(fileName)
     saveas(gcf, [fileName '.png'])
