@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 brainRegion = 'mtc';
 maxLesionSession = 3;
 
@@ -25,29 +25,27 @@ else
     kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
 data = kinData; save(fileName, 'data', '-v7.3', '-nocompression'); clear data;
-
-if strcmp(manipulation, 'lesion'); kinData = kinData([kinData.conditionNum]<=maxLesionSession); end
+% if strcmp(manipulation, 'lesion'); kinBins=[kinData.conditionNum]<=maxLesionSession; else; bins=true(size(kinData)); end
 toc
 
 %% load kinematic data
 
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_kinematicData.mat']), 'data');
 kinData = data; clear data;
-if strcmp(manipulation, 'lesion'); kinData = kinData([kinData.conditionNum]<=maxLesionSession); end
+% if strcmp(manipulation, 'lesion'); kinBins=[kinData.conditionNum]<=maxLesionSession; else; bins=true(size(kinData)); end
 disp([manipulation ' kinematic data loaded!'])
 
 %% compute speed and avoidance data
 
 speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, false);
 data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data'); clear data;
-if strcmp(manipulation, 'lesion'); kinData = speedAvoidanceData([speedAvoidanceData.conditionNum]<=maxLesionSession); end
-
+% if strcmp(manipulation, 'lesion'); speedBins=[speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins=true(size(speedAvoidanceData)); end
 
 %% load speed and avoidance data
 
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data');
 speedAvoidanceData = data; clear data;
-if strcmp(manipulation, 'lesion'); kinData = speedAvoidanceData([speedAvoidanceData.conditionNum]<=maxLesionSession); end
+% if strcmp(manipulation, 'lesion'); speedBins=[speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins=true(size(speedAvoidanceData)); end
 disp([manipulation ' speed avoidance data loaded!'])
 
 %% find matched bins
@@ -56,7 +54,8 @@ disp([manipulation ' speed avoidance data loaded!'])
 velTolerance = .05;
 angleTolerance = 2;
 
-[matchedBinsSpeedAvoidanceBins, weightsSpeedAvoidance] = findMatchedBins(speedAvoidanceData, conditions, velTolerance, angleTolerance);
+
+[matchedBinsSpeedAvoidanceBins, weightsSpeedAvoidance] = findMatchedBins(speedAvoidanceData(speedBins), conditions, velTolerance, angleTolerance);
 
 
 % % plot matched bins histogram
@@ -69,6 +68,7 @@ angleTolerance = 2;
 %%  compute dependent measures
 
 dvs = {'success', 'forePawErrRate', 'speed', 'bodyAngleContra', 'contraFirstRate', 'bigStepProb', 'pawHgt', 'hgtShaping'};
+
 sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData);
 disp('finished computing dependent measures!')
 
@@ -81,7 +81,9 @@ disp('finished computing dependent measures!')
 dvs = {'success', 'speed', 'bodyAngleContra', 'forePawErrRateIpsi', 'forePawErrRateContra', ...
     'contraFirstRate', 'bigStepProbIpsi', 'bigStepProbContra', 'pawHgtIpsi', 'pawHgtContra', ...
     'hgtShapingIpsi', 'hgtShapingContra'};
-barPlots(sessionDvs, dvs, [brainRegion '_' manipulation], flipud(conditions))
+
+if strcmp(manipulation, 'lesion'); bins = [sessionDvs.conditionNum]<=maxLesionSession; else; bins = true(size(sessionDvs)); end
+barPlots(sessionDvs(bins), dvs, [brainRegion '_' manipulation], flipud(conditions))
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'BarPlots.png']));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'BarPlots.fig']));
 
@@ -91,11 +93,11 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 miceToShow = 'all'; % set to 'all' to show all mice
 
 if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
-plotAcrossSessions(sessionDvs(bins), dvs, [brainRegion '_' manipulation])
+plotAcrossSessions(sessionDvs, dvs, [brainRegion '_' manipulation])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.png']));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.fig']));
 
-%% paw height by obs height for mtc
+%% !!! paw height by obs height
 
 binNames = {'ipsi', 'contra', conditions{1}};
 
@@ -113,7 +115,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightSha
 savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterMtc.fig'))
 
 
-%% !!! plot kinematics
+%% plot kinematics
 
 % settings
 % miceToExclude = {'sen5'};
