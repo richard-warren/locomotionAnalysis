@@ -26,7 +26,7 @@ problemSessions = cell(1,length(sessions));
 parfor i = 1:length(sessions)
     try
         if sessionInfo.include(strcmp(sessionInfo.session, sessions{i}))
-            spikeAnalysis2(sessions{i}, {'touches'});
+            spikeAnalysis2(sessions{i}, {'wiskContactPositions'});
         end
 %         try; showWiskContactFrames(sessions{i}); catch; end
     catch

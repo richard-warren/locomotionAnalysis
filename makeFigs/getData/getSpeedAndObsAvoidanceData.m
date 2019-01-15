@@ -69,13 +69,12 @@ function sessionData = getDataForSession(session, sessionMetaData)
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes',...
             'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', 'wiskContactPositions', ...
-            'touches', 'touchesPerPaw', 'touchClassNames', 'bodyAngles'); 
+            'touches', 'touchesPerPaw', 'touchClassNames', 'bodyAngles', 'obsPositionsFixed');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
-    obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     wheelVel = getVelocity(wheelPositions, .5, 1/median(diff(wheelTimes)));
 
     % find positions at which obstacles turn on and off
-    obsOnPositions = interp1(obsTimes, obsPositions, obsOnTimes, 'linear');
+    obsOnPositions = interp1(obsTimes, obsPositionsFixed, obsOnTimes, 'linear');
 
     % iterate over all trials
     for j = 1:length(obsOnTimes)
@@ -138,7 +137,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
         if includeContinuousVelocity
             sessionData(dataInd).trialVelInterp = trialVelInterp;
             sessionData(dataInd).trialPosInterp = posInterp;
-            sessionData(dataInd).contactPositions = contactPositions;
+            sessionData(dataInd).wiskContactPositions = wiskContactPositions;
         end
         dataInd = dataInd+1;
     end

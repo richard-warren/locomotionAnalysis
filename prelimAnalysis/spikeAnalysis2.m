@@ -686,8 +686,6 @@ function spikeAnalysis2(session, varsToOverWrite)
             end
         end
         
-        % !!! 
-        
         % save
         varStruct.wiskContactFrames = wiskContactData.framenum;
         varStruct.wiskContactFramesConfidences = wiskContactData.confidence;
