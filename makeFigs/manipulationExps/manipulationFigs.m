@@ -7,14 +7,22 @@ brainRegion = 'mtc';
 maxLesionSession = 3;
 
 
+% load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows
 sessionInfo = sessionInfo(strcmp(sessionInfo.brainRegion, brainRegion),:); % keep data for single brain region only
 conditions = unique(sessionInfo.condition(logical([sessionInfo.include])));
 
+% add conditionNum
+for i = 1:height(sessionInfo)
+    conditionInds = find(strcmp(sessionInfo.mouse, sessionInfo.mouse{i}) & ...
+                         strcmp(sessionInfo.condition, sessionInfo.condition{i})); % inds of given condition for given mouse
+    conditionNum = find(conditionInds==i);
+    sessionInfo.conditionNum(i) = conditionNum;
+end
+
 
 %% compute kinematic data
-tic
 loadPreviousData = false;
 
 fileName = fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_kinematicData.mat']);
@@ -26,7 +34,6 @@ else
 end
 data = kinData; save(fileName, 'data', '-v7.3', '-nocompression'); clear data;
 % if strcmp(manipulation, 'lesion'); kinBins=[kinData.conditionNum]<=maxLesionSession; else; bins=true(size(kinData)); end
-toc
 
 %% load kinematic data
 
@@ -103,6 +110,13 @@ if strcmp(manipulation, 'lesion'); bins = [speedAvoidanceData.conditionNum]<=max
 plotSpeedVsPosition(speedAvoidanceData(bins), [brainRegion '_' manipulation])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedVsPos.png']));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedVsPos.fig']));
+
+%% speed at wisk contact
+
+plotSpeedAtWiskContact(sessionInfo(sessionInfo.conditionNum<=maxLesionSession,:), [brainRegion '_' manipulation])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedAtWiskContact.png']));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedAtWiskContact.fig']));
+
 
 %% !!! paw height by obs height
 

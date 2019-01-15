@@ -12,7 +12,7 @@ function data = getSpeedAndObsAvoidanceData(sessions, sessionInfo, includeContin
 % settings
 obsPrePost = [-.6 .25]; % plot this much before and after the obstacle reaches nose
 posRes = .001; % meters // resoultion of positional grid that velocities are computed over
-
+velocityDelta = .01;  % compute velocity over this interval
 
 % initializations
 posInterp = obsPrePost(1) : posRes : obsPrePost(2); % velocities will be interpolated across this grid of positional values
@@ -71,7 +71,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
             'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', 'wiskContactPositions', ...
             'touches', 'touchesPerPaw', 'touchClassNames', 'bodyAngles', 'obsPositionsFixed');
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
-    wheelVel = getVelocity(wheelPositions, .5, 1/median(diff(wheelTimes)));
+    wheelVel = getVelocity(wheelPositions, velocityDelta, 1/median(diff(wheelTimes)));
 
     % find positions at which obstacles turn on and off
     obsOnPositions = interp1(obsTimes, obsPositionsFixed, obsOnTimes, 'linear');

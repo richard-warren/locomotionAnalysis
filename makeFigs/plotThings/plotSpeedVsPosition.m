@@ -13,7 +13,7 @@ if ~exist('conditions', 'var'); conditions = unique({data.condition}); end
 mice = unique({data.mouse});
 posInterp = data(1).trialPosInterp;
 lightConditions = {'light off', 'light on'};
-colors = jet(length(conditions));
+colors = hsv(length(conditions));
 
 % collect data for each mouse in each condition for both light on and light off trials
 mouseAvgs = nan(length(conditions), length(mice), 2, length(posInterp)); % condition X mouse X light off/on X position
@@ -38,11 +38,8 @@ for i = 1:2
     subplot(2,1,i)
     
     for j = 1:length(conditions)
-        conditionMean = mean(squeeze(mouseAvgs(j,:,i,:)), 1);
-%         plot(posInterp, conditionMean, ...
-%             'LineWidth', 2, 'Color', colors(j,:)); hold on
         shadedErrorBar(posInterp, squeeze(mouseAvgs(j,:,i,:)), {@nanmean, errorFcn}, ...
-            'lineprops', {'linewidth', 3, 'color', colors(j,:)}); hold on;
+            'lineprops', {'linewidth', 3, 'color', colors(j,:)}, 'patchSaturation', .1); hold on;
         
         if plotMouseAvgs
             for k = 1:length(mice)
