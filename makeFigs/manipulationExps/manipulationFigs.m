@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 brainRegion = 'mtc';
 maxLesionSession = 3;
 
@@ -96,6 +96,13 @@ if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = is
 plotAcrossSessions(sessionDvs, dvs, [brainRegion '_' manipulation])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.png']));
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.fig']));
+
+%% speed vs. position plots
+
+if strcmp(manipulation, 'lesion'); bins = [speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins = true(size(speedAvoidanceData)); end
+plotSpeedVsPosition(speedAvoidanceData(bins), [brainRegion '_' manipulation])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedVsPos.png']));
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedVsPos.fig']));
 
 %% !!! paw height by obs height
 

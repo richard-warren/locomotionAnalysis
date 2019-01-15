@@ -1,22 +1,19 @@
-% function plotSpeedVsPosition(data, figTitle, conditions)
+function plotSpeedVsPosition(data, figTitle, conditions)
 
-% to do: legends // all on one plot? // add vertical lines
-
-% temp
-data = speedAvoidanceData;
-figTitle = 'test';
 
 % settings
 plotMouseAvgs = false;
-yLims = [.2 .6];
+yLims = [.3 .6];
 xLims = [-.5 .2];
-colors = jet(length(conditions));
+errorFcn = @(x) nanstd(x)/sqrt(size(x,1)); % function for error bars
+% errorFcn = @(x) nanstd(x);
 
 % initializations
 if ~exist('conditions', 'var'); conditions = unique({data.condition}); end
 mice = unique({data.mouse});
 posInterp = data(1).trialPosInterp;
 lightConditions = {'light off', 'light on'};
+colors = jet(length(conditions));
 
 % collect data for each mouse in each condition for both light on and light off trials
 mouseAvgs = nan(length(conditions), length(mice), 2, length(posInterp)); % condition X mouse X light off/on X position
@@ -34,8 +31,7 @@ for i = 1:length(conditions)
 end
 
 
-%% plot for light on/off
-close all;
+% plot for light on/off
 figure('name', figTitle, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
 
 for i = 1:2
@@ -43,8 +39,10 @@ for i = 1:2
     
     for j = 1:length(conditions)
         conditionMean = mean(squeeze(mouseAvgs(j,:,i,:)), 1);
-        plot(posInterp, conditionMean, ...
-            'LineWidth', 2, 'Color', colors(j,:)); hold on
+%         plot(posInterp, conditionMean, ...
+%             'LineWidth', 2, 'Color', colors(j,:)); hold on
+        shadedErrorBar(posInterp, squeeze(mouseAvgs(j,:,i,:)), {@nanmean, errorFcn}, ...
+            'lineprops', {'linewidth', 3, 'color', colors(j,:)}); hold on;
         
         if plotMouseAvgs
             for k = 1:length(mice)
@@ -60,7 +58,7 @@ for i = 1:2
     
     % vertical line at avg obs on position
     obsOnPos = nanmean([data(~[data.isWheelBreak]).obsOnPositions]);
-    line([obsOnPos obsOnPos], yLims, 'color', get(gca, 'XColor'))
+    line([obsOnPos obsOnPos], yLims, 'color', mean(colors,1))
     
     % pimp fig
     set(gca, 'YLim', yLims, 'XLim', xLims, 'Box', 'off')
