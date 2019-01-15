@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'lesion';
+manipulation = 'muscimol';
 brainRegion = 'mtc';
 maxLesionSession = 3;
 
@@ -37,7 +37,7 @@ disp([manipulation ' kinematic data loaded!'])
 
 %% compute speed and avoidance data
 
-speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, false);
+speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, true);
 data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data'); clear data;
 % if strcmp(manipulation, 'lesion'); speedBins=[speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins=true(size(speedAvoidanceData)); end
 

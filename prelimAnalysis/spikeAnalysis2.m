@@ -411,7 +411,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
-    if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', ...
+    if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPixPositionsFixed', ...
             'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
        ~isempty(varStruct.obsOnTimes)
@@ -462,35 +462,18 @@ function spikeAnalysis2(session, varsToOverWrite)
             end
         end
         
-%         % use wheel position from rotary encoder to infer 'unraveled' obs
-%         % pix positions FOR EACH TRIAL
-%         %
-%         % obsPixPositionsContinuous has one obsPixPositions per trial,
-%         % where row is an 'individual obstacle'. This can be used to
-%         % 'unheadfix' the mouse later, by subtracting these obsPositions
-%         % from the x values of the paw on a trial by trial basis
-%         
-%         
-%         % obs
-%         obsPixPositionsContinuous = repmat(obsPixPositions', length(varStruct.obsOnTimes), 1);
-%         for i = 1:length(varStruct.obsOnTimes)
-%             % interp all values expect those where obs is tracked within the trial
-%             dontInterpBins =  varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
-%                               varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
-%                               epochBins & ~isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
-%             if any(~dontInterpBins)
-%                 obsPixPositionsContinuous(i,~dontInterpBins) = wheelPositionsInterp(~dontInterpBins)*obsPosToWheelPosMappings(i,1) + obsPosToWheelPosMappings(i,2);
-%             end
-%         end
+        % get obsPixPositionsFixed
+         obsPositionsFixed = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, varStruct.obsPixPositions, ...
+            varStruct.frameTimeStamps, varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.nosePos(1));
+        
 
         % save
         varStruct.obsPixPositions = obsPixPositions';
         varStruct.obsPixPositionsUninterped = obsPixPositionsUninterped;
-%         varStruct.obsPixPositionsContinuous = obsPixPositionsContinuous;
-%         if isfield(varStruct, 'obsPixPositionsContinuous'); varStruct = rmfield(varStruct, 'obsPixPositionsContinuous'); fprintf('%s: removed obsPixPositionsContinuous...\n', session); end % !!! temp to fix something...
         varStruct.obsPosToObsPixPosMappings = obsPosToObsPixPosMappings;
         varStruct.obsPosToWheelPosMappings = obsPosToWheelPosMappings;
         varStruct.mToPixMapping = nanmedian(obsPosToObsPixPosMappings,1);
+        varStruct.obsPositionsFixed = obsPositionsFixed;
         
         anythingAnalyzed = true;
     end
@@ -673,8 +656,10 @@ function spikeAnalysis2(session, varsToOverWrite)
             ~isempty(varStruct.obsOnTimes) && ...
             exist([sessionDir 'runWisk.mp4'], 'file')
         
+        fprintf('%s: getting whisker contacts\n', session)
+        
         % settings
-        rerunWiskNetwork = true;
+        rerunWiskNetwork = false;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
@@ -686,8 +671,6 @@ function spikeAnalysis2(session, varsToOverWrite)
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         
         % extract contact positions and times
-        obsPositionsFixed = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, varStruct.obsPixPositions, ...
-            varStruct.frameTimeStamps, varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.nosePos(1));
         contactTimes = nan(1,length(varStruct.obsOnTimes));
         contactPositions = nan(1,length(varStruct.obsOnTimes));
         
@@ -696,12 +679,14 @@ function spikeAnalysis2(session, varsToOverWrite)
                 time = varStruct.frameTimeStampsWisk(wiskContactData.framenum(i));
                 if time>varStruct.obsOnTimes(i) && time<varStruct.obsOffTimes(i)
                     contactTimes(i) = time;
-                    contactPositions(i) = interp1(varStruct.obsTimes, obsPositionsFixed, contactTimes(i));
+                    contactPositions(i) = interp1(varStruct.obsTimes, varStruct.obsPositionsFixed, contactTimes(i));
                 else
                     fprintf('%s: WARNING - wisk contact detected when obstacle not on!\n', session)
                 end
             end
         end
+        
+        % !!! 
         
         % save
         varStruct.wiskContactFrames = wiskContactData.framenum;

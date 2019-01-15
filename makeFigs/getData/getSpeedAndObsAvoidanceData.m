@@ -68,8 +68,8 @@ function sessionData = getDataForSession(session, sessionMetaData)
     % load session data
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'],...
             'obsPositions', 'obsTimes', 'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes',...
-            'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', ...
-            'touches', 'touchesPerPaw', 'touchClassNames', 'bodyAngles');
+            'isLightOn', 'nosePos', 'wheelPositions', 'wheelTimes', 'wiskContactPositions', ...
+            'touches', 'touchesPerPaw', 'touchClassNames', 'bodyAngles'); 
     load([getenv('OBSDATADIR') 'sessions\' session '\run.mat'], 'breaks');
     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
     wheelVel = getVelocity(wheelPositions, .5, 1/median(diff(wheelTimes)));
@@ -138,6 +138,7 @@ function sessionData = getDataForSession(session, sessionMetaData)
         if includeContinuousVelocity
             sessionData(dataInd).trialVelInterp = trialVelInterp;
             sessionData(dataInd).trialPosInterp = posInterp;
+            sessionData(dataInd).contactPositions = contactPositions;
         end
         dataInd = dataInd+1;
     end
