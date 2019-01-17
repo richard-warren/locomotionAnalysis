@@ -33,9 +33,9 @@ metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 
-parfor (i = 1:length(sessions), numWorkers)
-% for i = 1:length(sessions)
-    try
+% parfor (i = 1:length(sessions), numWorkers)
+for i = 1:length(sessions)
+%     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
         sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
@@ -57,9 +57,9 @@ parfor (i = 1:length(sessions), numWorkers)
         else
             fprintf('%s: skipped\n', sessions{i})
         end
-    catch
-        fprintf('%s: unable to analyze session!\n', sessions{i});
-    end
+%     catch
+%         fprintf('%s: unable to analyze session!\n', sessions{i});
+%     end
 end
 
 % concatenate data across sessions
@@ -76,8 +76,7 @@ models = cell(1,length(mice));
 
 for i = 1:length(mice)
     
-    mouseBins = strcmp({data.mouse}, mice{i});
-    mouseInds = find(mouseBins);
+    mouseInds = find(strcmp({data.mouse}, mice{i}));
     
     % make predictive model
     % use second to last control length and last control wheel vel (at first moment) to predict last control length
@@ -98,7 +97,7 @@ for i = 1:length(mice)
     
     % generate control length predictions (this is used to validate method)
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
-    [data(mouseBins).predictedControlLengths] = predictedLengths{:};
+    [data(mouseInds).predictedControlLengths] = predictedLengths{:};
     
     % generate mod length predictions
     prevLengths = nan(1, length(mouseInds));
@@ -109,7 +108,7 @@ for i = 1:length(mice)
         vel(j) = data(ind).modifiedWheelVels(1, data(ind).firstModPaw);
     end
     predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
-    [data(mouseBins).predictedLengths] = predictedLengths{:};     
+    [data(mouseInds).predictedLengths] = predictedLengths{:};     
 end
 
 % concatenate new and previous data, first removing fields that don't align
@@ -301,10 +300,10 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             isLeftSwingAtContact = ~isnan(trialModStepIds(trialTimeStamps==0,2));
             isRightSwingAtContact = ~isnan(trialModStepIds(trialTimeStamps==0,3));
 
-            % determine paw that gets over obs first
+            % determine sequence with which paws cross obstacle
             isStepping = ~isnan(trialModStepIds);
-            lastModStepInds = table2array(rowfun(@(x)(find(x,1,'last')), table(isStepping')));
-            [~, firstPawOver] = min(lastModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
+            lastModStepInds = table2array(rowfun(@(x)(find(x,1,'last')), table(isStepping'))); % final ind of final modified step for each paw
+            [~, pawOverSequence] = sort(lastModStepInds); % !!! perhaps should do some sanity checking here, eg make sure hindpaws don't cross obs before forepaws
             
             
             % determine which is paw first modified step (forepaws only)
@@ -316,26 +315,14 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             if xor(isLeftSwingAtContact, isRightSwingAtContact)
                 if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
             elseif isLeftSwingAtContact && isRightSwingAtContact
-                firstModPaw = firstPawOver;
+                firstModPaw = pawOverSequence(1);
             elseif ~isLeftSwingAtContact && ~isRightSwingAtContact
                 firstModStepInds = table2array(rowfun(@(x)(find(x,1,'first')), table(isStepping')));
                 [~, firstModPaw] = min(firstModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
             end
 
-
-            % get stance distance from obs, but only for trials in which
-            % both only if at least one paw is in stance at moment of contact
-            if ~(isLeftSwingAtContact && isRightSwingAtContact)
-                if firstModPaw==2; stancePaw=3; else; stancePaw=2; end
-                stanceDistance = trialLocations(trialTimeStamps==0,1,stancePaw);
-            else
-                stanceDistance = nan;
-                stancePaw = nan;
-            end
-            
             % get distance of firstModPaw to obs at the beginning of first mod step
             swingStartDistance = trialLocations(find(trialModStepIds(:,firstModPaw)==1,1,'first'),1,firstModPaw);
-
 
             % get mod, control, and noObs step(s) length, duration, wheel velocity
             maxModSteps = max(trialModStepIds(:));
@@ -468,8 +455,8 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             sessionData(dataInd).isLightOn = isLightOn(j);
             sessionData(dataInd).obsHeightsVid = obsHeightsVid(j);
             if ismember('side', metaDataFields) % if a neural manipulation occured, this stores information about the side of the brain
-                sessionData(dataInd).contraPawFirst = firstPawOver==contraLimb;
-                sessionData(dataInd).ipsiPawFirst = firstPawOver~=contraLimb && ~isnan(contraLimb);
+                sessionData(dataInd).contraPawFirst = pawOverSequence(1)==contraLimb;
+                sessionData(dataInd).ipsiPawFirst = pawOverSequence(1)~=contraLimb && ~isnan(contraLimb);
             end
 
             
@@ -495,8 +482,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             sessionData(dataInd).trialControlStepIdentities = trialControlStepIds;
             sessionData(dataInd).modifiedStepIdentities = trialModStepIds;
             sessionData(dataInd).modStepNum = modStepNum;
-            sessionData(dataInd).stanceDistance = stanceDistance;
-            sessionData(dataInd).stancePaw = stancePaw;
             sessionData(dataInd).swingStartDistance = swingStartDistance;
             
             % trial touch info
@@ -508,7 +493,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             % info about which paws did what
             sessionData(dataInd).isLeftSwingAtContact = isLeftSwingAtContact;
             sessionData(dataInd).isRightSwingAtContact = isRightSwingAtContact;
-            sessionData(dataInd).firstPawOver = firstPawOver;
+            sessionData(dataInd).pawOverSequence = pawOverSequence;
             sessionData(dataInd).firstModPaw = firstModPaw;
 
             % swing characteristics
