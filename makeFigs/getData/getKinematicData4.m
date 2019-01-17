@@ -1,4 +1,4 @@
-function [data, stanceBins, touchClassNames, models] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
+function [data, stanceBins, models] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 % note: stanceBins is only for the LAST analyzed session // only useful when calling this for a single session
@@ -35,7 +35,7 @@ metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 parfor (i = 1:length(sessions), numWorkers)
 % for i = 1:length(sessions)
-%     try
+    try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
         sessionMetaData = table2struct(sessionInfo(sessionInfoBin,:));
@@ -57,9 +57,9 @@ parfor (i = 1:length(sessions), numWorkers)
         else
             fprintf('%s: skipped\n', sessions{i})
         end
-%     catch
-%         fprintf('%s: unable to analyze session!\n', sessions{i});
-%     end
+    catch
+        fprintf('%s: unable to analyze session!\n', sessions{i});
+    end
 end
 
 % concatenate data across sessions

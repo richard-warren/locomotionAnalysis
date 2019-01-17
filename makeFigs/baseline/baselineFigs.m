@@ -1,6 +1,6 @@
 %% load session info
 
-sessionInfo = readtable([getenv('OBSDATADIR') 'sessions\sessionInfo.xlsx'], 'Sheet', 'baselineNotes');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
 
 
@@ -11,11 +11,11 @@ loadPreviousData = false;
 
 if loadPreviousData
     load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
-    [kinData, ~, touchClassNames] = getKinematicData4(sessionInfo.session, sessionInfo, data);
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
 else
-    [kinData, ~, touchClassNames] = getKinematicData4(sessionInfo.session, sessionInfo, []);
+    kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
 end
-data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data', 'touchClassNames'); clear data;
+data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data'); clear data;
 
 %% load previous data
 

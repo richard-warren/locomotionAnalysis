@@ -39,7 +39,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', ...
-    'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences');
+    'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes');
 locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
 locations = locations / scaling; % bring back to original resolution
@@ -177,6 +177,14 @@ function changeFrames(~,~)
             frameInd = find(frameInds>=str2num(input{1}),1,'first');
             updateFrame(0);
             
+        % 't': go to specific trial
+        elseif key==116
+            pause(.001);
+            paused = true;
+            input = inputdlg('enter trial number');
+            frameInd = find(frameTimeStamps(frameInds)>=obsOnTimes(str2num(input{1})),1,'first');
+            updateFrame(0);
+            
         % ESCAPE: close window
         elseif key==27                  
             playing = false;
@@ -206,7 +214,8 @@ function updateFrame(frameStep)
     
 	% add frame number
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
-        sprintf('session %s, frame %i', session, frameInds(frameInd)),...
+        sprintf('session %s, frame %i, trial %i', ...
+        session, frameInds(frameInd), find(obsOnTimes>=frameTimeStamps(frameInds(frameInd)),1,'first')), ...
         'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure

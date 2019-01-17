@@ -46,7 +46,7 @@ for h = 1:length(binLabels)
     
     % add best fit line
     fit = polyfit(obsHgtsBin, pawHgtsBin, 1);
-    try; lines(h) = plot(obsHgtsBin, polyval(fit, obsHgtsBin), 'linewidth', 4, 'color', colors(h,:)); catch; keyboard; end
+    lines(h) = plot(obsHgtsBin, polyval(fit, obsHgtsBin), 'linewidth', 4, 'color', colors(h,:));
 %     lines(h) = plot(obsHgtsBin, polyval(fit, obsHgtsBin), 'linewidth', 4, 'color', 'black');
 end
 
