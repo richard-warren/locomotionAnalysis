@@ -2,7 +2,7 @@
 
 
 % settings
-manipulation = 'lesion';
+manipulation = 'muscimol';
 brainRegion = 'mtc';
 maxLesionSession = 3;
 
