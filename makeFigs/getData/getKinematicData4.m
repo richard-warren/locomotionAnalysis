@@ -315,9 +315,9 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             % get mod, control, and noObs step(s) length, duration, wheel velocity
             maxModSteps = max(trialModStepIds(:));
             
-            [controlSwingLengths, controlSwingDurations, controlWheelVels, controlStartDistances] = deal(nan(controlSteps,4));
-            [noObsSwingLengths, noObsSwingDurations, noObsWheelVels, noObsStartDistances] = deal(nan(noObsSteps,4));
-            [modifiedSwingLengths, modifiedSwingDurations, modifiedWheelVels, modifiedStartDistances] = deal(nan(maxModSteps,4));
+            [controlSwingLengths, controlSwingDurations, controlWheelVels] = deal(nan(controlSteps,4));
+            [noObsSwingLengths, noObsSwingDurations, noObsWheelVels] = deal(nan(noObsSteps,4));
+            [modifiedSwingLengths, modifiedSwingDurations, modifiedWheelVels] = deal(nan(maxModSteps,4));
             
             for k = 1:4
 
@@ -326,7 +326,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                     stepBins = trialModStepIds(:,k)==m;
                     if any(stepBins)
                         stepXLocations = trialLocations(stepBins,1,k);
-                        modifiedStartDistances = stepXLocations(1);
                         modifiedSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                         stepTimes = trialTimeStamps(stepBins);
                         modifiedSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
@@ -338,7 +337,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                 for m = 1:controlSteps
                     stepBins = trialControlStepIds(:,k)==m;
                     stepXLocations = trialLocations(stepBins,1,k);
-                    controlStartDistances = stepXLocations(1);
                     controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStamps(stepBins);
                     controlSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
@@ -349,7 +347,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                 for m = 1:controlSteps
                     stepBins = trialNoObsStepIds(:,k)==m;
                     stepXLocations = trialLocations(stepBins,1,k);
-                    noObsStartDistances = stepXLocations(1);
                     noObsSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStamps(stepBins);
                     noObsSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
@@ -490,9 +487,6 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             sessionData(dataInd).controlWheelVels = controlWheelVels;
             sessionData(dataInd).modifiedWheelVels = modifiedWheelVels;
             sessionData(dataInd).noObsWheelVels = noObsWheelVels;
-            sessionData(dataInd).controlStartDistances = controlStartDistances;
-            sessionData(dataInd).modifiedStartDistances = modifiedStartDistances;
-            sessionData(dataInd).noObsStartDistances = noObsStartDistances;
 
             dataInd = dataInd + 1;
         end
