@@ -1,4 +1,4 @@
-function [data, stanceBins, touchClassNames] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
+function [data, stanceBins, touchClassNames, models] = getKinematicData4(sessions, sessionInfo, previousData, obsPos)
 
 % note: only specify obPos if you would like to trigger analysis at specific obs position relative to mouse, as opposed to relative to time obs first contacts whiskers...
 % note: stanceBins is only for the LAST analyzed session // only useful when calling this for a single session
@@ -6,7 +6,7 @@ function [data, stanceBins, touchClassNames] = getKinematicData4(sessions, sessi
 % THE SAME FOR ALL SESSIONS ANALYZED
 
 % settings
-speedTime = .02; % compute velocity over this interval
+speedTime = .05; % compute velocity over this interval
 interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
 swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
 noObsSteps = 3;
@@ -33,8 +33,8 @@ metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 
-% parfor (i = 1:length(sessions), numWorkers)
-for i = 1:length(sessions)
+parfor (i = 1:length(sessions), numWorkers)
+% for i = 1:length(sessions)
 %     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});
@@ -72,43 +72,29 @@ end
 
 % make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
 mice = unique({data.mouse});
-models = cell(1,length(mice));
+models = cell(length(mice),4);
 
 for i = 1:length(mice)
-    
-    mouseInds = find(strcmp({data.mouse}, mice{i}));
-    
-    % make predictive model
-    % use second to last control length and last control wheel vel (at first moment) to predict last control length
-    prevLengths = nan(1, length(mouseInds));
-    vel = nan(1, length(mouseInds));
-    lengths = nan(1, length(mouseInds));
-    for j = 1:length(mouseInds)
-        ind = mouseInds(j);
-        prevLengths(j) = data(ind).controlSwingLengths(end-1, data(ind).firstModPaw);
-        vel(j) = data(ind).controlWheelVels(end, data(ind).firstModPaw);
-        lengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
-    end
 
+    mouseInds = find(strcmp({data.mouse}, mice{i}));
+    controlVels = cat(1,data(mouseInds).controlWheelVels);
+    controlLengths = cat(1,data(mouseInds).controlSwingLengths);
     
-    % make linear model
-    validInds = ~isnan(prevLengths) & ~isnan(vel);
-    models{i} = fitlm(cat(1,prevLengths(validInds),vel(validInds))', lengths, 'Linear', 'RobustOpts', 'on');
-    
-    % generate control length predictions (this is used to validate method)
-    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
-    [data(mouseInds).predictedControlLengths] = predictedLengths{:};
-    
-    % generate mod length predictions
-    prevLengths = nan(1, length(mouseInds));
-    vel = nan(1, length(mouseInds));
-    for j = 1:length(mouseInds)
-        ind = mouseInds(j);
-        prevLengths(j) = data(ind).controlSwingLengths(end, data(ind).firstModPaw);
-        vel(j) = data(ind).modifiedWheelVels(1, data(ind).firstModPaw);
+    % make model to predict length of swing from wheel velocity for each
+    % paw
+    for paw = 1:4
+        validInds = ~isnan(controlVels(:,paw)) & ~isnan(controlLengths(:,paw));
+        models{i,paw} = fitlm(controlVels(validInds,paw), controlLengths(validInds,paw), 'Linear', 'RobustOpts', 'on');
     end
-    predictedLengths = num2cell(predict(models{i}, cat(1,prevLengths,vel)'));
-    [data(mouseInds).predictedLengths] = predictedLengths{:};     
+    
+    for j = mouseInds
+        data(j).controlPredictedLengths = nan(size(data(j).controlWheelVels));
+        data(j).modPredictedLengths = nan(size(data(j).modifiedWheelVels));
+        for paw = 1:4
+            data(j).controlPredictedLengths(:,paw) = predict(models{i,paw}, data(j).controlWheelVels(:,paw));
+            data(j).modPredictedLengths(:,paw) = predict(models{i,paw}, data(j).modifiedWheelVels(:,paw));
+        end
+    end
 end
 
 % concatenate new and previous data, first removing fields that don't align
@@ -199,7 +185,8 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
     [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
         getStepIdentities(stanceBins, locations(:,:,botPawInds), contactTimes, frameTimeStamps, ...
         obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps);
-    vel = getVelocity(wheelPositions, speedTime, targetFs);
+    wheelVel = getVelocity(wheelPositions, speedTime, targetFs);
+%     wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps); % interpolate to frameTimeStamps grid
     if timeOperations; fprintf('getting step identities: %i seconds\n', round(toc)); end
     
     
@@ -251,7 +238,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             trialModStepIds = modifiedStepIdentities(trialInds,:);
             trialNoObsStepIds = noObsStepIdentities(trialInds,:);
             trialLocations = locationsPaws(trialInds,:,:);
-            trialWheelVel = vel(trialInds);
+            trialWheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps(trialInds));
             trialTouchesPerPaw = touchesPerPaw(trialInds, :);
             
             % check whether any control or modified or obsOff steps are missing
@@ -321,23 +308,17 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                 [~, firstModPaw] = min(firstModStepInds .* [nan 1 1 nan]'); % mask out hind paws, inds 1 and 4
             end
 
-            % get distance of firstModPaw to obs at the beginning of first mod step
+            % get distance of firstModPaw to obs at the beginning of first
+            % mod step !!! add ditances for all paws
             swingStartDistance = trialLocations(find(trialModStepIds(:,firstModPaw)==1,1,'first'),1,firstModPaw);
 
             % get mod, control, and noObs step(s) length, duration, wheel velocity
             maxModSteps = max(trialModStepIds(:));
             
-            controlSwingLengths = nan(controlSteps,4);
-            noObsSwingLengths = nan(noObsSteps,4);
-            modifiedSwingLengths = nan(maxModSteps,4);
-            controlSwingDurations = nan(controlSteps,4);
-            noObsSwingDurations = nan(noObsSteps,4);
-            modifiedSwingDurations = nan(maxModSteps,4);
-            controlWheelVels = nan(controlSteps,4);
-            noObsWheelVels = nan(noObsSteps,4);
-            modifiedWheelVels = nan(maxModSteps,4);
+            [controlSwingLengths, controlSwingDurations, controlWheelVels, controlStartDistances] = deal(nan(controlSteps,4));
+            [noObsSwingLengths, noObsSwingDurations, noObsWheelVels, noObsStartDistances] = deal(nan(noObsSteps,4));
+            [modifiedSwingLengths, modifiedSwingDurations, modifiedWheelVels, modifiedStartDistances] = deal(nan(maxModSteps,4));
             
-
             for k = 1:4
 
                 % modified steps
@@ -345,6 +326,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                     stepBins = trialModStepIds(:,k)==m;
                     if any(stepBins)
                         stepXLocations = trialLocations(stepBins,1,k);
+                        modifiedStartDistances = stepXLocations(1);
                         modifiedSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                         stepTimes = trialTimeStamps(stepBins);
                         modifiedSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
@@ -356,6 +338,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                 for m = 1:controlSteps
                     stepBins = trialControlStepIds(:,k)==m;
                     stepXLocations = trialLocations(stepBins,1,k);
+                    controlStartDistances = stepXLocations(1);
                     controlSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStamps(stepBins);
                     controlSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
@@ -366,6 +349,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
                 for m = 1:controlSteps
                     stepBins = trialNoObsStepIds(:,k)==m;
                     stepXLocations = trialLocations(stepBins,1,k);
+                    noObsStartDistances = stepXLocations(1);
                     noObsSwingLengths(m,k) = stepXLocations(end) - stepXLocations(1);
                     stepTimes = trialTimeStamps(stepBins);
                     noObsSwingDurations(m,k) = stepTimes(end) - stepTimes(1);
@@ -462,7 +446,7 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             
 
             % bunch of thangs
-            sessionData(dataInd).vel = interp1(wheelTimes, vel, contactTimes(j));  % mouse vel at moment of wisk contact
+            sessionData(dataInd).vel = interp1(wheelTimes, wheelVel, contactTimes(j));  % mouse vel at moment of wisk contact
             sessionData(dataInd).angle = interp1(frameTimeStamps(~isnan(frameTimeStamps)), bodyAngles(~isnan(frameTimeStamps)), contactTimes(j));  % body angle at moment of wisk contact
             sessionData(dataInd).avgVel = avgVel;
             sessionData(dataInd).avgAngle = avgAngle;
@@ -506,6 +490,9 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             sessionData(dataInd).controlWheelVels = controlWheelVels;
             sessionData(dataInd).modifiedWheelVels = modifiedWheelVels;
             sessionData(dataInd).noObsWheelVels = noObsWheelVels;
+            sessionData(dataInd).controlStartDistances = controlStartDistances;
+            sessionData(dataInd).modifiedStartDistances = modifiedStartDistances;
+            sessionData(dataInd).noObsStartDistances = noObsStartDistances;
 
             dataInd = dataInd + 1;
         end
