@@ -23,10 +23,10 @@ end
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
 disp('starting to analyze sessions...')
 problemSessions = cell(1,length(sessions));
-parfor i = 1:length(sessions)
+for i = 1:length(sessions)
     try
         if sessionInfo.include(strcmp(sessionInfo.session, sessions{i}))
-            spikeAnalysis2(sessions{i}, {'wiskContactPositions'});
+            spikeAnalysis2(sessions{i});
         end
 %         try; showWiskContactFrames(sessions{i}); catch; end
     catch

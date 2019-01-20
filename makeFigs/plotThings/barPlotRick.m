@@ -1,17 +1,19 @@
-function barPlotRick(data, conditionNames)
+function barPlotRick(data, conditionNames, smpNames)
+
+% TO DO: add ability to make arbitrary statistical comparisons, within and
+% between subs // add box plots and/or violin plot options // document
 
 % temp
-% conditionNames = {{'light on', 'light off'}, {'RH', 'RF', 'LH', 'LF'}, {'sal', 'mus'}};
-% smpNames = {'run1', 'run2', 'run3', 'run4', 'run5'};
-% mouseNum = 5;
-% dv = 'vel';
-% data = rand([cellfun(@length, conditionNames), mouseNum]);
-% data(:,:,2,:) = data(:,:,2,:) * .5;
-% data(:,2,:,:) = data(:,2,:,:) * .75;
+conditionNames = {{'light on', 'light off'}, {'RH', 'RF', 'LH', 'LF'}, {'sal', 'mus'}, {'W', 'T' 'F'}};
+smpNames = {'run1', 'run2', 'run3', 'run4', 'run5'};
+mouseNum = 5;
+dv = 'vel';
+data = rand([cellfun(@length, conditionNames), mouseNum]);
+data(:,:,2,:) = data(:,:,2,:) * .5;
+data(:,2,:,:) = data(:,2,:,:) * .75;
 
 % settings
 connectLines = false;
-
 groupSeparation = 1.5;
 circSize = 40;
 circAlpha = .8;
@@ -21,7 +23,7 @@ lineWidth = 1;
 condLevels = cellfun(@length, conditionNames);
 totalConditions = prod(condLevels);
 conditionsMat = nan(length(conditionNames), totalConditions);
-labelVertSize = .15*length(conditionNames);
+labelVertSize = .1*length(conditionNames);
 dataDims = size(data);
 colors = hsv(dataDims(end)) * .8;
 xJitters = linspace(-.5*lineWidth, .5*lineWidth, dataDims(end));
@@ -66,12 +68,9 @@ for i = 1:totalConditions
     scatter(xJitters + xPositions(i), condData, ...
         circSize, colors, conditionSymbols{conditionsMat(end,i)}, 'filled', 'MarkerFaceAlpha', circAlpha); hold on
     
-    % add mean, std
-%     keyboard
+    % add mean
     line([-.5 .5]*lineWidth + xPositions(i), repmat(mean(condData),1,2), ...
         'color', 'black', 'linewidth', 2)
-%     line([xPositions(i) xPositions(i)], max([-1 1]*std(condData)+mean(condData), yLims(1)), ... % don't let error bar extend beneath yMin
-%         'color', 'black', 'linewidth', 1)
 end
 
 % add room beneath x axis for condition labels
