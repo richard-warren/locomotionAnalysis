@@ -10,7 +10,7 @@ epochTimes = [obsOnTimes; obsTimes(end)];
 for i = 1:length(obsOnTimes)
     
     % get trial pixPositions and pixTimes
-    trialFrameBins = (frameTimeStamps>=obsOnTimes(i)) & (frameTimeStamps<=obsOffTimes(i)) & ~isnan(obsPixPositions)';
+    trialFrameBins = (frameTimeStamps>=obsOnTimes(i)) & (frameTimeStamps<=obsOffTimes(i)) & ~isnan(obsPixPositions);
     pixPositions = obsPixPositions(trialFrameBins);
     pixTimes = frameTimeStamps(trialFrameBins);
     

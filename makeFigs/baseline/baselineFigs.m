@@ -17,7 +17,7 @@ else
 end
 data = kinData; save([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data'); clear data;
 
-%% load previous data
+%% load kinematic data
 
 load([getenv('OBSDATADIR') 'matlabData\baselineKinematicData.mat'], 'data');
 kinData = data; clear data;

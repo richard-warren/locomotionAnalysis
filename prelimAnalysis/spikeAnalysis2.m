@@ -463,7 +463,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         end
         
         % get obsPixPositionsFixed
-         obsPositionsFixed = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, varStruct.obsPixPositions, ...
+         obsPositionsFixed = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, obsPixPositions, ...
             varStruct.frameTimeStamps, varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.nosePos(1));
         
 

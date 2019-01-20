@@ -66,11 +66,9 @@ end
 sessionDvs = struct2table(sessionDvs);
 for i = 1:length(dvs)
     if size(sessionDvs.(dvs{i}),2)==3  % if a dv has an overall, ipsi, and contra version
-        try
         sessionDvs.([dvs{i} 'Ipsi']) = sessionDvs.(dvs{i})(:,2);
         sessionDvs.([dvs{i} 'Contra']) = sessionDvs.(dvs{i})(:,3);
         sessionDvs.(dvs{i}) = sessionDvs.(dvs{i})(:,1);
-        catch; keyboard; end
     end
 end
 sessionDvs = table2struct(sessionDvs);
