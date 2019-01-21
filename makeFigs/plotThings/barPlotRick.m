@@ -4,7 +4,7 @@ function barPlotRick(data, conditionNames, smpNames)
 % between subs // add box plots and/or violin plot options // document
 
 % temp
-conditionNames = {{'light on', 'light off'}, {'RH', 'RF', 'LH', 'LF'}, {'sal', 'mus'}, {'W', 'T' 'F'}};
+conditionNames = {{'light on', 'light off'}, {'RH', 'RF', 'LH', 'LF'}, {'sal', 'mus'}};
 smpNames = {'run1', 'run2', 'run3', 'run4', 'run5'};
 mouseNum = 5;
 dv = 'vel';
