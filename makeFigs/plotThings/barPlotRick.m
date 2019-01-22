@@ -13,7 +13,7 @@ data(:,:,2,:) = data(:,:,2,:) * .5;
 data(:,2,:,:) = data(:,2,:,:) * .75;
 
 % settings
-connectLines = false;
+connectLines = true;
 groupSeparation = 1.5;
 circSize = 40;
 circAlpha = .8;
@@ -31,7 +31,7 @@ xJitters = xJitters(randperm(length(xJitters)));
 conditionSymbols = {'o', 's', 'h', 'd'};
 
 close all;
-figure('color', 'white', 'menubar', 'none', 'position', [1979 194 1345 314])
+figure('color', 'white', 'menubar', 'none', 'position', [0 194 1345 314])
 
 % create matrix where each column is an interection of conditions
 xPositions = 1:totalConditions;
@@ -44,7 +44,6 @@ end
 
 % add lines connecting same sample across conditions
 if connectLines
-    
     for i = 1:dataDims(end)
         smpData = nan(1,totalConditions);
         for j = 1:totalConditions
@@ -58,25 +57,31 @@ end
 
 
 % plot data
+hold on
 for i = 1:totalConditions
     indsString = strrep(num2str(conditionsMat(:,i)'), '  ', ',');
     condData = squeeze(eval(['data(' indsString ',:)']));
     
-    % scatter raw data
-    x = linspace(xPositions(i)-.5*lineWidth, xPositions(i)+.5*lineWidth, length(condData));
+    % add probability density estimate
+    [p,y] = ksdensity(condData);
+    p = p / max(p) * lineWidth*.5;
+    fill([p -fliplr(p)]+xPositions(i), [y fliplr(y)], [.8 .8 .8], 'FaceColor', 'none')
     
+    % scatter raw data
     scatter(xJitters + xPositions(i), condData, ...
         circSize, colors, conditionSymbols{conditionsMat(end,i)}, 'filled', 'MarkerFaceAlpha', circAlpha); hold on
     
     % add mean
     line([-.5 .5]*lineWidth + xPositions(i), repmat(mean(condData),1,2), ...
         'color', 'black', 'linewidth', 2)
+    
+    
 end
 
 % add room beneath x axis for condition labels
 yLims = get(gca, 'YLim');
 yTicks = get(gca, 'YTick');
-set(gca, 'XAxisLocation', 'origin', ...
+set(gca, 'XColor', 'none', ...
     'YLim', [yLims(1)-labelVertSize*range(yLims), yLims(2)], 'YTick', yTicks, ...
     'XLim', [0 xPositions(end)+1], 'XTick', xPositions, 'XTickLabel', [])
 line([0 0], [yLims(1)-labelVertSize*range(yLims), yLims(1)], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
