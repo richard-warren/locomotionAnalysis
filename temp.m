@@ -18,7 +18,7 @@ data = struct('mouse', mice, 'sessions', ...
 
 
 
-dataOut = getStructFields(data, {'session', 'mouse', 'isLightOn', 'pawNum', 'isLeading', 'isIpsi', 'height', 'success'});
+dataOut = getNestedStructFields(data, {'session', 'mouse', 'isLightOn', 'pawNum', 'isLeading', 'isIpsi', 'height', 'success'});
 
 % get height for all light on trials, leading, ipsi
 dv = mean([dataOut([dataOut.isLightOn] & [dataOut.isLeading] & [dataOut.isIpsi]).height]);

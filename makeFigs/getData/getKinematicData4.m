@@ -12,7 +12,7 @@ swingMaxSmps = 50; % when averaging swing locations without interpolating don't 
 noObsSteps = 3;
 controlSteps = 2; % needs to be at least 2
 contactPosLimits = [-.02 .02]; % whisker cant only contact obs this far in front of and behind nose
-timeOperations = false;
+timeOperations = true;
 numWorkers = 4;
 
 % remove previously analyzed sessions from list of sessions
@@ -33,8 +33,8 @@ metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum', 'conditionNum'});
 
 
-parfor (i = 1:length(sessions), numWorkers)
-% for i = 1:length(sessions)
+% parfor (i = 1:length(sessions), numWorkers)
+for i = 1:length(sessions)
     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});

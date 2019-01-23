@@ -1,4 +1,6 @@
-function dataOut = getStructFields(data, varsToGet, varsGotten)
+function dataOut = getNestedStructFields(data, varsToGet, varsGotten)
+
+% to do: don't go deeper in tree if all vars are already gotten
 
 if ~exist('varsGotten', 'var'); varsGotten = struct(); end
 
@@ -17,11 +19,11 @@ if any(ismember(fields, varsToGet)) || any(isFieldStruct)
     end
 
     % get vars within nested structures
-    if any(isFieldStruct)
+    if any(isFieldStruct) && ~all(ismember(varsToGet, varsGotten))
         structData = cell(1,length(data));
         for row = 1:length(data)
             for field = fields(isFieldStruct)'
-                structData{row} = getStructFields(data(row).(field{1}), varsToGet, dataOut(row)); %catch; keyboard; end
+                structData{row} = getNestedStructFields(data(row).(field{1}), varsToGet, dataOut(row)); %catch; keyboard; end
             end
         end
         dataOut = [structData{:}];
