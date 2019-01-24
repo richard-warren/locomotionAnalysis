@@ -9,18 +9,15 @@ maxLesionSession = 3;
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & ...
+                          [sessionInfo.include]==1,:); % remove empty rows and sessions not to be included
 sessionInfo = sessionInfo(strcmp(sessionInfo.brainRegion, brainRegion),:); % keep data for single brain region only
-conditions = unique(sessionInfo.condition(logical([sessionInfo.include])));
 
-% add conditionNum
-for i = 1:height(sessionInfo)
-    conditionInds = find(strcmp(sessionInfo.mouse, sessionInfo.mouse{i}) & ...
-                         strcmp(sessionInfo.condition, sessionInfo.condition{i})); % inds of given condition for given mouse
-    conditionNum = find(conditionInds==i);
-    sessionInfo.conditionNum(i) = conditionNum;
+%% compute kinData for all sessions
+sessions = unique(sessionInfo.session);
+parfor i = 1:length(sessions)
+    getKinematicData5(sessions{i});
 end
-
 
 %% compute kinematic data
 loadPreviousData = false;

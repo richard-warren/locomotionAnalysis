@@ -443,15 +443,19 @@ function [sessionData, stanceBins] = getDataForSession(session, sessionMetaData)
             
 
             % bunch of thangs
+            
+            % 
             sessionData(dataInd).vel = interp1(wheelTimes, wheelVel, contactTimes(j));  % mouse vel at moment of wisk contact
             sessionData(dataInd).angle = interp1(frameTimeStamps(~isnan(frameTimeStamps)), bodyAngles(~isnan(frameTimeStamps)), contactTimes(j));  % body angle at moment of wisk contact
             sessionData(dataInd).avgVel = avgVel;
             sessionData(dataInd).avgAngle = avgAngle;
             sessionData(dataInd).obsPos = contactPositions(j);       % position of obs relative to nose at moment of wisk contact
             sessionData(dataInd).obsPosInd = find(trialTimeStamps==0); % ind at which obs contacts wisks for trial
+            sessionData(dataInd).timeStamps = trialTimeStamps;
+            
             sessionData(dataInd).pawObsPosInd = pawObsPosInd;% ind at which obs contacts wisks for locations for each paw
             sessionData(dataInd).pawObsPosIndInterp = pawObsPosIndInterp; % ind at which obs contacts wisks for interp locations for each paw
-            sessionData(dataInd).timeStamps = trialTimeStamps;
+            
             sessionData(dataInd).frameTimeStamps = frameTimeStamps(trialInds); % in original frameTimeStamps reference point
             sessionData(dataInd).locations = trialLocations;
             sessionData(dataInd).controlLocations = allLocations{1};

@@ -19,7 +19,7 @@ if any(ismember(fields, varsToGet)) || any(isFieldStruct)
     end
 
     % get vars within nested structures
-    if any(isFieldStruct) && ~all(ismember(varsToGet, varsGotten))
+    if any(isFieldStruct)
         structData = cell(1,length(data));
         for row = 1:length(data)
             for field = fields(isFieldStruct)'

@@ -15,9 +15,6 @@ data = struct('mouse', mice, 'sessions', ...
               'isIpsi', randLog(4), 'isFore', num2cell(logical([0 1 1 0]))))));
    
 %% query things
-
-
-
 dataOut = getNestedStructFields(data, {'session', 'mouse', 'isLightOn', 'pawNum', 'isLeading', 'isIpsi', 'height', 'success'});
 
 % get height for all light on trials, leading, ipsi
@@ -26,4 +23,8 @@ dv = mean([dataOut([dataOut.isLightOn] & [dataOut.isLeading] & [dataOut.isIpsi])
 % get success for all light on trials where LH is leading
 dv = mean([dataOut([dataOut.pawNum]==1 & [dataOut.isLeading]).success]);
 
+%% test out new stuff bro
 
+vars = {'mouse', 'session', 'paw', 'condition', 'side', 'brainRegion', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHeight'};
+data = getExperimentData(sessionInfo, vars);
+flat = getNestedStructFields(data, vars);
