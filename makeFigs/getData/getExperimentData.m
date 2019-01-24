@@ -6,12 +6,13 @@ function expData = getExperimentData(sessionInfo, vars)
 
 % settings
 touchThresh = 5;
+speedTime = .05; % compute velocity over this interval
 
 
 % initialiations
 mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion'};
-trialVars = {'isLightOn', 'isTrialSuccess'}; % 'velAtContact', 'velAvg', 'angleAvg', 'angleAtContact', 'isContraFirst', 'isBigStep', 'wiskContactPos', 'obsHgt', 'tailHeight', 'isWheelBreak', 'obsPosAtContact', 'modPawStepNum', 'obsHgt'
+trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'velAtWiskContact'}; % , 'velAvg', 'angleAvg', 'angleAtContact', 'trialVel', 'isContraFirst', 'isBigStep', 'wiskContactPos', 'tailHeight', 'obsPosAtContact', 'modPawStepNum'
 pawVars = {'stepOverMaxHeight'}; % 'penultLength', 'isPawSuccess', 'stepOverKin', 'preObsHeight', 'baselineHgt', 'firstModKin'
 
 % compute only requested vars
@@ -47,7 +48,7 @@ for mouse = 1:length(mice)
         fprintf('%s: computing\n', sessions{session})
         sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'kinData.mat'), 'kinData'); sesKinData = sesKinData.kinData;
         sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
-        
+        wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
         
         % get trial data
         expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(sesKinData)));
@@ -68,7 +69,15 @@ for mouse = 1:length(mice)
         end
     end 
 end
-disp('all don getting experiment data!')
+disp('all done getting experiment data! woo hoo!!!')
+
+
+
+
+
+
+
+
 
 % ---------
 % FUNCTIONS
@@ -93,6 +102,16 @@ function var = getVar(dvName)
         % ---------------
         case 'isLightOn'
             var = num2cell(sesData.isLightOn);
+            
+        case 'isWheelBreak'
+            load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks');
+            var = cell(1,length(sesKinData));
+            for i = 1:length(sesKinData)
+               var{i} = any(breaks.times>sesData.obsOnTimes(i) & breaks.times<sesData.obsOffTimes(i));
+            end
+            
+        case 'obsHgt'
+            var = num2cell(sesData.obsHeightsVid);
         
         case 'isTrialSuccess'
             var = cell(1,length(sesKinData));
@@ -100,16 +119,21 @@ function var = getVar(dvName)
                 var{i} = sum(any(sesData.touchesPerPaw(sesKinData(i).trialInds,:),2)) < touchThresh;
             end
             
+        case 'velAtWiskContact'
+            var = num2cell(interp1(sesData.wheelTimes, wheelVel, sesData.wiskContactTimes));
+            
         % paw variables
         % -------------
         case 'stepOverMaxHeight'
             if ~isempty(sesKinData(trial).modifiedLocations)
                 var = num2cell(cellfun(@(x) max(x(end,3,:)), sesKinData(trial).modifiedLocations));
             else
-               var = cell(1,4);
+               var = num2cell(nan(1,4));
             end
     end
 end
+
+
 
 
 function col = getTableColumn(colName)
@@ -117,6 +141,4 @@ function col = getTableColumn(colName)
     [~, inds] = intersect(sessionInfo.session, sessions, 'stable');
     col = sessionInfo.(colName)(inds);
 end
-
-
 end
