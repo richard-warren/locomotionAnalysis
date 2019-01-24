@@ -12,14 +12,16 @@ speedTime = .05; % compute velocity over this interval
 % initialiations
 mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion'};
-trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'velAtWiskContact'}; % , 'velAvg', 'angleAvg', 'angleAtContact', 'trialVel', 'isContraFirst', 'isBigStep', 'wiskContactPos', 'tailHeight', 'obsPosAtContact', 'modPawStepNum'
-pawVars = {'stepOverMaxHeight'}; % 'penultLength', 'isPawSuccess', 'stepOverKin', 'preObsHeight', 'baselineHgt', 'firstModKin'
+trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'trialAngle', 'angleAtWiskContact', ...
+             'obsPosAtContact'}; % 'isContraFirst', 'isBigStep', 'wiskContactPos', 'modPawStepNum'
+pawVars = {'stepOverMaxHeight'}; % 'pawType', 'isContra', 'penultLength', 'isPawSuccess', 'stepOverKin', 'preObsHeight', 'baselineHgt', 'firstModKin'
 
 % compute only requested vars
 mouseVars = mouseVars(ismember(mouseVars, vars));
 sessionVars = sessionVars(ismember(sessionVars, vars));
 trialVars = trialVars(ismember(trialVars, vars));
 pawVars = pawVars(ismember(pawVars, vars));
+
 
 
 % get mouse data
@@ -48,6 +50,7 @@ for mouse = 1:length(mice)
         fprintf('%s: computing\n', sessions{session})
         sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'kinData.mat'), 'kinData'); sesKinData = sesKinData.kinData;
         sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
+        sesBreaks = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks'); breakTimes = sesBreaks.breaks.times;
         wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
         
         % get trial data
@@ -98,16 +101,17 @@ function var = getVar(dvName)
         case 'brainRegion'
             var = getTableColumn('brainRegion');
             
+        
+        
         % trial variables
         % ---------------
         case 'isLightOn'
             var = num2cell(sesData.isLightOn);
             
         case 'isWheelBreak'
-            load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks');
             var = cell(1,length(sesKinData));
             for i = 1:length(sesKinData)
-               var{i} = any(breaks.times>sesData.obsOnTimes(i) & breaks.times<sesData.obsOffTimes(i));
+               var{i} = any(breakTimes>sesData.obsOnTimes(i) & breakTimes<sesData.obsOffTimes(i));
             end
             
         case 'obsHgt'
@@ -119,9 +123,24 @@ function var = getVar(dvName)
                 var{i} = sum(any(sesData.touchesPerPaw(sesKinData(i).trialInds,:),2)) < touchThresh;
             end
             
+        case 'trialVel'
+            var = avgSignalPerTrial(wheelVel, sesData.wheelTimes);
+        
         case 'velAtWiskContact'
             var = num2cell(interp1(sesData.wheelTimes, wheelVel, sesData.wiskContactTimes));
             
+        case 'trialAngle'
+            var = avgSignalPerTrial(sesData.bodyAngles, sesData.frameTimeStamps);
+        
+        case 'angleAtWiskContact'
+            bins = ~isnan(sesData.frameTimeStamps);
+            var = num2cell(interp1(sesData.frameTimeStamps(bins), sesData.bodyAngles(bins), sesData.wiskContactTimes));
+            
+        case 'obsPosAtContact'
+            var = num2cell(interp1(sesData.obsTimes, sesData.obsPositionsFixed, sesData.wiskContactTimes));
+            
+        
+        
         % paw variables
         % -------------
         case 'stepOverMaxHeight'
@@ -138,7 +157,31 @@ end
 
 function col = getTableColumn(colName)
     % given column name in sessionInfo, finds values in column name associated with all sessions belonging to a particular mouse
+    
     [~, inds] = intersect(sessionInfo.session, sessions, 'stable');
     col = sessionInfo.(colName)(inds);
 end
+
+
+
+function avgs = avgSignalPerTrial(sig, sigTimes)
+    % averages a signal (velocity, body angle, tail height) for each trial, but ommitting periods after wheel breaks for each trial
+    
+    avgs = cell(1, length(sesKinData));
+    for i = 1:length(avgs)
+        
+        if any(breakTimes>sesData.obsOnTimes(i) & breakTimes<sesData.obsOffTimes(i))
+            endTime = breakTimes(find(breakTimes>sesData.obsOnTimes(i),1,'first'));
+        else
+            endTime = sesData.obsOffTimes(i);
+        end
+        
+        inds = sigTimes>sesData.obsOnTimes(i) & sigTimes<endTime;
+        avgs{i} = nanmean(sig(inds));
+    end
+end
+
+
+
+
 end
