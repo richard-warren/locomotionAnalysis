@@ -234,6 +234,9 @@ for j = 1:length(obsOnTimes)
 
         % save trial kinematics
         kinData(j).trialInds = trialInds;
+        kinData(j).wiskContactPositions = wiskContactPositions;
+        kinData(j).wiskContactTimes = wiskContactTimes;
+        
         kinData(j).controlLocations = allLocations{1};
         kinData(j).noObsLocations = allLocations{2};
         kinData(j).modifiedLocations = allLocations{3};

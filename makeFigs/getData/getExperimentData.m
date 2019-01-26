@@ -3,6 +3,7 @@ function expData = getExperimentData(sessionInfo, vars)
 % creates nested struct containing data for all mice, sessions, trials, and
 % paws // at each level in this heirarchy vars can be computed
 
+% TO DO: body angle contra?
 
 % settings
 touchThresh = 5;
@@ -13,7 +14,7 @@ speedTime = .05; % compute velocity over this interval
 mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion'};
 trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'trialAngle', 'angleAtWiskContact', ...
-             'obsPosAtContact'}; % 'isContraFirst', 'isBigStep', 'wiskContactPos', 'modPawStepNum'
+             'obsPosAtContact', 'wiskContactPositions'}; % 'isContraFirst', 'isBigStep', 'modPawStepNum'
 pawVars = {'stepOverMaxHeight'}; % 'pawType', 'isContra', 'penultLength', 'isPawSuccess', 'stepOverKin', 'preObsHeight', 'baselineHgt', 'firstModKin'
 
 % compute only requested vars
@@ -138,6 +139,9 @@ function var = getVar(dvName)
             
         case 'obsPosAtContact'
             var = num2cell(interp1(sesData.obsTimes, sesData.obsPositionsFixed, sesData.wiskContactTimes));
+            
+        case 'wiskContactPositions'
+            var = num2cell([sesKinData.wiskContactPositions]);
             
         
         
