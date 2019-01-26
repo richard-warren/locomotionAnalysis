@@ -1,19 +1,20 @@
-function barPlotRick(data, conditionNames, smpNames)
+function barPlotRick(data, conditionNames, dvName, smpNames)
 
 % TO DO: add ability to make arbitrary statistical comparisons, within and
-% between subs // add box plots and/or violin plot options // document
+% between subs // add box plots and/or violin plot options // document //
+% get rid of eval statements // replace my hacky code with combvec!
 
 % temp
-conditionNames = {{'light on', 'light off'}, {'foreLead', 'foreLag', 'hindLead', 'hindLab'}, {'ipsi', 'contra'}, {'sal', 'mus'}};
-smpNames = {'run1', 'run2', 'run3', 'run4', 'run5'};
-mouseNum = 5;
-dv = 'vel';
-data = rand([cellfun(@length, conditionNames), mouseNum]);
-data(:,:,2,:) = data(:,:,2,:) * .5;
-data(:,2,:,:) = data(:,2,:,:) * .75;
+% conditionNames = {{'light on', 'light off'}, {'foreLead', 'foreLag', 'hindLead', 'hindLab'}, {'ipsi', 'contra'}, {'sal', 'mus'}};
+% smpNames = {'run1', 'run2', 'run3', 'run4', 'run5'};
+% mouseNum = 5;
+% dv = 'vel';
+% data = rand([cellfun(@length, conditionNames), mouseNum]);
+% data(:,:,2,:) = data(:,:,2,:) * .5;
+% data(:,2,:,:) = data(:,2,:,:) * .75;
 
 % settings
-connectLines = true;
+connectLines = false;
 groupSeparation = 1.5;
 circSize = 40;
 circAlpha = .8;
@@ -110,7 +111,7 @@ for i = 1:length(conditionNames)
         end
     end
 end
-ylabel(dv, 'position', [-.8 mean(yLims) -1])
+ylabel(dvName, 'position', [-.8 mean(yLims) -1])
 
 % add legend
 if exist('smpNames', 'var')

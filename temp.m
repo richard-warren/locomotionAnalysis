@@ -25,7 +25,8 @@ dv = mean([dataOut([dataOut.pawNum]==1 & [dataOut.isLeading]).success]);
 
 %% test out new stuff bro
 
-vars = {'mouse', 'session', 'paw', 'condition', 'side', 'brainRegion', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHeight', 'obsHgt', ...
-        'isWheelBreak', 'velAtWiskContact', 'angleAtWiskContact', 'obsPosAtContact', 'trialVel', 'trialAngle', 'wiskContactPositions'};
-data = getExperimentData(sessionInfo, vars);
-flat = getNestedStructFields(data, {'trialVel'});
+% vars = {'mouse', 'session', 'paw', 'condition', 'side', 'brainRegion', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHeight', 'obsHgt', ...
+%         'isWheelBreak', 'velAtWiskContact', 'angleAtWiskContact', 'obsPosAtContact', 'trialVel', 'trialAngle', 'wiskContactPositions'};
+vars = 'all';
+dataRaw = getExperimentData(sessionInfo, vars);
+flat = getNestedStructFields(dataRaw, {'mouse', 'session', 'trial', 'paw', 'condition', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHgt', 'trialVel'});

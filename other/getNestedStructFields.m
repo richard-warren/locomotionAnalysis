@@ -1,6 +1,7 @@
 function dataOut = getNestedStructFields(data, varsToGet, varsGotten)
 
-% to do: don't go deeper in tree if all vars are already gotten
+% to do: don't go deeper in tree if all vars are already gotten // how to
+% deal with bins of continuous variables?
 
 if ~exist('varsGotten', 'var'); varsGotten = struct(); end
 
