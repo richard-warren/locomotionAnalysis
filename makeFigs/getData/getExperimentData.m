@@ -11,6 +11,7 @@ function expData = getExperimentData(sessionInfo, vars)
 % settings
 touchThresh = 5;
 speedTime = .05; % compute velocity over this interval
+preObsLim = .008;
 
 
 % initialiations
@@ -18,10 +19,9 @@ mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion'};
 trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'obsPosAtContact', 'wiskContactPositions', 'isContraFirst', 'isBigStep'};
-pawVars = {'isContra', 'pawType', 'isPawSuccess', 'stepOverMaxHgt', 'baselineStepHgt', 'penultStepLength'};
-
-% 'preObsHeight', 'stepOverKin', 'firstModKin'
+             'obsPosAtContact', 'wiskContactPositions', 'isContraFirst', 'isBigStep', 'firstModKin'};
+pawVars = {'isContra', 'pawType', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
+           'penultStepLength', 'stepOverKin'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -61,6 +61,10 @@ for mouse = 1:length(mice)
         sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
         sesBreaks = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks'); breakTimes = sesBreaks.breaks.times;
         wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
+        
+        % get size of kin data entries
+        locationsSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
+        locationsInterpSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
         
         % get trial data
         expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(sesKinData)));
@@ -110,6 +114,7 @@ function var = getVar(dvName)
         case 'brainRegion'
             var = getTableColumn('brainRegion');
             
+        
         
         
         % trial variables
@@ -170,8 +175,9 @@ function var = getVar(dvName)
                 var{i} = max(sesKinData(i).modifiedStepIdentities(:,sesKinData(i).firstModPaw))==1; %
             end
             
-        
-        
+            
+            
+            
         % paw variables
         % -------------
         case 'isContra'
@@ -194,6 +200,16 @@ function var = getVar(dvName)
                 var = num2cell(cellfun(@(x) max(x(end,3,:)), sesKinData(trial).modifiedLocations));
             end
             
+        case 'preObsHgt'
+            var = num2cell(nan(1,4));
+            if sesKinData(trial).isTrialAnalyzed
+                for i = 1:4
+                    ind = find(sesKinData(trial).modifiedLocations{i}(end,1,:)>-preObsLim, 1, 'first');
+                    if ind>1; var{i} = sesKinData(trial).modifiedLocations{i}(end,3,ind); end
+                end
+            end
+            
+            
         case 'baselineStepHgt'
             var = num2cell(nan(1,4));
             if sesKinData(trial).isTrialAnalyzed
@@ -211,6 +227,12 @@ function var = getVar(dvName)
                         var{i} = sesKinData(trial).modifiedSwingLengths(end-1,i); % otherwise it is the second to last mod step
                     end 
                 end
+            end
+            
+        case 'stepOverKin'
+            var = repmat({nan(3,locationsInterpSmps)},1,4);
+            if sesKinData(trial).isTrialAnalyzed
+                var = cellfun(@(x) squeeze(x(end,:,:)), sesKinData(trial).modifiedLocationsInterp, 'UniformOutput', false);
             end
     end
 end

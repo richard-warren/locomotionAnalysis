@@ -29,7 +29,7 @@ dv = mean([dataOut([dataOut.pawNum]==1 & [dataOut.isLeading]).success]);
 %         'isWheelBreak', 'velAtWiskContact', 'angleAtWiskContact', 'obsPosAtContact', 'trialVel', 'trialAngle', 'wiskContactPositions'};
 vars = 'all';
 data = getExperimentData(sessionInfo, vars);
-dataFlat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'paw', 'trialAngle', 'trialAngleContra'});
+dataFlat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'firstModKin'});
 
 %%
 
@@ -51,7 +51,20 @@ vars = [condition; pawType];
 dvMatrix = getDvMatrix(data, dv, vars, varsToAvg);
 barPlotRick(dvMatrix, {vars.levelNames}, dv)
 
+%% plot kin
+
+figure;
+pawTypes = {'leadFore', 'lagFore', 'leadHind', 'lagHind'};
+for i = 1:length(pawTypes)
+    kinMean = nanmean(cat(3, dataFlat(strcmp({dataFlat.pawType}, pawTypes{i})).stepOverKin),3);
+    plot(kinMean(1,:), kinMean(3,:)); hold on;
+end
+legend(pawTypes)
 %%
+randInds = randperm(length(dataFlat), 100);
+trialData = cat(3, dataFlat.firstModKin);
+
+figure; plot(squeeze(trialData(1,:,randInds)), squeeze(trialData(3,:,randInds)))
 
 
 
