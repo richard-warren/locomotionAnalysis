@@ -3,7 +3,7 @@ function expData = getExperimentData(sessionInfo, vars)
 % creates nested struct containing data for all mice, sessions, trials, and
 % paws // at each level in this heirarchy vars can be computed
 
-% TO DO: throw error when var missing! // make this with recursive function? // body angle contra? // ignore vars if can't be computed (eg if
+% TO DO: throw error when var missing // make this with recursive function? // body angle contra? // ignore vars if can't be computed (eg if
 % looking for field in sessionInfo that doest exist for given experiment)
 
 % settings

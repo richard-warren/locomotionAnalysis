@@ -34,16 +34,19 @@ flat = getNestedStructFields(dataRaw, {'mouse', 'session', 'trial', 'paw', 'cond
 %%
 
 data = dataRaw;
-dv = 'stepOverMaxHeight';
-vars = {'paw', 'isLightOn', 'condition'};
-varLevels = {1:4, [0,1], {'saline', 'muscimol'}};
-varLevelNames = {{'LH', 'LF', 'RF', 'RH'}, {'light off', 'light on'}, {'sal', 'mus'}};
-varsToAvg = {'session'};
+dv = 'isTrialSuccess';
+vars = {'isWheelBreak', 'isLightOn', 'condition'};
+varLevels = {[0,1], [0,1], {'saline', 'muscimol'}};
+varLevelNames = {{'no break', 'break'}, {'light off', 'light on'}, {'sal', 'mus'}};
+varsToAvg = {'mouse', 'session'};
 conditionInds = [];
 
 
-dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg);
+tic; dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg); toc
 barPlotRick(dvMatrix, varLevelNames, dv)
 
+%%
+
+isWheelBreak.name = 'isWheelBreak'; isWheelBreak.levels = [0,1]; isWheelBreak.
 
 

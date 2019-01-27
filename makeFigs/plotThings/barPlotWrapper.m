@@ -1,12 +1,8 @@
 function dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg, conditionInds)
 
 
-% TO DO: nest vars, varLevels, and varLevelNames?
-
-% find vars, ind of var in dvMatrix
-% if dv in fields, for rows add dv to correct location in matrix
-% else, for rows call fcn with conditionInds // if varsToAvg avg across last dimension
-% concat along last dimension and retrun
+% TO DO: nest vars, varLevels, and varLevelNames? // meaningful error
+% messages... // document, explain code logic
 
 
 % initializations
