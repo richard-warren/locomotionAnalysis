@@ -1,77 +1,69 @@
-% function barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg)
-
-% to do: get rid of unused fields // collapse across paws, or lower
-% levels... // add smp (mouse) name // use all levels of var if not
-% explicitly passed in...
-
-% temp
-data = flat;
-dv = 'isTrialSuccess';
-vars = {'isLightOn', 'condition'};
-varLevels = {[0,1], {'saline', 'muscimol'}};
-varLevelNames = {{'light off', 'light on'}, {'mus', 'sal'}};
-varsToAvg = {'trial', 'session', 'mouse'};
+function dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg, conditionInds)
 
 
-% initialiations
-if isstruct(data); data = struct2table(data); end
-varLevelNums = cellfun(@length, varLevels); % number of levels for each variable
-dvMatrix = nan([varLevelNums height(data)]); % each dimension is a variable, and last dimension is data to plotted (eg mouse, trial), which has a length that is determined on the fly
-varLevelInds = cell(1,length(vars)); % for every condition (intersection of var levels), this will store the levels of each var
-maxConditionSmps = 0;
+% TO DO: nest vars, varLevels, and varLevelNames?
+
+% find vars, ind of var in dvMatrix
+% if dv in fields, for rows add dv to correct location in matrix
+% else, for rows call fcn with conditionInds // if varsToAvg avg across last dimension
+% concat along last dimension and retrun
 
 
-%% turn all variables into ints, which are easier to work with
-fields = data.Properties.VariableNames;
-allVarLevels = cell(1,length(fields));
-[~,~,varInds] = intersect(vars, fields, 'stable');
-[~,~,varsToAvgInds] = intersect(varsToAvg, fields, 'stable');
+% initializations
+if ~exist('conditionInds', 'var'); conditionInds = nan(1, length(vars)); end
+fields = fieldnames(data);
+dvFound = ismember(dv, fields);
 
-for i = 1:length(fields)
-    if iscell(data.(fields{i})) % if field contains strings    
-        [allVarLevels{i}, ~, data.(fields{i})] = unique(data.(fields{i}));
-        
-        % replace level names with level inds
-        varBin = ismember(vars, fields{i});
-        if any(varBin)
-            [~, ~, varLevels{varBin}] = intersect(varLevels{varBin}, allVarLevels{i}, 'stable');
-            varLevels{varBin} = varLevels{varBin}';
+% initialize dvMatrix if dv is found
+if ismember(dv, fields)
+    dvMatrixSize = num2cell([cellfun(@length, varLevels) length(data)]);
+    dvMatrix = nan(dvMatrixSize{:});
+
+% otherwise, find fields containing nested structs to be searched
+else
+    dvMatrices = cell(1,length(data));
+    structFieldInds = false(1,length(fields));
+    for i = 1:length(fields); structFieldInds(i) = isstruct(data(1).(fields{i})); end
+    structFieldInds = find(structFieldInds);
+end
+
+% get inds of vars in data
+varInds = find(ismember(vars, fields));
+avgDvs = any(ismember(varsToAvg, fields));
+conditionIndsSub = conditionInds;
+
+
+
+% return empty matrix if branch contains neither dv nor nested structs
+if ~dvFound && isempty(structFieldInds)
+    dvMatrix = [];
+
+% otherwise, loop through rows
+else
+    for i = 1:length(data)
+
+        % add vars to conditionInds
+        for j = varInds; conditionIndsSub(j) = find(ismember(varLevels{j}, data(i).(vars{j}))); end
+
+        % if dv is in data, add to correct location in dvMatrix
+        if dvFound
+            dvMatrixInds = num2cell([conditionIndsSub i]);
+            dvMatrix(dvMatrixInds{:}) = data(i).(dv);
+
+        % otherwise loop through nested structs
+        else
+            for j = structFieldInds
+                dvMatrices{i} = barPlotWrapper(data(i).(fields{j}), ...
+                    dv, vars, varLevels, varLevelNames, varsToAvg, conditionIndsSub);
+                if ~isempty(dvMatrices{i}); break; end % terminate loop once a branch containing dv is found
+            end
+            
+            if avgDvs; dvMatrices{i} = nanmean(dvMatrices{i}, length(vars)+1); end % avg matrix if data contains field in varsToAvg
         end
-    else
-        allVarLevels{i} = unique(data.(fields{i}));
     end
+
+    if ~dvFound; dvMatrix = cat(length(vars)+1, dvMatrices{:}); end % concatenate matrices obtained from nested structs
 end
-
-
-%%
-
-
-conditions = combvec(varLevels{:}); % each column is combination of conditions
-
-for i = 1:size(conditions,2)
-    
-    % get condition bins
-    bins = all(table2array(data(:, varInds)) == conditions(:,1)', 2);
-    dataSub = data(bins,:);
-    
-    % avg across varsToAvg
-    
-    
-    
-    % save condition data
-    indsString = strrep(num2str(cell2mat(varLevelInds)), '  ', ',');
-    eval(['dvMatrix(' indsString ',1:length(dataSub)) = [dataSub.(dv)];']);
-    if length(dataSub)>maxConditionSmps; maxConditionSmps=sum(dataSub); end
-end
-
-eval(['dvMatrix = dvMatrix(' repmat(':,',1,length(vars)) '1:maxConditionSmps);']) % shorten last dimension
-
-
-
-% call bar plot function
-barPlotRick(dvMatrix, varLevelNames, dv)
-
-
 
 
 

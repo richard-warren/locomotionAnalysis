@@ -32,7 +32,7 @@ xJitters = xJitters(randperm(length(xJitters)));
 conditionSymbols = {'o', 's', 'h', 'd'};
 
 close all;
-figure('color', 'white', 'menubar', 'none', 'position', [0 194 1345 314])
+figure('color', 'white', 'menubar', 'none', 'position', [2000 194 1345 314])
 
 % create matrix where each column is an interection of conditions
 xPositions = 1:totalConditions;
@@ -73,7 +73,7 @@ for i = 1:totalConditions
         circSize, colors, conditionSymbols{conditionsMat(end,i)}, 'filled', 'MarkerFaceAlpha', circAlpha); hold on
     
     % add mean
-    line([-.5 .5]*lineWidth + xPositions(i), repmat(mean(condData),1,2), ...
+    line([-.5 .5]*lineWidth + xPositions(i), repmat(nanmean(condData),1,2), ...
         'color', 'black', 'linewidth', 2)
     
     
@@ -111,7 +111,7 @@ for i = 1:length(conditionNames)
         end
     end
 end
-ylabel(dvName, 'position', [-.8 mean(yLims) -1])
+ylabel(dvName)
 
 % add legend
 if exist('smpNames', 'var')

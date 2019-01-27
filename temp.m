@@ -30,3 +30,20 @@ dv = mean([dataOut([dataOut.pawNum]==1 & [dataOut.isLeading]).success]);
 vars = 'all';
 dataRaw = getExperimentData(sessionInfo, vars);
 flat = getNestedStructFields(dataRaw, {'mouse', 'session', 'trial', 'paw', 'condition', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHgt', 'trialVel'});
+
+%%
+
+data = dataRaw;
+dv = 'stepOverMaxHeight';
+vars = {'paw', 'isLightOn', 'condition'};
+varLevels = {1:4, [0,1], {'saline', 'muscimol'}};
+varLevelNames = {{'LH', 'LF', 'RF', 'RH'}, {'light off', 'light on'}, {'sal', 'mus'}};
+varsToAvg = {'session'};
+conditionInds = [];
+
+
+dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg);
+barPlotRick(dvMatrix, varLevelNames, dv)
+
+
+
