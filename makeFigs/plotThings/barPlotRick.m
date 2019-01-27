@@ -3,7 +3,8 @@ function barPlotRick(data, conditionNames, dvName, smpNames)
 % TO DO: add ability to make arbitrary statistical comparisons, within and
 % between subs // add box plots and/or violin plot options // document //
 % get rid of eval statements // replace my hacky code with combvec! //
-% control y lims better when violin plots are on
+% control y lims better when violin plots are on // no hz lines if
+% conditionNum==1
 
 % temp
 % conditionNames = {{'light on', 'light off'}, {'foreLead', 'foreLag', 'hindLead', 'hindLab'}, {'ipsi', 'contra'}, {'sal', 'mus'}};

@@ -39,22 +39,33 @@ else
     for i = 1:length(data)
 
         % add vars to conditionInds
-        for j = varInds; conditionIndsSub(j) = find(ismember(varLevels{j}, data(i).(vars{j}))); end
-
-        % if dv is in data, add to correct location in dvMatrix
-        if dvFound
-            dvMatrixInds = num2cell([conditionIndsSub i]);
-            dvMatrix(dvMatrixInds{:}) = data(i).(dv);
-
-        % otherwise loop through nested structs
-        else
-            for j = structFieldInds
-                dvMatrices{i} = barPlotWrapper(data(i).(fields{j}), ...
-                    dv, vars, varLevels, varLevelNames, varsToAvg, conditionIndsSub);
-                if ~isempty(dvMatrices{i}); break; end % terminate loop once a branch containing dv is found
+        skipRow = false;
+        for j = varInds
+            rowConditionInd = find(ismember(varLevels{j}, data(i).(vars{j})));
+            if ~isempty(rowConditionInd)
+                conditionIndsSub(j) = rowConditionInd;
+            else
+                skipRow = true;
             end
-            
-            if avgDvs; dvMatrices{i} = nanmean(dvMatrices{i}, length(vars)+1); end % avg matrix if data contains field in varsToAvg
+        end
+        
+        
+        if ~skipRow
+            % if dv is in data, add to correct location in dvMatrix
+            if dvFound
+                dvMatrixInds = num2cell([conditionIndsSub i]);
+                dvMatrix(dvMatrixInds{:}) = data(i).(dv);
+
+            % otherwise loop through nested structs
+            else
+                for j = structFieldInds
+                    dvMatrices{i} = barPlotWrapper(data(i).(fields{j}), ...
+                        dv, vars, varLevels, varLevelNames, varsToAvg, conditionIndsSub);
+                    if ~isempty(dvMatrices{i}); break; end % terminate loop once a branch containing dv is found
+                end
+
+                if avgDvs; dvMatrices{i} = nanmean(dvMatrices{i}, length(vars)+1); end % avg matrix if data contains field in varsToAvg
+            end
         end
     end
 

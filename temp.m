@@ -35,9 +35,13 @@ flat = getNestedStructFields(dataRaw, {'mouse', 'session', 'trial', 'paw', 'cond
 
 data = dataRaw;
 dv = 'isTrialSuccess';
-vars = {'isWheelBreak', 'isLightOn', 'condition'};
-varLevels = {[0,1], [0,1], {'saline', 'muscimol'}};
-varLevelNames = {{'no break', 'break'}, {'light off', 'light on'}, {'sal', 'mus'}};
+% vars = {'isWheelBreak', 'isLightOn', 'condition'};
+% varLevels = {[0,1], [0,1], {'muscimol'}};
+% varLevelNames = {{'no break', 'break'}, {'light off', 'light on'}, {'mus'}};
+
+isWheelBreak = struct('name', 'isWheelBreak', 'levels', [0, 1], 'levelNames', {'no break', 'break'});
+condition = struct('name', 'condition', 'levels', {'saline', 'muscimol'}, 'levelNames', {'sal', 'mus'});
+
 varsToAvg = {'mouse', 'session'};
 conditionInds = [];
 
@@ -47,6 +51,6 @@ barPlotRick(dvMatrix, varLevelNames, dv)
 
 %%
 
-isWheelBreak.name = 'isWheelBreak'; isWheelBreak.levels = [0,1]; isWheelBreak.
+
 
 
