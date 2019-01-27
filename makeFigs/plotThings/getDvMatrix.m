@@ -1,8 +1,7 @@
-function dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg, conditionInds)
+function dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionInds)
 
 
-% TO DO: nest vars, varLevels, and varLevelNames? // meaningful error
-% messages... // document, explain code logic
+% TO DO: return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
 
 
 % initializations
@@ -12,7 +11,7 @@ dvFound = ismember(dv, fields);
 
 % initialize dvMatrix if dv is found
 if ismember(dv, fields)
-    dvMatrixSize = num2cell([cellfun(@length, varLevels) length(data)]);
+    dvMatrixSize = num2cell([cellfun(@length, {vars.levels}) length(data)]);
     dvMatrix = nan(dvMatrixSize{:});
 
 % otherwise, find fields containing nested structs to be searched
@@ -24,7 +23,7 @@ else
 end
 
 % get inds of vars in data
-varInds = find(ismember(vars, fields));
+varInds = find(ismember({vars.name}, fields));
 avgDvs = any(ismember(varsToAvg, fields));
 conditionIndsSub = conditionInds;
 
@@ -41,7 +40,7 @@ else
         % add vars to conditionInds
         skipRow = false;
         for j = varInds
-            rowConditionInd = find(ismember(varLevels{j}, data(i).(vars{j})));
+            rowConditionInd = find(ismember(vars(j).levels, data(i).(vars(j).name)));
             if ~isempty(rowConditionInd)
                 conditionIndsSub(j) = rowConditionInd;
             else
@@ -59,8 +58,8 @@ else
             % otherwise loop through nested structs
             else
                 for j = structFieldInds
-                    dvMatrices{i} = barPlotWrapper(data(i).(fields{j}), ...
-                        dv, vars, varLevels, varLevelNames, varsToAvg, conditionIndsSub);
+                    dvMatrices{i} = getDvMatrix(data(i).(fields{j}), ...
+                        dv, vars, varsToAvg, conditionIndsSub);
                     if ~isempty(dvMatrices{i}); break; end % terminate loop once a branch containing dv is found
                 end
 

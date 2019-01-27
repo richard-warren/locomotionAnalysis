@@ -265,6 +265,7 @@ for j = 1:length(obsOnTimes)
         kinData(j).modifiedWheelVels = modifiedWheelVels;
         kinData(j).noObsWheelVels = noObsWheelVels;
     end
+    kinData(j).isTrialAnalyzed = isTrialAnalyzed(j);
 end
 if timeOperations; fprintf('getting data for all trials: %i seconds\n', round(toc)); end
 fprintf('%s: got kinematicData with %.2f of trials successfully analyzed\n', ...

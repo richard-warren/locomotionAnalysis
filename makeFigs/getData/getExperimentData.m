@@ -1,9 +1,11 @@
 function expData = getExperimentData(sessionInfo, vars)
 
 % creates nested struct containing data for all mice, sessions, trials, and
-% paws // at each level in this heirarchy vars can be computed
+% paws // at each level in this heirarchy vars can be computed // add
+% sanity checks for all dvs (eg step over hgt cant be less than hgt of asdf
+% obstacle...) // dft fcns for getting session, mouse, trial vars, etc...
 
-% TO DO: throw error when var missing // make this with recursive function? // body angle contra? // ignore vars if can't be computed (eg if
+% TO DO: throw error when var missing, or when var is requested that depends on higher up var that has not been requested... // make this with recursive function? // ignore vars if can't be computed (eg if
 % looking for field in sessionInfo that doest exist for given experiment)
 
 % settings
@@ -14,9 +16,12 @@ speedTime = .05; % compute velocity over this interval
 % initialiations
 mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion'};
-trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'trialAngle', 'angleAtWiskContact', ...
-             'obsPosAtContact', 'wiskContactPositions'}; % 'isContraFirst', 'isBigStep', 'modPawStepNum'
-pawVars = {'stepOverMaxHeight'}; % 'pawType', 'isContra', 'penultLength', 'isPawSuccess', 'stepOverKin', 'preObsHeight', 'baselineHgt', 'firstModKin'
+trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
+             'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
+             'obsPosAtContact', 'wiskContactPositions', 'isContraFirst', 'isBigStep'};
+pawVars = {'isContra', 'pawType', 'isPawSuccess', 'stepOverMaxHgt', 'baselineStepHgt', 'penultStepLength'};
+
+% 'preObsHeight', 'stepOverKin', 'firstModKin'
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -52,6 +57,7 @@ for mouse = 1:length(mice)
         % load data from session
         fprintf('%s: computing\n', sessions{session})
         sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'kinData.mat'), 'kinData'); sesKinData = sesKinData.kinData;
+        sesKinInds = find([sesKinData.isTrialAnalyzed]);
         sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
         sesBreaks = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks'); breakTimes = sesBreaks.breaks.times;
         wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
@@ -134,10 +140,18 @@ function var = getVar(dvName)
             
         case 'trialAngle'
             var = avgSignalPerTrial(sesData.bodyAngles, sesData.frameTimeStamps);
+            
+        case 'trialAngleContra'
+            var = getVar('trialAngle');
+            if strcmp(expData(mouse).sessions(session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
         
         case 'angleAtWiskContact'
             bins = ~isnan(sesData.frameTimeStamps);
             var = num2cell(interp1(sesData.frameTimeStamps(bins), sesData.bodyAngles(bins), sesData.wiskContactTimes));
+            
+        case 'angleAtWiskContactContra'
+            var = getVar('angleAtWiskContact');
+            if strcmp(expData(mouse).sessions(session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
             
         case 'obsPosAtContact'
             var = num2cell(interp1(sesData.obsTimes, sesData.obsPositionsFixed, sesData.wiskContactTimes));
@@ -145,15 +159,58 @@ function var = getVar(dvName)
         case 'wiskContactPositions'
             var = num2cell([sesKinData.wiskContactPositions]);
             
+        case 'isContraFirst'
+            var = num2cell(false(1,length(sesKinData)));
+            for i = sesKinInds; var{i} = ismember(sesKinData(i).pawOverSequence(1), [1, 2]); end % is first paw over on left side of body
+            if strcmp(expData(mouse).sessions(session).side, 'left'); var = num2cell(cellfun(@not, var)); end % if side is left, then contra limbs are on the right side
+            
+        case 'isBigStep'
+            var = num2cell(false(1,length(sesKinData)));
+            for i = sesKinInds
+                var{i} = max(sesKinData(i).modifiedStepIdentities(:,sesKinData(i).firstModPaw))==1; %
+            end
+            
         
         
         % paw variables
         % -------------
-        case 'stepOverMaxHeight'
-            if ~isempty(sesKinData(trial).modifiedLocations)
+        case 'isContra'
+            var = [1 1 0 0]; % left side contra by default
+            if strcmp(expData(mouse).sessions(session).side, 'left'); var = ~var; end % if side is left, then contra limbs are on the right side
+            var = num2cell(var);
+        
+        case 'pawType'
+            var = cell(1,4);
+            seq = sesKinData(trial).pawOverSequence;
+            if find(seq==1)<find(seq==4); var([1,4]) = {'leadHind', 'lagHind'}; else; var([1,4]) = {'lagHind', 'leadHind'}; end
+            if find(seq==2)<find(seq==3); var([2,3]) = {'leadFore', 'lagFore'}; else; var([2,3]) = {'lagFore', 'leadFore'}; end
+            
+        case 'isPawSuccess'
+            var = num2cell(sum(sesData.touchesPerPaw(sesKinData(trial).trialInds,:),1) < touchThresh);
+        
+        case 'stepOverMaxHgt'
+            var = num2cell(nan(1,4));
+            if sesKinData(trial).isTrialAnalyzed
                 var = num2cell(cellfun(@(x) max(x(end,3,:)), sesKinData(trial).modifiedLocations));
-            else
-                var = num2cell(nan(1,4));
+            end
+            
+        case 'baselineStepHgt'
+            var = num2cell(nan(1,4));
+            if sesKinData(trial).isTrialAnalyzed
+                var = cellfun(@(x) nanmean(max(squeeze(x(:,3,:)),[],2)), ... % avg the max z for each noObsStep
+                    sesKinData(trial).noObsLocations, 'UniformOutput', false);
+            end
+            
+        case 'penultStepLength'
+            var = num2cell(nan(1,4));
+            if sesKinData(trial).isTrialAnalyzed
+                for i = 1:4
+                    if max(sesKinData(trial).modifiedStepIdentities(:,i))==1 % if 1 mod step, penultimate step is final control step
+                        var{i} = sesKinData(trial).controlSwingLengths(end,i);
+                    else
+                        var{i} = sesKinData(trial).modifiedSwingLengths(end-1,i); % otherwise it is the second to last mod step
+                    end 
+                end
             end
     end
 end

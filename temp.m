@@ -25,29 +25,31 @@ dv = mean([dataOut([dataOut.pawNum]==1 & [dataOut.isLeading]).success]);
 
 %% test out new stuff bro
 
-% vars = {'mouse', 'session', 'paw', 'condition', 'side', 'brainRegion', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHeight', 'obsHgt', ...
+% vars = {'mouse', 'session', 'paw', 'condition', 'side', 'brainRegion', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHgt', 'obsHgt', ...
 %         'isWheelBreak', 'velAtWiskContact', 'angleAtWiskContact', 'obsPosAtContact', 'trialVel', 'trialAngle', 'wiskContactPositions'};
 vars = 'all';
-dataRaw = getExperimentData(sessionInfo, vars);
-flat = getNestedStructFields(dataRaw, {'mouse', 'session', 'trial', 'paw', 'condition', 'isLightOn', 'isTrialSuccess', 'stepOverMaxHgt', 'trialVel'});
+data = getExperimentData(sessionInfo, vars);
+dataFlat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'paw', 'trialAngle', 'trialAngleContra'});
 
 %%
 
-data = dataRaw;
-dv = 'isTrialSuccess';
-% vars = {'isWheelBreak', 'isLightOn', 'condition'};
-% varLevels = {[0,1], [0,1], {'muscimol'}};
-% varLevelNames = {{'no break', 'break'}, {'light off', 'light on'}, {'mus'}};
+dv = 'penultStepLength';
 
-isWheelBreak = struct('name', 'isWheelBreak', 'levels', [0, 1], 'levelNames', {'no break', 'break'});
-condition = struct('name', 'condition', 'levels', {'saline', 'muscimol'}, 'levelNames', {'sal', 'mus'});
-
-varsToAvg = {'mouse', 'session'};
-conditionInds = [];
+paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
+pawType = struct('name', 'pawType', 'levels', {{'leadFore', 'lagFore', 'leadHind', 'lagHind'}}, 'levelNames', {{'leadFore', 'lagFore', 'leadHind', 'lagHind'}});
+isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
+isWheelBreak = struct('name', 'isWheelBreak', 'levels', [0, 1], 'levelNames', {{'no break', 'break'}});
+condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'sal', 'mus'}});
+isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'light', 'no light'}});
 
 
-tic; dvMatrix = barPlotWrapper(data, dv, vars, varLevels, varLevelNames, varsToAvg); toc
-barPlotRick(dvMatrix, varLevelNames, dv)
+
+varsToAvg = {'mouse'};
+vars = [condition; pawType];
+
+
+dvMatrix = getDvMatrix(data, dv, vars, varsToAvg);
+barPlotRick(dvMatrix, {vars.levelNames}, dv)
 
 %%
 

@@ -4,7 +4,7 @@ function barPlotRick(data, conditionNames, dvName, smpNames)
 % between subs // add box plots and/or violin plot options // document //
 % get rid of eval statements // replace my hacky code with combvec! //
 % control y lims better when violin plots are on // no hz lines if
-% conditionNum==1
+% conditionNum==1 // adjust width based on number of conditions
 
 % temp
 % conditionNames = {{'light on', 'light off'}, {'foreLead', 'foreLag', 'hindLead', 'hindLab'}, {'ipsi', 'contra'}, {'sal', 'mus'}};
@@ -34,7 +34,7 @@ xJitters = xJitters(randperm(length(xJitters)));
 conditionSymbols = {'o', 's', 'h', 'd'};
 
 close all;
-figure('color', 'white', 'menubar', 'none', 'position', [2000 194 1345 314])
+figure('color', 'white', 'menubar', 'none', 'position', [2000 200 1200 300])
 
 % create matrix where each column is an interection of conditions
 xPositions = 1:totalConditions;
