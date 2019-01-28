@@ -45,7 +45,7 @@ set(gca, 'ydir', 'normal', 'DataAspectRatio', [1 1 1])
 
 %%
 
-dv = 'penultStepLength';
+dv = 'isTrialSuccess';
 
 % define categorical vars
 paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
@@ -57,13 +57,12 @@ condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'lev
 isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 
 % set conditionals
-clear conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'comparison', @eq, 'value', 0);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'comparison', @eq, 'value', 0);
 conditionals = [conditionals.noWheelBreak];
 
 varsToAvg = {'mouse', 'session'};
-vars = [isFore; isLightOn];
+vars = [isLightOn; condition];
 
 
 dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionals);

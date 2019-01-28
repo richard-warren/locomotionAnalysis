@@ -6,6 +6,7 @@ function dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionals, conditi
 
 % initializations
 if ~exist('conditionInds', 'var'); conditionInds = nan(1, length(vars)); end
+if ~exist('conditionals', 'var'); conditionals = struct('name', ''); end
 fields = fieldnames(data);
 dvFound = ismember(dv, fields);
 
