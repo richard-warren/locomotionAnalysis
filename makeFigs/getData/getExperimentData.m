@@ -19,8 +19,8 @@ mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion'};
 trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'obsPosAtContact', 'wiskContactPositions', 'isContraFirst', 'isBigStep', 'firstModKin'};
-pawVars = {'isContra', 'pawType', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
+             'obsPosAtContact', 'wiskContactPositions', 'isContraFirst', 'isBigStep'};
+pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverKin'};
 
 % compute only requested vars
@@ -184,12 +184,15 @@ function var = getVar(dvName)
             var = [1 1 0 0]; % left side contra by default
             if strcmp(expData(mouse).sessions(session).side, 'left'); var = ~var; end % if side is left, then contra limbs are on the right side
             var = num2cell(var);
+            
+        case 'isFore'
+            var = num2cell(logical([0 1 1 0]));
         
-        case 'pawType'
-            var = cell(1,4);
+        case 'isLeading'
+            var = num2cell(logical([1 1 0 0])); % start assuming left is leading
             seq = sesKinData(trial).pawOverSequence;
-            if find(seq==1)<find(seq==4); var([1,4]) = {'leadHind', 'lagHind'}; else; var([1,4]) = {'lagHind', 'leadHind'}; end
-            if find(seq==2)<find(seq==3); var([2,3]) = {'leadFore', 'lagFore'}; else; var([2,3]) = {'lagFore', 'leadFore'}; end
+            if find(seq==4)<find(seq==1); var([1,4]) = var([4,1]); end
+            if find(seq==3)<find(seq==2); var([2,3]) = var([3,2]); end
             
         case 'isPawSuccess'
             var = num2cell(sum(sesData.touchesPerPaw(sesKinData(trial).trialInds,:),1) < touchThresh);

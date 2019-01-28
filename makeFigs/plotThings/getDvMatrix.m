@@ -1,7 +1,7 @@
-function dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionInds)
+function [dvMatrix, dataNames] = getDvMatrix(data, dv, vars, varsToAvg, conditionInds)
 
 
-% TO DO: return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
+% TO DO: how to add conditionals // how to bin variables // return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
 
 
 % initializations

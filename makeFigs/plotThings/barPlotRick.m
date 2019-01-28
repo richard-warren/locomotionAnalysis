@@ -1,12 +1,9 @@
-function barPlotRick(data, conditionNames, dvName, smpNames)
+function barPlotRick(data, conditionNames, dvName, isWithinSubs)
 
-% TO DO: add ability to make arbitrary statistical comparisons, within and
-% between subs // add box plots and/or violin plot options // document //
-% get rid of eval statements // replace my hacky code with combvec! //
-% control y lims better when violin plots are on // no hz lines if
-% conditionNum==1 // adjust width based on number of conditions
+% TO DO: should allow user to define whether each var is between or within, and also to define arbitrary stat comparisons //deal with legend...
+% document // replace my hacky code with combvec! //
 
-% temp
+% % create fake data
 % conditionNames = {{'light on', 'light off'}, {'foreLead', 'foreLag', 'hindLead', 'hindLab'}, {'ipsi', 'contra'}, {'sal', 'mus'}};
 % smpNames = {'run1', 'run2', 'run3', 'run4', 'run5'};
 % mouseNum = 5;
@@ -16,11 +13,18 @@ function barPlotRick(data, conditionNames, dvName, smpNames)
 % data(:,2,:,:) = data(:,2,:,:) * .75;
 
 % settings
-connectLines = false;
-groupSeparation = 1.5;
+showScatter = true;
+showErrorBars = true;
+showViolins = false;
+showStats = true;
+compareToFirstOnly = false; % only run stats between first and all other conditions
+
+groupSeparation = 1;
 circSize = 40;
 circAlpha = .8;
 lineWidth = 1;
+lineThickness = 3;
+pThresh = .05;
 
 % initializations
 condLevels = cellfun(@length, conditionNames);
@@ -28,13 +32,16 @@ totalConditions = prod(condLevels);
 conditionsMat = nan(length(conditionNames), totalConditions);
 labelVertSize = .1*length(conditionNames);
 dataDims = size(data);
-colors = hsv(dataDims(end)) * .8;
 xJitters = linspace(-.5*lineWidth, .5*lineWidth, dataDims(end));
 xJitters = xJitters(randperm(length(xJitters)));
-conditionSymbols = {'o', 's', 'h', 'd'};
+if isWithinSubs
+    colors = hsv(dataDims(end)) * .8;
+else
+    colors = hsv(length(conditionNames{end})) * .8;
+end
 
 close all;
-figure('color', 'white', 'menubar', 'none', 'position', [2000 200 1200 300])
+figure('color', 'white', 'menubar', 'none', 'position', [2000 200 interp1([1 16], [200 1200], totalConditions) 300])
 
 % create matrix where each column is an interection of conditions
 xPositions = 1:totalConditions;
@@ -46,15 +53,23 @@ for i = 1:length(conditionNames)
 end
 
 % add lines connecting same sample across conditions
-if connectLines
-    for i = 1:dataDims(end)
+if isWithinSubs
+    [~,~,condInds] = unique(conditionsMat(1:end-1,:)', 'rows'); % only draw lines connecting data across last condition
+    
+    for i = 1:dataDims(end) % for each subject        
+        
+        % get data in all conditions
         smpData = nan(1,totalConditions);
         for j = 1:totalConditions
-            indsString = strrep(num2str(conditionsMat(:,j)'), '  ', ',');
-            smpData(j) = squeeze(eval(['data(' indsString ',i)']));
+            inds = num2cell([conditionsMat(:,j); i]);
+            smpData(j) = squeeze(data(inds{:}));
         end
-        line(xPositions+xJitters(i), smpData, ...
-            'linewidth', 1, 'color', [.8 .8 .8]); hold on
+        
+        % draw lines connecting data only across levels of last condition
+        for j = unique(condInds)'
+            line(xPositions(condInds==j)+xJitters(i), smpData(condInds==j), ...
+                'linewidth', 1, 'color', [.8 .8 .8]); hold on
+        end
     end
 end
 
@@ -62,28 +77,86 @@ end
 % plot data
 hold on
 for i = 1:totalConditions
-    indsString = strrep(num2str(conditionsMat(:,i)'), '  ', ',');
-    condData = squeeze(eval(['data(' indsString ',:)']));
+    inds = cat(1, num2cell(conditionsMat(:,i)), {1:size(data,length(conditionNames)+1)});
+    condData = squeeze(data(inds{:}));
+    if isWithinSubs; lineColor = [0 0 0]; else; lineColor = colors(conditionsMat(end,i),:); end
     
     % add probability density estimate
-    [p,y] = ksdensity(condData);
-    p = p / max(p) * lineWidth*.5;
-    fill([p -fliplr(p)]+xPositions(i), [y fliplr(y)], [.8 .8 .8], 'FaceColor', 'none')
+    if showViolins
+        [p,y] = ksdensity(condData);
+        p = p / max(p) * lineWidth*.5; % normalize range
+        fill([p -fliplr(p)]+xPositions(i), [y fliplr(y)], [.8 .8 .8], 'FaceColor', 'none')
+    end
     
     % scatter raw data
-    scatter(xJitters + xPositions(i), condData, ...
-        circSize, colors, conditionSymbols{conditionsMat(end,i)}, 'filled', 'MarkerFaceAlpha', circAlpha); hold on
+    if showScatter
+        if isWithinSubs; scatColor = colors; else; scatColor = [.5 .5 .5]; end
+        scatter(xJitters + xPositions(i), condData, ...
+            circSize, scatColor, 'filled', 'MarkerFaceAlpha', circAlpha); hold on
+    end
+    
+    if showErrorBars
+        err = nanstd(condData);
+        line([xPositions(i) xPositions(i)], [err -err] + nanmean(condData), ...
+        'color', lineColor, 'linewidth', lineThickness*.5)
+    end
     
     % add mean
     line([-.5 .5]*lineWidth + xPositions(i), repmat(nanmean(condData),1,2), ...
-        'color', 'black', 'linewidth', 2)
+        'color', lineColor, 'linewidth', lineThickness)
+end
+axisData = get(gca);
+
+
+
+% add pairwise stats
+if showStats && exist('isWithinSubs', 'var')
+    [~,~,condInds] = unique(conditionsMat(1:end-1,:)', 'rows'); % only draw lines connecting data across last condition
     
+    for i = unique(condInds)'
+        dimPairs = nchoosek(1:length(find(condInds==i)), 2); % wrt data dimensions
+        condPairs = nchoosek(find(condInds==i), 2); % wrt columns in plot
+        
+        % sort s.t. more distant comparisons are last
+        [~, sortInds] = sort(diff(dimPairs,[],2));
+        dimPairs = dimPairs(sortInds,:); condPairs = condPairs(sortInds,:);
+        
+        % only keep comparisons between first and all other conditions
+        if compareToFirstOnly
+            bins = any(dimPairs==1,2);
+            dimPairs = dimPairs(bins,:);
+            condPairs = condPairs(bins,:);
+        end
+        
+        % vertical position of each line, expressed as fraction of y range
+        yPosits = linspace(1.0, 1.0+.01*size(dimPairs,1), size(dimPairs,1)); 
+        inds = conditionsMat(1:end-1, find(condInds==i,1,'first'))'; % matrix inds for conditions higher up in the hierarchy
+        
+        for j = 1:size(dimPairs,1)
+            
+            [inds1, inds2] = deal(cat(2,num2cell([inds dimPairs(j,1)]), {1:size(data,length(conditionNames)+1)}));
+            inds2{length(conditionNames)} = dimPairs(j,2);
+            
+            if isWithinSubs
+                [~,p] = ttest(data(inds1{:}), data(inds2{:}));
+            else
+                [~,p] = ttest2(data(inds1{:}), data(inds2{:}));
+            end
+            if p<pThresh; lineColor = 'red'; else; lineColor = [.5 .5 .5]; end
+            line(xPositions(condPairs(j,:)), max(data(:))*[yPosits(j) yPosits(j)], ...
+                'color', lineColor, 'linewidth', 1.0);
+        end
+    end
     
+    set(gca, 'YTick', axisData.YTick, 'YLim', [axisData.YLim(1), max(data(:))*max(yPosits)])
 end
 
+
+
+
 % add room beneath x axis for condition labels
-yLims = get(gca, 'YLim');
-yTicks = get(gca, 'YTick');
+yLims = get(gca, 'ylim');
+yTicks = get(gca, 'ytick');
 set(gca, 'XColor', 'none', ...
     'YLim', [yLims(1)-labelVertSize*range(yLims), yLims(2)], 'YTick', yTicks, ...
     'XLim', [0 xPositions(end)+1], 'XTick', xPositions, 'XTickLabel', [])
@@ -105,7 +178,7 @@ for i = 1:length(conditionNames)
             condText = text(xPos, yPos, conditionNames{i}(k), 'HorizontalAlignment', 'center');
             
             % add lines on the side of condition name
-            if i<length(conditionNames)
+            if i<length(conditionNames) && length(conditionNames{i})>1
                 textPos = get(condText, 'Extent');
                 line([xPositions(inds(1)) textPos(1)], [yPos yPos], 'color', [.5 .5 .5]) % left side of text
                 line([textPos(1)+textPos(3) xPositions(inds(end))], [yPos yPos], 'color', [.5 .5 .5]) % right side of text
@@ -114,6 +187,8 @@ for i = 1:length(conditionNames)
     end
 end
 ylabel(dvName)
+
+
 
 % add legend
 if exist('smpNames', 'var')

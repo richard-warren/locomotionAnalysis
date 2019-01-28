@@ -29,27 +29,42 @@ dv = mean([dataOut([dataOut.pawNum]==1 & [dataOut.isLeading]).success]);
 %         'isWheelBreak', 'velAtWiskContact', 'angleAtWiskContact', 'obsPosAtContact', 'trialVel', 'trialAngle', 'wiskContactPositions'};
 vars = 'all';
 data = getExperimentData(sessionInfo, vars);
-dataFlat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'firstModKin'});
+dataFlat = getNestedStructFields(data, {'mouse', 'session', 'isLightOn', 'obsHgt', 'stepOverMaxHgt', 'preObsHgt'});
+%%
+
+x = [dataFlat.obsHgt];
+y = [dataFlat.preObsHgt]*1000;
+smps = 200;
+
+[x1, x2] = meshgrid(linspace(0,12,smps), linspace(0,20,smps));
+[d, xi] = ksdensity([x; y]', [x1(:) x2(:)]);
+d = reshape(d, smps, smps);
+close all; figure; imagesc(xi(:,1), xi(:,2), d)
+set(gca, 'ydir', 'normal', 'DataAspectRatio', [1 1 1])
+
 
 %%
 
 dv = 'penultStepLength';
 
 paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
-pawType = struct('name', 'pawType', 'levels', {{'leadFore', 'lagFore', 'leadHind', 'lagHind'}}, 'levelNames', {{'leadFore', 'lagFore', 'leadHind', 'lagHind'}});
+isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'lagging'}});
 isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
+isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 isWheelBreak = struct('name', 'isWheelBreak', 'levels', [0, 1], 'levelNames', {{'no break', 'break'}});
 condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'sal', 'mus'}});
-isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'light', 'no light'}});
+isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 
 
 
-varsToAvg = {'mouse'};
-vars = [condition; pawType];
+
+
+varsToAvg = {'mouse', 'session'};
+vars = [isFore; isLeading; isContra; condition];
 
 
 dvMatrix = getDvMatrix(data, dv, vars, varsToAvg);
-barPlotRick(dvMatrix, {vars.levelNames}, dv)
+barPlotRick(dvMatrix, {vars.levelNames}, dv, true)
 
 %% plot kin
 
