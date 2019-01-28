@@ -47,6 +47,7 @@ set(gca, 'ydir', 'normal', 'DataAspectRatio', [1 1 1])
 
 dv = 'penultStepLength';
 
+% define categorical vars
 paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
 isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'lagging'}});
 isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
@@ -55,15 +56,17 @@ isWheelBreak = struct('name', 'isWheelBreak', 'levels', [0, 1], 'levelNames', {{
 condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'sal', 'mus'}});
 isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 
-
-
-
+% set conditionals
+clear conditionals
+conditionals.lightOff = struct('name', 'isLightOn', 'comparison', @eq, 'value', 0);
+conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'comparison', @eq, 'value', 0);
+conditionals = [conditionals.noWheelBreak];
 
 varsToAvg = {'mouse', 'session'};
-vars = [isFore; isLeading; isContra; condition];
+vars = [isFore; isLightOn];
 
 
-dvMatrix = getDvMatrix(data, dv, vars, varsToAvg);
+dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionals);
 barPlotRick(dvMatrix, {vars.levelNames}, dv, true)
 
 %% plot kin

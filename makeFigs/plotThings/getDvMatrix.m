@@ -1,4 +1,4 @@
-function [dvMatrix, dataNames] = getDvMatrix(data, dv, vars, varsToAvg, conditionInds)
+function dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionals, conditionInds)
 
 
 % TO DO: how to add conditionals // how to bin variables // return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
@@ -25,6 +25,7 @@ end
 % get inds of vars in data
 varInds = find(ismember({vars.name}, fields));
 avgDvs = any(ismember(varsToAvg, fields));
+conditionalInds = find(ismember({conditionals.name}, fields));
 conditionIndsSub = conditionInds;
 
 
@@ -35,7 +36,17 @@ if ~dvFound && isempty(structFieldInds)
 
 % otherwise, loop through rows
 else
-    for i = 1:length(data)
+    
+    % find rows that meet conditionals
+    binsToAnalyze = true(1,length(data));
+    if ~isempty(conditionalInds)    
+        for i = conditionalInds
+            binsToAnalyze = binsToAnalyze & feval(conditionals(i).comparison, [data.(conditionals(i).name)], conditionals(i).value);
+        end
+    end
+    
+    
+    for i = find(binsToAnalyze)
 
         % add vars to conditionInds
         skipRow = false;
@@ -59,7 +70,7 @@ else
             else
                 for j = structFieldInds
                     dvMatrices{i} = getDvMatrix(data(i).(fields{j}), ...
-                        dv, vars, varsToAvg, conditionIndsSub);
+                        dv, vars, varsToAvg, conditionals, conditionIndsSub);
                     if ~isempty(dvMatrices{i}); break; end % terminate loop once a branch containing dv is found
                 end
 
