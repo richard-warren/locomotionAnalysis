@@ -5,8 +5,10 @@ function expData = getExperimentData(sessionInfo, vars)
 % sanity checks for all dvs (eg step over hgt cant be less than hgt of asdf
 % obstacle...) // dft fcns for getting session, mouse, trial vars, etc...
 
-% TO DO: throw error when var missing, or when var is requested that depends on higher up var that has not been requested... // make this with recursive function? // ignore vars if can't be computed (eg if
-% looking for field in sessionInfo that doest exist for given experiment)
+% TO DO: throw error when var missing, or when var is requested that depends on higher up var that has not been requested...
+% make this with recursive function?
+% ignore vars if can't be computed (eg if looking for field in sessionInfo that doest exist for given experiment)
+% parallelize...
 
 % settings
 touchThresh = 5;
@@ -16,12 +18,12 @@ preObsLim = .008;
 
 % initialiations
 mouseVars = {};
-sessionVars = {'condition', 'side', 'brainRegion'};
+sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum'};
 trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'obsPosAtContact', 'wiskContactPositions', 'isContraFirst', 'isBigStep'};
+             'obsPosAtContact', 'wiskContactPosition', 'isContraFirst', 'isBigStep', 'isModPawContra'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
-           'penultStepLength', 'stepOverKin'};
+           'penultStepLength', 'stepOverStartingDistance', 'stepOverKin'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -114,9 +116,19 @@ function var = getVar(dvName)
         case 'brainRegion'
             var = getTableColumn('brainRegion');
             
-        
-        
-        
+        case 'conditionNum'
+            var = num2cell(nan(1,length(expData(mouse).sessions)));
+            sessionInfoSub = sessionInfo(strcmp(sessionInfo.mouse, expData(mouse).mouse),:);
+            conditions = unique(sessionInfoSub.condition);
+            for i = conditions'
+                bins = strcmp(sessionInfoSub.condition, i{1});
+                var(bins) = num2cell(1:sum(bins));
+            end
+            
+            
+            
+            
+            
         % trial variables
         % ---------------
         case 'isLightOn'
@@ -161,7 +173,7 @@ function var = getVar(dvName)
         case 'obsPosAtContact'
             var = num2cell(interp1(sesData.obsTimes, sesData.obsPositionsFixed, sesData.wiskContactTimes));
             
-        case 'wiskContactPositions'
+        case 'wiskContactPosition'
             var = num2cell([sesKinData.wiskContactPositions]);
             
         case 'isContraFirst'
@@ -174,6 +186,12 @@ function var = getVar(dvName)
             for i = sesKinInds
                 var{i} = max(sesKinData(i).modifiedStepIdentities(:,sesKinData(i).firstModPaw))==1; %
             end
+            
+        case 'isModPawContra'
+            var = num2cell(false(1,length(sesKinData)));
+            if strcmp(expData(mouse).sessions(session).side, 'right'); contraPaw = 2; else; contraPaw = 3; end
+            var([sesKinData.isTrialAnalyzed]) = num2cell([sesKinData.firstModPaw]==contraPaw);
+            
             
             
             
@@ -232,6 +250,12 @@ function var = getVar(dvName)
                 end
             end
             
+        case 'stepOverStartingDistance'
+            var = num2cell(nan(1,4));
+            if sesKinData(trial).isTrialAnalyzed
+                var = num2cell(cellfun(@(x) x(end,1,1), sesKinData(trial).modifiedLocations));
+            end
+        
         case 'stepOverKin'
             var = repmat({nan(3,locationsInterpSmps)},1,4);
             if sesKinData(trial).isTrialAnalyzed

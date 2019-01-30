@@ -40,8 +40,8 @@ else
     colors = hsv(length(conditionNames{end})) * .8;
 end
 
-close all;
-figure('color', 'white', 'menubar', 'none', 'position', [2000 200 interp1([1 16], [200 1200], totalConditions) 300])
+% close all;
+% figure('color', 'white', 'menubar', 'none', 'position', [2000 200 interp1([1 16], [200 1200], totalConditions) 300])
 
 % create matrix where each column is an interection of conditions
 xPositions = 1:totalConditions;
@@ -53,7 +53,7 @@ for i = 1:length(conditionNames)
 end
 
 % add lines connecting same sample across conditions
-if isWithinSubs
+if isWithinSubs && dataDims(end)<40 
     [~,~,condInds] = unique(conditionsMat(1:end-1,:)', 'rows'); % only draw lines connecting data across last condition
     
     for i = 1:dataDims(end) % for each subject        

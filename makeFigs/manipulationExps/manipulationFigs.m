@@ -1,80 +1,47 @@
-%% load session info
-
+%% -------------- 
+% INITIALIZATIONS
+% ---------------
 
 % settings
 manipulation = 'muscimol';
 brainRegion = 'mtc';
-maxLesionSession = 3;
-
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & ...
-                          [sessionInfo.include]==1,:); % remove empty rows and sessions not to be included
-sessionInfo = sessionInfo(strcmp(sessionInfo.brainRegion, brainRegion),:); % keep data for single brain region only
+                          [sessionInfo.include]==1 & ...
+                          strcmp(sessionInfo.brainRegion, brainRegion),:); % remove empty rows, not included sessions, and those without correct brain region
 
-%% compute kinData for all sessions
-sessions = unique(sessionInfo.session);
-parfor i = 1:length(sessions)
-    getKinematicData5(sessions{i});
-end
-
-%% compute kinematic data
-loadPreviousData = false;
-
-fileName = fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_kinematicData.mat']);
-if loadPreviousData && exist(fileName, 'file')
-    load(fileName, 'data');
-    kinData = getKinematicData4(sessionInfo.session, sessionInfo, data);
+% set categorical vars
+vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
+vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'lead', 'lag'}});
+vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
+vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
+vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
+vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
+if strcmp(manipulation, 'muscimol')
+    vars.condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'sal', 'mus'}});
 else
-    kinData = getKinematicData4(sessionInfo.session, sessionInfo, []);
+    vars.condition = struct('name', 'condition', 'levels', {{'pre', 'post'}}, 'levelNames', {{'sal', 'mus'}});
 end
-data = kinData; save(fileName, 'data', '-v7.3', '-nocompression'); clear data;
-% if strcmp(manipulation, 'lesion'); kinBins=[kinData.conditionNum]<=maxLesionSession; else; bins=true(size(kinData)); end
 
-%% load kinematic data
+% set conditionals
+conditionals.lightOff = struct('name', 'isLightOn', 'comparison', @eq, 'value', 0);
+conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'comparison', @eq, 'value', 0);
+conditionals.isLagging = struct('name', 'isLeading', 'comparison', @eq, 'value', 0);
 
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_kinematicData.mat']), 'data');
-kinData = data; clear data;
-% if strcmp(manipulation, 'lesion'); kinBins=[kinData.conditionNum]<=maxLesionSession; else; bins=true(size(kinData)); end
-disp([manipulation ' kinematic data loaded!'])
+%% compute kinData for all sessions (only need to do once)
+sessions = unique(sessionInfo.session);
+parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
-%% compute speed and avoidance data
+%% compute experiment data
+data = getExperimentData(sessionInfo, 'all');
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data')
 
-speedAvoidanceData = getSpeedAndObsAvoidanceData(sessionInfo.session, sessionInfo, true);
-data = speedAvoidanceData; save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data'); clear data;
-% if strcmp(manipulation, 'lesion'); speedBins=[speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins=true(size(speedAvoidanceData)); end
+%% load experiment data
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
+disp([manipulation ' data loaded!'])
 
-%% load speed and avoidance data
-
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_speedAvoidanceData.mat']), 'data');
-speedAvoidanceData = data; clear data;
-% if strcmp(manipulation, 'lesion'); speedBins=[speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins=true(size(speedAvoidanceData)); end
-disp([manipulation ' speed avoidance data loaded!'])
-
-%% find matched bins
-
-% settings
-velTolerance = .05;
-angleTolerance = 2;
-
-
-[matchedBinsSpeedAvoidanceBins, weightsSpeedAvoidance] = findMatchedBins(speedAvoidanceData(speedBins), conditions, velTolerance, angleTolerance);
-
-
-% % plot matched bins histogram
-% figure;
-% angle = abs([speedAvoidanceData.avgAngle]);
-% speed = [speedAvoidanceData.avgVel];
-% hist3([angle(controlBins & matchedBins)', speed(controlBins & matchedBins)'], 'FaceColor', [1 0 0], 'FaceAlpha', 0.5); hold on
-% hist3([angle(manipBins & matchedBins)', speed(manipBins & matchedBins)'], 'FaceColor', [0 1 0], 'FaceAlpha', 0.5);
-
-%%  compute dependent measures
-
-dvs = {'success', 'forePawErrRate', 'speed', 'bodyAngleContra', 'contraFirstRate', 'bigStepProb', 'pawHgt', 'hgtShaping'};
-
-sessionDvs = getSessionDvs(dvs, speedAvoidanceData, kinData);
-disp('finished computing dependent measures!')
 
 %% ----------
 % PLOT THINGS
@@ -82,142 +49,147 @@ disp('finished computing dependent measures!')
 
 %% bar plots
 
-dvs = {'success', 'speed', 'bodyAngleContra', 'forePawErrRateIpsi', 'forePawErrRateContra', ...
-    'contraFirstRate', 'bigStepProbIpsi', 'bigStepProbContra', 'pawHgtIpsi', 'pawHgtContra', ...
-    'hgtShapingIpsi', 'hgtShapingContra'};
 
-if strcmp(manipulation, 'lesion'); bins = [sessionDvs.conditionNum]<=maxLesionSession; else; bins = true(size(sessionDvs)); end
-barPlots(sessionDvs(bins), dvs, [brainRegion '_' manipulation], flipud(conditions))
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'BarPlots.png']));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'BarPlots.fig']));
-
-
-%% sessions over time plots
-
-miceToShow = 'all'; % set to 'all' to show all mice
-
-if strcmp(miceToShow, 'all'); bins = true(1,length(sessionDvs)); else; bins = ismember({sessionDvs.mouse}, miceToShow); end
-plotAcrossSessions(sessionDvs, dvs, [brainRegion '_' manipulation])
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.png']));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'AcrossSessions.fig']));
-
-%% speed vs. position plots
-
-if strcmp(manipulation, 'lesion'); bins = [speedAvoidanceData.conditionNum]<=maxLesionSession; else; bins = true(size(speedAvoidanceData)); end
-plotSpeedVsPosition(speedAvoidanceData(bins), [brainRegion '_' manipulation])
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedVsPos.png']));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedVsPos.fig']));
-
-%% speed at wisk contact
-
-plotSpeedAtWiskContact(sessionInfo(sessionInfo.conditionNum<=maxLesionSession,:), [brainRegion '_' manipulation])
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedAtWiskContact.png']));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'SpeedAtWiskContact.fig']));
-
-
-%% !!! paw height by obs height
-
-binNames = {'ipsi', 'contra', conditions{1}};
-
-velBins = zeros(1,length(kinData));
-velBins(strcmp({kinData.condition}, conditions{2}) & strcmp({kinData.brainRegion}, 'mtc') & [kinData.ipsiPawFirst]) = 1;
-velBins(strcmp({kinData.condition}, conditions{2}) & strcmp({kinData.brainRegion}, 'mtc') & [kinData.contraPawFirst]) = 2;
-velBins(strcmp({kinData.condition}, conditions{1}) & strcmp({kinData.brainRegion}, 'mtc')) = 3;
-
-% don't include too many post lesion sessions if manipulation=='lesion'
-if strcmp(manipulation, 'lesion'); includeTrial = [kinData.conditionNum]<=maxLesionSession;
-else; includeTrial = ones(1,length(kinData)); end
-
-scatterObsVsPawHeights(kinData, velBins.*includeTrial, binNames);
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterMtc.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures/', manipulation, '/heightShapingScatterMtc.fig'))
-
-
-%% plot kinematics
 
 % settings
-% miceToExclude = {'sen5'};
-miceToExclude = {''};
-
-% get trial bins
-contraFirstBins = [kinData.contraPawFirst];
-ipsiFirstBins = [kinData.ipsiPawFirst];
-controlBins = strcmp({kinData.condition}, conditions{1});
-manipBins = strcmp({kinData.condition}, conditions{2});
-noWiskBins = strcmp({kinData.condition}, 'postNoWisk');
-lightOnBins = [kinData.isLightOn];
-mtcBins = strcmp({kinData.brainRegion}, 'mtc');
-senBins = strcmp({kinData.brainRegion}, 'sen');
-
-% don't include too many post lesion sessions if manipulation=='lesion'
-if strcmp(manipulation, 'lesion'); includeTrial = [kinData.conditionNum]<=maxLesionSession;
-else; includeTrial = ones(1,length(kinData)); end
-
-% mtc
-velBins = zeros(1,length(kinData));
-velBins(mtcBins & ipsiFirstBins & manipBins) = 1; % ipsi
-velBins(mtcBins & contraFirstBins & manipBins) = 2; % contra
-velBins(mtcBins & controlBins) = 3; % pre
-binLabels = {'ipsi', 'contra', 'pre'};
-plotObsHeightTrajectories(kinData, velBins.*includeTrial, binLabels, ['motor cortex ' manipulation])
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.png'));
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', manipulation, 'MtcKinematics.fig'))
+varsToAvg = {'mouse', 'session'};
+rows = 4;
+cols = 4;
 
 
+% initializations
+close all; figure('name', [brainRegion '_' manipulation], ...
+    'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
+plotInd = 0;
+
+% success (light, manip)
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isLightOn; vars.condition];
+dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
+
+% !!! success (early/late lesion, light, manip)
+
+
+% velocity
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isLightOn; vars.condition];
+dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'velocity (m/s)', true)
+
+% body angle
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isLightOn; vars.condition];
+dvMatrix = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'body angle (towards contra)', true)
+
+% baseline step height
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isFore; vars.isContra; vars.condition];
+dvMatrix = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg) * 1000;
+barPlotRick(dvMatrix, {conditions.levelNames}, 'baseline step height (mm)', true)
+
+% contra first rate (light, manip)
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isLightOn; vars.condition];
+dvMatrix = getDvMatrix(data, 'isContraFirst', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'contra paw first rate', true)
+
+% penult step length (light, fore/hind, ipsi/contra, manip) - hgt, vel?
+plotInd = plotInd+1; subplot(rows, cols, plotInd:plotInd);
+conditions = [vars.condition; vars.isFore; vars.isLeading];
+dvMatrix = getDvMatrix(data, 'penultStepLength', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'penultimate step length', true)
+
+% paw error rate
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isFore; vars.isContra; vars.condition];
+dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
+
+% planting step distance (light, fore/hind, ipsi/contra, manip)
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isFore; vars.isContra; vars.condition];
+dvMatrix = getDvMatrix(data, 'stepOverStartingDistance', conditions, varsToAvg, conditionals.isLagging)*-1000; % only take lagging paws
+barPlotRick(dvMatrix, {conditions.levelNames}, 'planting foot distance (mm)', true)
+
+% step over height (light, fore/hind, ipsi/contra, manip)
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isFore; vars.isContra; vars.condition];
+dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'step over anticipatory height', true)
+
+% !!! height shaping (light, fore/hind, ipsi/contra, manip)
+
+
+% big step probability (light, modPawContra, manip)
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isLightOn; vars.isModPawContra; vars.condition];
+dvMatrix = getDvMatrix(data, 'isBigStep', conditions, varsToAvg);
+barPlotRick(dvMatrix, {conditions.levelNames}, 'big step probability', true)
+
+% wisk contact position (light, manip)
+plotInd = plotInd+1; subplot(rows, cols, plotInd);
+conditions = [vars.isLightOn; vars.condition];
+dvMatrix = getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg)*-1000;
+barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at contact (mm)'}, true)
+
+% !!! tail height (manip)
+
+
+
+%% log plots
+
+% big step prob by obs height (manip)
+
+% big step prob by predicted distance to obs (manip)
+
+
+
+%% big step kinematics
+
+% !!! how to show this for different conditions?
+
+
+%% sessions over time
+
+% success, vel, body angle, baseline step height, 
+
+%% speed vs. position / time plots
+
+% speed vs position, control vs manip
+
+
+% speed vs time centered around whisker contract
+
+
+%% scatters
+
+% obs hgt vs paw hgt (manip), plots for ipsi, contra, fore, hind
+
+
+%% heat maps
+
+% predicted vs actual planting distance, one map per paw
+
+
+% delta mod step length vs predicted distance to obs (contra, manip)
+
+
+%% kinematics
+
+% fore/hind, contra, manip (leading only, light off only)
+
+
+% fore/hind, leading, manip (contra only, light off only)
 
 
 
 
 
-%% explore relationship between speed, success, and manipulation
-
-% plot histograms
-controlBins = strcmp({speedAvoidanceData.condition}, conditions{1});
-manipBins = strcmp({speedAvoidanceData.condition}, conditions{2});
-
-figure;
-histogram([speedAvoidanceData(controlBins).avgVel], 50); hold on
-histogram([speedAvoidanceData(manipBins).avgVel], 50);
-legend(conditions)
-
-figure;
-histogram(abs([speedAvoidanceData(controlBins).avgAngle]), 50); hold on
-histogram(abs([speedAvoidanceData(manipBins).avgAngle]), 50);
-legend(conditions)
-
-figure;
-angle = abs([speedAvoidanceData.avgAngle]);
-speed = [speedAvoidanceData.avgVel];
-hist3([angle(controlBins)', speed(controlBins)'], 'FaceColor', [1 0 0], 'FaceAlpha', 0.5); hold on
-hist3([angle(manipBins)', speed(manipBins)'], 'FaceColor', [0 1 0], 'FaceAlpha', 0.5);
 
 
 
-
-%% plot succcses vs speed
-
-dv = .01;
-width = .05;
-velLims = [0 1];
-successThresh = 5;
-validBins = strcmp({speedAvoidanceData.condition}, conditions{1}); % only look at control condition trials
-
-isSuccess = cellfun(@sum, {speedAvoidanceData.totalTouchFramesPerPaw}) < successThresh;
-binCenters = velLims(1)+.5*width : dv : velLims(2)-.5*width;
-
-successRates = nan(1, length(binCenters));
-
-for i = 1:length(binCenters)
-    
-    trialBins = (validBins & ...
-                 [speedAvoidanceData.avgVel] > binCenters(i)-.5*width & ...
-                 [speedAvoidanceData.avgVel] < binCenters(i)+.5*width);
-    if any(trialBins)
-        successRates(i) = mean(isSuccess(trialBins));
-    end
-end
-
-figure; plot(binCenters, successRates)
 
 
 
