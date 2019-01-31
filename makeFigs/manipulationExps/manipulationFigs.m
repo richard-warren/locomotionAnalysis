@@ -3,8 +3,9 @@
 % ---------------
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 brainRegion = 'mtc';
+varsToAvg = {'mouse', 'session'};
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
@@ -42,7 +43,7 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
 data = getExperimentData(sessionInfo, 'all');
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data')
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
 
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
@@ -57,9 +58,8 @@ disp([manipulation ' data loaded!'])
 
 
 % settings
-varsToAvg = {'mouse', 'session'};
-rows = 4;
-cols = 4;
+rowVar = 4;
+colVar = 4;
 
 
 % initializations
@@ -67,79 +67,79 @@ figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'non
 plotInd = 0;
 
 % success (light, manip)
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.condition];
 dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
 % velocity
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.condition];
 dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'velocity (m/s)', true)
 
 % body angle
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.condition];
 dvMatrix = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'body angle (towards contra)', true)
 
 % baseline step height
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isFore; vars.isContra; vars.condition];
 dvMatrix = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, 'baseline step height (mm)', true)
 
 % contra first rate (light, manip)
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.condition];
 dvMatrix = getDvMatrix(data, 'isContraFirst', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'contra paw first rate', true)
 
 % penult step length (light, fore/hind, ipsi/contra, manip) - hgt, vel?
-plotInd = plotInd+1; subplot(rows, cols, plotInd:plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd:plotInd);
 conditions = [vars.condition; vars.isFore; vars.isLeading];
 dvMatrix = getDvMatrix(data, 'penultStepLength', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'penultimate step length', true)
 
 % paw error rate
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isFore; vars.isContra; vars.condition];
 dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
 % planting step distance (light, fore/hind, ipsi/contra, manip)
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isFore; vars.isContra; vars.condition];
 dvMatrix = getDvMatrix(data, 'stepOverStartingDistance', conditions, varsToAvg, [figConditionals; conditionals.isLagging])*-1000; % only take lagging paws
 barPlotRick(dvMatrix, {conditions.levelNames}, 'planting foot distance (mm)', true)
 
 % step over height (light, fore/hind, ipsi/contra, manip)
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isFore; vars.isContra; vars.condition];
 dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'step over anticipatory height', true)
 
 % height shaping
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isFore; vars.isLeading; vars.condition];
 dvMatrix = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, figConditionals); % perform regression for each session, then average slopes across sessions for each mouse
 barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
 
 % big step probability (light, modPawContra, manip)
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.isModPawContra; vars.condition];
 dvMatrix = getDvMatrix(data, 'isBigStep', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'big step probability', true)
 
 % wisk contact position (light, manip)
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.condition];
 dvMatrix = getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg, figConditionals)*-1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at contact (mm)'}, true)
 
 % tail height
-plotInd = plotInd+1; subplot(rows, cols, plotInd);
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isLightOn; vars.condition];
 dvMatrix = getDvMatrix(data, 'tailHgt', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true)
@@ -147,9 +147,9 @@ barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true)
 
 % compare early and late success
 if strcmp(manipulation, 'lesion')
-    dvs = {'isTrialSuccess', 'trialVel'};
+    dvs = {'isTrialSuccess', 'trialVel', 'tailHgt'};
     for dv = dvs
-        plotInd = plotInd+1; subplot(rows, cols, plotInd);
+        plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
         conditions = [vars.isLightOn];
         pre = getDvMatrix(data, dv{1}, conditions, varsToAvg, conditionals.isPre);
         early = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isEarly]);
@@ -189,10 +189,42 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 % speed vs time centered around whisker contract
 
 
-%% scatters
+%% height shaping scatters
 
-% obs hgt vs paw hgt (manip), plots for ipsi, contra, fore, hind
+figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
 
+% settings
+rowVar = vars.isFore;
+colVar = vars.isLeading;
+scatVar = vars.condition;
+xLims = [2 10];
+yLims = [0 20];
+
+% obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition'});
+obsHgts = [flat.obsHgt]*1000;
+pawHgts = [flat.preObsHgt]*1000;
+
+% initializations
+conditions = cellfun(@(x) find(ismember(scatVar.levels, x)), {flat.(scatVar.name)});
+rows = length(rowVar.levels);
+cols = length(colVar.levels);
+        
+plotInd = 1;
+for i = 1:rows
+    for j = 1:cols
+        subplot(rows, cols, plotInd)
+        bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
+        scatterConditions(cat(1,obsHgts(bins),pawHgts(bins)), {'obstacle height', 'paw height'}, conditions(bins), scatVar.levelNames)
+        plotInd = plotInd+1;
+        title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
+        set(gca, 'XLim', xLims, 'YLim', yLims)
+    end
+end
+
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_heightShaping.fig']))
 
 %% heat maps
 

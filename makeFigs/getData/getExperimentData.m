@@ -199,7 +199,6 @@ function var = getVar(dvName)
                 tailHgts(sesKinData(i).trialInds) = sesKinData(i).locationsTail(:,3,1);
             end
             var = avgSignalPerTrial(tailHgts, sesData.frameTimeStamps);
-            keyboard
             
             
             
