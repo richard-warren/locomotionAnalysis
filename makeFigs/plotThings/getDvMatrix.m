@@ -42,7 +42,13 @@ else
     binsToAnalyze = true(1,length(data));
     if ~isempty(conditionalInds)    
         for i = conditionalInds
-            binsToAnalyze = binsToAnalyze & feval(conditionals(i).comparison, [data.(conditionals(i).name)], conditionals(i).value);
+            if any(cellfun(@ischar, ({data.(conditionals(i).name)}))) % if row contains strings
+                binsToAnalyze = binsToAnalyze & ...
+                    feval(conditionals(i).condition, {data.(conditionals(i).name)});
+            else
+                binsToAnalyze = binsToAnalyze & ...
+                    feval(conditionals(i).condition, [data.(conditionals(i).name)]);
+            end
         end
     end
     

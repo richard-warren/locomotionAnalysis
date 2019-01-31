@@ -60,7 +60,7 @@ if timeOperations; fprintf('getting step identities: %i seconds\n', round(toc));
 
 
 
-% put together xyz for paws only
+% put together xyz for paws
 if timeOperations; tic; end
 locationsPaws = nan(size(locations,1), 3, 4);
 locationsPaws(:,1:2,:) = locations(:,:,botPawInds);
@@ -68,7 +68,14 @@ locationsPaws(:,3,:) = locations(:,2,topPawInds);
 locationsPaws(:,2,:) = locationsPaws(:,2,:) - nosePos(2); % subtract midline from all y values
 locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
 
-
+% put together xyz for tail
+botTailBins = contains(features, 'tail') & contains(features, '_bot');
+topTailBins = contains(features, 'tail') & contains(features, '_top');
+locationsTail = nan(size(locations,1), 3, 2); % frameNum X xyz X tailbase/mid
+locationsTail(:,1:2,:) = locations(:,:,botTailBins);
+locationsTail(:,3,:) = locations(:,2,topTailBins);
+locationsTail(:,2,:) = locationsTail(:,2,:) - nosePos(2); % subtract midline from all y values
+locationsTail(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsTail(:,3,:); % flip z and set s.t. top of wheel is zero
 
 % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
 % this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
@@ -76,11 +83,16 @@ prevInd = 1;
 for j = 1:length(obsOnTimes)
     finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
     if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
+    
     locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
+    locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
     prevInd = finalInd+1;
 end
 locationsPaws = locationsPaws / abs(mToPixMapping(1)); % convert to meters
+locationsTail = locationsTail / abs(mToPixMapping(1)); % convert to meters
 if timeOperations; fprintf('getting xyz coords: %i seconds\n', round(toc)); end
+
+
 
 
 
@@ -104,6 +116,7 @@ for j = 1:length(obsOnTimes)
     trialModStepIds = modifiedStepIdentities(trialInds,:);
     trialNoObsStepIds = noObsStepIdentities(trialInds,:);
     trialLocations = locationsPaws(trialInds,:,:);
+    trialLocationsTail = locationsTail(trialInds,:,:);
     trialWheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps(trialInds));
 
     % determine whether kinematic data can be analyzed for trial (all )
@@ -234,6 +247,8 @@ for j = 1:length(obsOnTimes)
 
         % save trial kinematics
         kinData(j).trialInds = trialInds;
+        kinData(j).locations = trialLocations;
+        kinData(j).locationsTail = trialLocationsTail;
         kinData(j).wiskContactPositions = wiskContactPositions;
         kinData(j).wiskContactTimes = wiskContactTimes;
         

@@ -21,7 +21,8 @@ mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum'};
 trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'obsPosAtContact', 'wiskContactPosition', 'isContraFirst', 'isBigStep', 'isModPawContra'};
+             'obsPosAtContact', 'wiskContactPosition', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
+             'tailHgt'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKin'};
 
@@ -141,7 +142,7 @@ function var = getVar(dvName)
             end
             
         case 'obsHgt'
-            var = num2cell(sesData.obsHeightsVid);
+            var = num2cell(sesData.obsHeightsVid/1000); % convert back to meters
         
         case 'isTrialSuccess'
             var = cell(1,length(sesKinData));
@@ -191,6 +192,14 @@ function var = getVar(dvName)
             var = num2cell(false(1,length(sesKinData)));
             if strcmp(expData(mouse).sessions(session).side, 'right'); contraPaw = 2; else; contraPaw = 3; end
             var([sesKinData.isTrialAnalyzed]) = num2cell([sesKinData.firstModPaw]==contraPaw);
+            
+        case 'tailHgt'
+            tailHgts = nan(size(sesData.frameTimeStamps));
+            for i = sesKinInds
+                tailHgts(sesKinData(i).trialInds) = sesKinData(i).locationsTail(:,3,1);
+            end
+            var = avgSignalPerTrial(tailHgts, sesData.frameTimeStamps);
+            keyboard
             
             
             
