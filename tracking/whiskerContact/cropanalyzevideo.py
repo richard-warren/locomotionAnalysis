@@ -33,7 +33,7 @@ if os.path.split(sys.argv[0])[0] != '':
 
 session = sys.argv[2]
 baseDir = sys.argv[1]
-modelName = "largecrop.20-1.40"
+modelName = "largecroptrim.25-0.77"
 cropModelName = "cropWhiskers"
 probDistribution = [0.5, 0.707, 0.867, 0.966, 1.0, 1.0, 0.966, 0.867, 0.707, 0.5]
 timesteps = 10
@@ -71,7 +71,7 @@ print("Assembling end-to-end model")
 convNet = model.layers[1].layer
 v = cropModel.output
 v = Maxima2D()(v)
-v = PointCrop2D(crop_size=200, mean=0.257, std=0.288, wOffset=-50, hOffset=-75)([v, cropModel.input])
+v = PointCrop2D(crop_size=200, mean=0.257, std=0.288, wOffset=-50, hOffset=0)([v, cropModel.input])
 v = MaxPooling2D((2,2), padding='same', name='downsampler')(v)
 v = convNet(v)
 
@@ -132,7 +132,7 @@ while mat['frameTimeStamps'][lastIdx][0]==INF:
     lastIdx-=1
 while mat['frameTimeStampsWisk'][otherlastIdx][0]==INF:
     otherlastIdx-=1
-    
+
 otherFirstTime = mat['frameTimeStamps'][firstIdx][0]
 firstTime = mat['frameTimeStampsWisk'][otherfirstIdx][0]
 for i, obsOnTime in enumerate(obsOnTimes):

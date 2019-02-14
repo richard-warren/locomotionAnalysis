@@ -28,7 +28,7 @@ metaDataFields = sessionInfo.Properties.VariableNames;
 metaDataFields = cat(2, metaDataFields, {'sessionNum'});
 if ismember('condition', metaDataFields); metaDataFields = cat(2, metaDataFields, {'conditionNum'}); end
 
-parfor i = 1:length(sessions)
+for i = 1:length(sessions)
     try
         % get metadata for sessions
         sessionInfoBin = strcmp(sessionInfo.session, sessions{i});

@@ -11,7 +11,7 @@ showDlcScores = false;
 showTouchData = true;
 showStance = true;
 circSize = 100;
-vidSizeScaling = 1.5;
+vidSizeScaling = 2.0;
 colorMap = 'hsv';
 scaling = 1.0; % network was trained on resolution of (saling)*(original resolution)
 connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
@@ -54,7 +54,7 @@ end
 % set up figure
 if addingFrames; figureName = [session ', frames added: 0']; else; figureName = session; end
 hgt = (vidBot.Height+vidTop.Height);
-fig = figure('name', figureName, 'units', 'pixels', 'position', [600 400 vidBot.Width*vidSizeScaling hgt*vidSizeScaling],...
+fig = figure('name', figureName, 'units', 'pixels', 'position', [600 100 vidBot.Width*vidSizeScaling hgt*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
 imPreview = image(zeros(hgt, vidBot.Width), 'CDataMapping', 'scaled'); hold on;

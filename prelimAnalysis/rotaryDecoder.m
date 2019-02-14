@@ -31,7 +31,7 @@ states = [aStates bStates];
 states = states(sortInds);
 
 % create identities vector, where each element represents whether encoder A (1) or B (2) has changed state
-% this is the most economical representation of the encoder data, because the states can be inferred at all times if you known the starting state of both channels and the times at which those channels change
+% this is the most economical representation of the encoder data, because the states can be inferred at all times if you know the starting state of both channels and the times at which those channels change
 identities = [ones(1, length(aTimes)) ones(1, length(bTimes))*2];
 identities = identities(sortInds);
 

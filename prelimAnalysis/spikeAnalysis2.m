@@ -659,7 +659,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         fprintf('%s: getting whisker contacts\n', session)
         
         % settings
-        rerunWiskNetwork = false;
+        rerunWiskNetwork = true;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
