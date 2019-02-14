@@ -1,4 +1,4 @@
-function scatterConditions(vars, varNames, conditions, conditionNames)
+function scatterPlotRick(vars, varNames, conditions, conditionNames)
 
 % settings
 colors = hsv(length(conditionNames));

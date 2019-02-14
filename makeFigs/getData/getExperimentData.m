@@ -22,7 +22,7 @@ sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum'};
 trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'obsPosAtContact', 'wiskContactPosition', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
-             'tailHgt'};
+             'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKin'};
 
@@ -199,6 +199,20 @@ function var = getVar(dvName)
                 tailHgts(sesKinData(i).trialInds) = sesKinData(i).locationsTail(:,3,1);
             end
             var = avgSignalPerTrial(tailHgts, sesData.frameTimeStamps);
+            
+        case 'modPawDistanceToObs'
+            var = num2cell(false(1,length(sesKinData)));
+            for i = sesKinInds
+                var{i} = sesKinData(i).modifiedLocations{sesKinData(i).firstModPaw}(1,1,end);
+            end
+            
+        case 'modPawPredictedDistanceToObs'
+            var = num2cell(false(1,length(sesKinData)));
+            for i = sesKinInds
+                xStart = sesKinData(i).modifiedLocations{sesKinData(i).firstModPaw}(1,1,1); % first x val of first mod step for mod paw
+                predictedLength = sesKinData(i).modPredictedLengths(1,sesKinData(i).firstModPaw);
+                var{i} = xStart + predictedLength;
+            end
             
             
             
