@@ -115,7 +115,7 @@ for i in range(len(mat['frameTimeStamps'])):
         if beforeAfter:
             mat['frameTimeStamps'][i][0] = -1
         else:
-            mat['frameTimeStampsWisk'][i][0]=INF
+            mat['frameTimeStamps'][i][0]=INF
     else:
         beforeAfter = False
 firstIdx = bisect.bisect(np.squeeze(mat['frameTimeStamps']), -1)
