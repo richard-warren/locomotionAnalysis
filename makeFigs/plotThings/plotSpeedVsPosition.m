@@ -1,17 +1,19 @@
-function plotSpeedVsPosition(data, figTitle, conditions)
+function plotSpeedVsPosition(sessionInfo, figTitle, conditions)
+
 
 
 % settings
 plotMouseAvgs = false;
 yLims = [.3 .6];
-xLims = [-.5 .2];
+xLims = [-.5 .2]; % (m)
+posRes = .001; % (m) // resoultion of positional grid that velocities are computed over
 errorFcn = @(x) nanstd(x)/sqrt(size(x,1)); % function for error bars
 % errorFcn = @(x) nanstd(x);
 
 % initializations
-if ~exist('conditions', 'var'); conditions = unique({data.condition}); end
-mice = unique({data.mouse});
-posInterp = data(1).trialPosInterp;
+if ~exist('conditions', 'var'); conditions = unique(sessionInfo.condition); end
+mice = unique(sessionInfo.mouse);
+posInterp = xLims(1) : posRes : xLims(2); % velocities will be interpolated across this grid of positional values
 lightConditions = {'light off', 'light on'};
 colors = hsv(length(conditions));
 
@@ -20,12 +22,12 @@ mouseAvgs = nan(length(conditions), length(mice), 2, length(posInterp)); % condi
 for i = 1:length(conditions)
     for j = 1:length(mice)
         for k = 1:2
-            bins = strcmp({data.condition}, conditions{i}) & ...
-                   strcmp({data.mouse}, mice{j}) & ...
-                   [data.isLightOn]+1 == k & ...
-                   ~[data.isWheelBreak];
+            bins = strcmp({sessionInfo.condition}, conditions{i}) & ...
+                   strcmp({sessionInfo.mouse}, mice{j}) & ...
+                   [sessionInfo.isLightOn]+1 == k & ...
+                   ~[sessionInfo.isWheelBreak];
             
-            mouseAvgs(i,j,k,:) = mean(cat(1,data(bins).trialVelInterp));
+            mouseAvgs(i,j,k,:) = mean(cat(1,sessionInfo(bins).trialVelInterp));
         end
     end
 end
@@ -49,12 +51,12 @@ for i = 1:2
         end
         
         % vertical line at avg wisk contact position for condition
-        contactPos = nanmean([data([data.isLightOn]+1==j & ~[data.isWheelBreak]).wiskContactPositions]);
+        contactPos = nanmean([sessionInfo([sessionInfo.isLightOn]+1==j & ~[sessionInfo.isWheelBreak]).wiskContactPositions]);
         line([contactPos contactPos], yLims, 'color', [colors(j,:) .5])
     end
     
     % vertical line at avg obs on position
-    obsOnPos = nanmean([data(~[data.isWheelBreak]).obsOnPositions]);
+    obsOnPos = nanmean([sessionInfo(~[sessionInfo.isWheelBreak]).obsOnPositions]);
     line([obsOnPos obsOnPos], yLims, 'color', mean(colors,1))
     
     % pimp fig
