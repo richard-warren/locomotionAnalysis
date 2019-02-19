@@ -1,23 +1,23 @@
-% function plotDvPsth(data, dv, xEvents, xLims, plotVar, rowVar)
+function plotDvPsth(data, dv, xLims, plotVar, rowVar)
 
 
 % used to plot PSTHs of continuous data signals stored on data struct //
-% data has one row per trial // y is the variable to be plotted as a
-% function of x (eg plotting velocity vs time) // xEvents is the value of
-% x corresponding to some event (eg whisker contact) around which the plot
-% is centered // plotVar is the field in data containing conditions that
+% data has one row per trial // dv is the variable to be plotted as a
+% function of x (eg plotting velocity vs time) // plotVar is the field in data containing conditions that
 % should be plotted as different colored lines // rowVar is plotted as
 % different subplot, stacked one on top of another // this function
-% averages all trials for given mouse, then averages across mice
+% averages all trials for given mouse, then averages across mice // assumes
+% that dv is matrix with 2 rows, first row containing y values and second
+% row containing x values
 
-%% temp
-data = getNestedStructFields(dataTemp, ...
-    {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', 'isBigStep', ...
-    'condition', 'velContinuousAtContact', 'isTrialSuccess', 'isWheelBreak'});
-dv = 'velContinuousAtContact';
-plotVar = 'condition';
-rowVar = 'isWheelBreak';
-xLims = [-.5 .5];
+% temp
+% data = getNestedStructFields(dataTemp, ...
+%     {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', 'isBigStep', 'obsOnPositions', ...
+%     'condition', 'velContinuousAtContact', 'velVsPosition', 'isTrialSuccess', 'isWheelBreak', 'wiskContactPosition'});
+% dv = 'velVsPosition';
+% plotVar = 'isLightOn';
+% rowVar = 'condition';
+% xLims = [-.5 .2];
 
 % settings
 errorFcn = @(x) nanstd(x)/sqrt(size(x,1)); % function for error bars
@@ -25,7 +25,7 @@ plotMouseAvgs = false;
 % errorFcn = @(x) nanstd(x);
 
 
-%% initializations
+% initializations
 if isa(data(1).(plotVar), 'char'); plotConditions = unique({data.(plotVar)}); else; plotConditions = num2cell(unique([data.(plotVar)])); end
 if isa(data(1).(rowVar), 'char'); rowConditions = unique({data.(rowVar)}); else; rowConditions = num2cell(unique([data.(rowVar)])); end
 colors = hsv(length(plotConditions));
@@ -53,8 +53,6 @@ end
 
 
 % plot for light on/off
-close all; figure('Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 250*length(rowConditions)], 'inverthardcopy', 'off')
-
 for i = 1:length(rowConditions)
     subplot(length(rowConditions),1,i)
     
@@ -69,22 +67,16 @@ for i = 1:length(rowConditions)
             end
         end
     end
-    line([0 0], get(gca, 'YLim'), 'color', mean(colors,1))
+    yLims = get(gca, 'YLim');
+    line([0 0], yLims, 'color', [.5 .5 .5])
+    set(gca, 'YLim', yLims)
     
     % pimp fig
     set(gca, 'XLim', xLims, 'Box', 'off')
-%     title(lightConditions{i})
 end
 
-xlabel(x)
-ylabel(y)
 for i = 1:length(plotConditions); lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
-legend(lines, plotConditions, 'Location', 'northeast', 'Box', 'off')
-
-
-
-
-
+try; legend(lines, plotConditions, 'Location', 'northeast', 'Box', 'off', 'AutoUpdate', 'off'); catch; end
 
 
 

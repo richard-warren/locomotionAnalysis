@@ -54,6 +54,7 @@ disp([manipulation ' data loaded!'])
 % PLOT THINGS
 %  ----------
 
+
 %% bar plots
 
 
@@ -185,13 +186,41 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 %% sessions over time
 
 % success, vel, body angle, baseline step height, 
+dvs = {'isWheelBreak', 'isTrialSuccess', 'trialVel', 'trialAngleContra', ...
+       'obsPosAtContact', 'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
+       'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact'};
+flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum'}, dvs));
+plotAcrossSessions2(flat, dvs);
+
+
+
+
+
 
 %% speed vs. position / time plots
 
-% speed vs position, control vs manip
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'condition', 'obsOnPositions', ...
+    'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition'});
+flat = flat(~[flat.isWheelBreak]);
 
+% speed vs position, control vs manip
+figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
+plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'condition', 'isLightOn')
+conditions = unique({flat.condition});
+for i = 1:length(conditions)
+    subplot(length(conditions),1,i)
+    line(repmat(nanmean([flat.obsOnPositions]),1,2), get(gca, 'YLim'), 'color', [.5 .5 .5])
+end
+xlabel('position relaive to nose (m)')
+ylabel('velocity (m/s)')
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'speedVsPosition.fig']))
 
 % speed vs time centered around whisker contract
+figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2600 50 600 500], 'inverthardcopy', 'off')
+plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'condition', 'isLightOn')
+xlabel('time relative to whisker contact (s)')
+ylabel('velocity (m/s)')
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'speedAroundContact.fig']))
 
 
 %% height shaping scatters

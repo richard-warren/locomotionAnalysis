@@ -97,7 +97,8 @@ function sessionData = getDataForSession(session, sessionMetaData)
 
         % get speed as a function of position
         if includeContinuousVelocity
-            obsWheelPos = interp1(wheelTimes, wheelPositions, obsOnTimes(j)); % wheel position at moment obs turns on
+            disp('WARNING! This code does not work properly...'); keyboard;
+            obsWheelPos = interp1(wheelTimes, wheelPositions, obsOnTimes(j)); % wheel position at moment obs turns on !!! this is incorrect and should be the time at which obstalce reaches the nose of the mouse! fuck!
             trialBins = (wheelPositions > obsWheelPos+obsPrePost(1)) & (wheelPositions < obsWheelPos+obsPrePost(2));
             trialPos = wheelPositions(trialBins) - obsWheelPos; % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
             trialVel = wheelVel(trialBins); % wheel vel for trial

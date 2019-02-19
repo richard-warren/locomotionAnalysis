@@ -18,10 +18,11 @@ preObsLim = .008;
 
 % initialiations
 mouseVars = {};
-sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum'};
-trialVars = {'velContinuousAtContact', 'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
+sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum', 'sessionNum'};
+trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
+             'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'obsPosAtContact', 'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
+             'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKin'};
@@ -126,26 +127,20 @@ function var = getVar(dvName)
                 var(bins) = num2cell(1:sum(bins));
             end
             
+        case 'sessionNum'
+            var = num2cell(1:length(expData(mouse).sessions)); % !!! not working correctly
+            
             
             
             
             
         % trial variables
         % ---------------
-%         case 'trialTimes'
-%             % vector of frame time stamps for trial
-%             var = num2cell(false(1,length(sesKinData)));
-%             for i = sesKinInds
-%                 var{i} = sesData.frameTimeStamps(sesKinData(i).trialInds);
-%             end
         
-%         case 'trialVelContinuous'
-%             % velocity for each trial, with each trial only saving velocity at trialTimes
-%             var = num2cell(false(1,length(sesKinData)));
-%             for i = 1:length(sesKinData)
-%                 var{i} = wheelVel(sesKinData(i).trialInds);
-%             end
-
+        case 'obsOnPositions'
+            % position of the obstacle relative to mouse nose at the moment it turns on
+            var = num2cell(interp1(sesData.obsTimes, sesData.obsPositionsFixed, sesData.obsOnTimes, 'linear'));
+            
         case 'velContinuousAtContact'
             % continuous velocity vector surrouding moment of whisker
             % contact // 2xn matrix, with first row containing velocity
@@ -159,6 +154,30 @@ function var = getVar(dvName)
                 if ~isempty(startInd)
                     var{i} = [wheelVel(startInd:startInd+length(times)-1); times];
                 end
+            end
+            
+        case 'velVsPosition'
+            % continuous velocity as a function of position of obstacle relative to nose
+            % 2xn matrix, with first row containing velocity
+            % signal and second row containing position
+            
+            prePost = [-.8 .4]; % (m) time before and after whisker contact to collect velocity data
+            posInterp = linspace(prePost(1), prePost(2), 500);
+            
+            var = cell(1,length(sesKinData));
+            for i = sesKinInds
+                obsAtNoseTime = sesData.obsTimes(find(sesData.obsPositionsFixed>=0 & sesData.obsTimes>sesData.obsOnTimes(i), 1, 'first'));
+                obsAtNosePos = sesData.wheelPositions(find(sesData.wheelTimes>obsAtNoseTime,1,'first'));
+                trialBins = (sesData.wheelPositions > obsAtNosePos+prePost(1)) & (sesData.wheelPositions < obsAtNosePos+prePost(2));
+                trialPos = sesData.wheelPositions(trialBins) - obsAtNosePos; % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
+                trialVel = wheelVel(trialBins); % wheel vel for trial
+
+                % remove duplicate positional values (would be better to average all values in a particular bin)
+                [trialPos, uniqueInds] = unique(trialPos, 'stable');
+                trialVel = trialVel(uniqueInds);
+
+                % interpolate velocities across positional grid and store results
+                var{i} = [interp1(trialPos, trialVel, posInterp, 'linear'); posInterp];
             end
             
         case 'isLightOn'
@@ -199,9 +218,6 @@ function var = getVar(dvName)
         case 'angleAtWiskContactContra'
             var = getVar('angleAtWiskContact');
             if strcmp(expData(mouse).sessions(session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
-            
-        case 'obsPosAtContact'
-            var = num2cell(interp1(sesData.obsTimes, sesData.obsPositionsFixed, sesData.wiskContactTimes));
             
         case 'wiskContactPosition'
             var = num2cell([sesKinData.wiskContactPositions]);
