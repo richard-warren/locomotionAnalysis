@@ -12,17 +12,17 @@ function expData = getExperimentData(sessionInfo, vars)
 
 % settings
 touchThresh = 5;
-speedTime = .05; % compute velocity over this interval
+speedTime = .01; % compute velocity over this interval
 preObsLim = .008;
 
 
 % initialiations
 mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum'};
-trialVars = {'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
+trialVars = {'velContinuousAtContact', 'isLightOn', 'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'obsPosAtContact', 'wiskContactPosition', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
-             'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs'};
+             'obsPosAtContact', 'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
+             'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKin'};
 
@@ -132,6 +132,35 @@ function var = getVar(dvName)
             
         % trial variables
         % ---------------
+%         case 'trialTimes'
+%             % vector of frame time stamps for trial
+%             var = num2cell(false(1,length(sesKinData)));
+%             for i = sesKinInds
+%                 var{i} = sesData.frameTimeStamps(sesKinData(i).trialInds);
+%             end
+        
+%         case 'trialVelContinuous'
+%             % velocity for each trial, with each trial only saving velocity at trialTimes
+%             var = num2cell(false(1,length(sesKinData)));
+%             for i = 1:length(sesKinData)
+%                 var{i} = wheelVel(sesKinData(i).trialInds);
+%             end
+
+        case 'velContinuousAtContact'
+            % continuous velocity vector surrouding moment of whisker
+            % contact // 2xn matrix, with first row containing velocity
+            % signal and second row containing time relative to contact for
+            % given trial
+            prePost = [-1 1]; % (s) time before and after whisker contact to collect velocity data
+            times = prePost(1):(1/sesData.targetFs):prePost(2);
+            var = cell(1,length(sesKinData));
+            for i = sesKinInds
+               startInd = find(sesData.wheelTimes >= sesData.wiskContactTimes(i) + prePost(1), 1, 'first');
+                if ~isempty(startInd)
+                    var{i} = [wheelVel(startInd:startInd+length(times)-1); times];
+                end
+            end
+            
         case 'isLightOn'
             var = num2cell(sesData.isLightOn);
             
@@ -176,6 +205,9 @@ function var = getVar(dvName)
             
         case 'wiskContactPosition'
             var = num2cell([sesKinData.wiskContactPositions]);
+            
+        case 'wiskContactTimes'
+            var = num2cell([sesKinData.wiskContactTimes]);
             
         case 'isContraFirst'
             var = num2cell(false(1,length(sesKinData)));
