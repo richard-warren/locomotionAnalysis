@@ -23,9 +23,10 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
-             'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact'};
+             'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
+             'modPawKinInterp', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
-           'penultStepLength', 'stepOverStartingDistance', 'stepOverKin'};
+           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -264,6 +265,39 @@ function var = getVar(dvName)
                 var{i} = xStart + predictedLength;
             end
             
+        case 'modPawKinInterp'
+            % kinematics of first modified step for first modified paw
+            var = repmat({nan(3,locationsInterpSmps)},1,length(sesKinData));
+            for i = sesKinInds
+                var{i} = squeeze(sesKinData(i).modifiedLocationsInterp{sesKinData(i).firstModPaw}(1,:,:));
+            end
+            
+        case 'preModPawKinInterp'
+            % kinematics of step preceding first modified step for first modified paw
+            var = repmat({nan(3,locationsInterpSmps)},1,length(sesKinData));
+            for i = sesKinInds
+                var{i} = squeeze(sesKinData(i).controlLocationsInterp{sesKinData(i).firstModPaw}(end,:,:));
+            end
+            
+        case 'modPawDeltaLength'
+            % change in length of first modified step of first modified paw
+            var = num2cell(false(1,length(sesKinData)));
+            for i = sesKinInds
+                predictedLength = sesKinData(i).modPredictedLengths(1,sesKinData(i).firstModPaw);
+                actualLength = sesKinData(i).modifiedSwingLengths(1,sesKinData(i).firstModPaw);
+                var{i} = actualLength - predictedLength;
+            end
+            
+            
+        case 'preModPawDeltaLength'
+            % change in length of step preceding first modified step of first modified paw (serves as control for modPawDeltaLength)
+            var = num2cell(false(1,length(sesKinData)));
+            for i = sesKinInds
+                predictedLength = sesKinData(i).controlPredictedLengths(end,sesKinData(i).firstModPaw);
+                actualLength = sesKinData(i).controlSwingLengths(end,sesKinData(i).firstModPaw);
+                var{i} = actualLength - predictedLength;
+            end
+            
             
             
             
@@ -328,7 +362,7 @@ function var = getVar(dvName)
                 var = num2cell(cellfun(@(x) x(end,1,1), sesKinData(trial).modifiedLocations));
             end
         
-        case 'stepOverKin'
+        case 'stepOverKinInterp'
             var = repmat({nan(3,locationsInterpSmps)},1,4);
             if sesKinData(trial).isTrialAnalyzed
                 var = cellfun(@(x) squeeze(x(end,:,:)), sesKinData(trial).modifiedLocationsInterp, 'UniformOutput', false);

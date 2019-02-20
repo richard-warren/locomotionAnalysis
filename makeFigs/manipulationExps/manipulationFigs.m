@@ -21,9 +21,10 @@ vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'n
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 if strcmp(manipulation, 'muscimol')
     vars.condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'sal', 'mus'}});
-else
+elseif strcmp(manipulation, 'lesion')
     vars.condition = struct('name', 'condition', 'levels', {{'pre', 'post'}}, 'levelNames', {{'pre', 'post'}});
 end
+manipConditions = vars.condition.levels;
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
@@ -179,7 +180,26 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 %% big step kinematics
 
-flat = getNestedStructFields(data, {'modPawPredictedDistanceToObs')};
+% settings
+% close all
+rowVar = 'modPawPredictedDistanceToObs';
+numRows = 5;
+
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'isBigStep', 'isLightOn', ...
+    rowVar, 'preModPawDeltaLength', 'modPawDeltaLength', 'obsHgt', 'condition', 'isTrialSuccess', 'isWheelBreak'});
+flat = flat(~[flat.isLightOn]);
+controlBins = strcmp({flat.condition}, manipConditions{1});
+manipBins = strcmp({flat.condition}, manipConditions{2});
+lims = prctile([flat.(rowVar)], [5 95]);
+rowInds = discretize([flat.(rowVar)], linspace(lims(1), lims(2), numRows+1));
+
+plotOneVsTwoStepTrajectories2(flat(controlBins), rowInds(controlBins));
+set(gcf, 'Name', [brainRegion '_' manipulation '_control.fig'])
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepKinControl.fig']))
+
+plotOneVsTwoStepTrajectories2(flat(manipBins), rowInds(manipBins));
+set(gcf, 'Name', [brainRegion '_' manipulation '_manip.fig'])
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepKinManip.fig']))
 
 
 %% sessions over time
