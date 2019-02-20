@@ -221,9 +221,11 @@ flat = flat(~[flat.isWheelBreak]);
 figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
 plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'condition', 'isLightOn')
 conditions = unique({flat.condition});
+plotTitles = {'light off', 'light on'};
 for i = 1:length(conditions)
     subplot(length(conditions),1,i)
     line(repmat(nanmean([flat.obsOnPositions]),1,2), get(gca, 'YLim'), 'color', [.5 .5 .5])
+    title(plotTitles{i})
 end
 xlabel('position relaive to nose (m)')
 ylabel('velocity (m/s)')
@@ -232,6 +234,10 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 % speed vs time centered around whisker contract
 figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2600 50 600 500], 'inverthardcopy', 'off')
 plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'condition', 'isLightOn')
+for i = 1:length(conditions)
+    subplot(length(conditions),1,i)
+    title(plotTitles{i})
+end
 xlabel('time relative to whisker contact (s)')
 ylabel('velocity (m/s)')
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'speedAroundContact.fig']))
@@ -309,9 +315,6 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 
 % fore/hind, leading, manip (contra only, light off only)
-
-
-
 
 
 
