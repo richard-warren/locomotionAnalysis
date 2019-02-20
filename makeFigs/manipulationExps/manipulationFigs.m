@@ -10,7 +10,6 @@ varsToAvg = {'mouse', 'session'};
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & ...
-                          [sessionInfo.include]==1 & ...
                           strcmp(sessionInfo.brainRegion, brainRegion),:); % remove empty rows, not included sessions, and those without correct brain region
 
 % set categorical vars
@@ -38,7 +37,7 @@ conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) (x>=5 & x
 if strcmp(manipulation, 'lesion'); figConditionals = [conditionals.isEarly]; else; figConditionals = struct('name', '', 'condition', @(x) x); end
 
 %% compute kinData for all sessions (only need to do once)
-sessions = unique(sessionInfo.session);
+sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
@@ -180,21 +179,16 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 %% big step kinematics
 
-% !!! how to show this for different conditions?
+flat = getNestedStructFields(data, {'modPawPredictedDistanceToObs')};
 
 
 %% sessions over time
 
 % success, vel, body angle, baseline step height, 
-dvs = {'isWheelBreak', 'isTrialSuccess', 'trialVel', 'trialAngleContra', ...
-       'obsPosAtContact', 'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
-       'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact'};
+dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
 flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum'}, dvs));
 plotAcrossSessions2(flat, dvs);
-
-
-
-
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_sessionsOverTime.fig']))
 
 
 %% speed vs. position / time plots

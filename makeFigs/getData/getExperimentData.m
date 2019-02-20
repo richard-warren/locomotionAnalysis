@@ -48,7 +48,7 @@ end
 for mouse = 1:length(mice)
     
     % get session data
-    sessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{mouse}));
+    sessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{mouse}) & logical(sessionInfo.include));
     expData(mouse).sessions = struct('session', sessions);
     for sessionVar = 1:length(sessionVars)
         temp = getVar(sessionVars{sessionVar});
@@ -128,7 +128,9 @@ function var = getVar(dvName)
             end
             
         case 'sessionNum'
-            var = num2cell(1:length(expData(mouse).sessions)); % !!! not working correctly
+            allMouseSessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{mouse})); % all sessions, including those where .include==false
+            [~, inds] = intersect(allMouseSessions, sessions, 'stable');
+            var = num2cell(inds);
             
             
             

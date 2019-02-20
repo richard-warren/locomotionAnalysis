@@ -1,11 +1,7 @@
-function plotOneVsTwoStepTrajectories(data, bins, plotType)
+function plotOneVsTwoStepTrajectories(data, rowInds, plotType)
 
 
 % global settings
-% validBins = ~[data.isLightOn] & ~[data.isWheelBreak];
-validBins = [data.isLightOn] & ~[data.isWheelBreak];
-% validBins = ~[data.isWheelBreak];
-
 obsDiam = 3.175; % mm
 colors = [.25 1 1; .25 1 .25]; % colors for little vs big steps
 obsColor = [.2 .2 .2];
@@ -30,10 +26,12 @@ transparency = .4;
 
 
 
+keyboard
+
 % initializations
 % if showPredictedLocations; predictedLocations = [data.swingStartDistance] + [data.predictedLengths]; end % predicted distance to obs
-binNum = max(bins);
-bins(~validBins) = 0; % makes sure we don't use invalid trials
+binNum = max(rowInds);
+rowInds(~validBins) = 0; % makes sure we don't use invalid trials
 deltaLengths = cellfun(@(x,ind) x(1,data(ind).firstModPaw), ... % for each trial, get length of first mod paw
     {data.modifiedSwingLengths}, num2cell(1:length(data))) ...    % all mod paw lengths, trial ind
     - [data.predictedLengths];                                    % subtract predicted lengths
@@ -61,12 +59,12 @@ figure('color', 'white', 'menubar', 'none', 'position', [100 50 800 1000], 'Inve
 for h = 1:binNum
 
     ax = subaxis(binNum, 2, h*2);
-    oneStepBins = bins==h & numModSteps==1;
-    twoStepBins = bins==h & numModSteps==2;
+    oneStepBins = rowInds==h & numModSteps==1;
+    twoStepBins = rowInds==h & numModSteps==2;
     oneTwoRatio = sum(oneStepBins) / (sum(oneStepBins) + sum(twoStepBins));
 
     % control histo
-    binCounts = histcounts(deltaControlLengths(bins==h), deltaBinEdges);
+    binCounts = histcounts(deltaControlLengths(rowInds==h), deltaBinEdges);
     histoConv = conv(binCounts, kernel, 'same');
     histoConv = (histoConv/sum(histoConv));
     shadedErrorBar(deltaBinCenters, histoConv, cat(1, histoConv, zeros(1,length(histoConv))), ...
@@ -116,16 +114,16 @@ if strcmp(plotType, 'trials')
 
         % get inds for one and two step trials within bin
         % (making sure the number of trials of each type reflects the proportion of each type across all trials)
-        oneStepPortion = sum(bins==h & numModSteps==1) / sum(bins==h);
+        oneStepPortion = sum(rowInds==h & numModSteps==1) / sum(rowInds==h);
         oneTwoStepTrialNums = [ceil(tracesPerPlot*oneStepPortion) ceil(tracesPerPlot*(1-oneStepPortion))];
 
         if oneTwoStepTrialNums(1)>0
-            oneStepInds = find(bins==h & numModSteps==1);
+            oneStepInds = find(rowInds==h & numModSteps==1);
             oneStepInds = oneStepInds(randperm(length(oneStepInds), oneTwoStepTrialNums(1)));
         else
             oneStepInds = [];
         end
-        twoStepInds = find(bins==h & numModSteps>1);
+        twoStepInds = find(rowInds==h & numModSteps>1);
         twoStepInds = twoStepInds(randperm(length(twoStepInds), oneTwoStepTrialNums(2)));
 
 
@@ -152,7 +150,7 @@ if strcmp(plotType, 'trials')
         end
         
         % add obstacle
-        avgObsHgt = mean([data(bins==h).obsHeightsVid]) / 1000; % get avg obstacle height for bin
+        avgObsHgt = mean([data(rowInds==h).obsHeightsVid]) / 1000; % get avg obstacle height for bin
         circ = rectangle('position', [0-obsRadius, avgObsHgt-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
             'curvature', [1 1], 'facecolor', obsColor, 'edgecolor', 'none');
         
@@ -161,12 +159,12 @@ if strcmp(plotType, 'trials')
         
         % get right control locations
         controlLocations = cellfun(@(x,ind) x{data(ind).firstModPaw}(end,:,:), ...
-            {data(bins==h).controlLocations}, num2cell(find(bins==h)), 'UniformOutput', false); % only take last control step
+            {data(rowInds==h).controlLocations}, num2cell(find(rowInds==h)), 'UniformOutput', false); % only take last control step
         controlLocations = cat(1,controlLocations{:});
 
         % get x offset (mean starting x pos of modified steps)
         modLocations = cellfun(@(x,ind) x{data(ind).firstModPaw}(1,:,:), ...
-            {data(bins==h).modifiedLocations}, num2cell(find(bins==h)), 'UniformOutput', false); % only take last control step
+            {data(rowInds==h).modifiedLocations}, num2cell(find(rowInds==h)), 'UniformOutput', false); % only take last control step
         modLocations = cat(1,modLocations{:});
         xOffset = mean(squeeze(modLocations(:,1,1)));
 
@@ -195,9 +193,9 @@ elseif strcmp(plotType, 'averages')
         subaxis(binNum, 2, h*2-1);
         
         % get subplot bins for different conditions
-        controlBins = bins==h;
-        oneStepBins = bins==h & numModSteps==1;
-        twoStepBins = bins==h & numModSteps==2;
+        controlBins = rowInds==h;
+        oneStepBins = rowInds==h & numModSteps==1;
+        twoStepBins = rowInds==h & numModSteps==2;
         oneTwoRatio = sum(oneStepBins) / (sum(oneStepBins) + sum(twoStepBins)); % ratio of trials in which swing foot takes one large step to those in which an additional step is taken
         oneTwoRatio = oneTwoRatio * 2 - 1; % scale from -1 to 1
 
@@ -227,7 +225,7 @@ elseif strcmp(plotType, 'averages')
 
 
         % add obstacle
-        avgObsHgt = mean([data(bins==h).obsHeightsVid]) / 1000; % get avg obstacle height for bin
+        avgObsHgt = mean([data(rowInds==h).obsHeightsVid]) / 1000; % get avg obstacle height for bin
         circ = rectangle('position', [0-obsRadius, avgObsHgt-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
             'curvature', [1 1], 'facecolor', obsColor, 'edgecolor', 'none');
         
@@ -236,12 +234,12 @@ elseif strcmp(plotType, 'averages')
         
         % get control locations
         controlLocations = cellfun(@(x,ind) x{data(ind).firstModPaw}(end,:,:), ...
-            {data(bins==h).controlLocations}, num2cell(find(bins==h)), 'UniformOutput', false); % only take last control step
+            {data(rowInds==h).controlLocations}, num2cell(find(rowInds==h)), 'UniformOutput', false); % only take last control step
         controlLocations = cat(1,controlLocations{:});
 
         % get x offset (mean starting x pos of modified steps)
         modLocations = cellfun(@(x,ind) x{data(ind).firstModPaw}(1,:,:), ...
-            {data(bins==h).modifiedLocations}, num2cell(find(bins==h)), 'UniformOutput', false); % only take last control step
+            {data(rowInds==h).modifiedLocations}, num2cell(find(rowInds==h)), 'UniformOutput', false); % only take last control step
         modLocations = cat(1,modLocations{:});
         xOffset = mean(squeeze(modLocations(:,1,1)));
 

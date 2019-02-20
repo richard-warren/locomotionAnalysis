@@ -9,7 +9,7 @@ mouseSymbols = {'o', '+', '*', '.', 'x', 's', 'd'};
 
 % initializations
 rows = ceil(length(dvs) / columns);
-figure('Color', 'white', 'MenuBar', 'none', 'Position', [2000 10 600*columns 150*rows], 'InvertHardcopy', 'off')
+figure('Color', 'white', 'MenuBar', 'none', 'Position', [2000 100 600*columns 150*rows], 'InvertHardcopy', 'off')
 mice = unique({data.mouse});
 conditions = unique({data.condition});
 colors = hsv(length(conditions));
