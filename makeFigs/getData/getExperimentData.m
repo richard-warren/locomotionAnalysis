@@ -52,8 +52,10 @@ for mouse = 1:length(mice)
     sessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{mouse}) & logical(sessionInfo.include));
     expData(mouse).sessions = struct('session', sessions);
     for sessionVar = 1:length(sessionVars)
+        try
         temp = getVar(sessionVars{sessionVar});
         [expData(mouse).sessions(1:length(sessions)).(sessionVars{sessionVar})] = temp{:};
+        catch; end
     end
     
     % loop over sessions
@@ -74,8 +76,10 @@ for mouse = 1:length(mice)
         % get trial data
         expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(sesKinData)));
         for trialVar = 1:length(trialVars)
+            try
             temp = getVar(trialVars{trialVar});
             [expData(mouse).sessions(session).trials(1:length(sesKinData)).(trialVars{trialVar})] = temp{:};
+            catch; end
         end
         
         % loop over trials
@@ -84,8 +88,10 @@ for mouse = 1:length(mice)
             % get paw data
             expData(mouse).sessions(session).trials(trial).paws = struct('paw', {1,2,3,4}, 'pawName', {'LH', 'LF', 'RF', 'RH'});
             for pawVar = 1:length(pawVars)
+                try
                 temp = getVar(pawVars{pawVar});
                 [expData(mouse).sessions(session).trials(trial).paws(1:4).(pawVars{pawVar})] = temp{:};
+                catch; end
             end
         end
     end 

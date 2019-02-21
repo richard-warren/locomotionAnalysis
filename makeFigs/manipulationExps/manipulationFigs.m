@@ -3,7 +3,7 @@
 % ---------------
 
 % settings
-manipulation = 'muscimol';
+manipulation = 'lesion';
 brainRegion = 'mtc';
 varsToAvg = {'mouse', 'session'};
 

@@ -9,8 +9,8 @@ function logPlotRick(x, y, varNames, conditions, conditionNames)
 % array of length max(conditions)
 
 % settings
-xPercentileLims = [1 99]; % exclude x values outside these percentile limits
-smoothing = .04; % expressed as fraction of x limits (determined by xPercentileLims)
+xPercentileLims = [5 95]; % exclude x values outside these percentile limits
+smoothing = .1; % expressed as fraction of x limits (determined by xPercentileLims)
 bins = 100;
 lineWidth = 3;
 
