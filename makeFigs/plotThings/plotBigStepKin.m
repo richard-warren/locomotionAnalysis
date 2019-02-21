@@ -1,13 +1,14 @@
-function plotOneVsTwoStepTrajectories2(data, rowInds)
+function plotBigStepKin(data, rowInds)
 
-% to do: add individual trials option // add times of whisker contact
+% plots kinematics of first modified paw, with one line showing
+% trajectories for big steps, and another for shortened steps // relative
+% thickness of lines represents portion of trials on which one vs the other
+% strategy is chosen // also shows histograms of delta step lengths for
+% control and modified steps // assumes data is a struct with all of the
+% necessary fields // rowInds tells which row of the plot each trial should
+% be included in
 
-
-% temp
-% data = getNestedStructFields(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'isBigStep', ...
-%     'modPawPredictedDistanceToObs', 'preModPawDeltaLength', 'modPawDeltaLength', 'obsHgt'});
-% lims = prctile([data.modPawPredictedDistanceToObs], [5 95]);
-% rowInds = discretize([data.modPawPredictedDistanceToObs], linspace(lims(1), lims(2), 4));
+% to do: perhaps should average within mice, then across mice afterwards? // add individual trials option // add times of whisker contact
 
 
 % global settings
@@ -20,7 +21,7 @@ kinematicsHistoSeparation = .02; % separation between kin data and histos
 sidePadding = .02; % padding at side of figure
 
 % kinematic plot settings
-xLims = [-.08 .03];
+xLims = [-.1 .03];
 zLims = [0 .015];
 lineWid = 3;
 
@@ -65,10 +66,12 @@ for h = 1:numRows
     end
 
     % two step histo
-    histoConv = ksdensity([data(twoStepBins).modPawDeltaLength], histGrid) * (1-oneTwoRatio);
-    shadedErrorBar(histGrid, histoConv, cat(1, histoConv, zeros(1,length(histoConv))), ...
-            'lineprops', {'linewidth', 3, 'color', colors(1,:)}, ...
-            'patchSaturation', 1-transparency); hold on;
+    if any(twoStepBins)
+        histoConv = ksdensity([data(twoStepBins).modPawDeltaLength], histGrid) * (1-oneTwoRatio);
+        shadedErrorBar(histGrid, histoConv, cat(1, histoConv, zeros(1,length(histoConv))), ...
+                'lineprops', {'linewidth', 3, 'color', colors(1,:)}, ...
+                'patchSaturation', 1-transparency); hold on;
+    end
 
     % set apearance
     axPos = [sidePadding+kinematicsWidth+kinematicsHistoSeparation, ...

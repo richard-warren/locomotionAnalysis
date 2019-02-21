@@ -2,7 +2,7 @@ function plotKinematics(trajectories, obsHgts, conditions, conditionNames)
 
 % plots kinematic trajectories for different conditions on top of one
 % another, including obstacle position // trajectories is [number of trials
-% X 2 (xy) X time] matrix with kinematics // obsHgts is height of obstacle
+% X 2 (xz) X time] matrix with kinematics // obsHgts is height of obstacle
 % for each trial // conditions are condition number for each trial, and
 % conditionNames is names of conditions for legend
 
@@ -39,9 +39,10 @@ end
 
 
 % pimp fig
-line(xLims, [0 0], 'color', 'black') % add line at top of wheel
-set(gca, 'DataAspectRatio', [1 1 1], 'visible', 'off', 'YLim', max(get(gca, 'YLim'), 0))
-legend(conditionNames, 'box', 'off', 'Location', 'northeast')
+line(get(gca, 'XLim'), [0 0], 'color', 'black') % add line at top of wheel
+set(gca, 'DataAspectRatio', [1 1 1], 'YLim', max(get(gca, 'YLim'), 0), ...
+    'XColor', 'none', 'YColor', 'none')
+if exist('conditionNames', 'var'); legend(conditionNames, 'box', 'off', 'Location', 'northeast'); end
 
 
 

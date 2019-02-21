@@ -4,7 +4,7 @@ function scatterPlotRick(vars, varNames, conditions, conditionNames)
 colors = hsv(length(conditionNames));
 circSize = 20;
 transparency = .2;
-maxScatterPoints = 2000;
+maxScatterPoints = 1000;
 
 
 % initializations

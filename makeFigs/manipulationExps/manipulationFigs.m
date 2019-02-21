@@ -173,7 +173,18 @@ if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp(
 
 % big step prob by predicted distance to obs (manip)
 conditions = cellfun(@(x) find(ismember(vars.condition.levels,x)), {flat.condition});
-figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 550 750 350])
+mice = unique({flat.mouse});
+figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 200 300*length(mice) 600])
+
+for i = 1:length(mice)
+    subplot(2,length(mice),i)
+    bins = strcmp({flat.mouse}, mice{i});
+    logPlotRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).isBigStep], ...
+        {'predicted distance to obstacle (m)', 'big step probability'}, conditions(bins))
+    title(mice{i})
+end
+
+subplot(2,length(mice),length(mice)+1:length(mice)*2)
 logPlotRick([flat.modPawPredictedDistanceToObs], [flat.isBigStep], ...
     {'predicted distance to obstacle (m)', 'big step probability'}, conditions, vars.condition.levelNames)
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepProbability.fig']))
@@ -181,23 +192,23 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 %% big step kinematics
 
 % settings
-% close all
 rowVar = 'modPawPredictedDistanceToObs';
 numRows = 5;
 
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'isBigStep', 'isLightOn', ...
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'conditionNum', 'modPawKinInterp', 'preModPawKinInterp', 'isBigStep', 'isLightOn', ...
     rowVar, 'preModPawDeltaLength', 'modPawDeltaLength', 'obsHgt', 'condition', 'isTrialSuccess', 'isWheelBreak'});
-flat = flat(~[flat.isLightOn]);
+if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+flat = flat(~[flat.isLightOn]); % add conditionals here
 controlBins = strcmp({flat.condition}, manipConditions{1});
 manipBins = strcmp({flat.condition}, manipConditions{2});
 lims = prctile([flat.(rowVar)], [5 95]);
 rowInds = discretize([flat.(rowVar)], linspace(lims(1), lims(2), numRows+1));
 
-plotOneVsTwoStepTrajectories2(flat(controlBins), rowInds(controlBins));
+plotBigStepKin(flat(controlBins), rowInds(controlBins));
 set(gcf, 'Name', [brainRegion '_' manipulation '_control.fig'])
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepKinControl.fig']))
 
-plotOneVsTwoStepTrajectories2(flat(manipBins), rowInds(manipBins));
+plotBigStepKin(flat(manipBins), rowInds(manipBins));
 set(gcf, 'Name', [brainRegion '_' manipulation '_manip.fig'])
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepKinManip.fig']))
 
@@ -206,16 +217,18 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 % success, vel, body angle, baseline step height, 
 dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
-flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum'}, dvs));
+flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
+if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
 plotAcrossSessions2(flat, dvs);
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_sessionsOverTime.fig']))
 
 
 %% speed vs. position / time plots
 
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'condition', 'obsOnPositions', ...
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'conditionNum', 'isLightOn', 'condition', 'obsOnPositions', ...
     'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition'});
 flat = flat(~[flat.isWheelBreak]);
+if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
 
 % speed vs position, control vs manip
 figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
@@ -258,6 +271,7 @@ yLims = [0 20];
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition'});
 if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+% flat = flat(strcmp({flat.mouse})); % add conditionals here
 obsHgts = [flat.obsHgt]*1000;
 pawHgts = [flat.preObsHgt]*1000;
 
@@ -287,34 +301,82 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 xLims = [-.03 .015];
 yLims = [-.03 .03];
 
-% predicted vs actual planting distance, one map per paw
-figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [1962 459 682 386])
+% predicted vs. actual mod paw distance
+figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 100 700 900])
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'condition', 'trial', 'isLightOn', ...
-    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess'});
+    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra'});
 if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
 validBins = true(size(flat));
+mice = unique({flat.mouse});
 
 for i = 1:length(vars.condition.levels)
-    subplot(1,2,i)
-    bins = strcmp(vars.condition.levels{i}, {flat.condition}) & validBins;
-    
-    heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
-        {'predicted distance to ', 'actual distance'}, xLims, yLims); hold on
-    plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
-    title(vars.condition.levelNames{i})
-    
+    for j = 1:length(vars.isModPawContra.levels)
+        subplot(2,2,i+(j-1)*2)
+        bins = strcmp(vars.condition.levels{i}, {flat.condition}) & validBins & [flat.isModPawContra]==vars.isModPawContra.levels(j);
+
+        heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
+            {'predicted distance to ', 'actual distance'}, xLims, yLims); hold on
+        plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+        title(vars.condition.levelNames{i})
+        if i==1; ylabel(vars.isModPawContra.levelNames{j}); end
+    end
 end
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_predictedDistanceHeatmaps.fig']))
 
-% delta mod step length vs predicted distance to obs (contra, manip)
+% plot for individual mice
+figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 100 300*length(mice) 600])
+for mouse = 1:length(mice)
+    for i = 1:length(vars.condition.levels)
+        subplot(2,length(mice), mouse + (i-1)*length(mice))
+        bins = strcmp(vars.condition.levels{i}, {flat.condition}) & validBins & strcmp({flat.mouse}, mice{mouse});
+
+        heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
+            {'predicted distance to ', 'actual distance'}, xLims, yLims); hold on
+        plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+        title(vars.condition.levelNames{i})
+    end
+    xlabel(mice{mouse})
+end
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_predictedDistanceHeatmapsMice.fig']))
+
+
+% !!! predicted vs actual planting distance, one map per paw
+
 
 
 %% kinematics
 
-% fore/hind, contra, manip (leading only, light off only)
+figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
 
+% settings
+rowVar = vars.isFore;
+colVar = vars.isLeading;
+plotVar = vars.condition;
 
-% fore/hind, leading, manip (contra only, light off only)
+% obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
+flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'isBigStep'});
+if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+% flat = flat(~[flat.isBigStep]); % add conditionals here
+
+% initializations
+conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
+rows = length(rowVar.levels);
+cols = length(colVar.levels);
+kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+kinData = kinData(:,[1,3],:); % keep only x and z dimensions
+        
+plotInd = 1;
+for i = 1:rows
+    for j = 1:cols
+        subplot(rows, cols, plotInd)
+        bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});        
+        plotKinematics(kinData(bins,:,:), [flat(bins).obsHgt], conditions(bins), plotVar.levelNames)
+        plotInd = plotInd+1;
+        title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
+    end
+end
 
 
 
