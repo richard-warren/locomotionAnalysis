@@ -20,7 +20,8 @@ function plotKinematics(trajectories, obsHgts, conditions, conditionNames)
 
 % settings
 obsRadius = 3.175 / 2 / 1000; % (m)
-colors = hsv(max(conditions));
+% colors = hsv(max(conditions));
+colors = jet(max(conditions));
 
 
 
@@ -34,7 +35,7 @@ for i = 1:max(conditions)
     % draw obstacle
     z = nanmean(obsHgts(conditions==i));
     rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
-        'curvature', [1 1], 'facecolor', [colors(i,:) 1], 'edgecolor', 'none');    
+        'curvature', [1 1], 'facecolor', [colors(i,:) .8], 'edgecolor', 'none');
 end
 
 

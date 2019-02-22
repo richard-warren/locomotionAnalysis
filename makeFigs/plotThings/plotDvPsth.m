@@ -10,20 +10,17 @@ function plotDvPsth(data, dv, xLims, plotVar, rowVar)
 % that dv is matrix with 2 rows, first row containing y values and second
 % row containing x values
 
-% temp
-% data = getNestedStructFields(dataTemp, ...
-%     {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', 'isBigStep', 'obsOnPositions', ...
-%     'condition', 'velContinuousAtContact', 'velVsPosition', 'isTrialSuccess', 'isWheelBreak', 'wiskContactPosition'});
-% dv = 'velVsPosition';
-% plotVar = 'isLightOn';
-% rowVar = 'condition';
-% xLims = [-.5 .2];
 
 % settings
 errorFcn = @(x) nanstd(x)/sqrt(size(x,1)); % function for error bars
 plotMouseAvgs = false;
 % errorFcn = @(x) nanstd(x);
 
+
+% create dummy plotvar and rowVar if not provided by user (all ones)
+temp = num2cell(ones(size(data)));
+if ~exist('rowVar', 'var'); [data.rowVar] = temp{:}; rowVar = 'rowVar'; end
+if ~exist('plotVar', 'var'); [data.plotVar] = temp{:}; plotVar = 'plotVar'; end
 
 % initializations
 if isa(data(1).(plotVar), 'char'); plotConditions = unique({data.(plotVar)}); else; plotConditions = num2cell(unique([data.(plotVar)])); end
@@ -54,7 +51,7 @@ end
 
 % plot for light on/off
 for i = 1:length(rowConditions)
-    subplot(length(rowConditions),1,i)
+    if length(rowConditions)>1; subplot(length(rowConditions),1,i); end
     
     for j = 1:length(plotConditions)
         shadedErrorBar(xGrid, squeeze(mouseAvgs(j,i,:,:)), {@nanmean, errorFcn}, ...
@@ -67,16 +64,21 @@ for i = 1:length(rowConditions)
             end
         end
     end
-    yLims = get(gca, 'YLim');
-    line([0 0], yLims, 'color', [.5 .5 .5])
-    set(gca, 'YLim', yLims)
     
     % pimp fig
     set(gca, 'XLim', xLims, 'Box', 'off')
 end
 
+% add legend
 for i = 1:length(plotConditions); lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
-try; legend(lines, plotConditions, 'Location', 'northeast', 'Box', 'off', 'AutoUpdate', 'off'); catch; end
+if islogical(plotConditions{1})
+    conditionNames = {[plotVar ': false'], [plotVar ': true']};
+    if plotConditions{1}; conditionNames = fliplr(conditionNames); end % if [1 0] rather than [0 1], flip condition names
+elseif ischar(plotConditions{1})
+    conditionNames = plotConditions;
+end
+    
+legend(lines, conditionNames, 'Location', 'best', 'Box', 'off', 'AutoUpdate', 'off');
 
 
 

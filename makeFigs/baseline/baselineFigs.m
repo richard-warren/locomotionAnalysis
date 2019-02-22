@@ -3,17 +3,20 @@
 % ---------------
 
 % settings
-varsToAvg = {'mouse', 'session'};
+varsToAvg = {'mouse'}; % {'mouse', 'session'}
+obsHgts = 5; % discretize obstacle heights into this many bins
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
 
 % set categorical vars
+vars.isTrialSuccess = struct('name', 'isTrialSuccess', 'levels', [1 0], 'levelNames', {{'success', 'not success'}});
 vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'lead', 'lag'}});
-vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
+vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
+vars.obsHgtDiscretized = struct('name', 'obsHgtDiscretized', 'levels', 1:obsHgts, 'levelNames', {num2cell(1:obsHgts)});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
@@ -25,7 +28,6 @@ figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 %% compute kinData for all sessions (only need to do once)
 sessions = unique(sessionInfo.session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
-
 
 %% compute experiment data
 data = getExperimentData(sessionInfo, 'all');
@@ -81,7 +83,6 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_bars.fig
 %% big step prob by predicted distance to obs
 
 % settings
-close all
 rows = 3;
 
 % initializations
@@ -90,8 +91,8 @@ flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial',
 % flat = flat(~strcmp({flat.mouse}, 'mtc1')); % add conditionals here
 conditions = discretize([flat.obsHgt], linspace(3.4, 10, 4)/1000);
 mice = unique({flat.mouse});
-figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [100 100 300*cols 200*rows])
 cols = ceil(length(mice)/rows);
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [100 100 300*cols 200*rows])
 
 for i = 1:length(mice)
     subplot(rows, cols,i)
@@ -112,7 +113,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_bigStepP
 
 % settings
 rowVar = 'modPawPredictedDistanceToObs';
-numRows = 4;
+numRows = 5;
 
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'isBigStep', 'isLightOn', ...
     rowVar, 'preModPawDeltaLength', 'modPawDeltaLength', 'obsHgt', 'isTrialSuccess', 'isWheelBreak'});
@@ -122,6 +123,160 @@ rowInds = discretize([flat.(rowVar)], linspace(lims(1), lims(2), numRows+1));
 plotBigStepKin(flat, rowInds);
 set(gcf, 'Name', 'baseline')
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_bigStepKinControl.fig'))
+
+
+%% speed vs. position / time plots
+
+yLims = [.25 .55];
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', ...
+    'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition', 'isBigStep'});
+flat = flat(~[flat.isWheelBreak]);
+
+% speed vs position, 
+figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
+subplot(2,1,1)
+plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'isLightOn')
+line(repmat(nanmean([flat.obsOnPositions]),1,2), yLims, 'color', [.5 .5 .5])
+line([0 0], yLims, 'color', [.5 .5 .5])
+set(gca, 'YLim', yLims);
+xlabel('position relaive to nose (m)')
+ylabel('velocity (m/s)')
+
+% speed vs time centered around whisker contract
+subplot(2,1,2)
+plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'isLightOn')
+line([0 0], yLims, 'color', [.5 .5 .5])
+set(gca, 'YLim', yLims);
+xlabel('time relative to whisker contact (s)')
+ylabel('velocity (m/s)')
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_speed.fig'))
+
+%% height shaping scatters
+
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
+
+% settings
+rowVar = vars.isFore;
+colVar = vars.isLeading;
+scatVar = vars.isLightOn;
+xLims = [2 10];
+yLims = [0 20];
+
+% obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading'});
+% flat = flat(strcmp({flat.mouse})); % add conditionals here
+obsHgts = [flat.obsHgt]*1000;
+pawHgts = [flat.preObsHgt]*1000;
+
+% initializations
+conditions = cellfun(@(x) find(ismember(scatVar.levels, x)), {flat.(scatVar.name)});
+rows = length(rowVar.levels);
+cols = length(colVar.levels);
+        
+plotInd = 1;
+for i = 1:rows
+    for j = 1:cols
+        subplot(rows, cols, plotInd)
+        bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
+        scatterPlotRick(cat(1,obsHgts(bins),pawHgts(bins)), {'obstacle height', 'paw height'}, conditions(bins), scatVar.levelNames)
+        plotInd = plotInd+1;
+        title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
+        set(gca, 'XLim', xLims, 'YLim', yLims)
+    end
+end
+
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_heightShaping.fig'))
+
+%% heat maps
+
+% settings
+rowVar = vars.isLightOn;
+colVar = vars.isTrialSuccess;
+xLims = [-.03 .015];
+yLims = [-.03 .03];
+
+% predicted vs. actual mod paw distance
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 700 900])
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
+    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess'});
+% flat = flat(~[flat.isTrialSuccess]); % set conditionals here
+mice = unique({flat.mouse});
+rows = length(rowVar.levels);
+cols = length(colVar.levels);
+
+plotInd = 1;
+for i = 1:rows
+    for j = 1:cols
+        subplot(rows, cols, plotInd)
+        bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
+        heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
+            {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
+        plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+        title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
+        plotInd = plotInd + 1;
+    end
+end
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_predictedDistanceHeatmaps.fig'))
+
+% plot for individual mice
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 300*cols 900])
+rows = 4;
+cols = ceil(length(mice)/rows);
+
+for i = 1:length(mice)
+    subplot(rows, cols, i)
+    bins = strcmp({flat.mouse}, mice{i});
+    heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
+        {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
+    plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+    title(mice{i})
+end
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_predictedDistanceHeatmaps_mice.fig'))
+
+% !!! predicted vs actual planting distance, one map per paw
+
+%% kinematics
+
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
+
+% settings
+rowVar = vars.isFore;
+colVar = vars.isLeading;
+plotVar = vars.obsHgtDiscretized;
+
+% obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
+flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'stepOverKinInterp', 'isBigStep'});
+obsHgtDiscretized = num2cell(discretize([flat.obsHgt], linspace(3.4, 10, obsHgts+1)/1000));
+[flat.obsHgtDiscretized] = obsHgtDiscretized{:};
+if isequal(plotVar, vars.obsHgtDiscretized); flat = flat(~isnan([flat.obsHgtDiscretized])); end
+
+
+% initializations
+conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
+rows = length(rowVar.levels);
+cols = length(colVar.levels);
+kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+kinData = kinData(:,[1,3],:); % keep only x and z dimensions
+        
+plotInd = 1;
+for i = 1:rows
+    for j = 1:cols
+        subplot(rows, cols, plotInd)
+        bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});        
+        plotKinematics(kinData(bins,:,:), [flat(bins).obsHgt], conditions(bins))
+        plotInd = plotInd+1;
+        title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
+    end
+end
+
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_kinematics.fig'))
+
+
 
 
 

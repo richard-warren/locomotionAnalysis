@@ -378,7 +378,7 @@ for i = 1:rows
     end
 end
 
-
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation 'kinematics.fig']))
 
 
 

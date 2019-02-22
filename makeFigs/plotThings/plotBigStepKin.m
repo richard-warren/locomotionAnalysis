@@ -38,7 +38,7 @@ kinematicsWidth = (1-2*sidePadding-kinematicsHistoSeparation) * kinWidthPortion;
 histoWidth = (1-2*sidePadding-kinematicsHistoSeparation) * (1-kinWidthPortion);
 plotHgt = (diff(zLims)/diff(xLims))*kinematicsWidth;
 histGrid = linspace(histLims(1), histLims(2), bins);
-figure('color', 'white', 'menubar', 'none', 'position', [2000 0 800 200*numRows], 'InvertHardcopy', 'off');
+figure('color', 'white', 'menubar', 'none', 'position', [2000 20 800 200*numRows], 'InvertHardcopy', 'off');
 
 
 
