@@ -55,7 +55,7 @@ for i = 1:length(rowConditions)
     
     for j = 1:length(plotConditions)
         shadedErrorBar(xGrid, squeeze(mouseAvgs(j,i,:,:)), {@nanmean, errorFcn}, ...
-            'lineprops', {'linewidth', 3, 'color', colors(j,:)}, 'patchSaturation', .1); hold on;
+            'lineprops', {'linewidth', 3, 'color', colors(j,:)}, 'patchSaturation', .05); hold on;
         
         if plotMouseAvgs
             for k = 1:length(mice)

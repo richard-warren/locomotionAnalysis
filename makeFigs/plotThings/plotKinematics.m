@@ -43,7 +43,7 @@ end
 line(get(gca, 'XLim'), [0 0], 'color', 'black') % add line at top of wheel
 set(gca, 'DataAspectRatio', [1 1 1], 'YLim', max(get(gca, 'YLim'), 0), ...
     'XColor', 'none', 'YColor', 'none')
-if exist('conditionNames', 'var'); legend(conditionNames, 'box', 'off', 'Location', 'northeast'); end
+if exist('conditionNames', 'var'); legend(conditionNames, 'box', 'off', 'Location', 'best'); end
 
 
 

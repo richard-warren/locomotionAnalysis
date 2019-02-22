@@ -55,5 +55,5 @@ end
 set(gca, 'YLim', [0 1], 'XLim', xLims, 'Box', 'off')
 xlabel(varNames{1})
 ylabel(varNames{2})
-if exist('conditionNames', 'var'); legend(conditionNames, 'Box', 'off'); end
+if exist('conditionNames', 'var'); legend(conditionNames, 'Box', 'off', 'Location', 'best'); end
 

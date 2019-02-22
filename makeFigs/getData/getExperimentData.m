@@ -24,7 +24,8 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
-             'modPawKinInterp', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength'};
+             'modPawKinInterp', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
+             'sensoryCondition'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp'};
 
@@ -304,9 +305,17 @@ function var = getVar(dvName)
                 var{i} = actualLength - predictedLength;
             end
             
+        case 'sensoryCondition'
+            % for sensoryDependence experiments, stores whether trial had
+            % light + whiskers ('LW'), whiskers only ('W'), light only
+            % ('L'), or neither ('-')
+            hasWhiskers = strcmp(expData(mouse).sessions(session).condition, 'pre');
+            if hasWhiskers; conditions = {'W', 'WL'}; else; conditions = {'-', 'L'}; end
+            var = conditions([sesData.isLightOn]+1);
             
             
             
+
             
         % paw variables
         % -------------

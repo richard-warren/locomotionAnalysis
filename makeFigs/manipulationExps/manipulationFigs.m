@@ -3,9 +3,7 @@
 % ---------------
 
 % settings
-manipulation = 'lesion';
-brainRegion = 'mtc';
-varsToAvg = {'mouse', 'session'};
+varsToAvg = {'mouse'};
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
