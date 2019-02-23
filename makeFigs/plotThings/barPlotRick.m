@@ -17,7 +17,7 @@ showScatter = true;
 showErrorBars = true;
 showViolins = false;
 showStats = true;
-compareToFirstOnly = false; % only run stats between first and all other conditions
+compareToFirstOnly = length(conditionNames{end})>4; % only run stats between first and all other conditions
 
 groupSeparation = 1;
 circSize = 40;
@@ -175,7 +175,8 @@ for i = 1:length(conditionNames)
             inds = find(conditionsMat(i,:)==k & bins');
             xPos = mean(xPositions(inds));
             yPos = yLims(1)-labelVertSize*range(yLims) + ((labelVertSize*range(yLims))/(length(conditionNames)+1))*i;
-            condText = text(xPos, yPos, conditionNames{i}(k), 'HorizontalAlignment', 'center');
+            if i==length(conditionNames); rotation = 25; else; rotation = 0; end
+            condText = text(xPos, yPos, conditionNames{i}(k), 'HorizontalAlignment', 'center', 'rotation', rotation);
             
             % add lines on the side of condition name
             if i<length(conditionNames) && length(conditionNames{i})>1

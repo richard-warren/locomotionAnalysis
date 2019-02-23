@@ -114,6 +114,7 @@ for i = find(binsToAnalyze)
                     x = squeeze(dvMatrices{i}(condDimsSub1{:}));
                     y = squeeze(dvMatrices{i}(condDimsSub2{:}));
                     bins = ~isnan(x) & ~isnan(y);
+                    if ~any(bins); keyboard; end
                     fit = polyfit(x(bins), y(bins), 1);
                     
                     % store in newDvMatrix, which has 1 less dim than dvMatrices{i}

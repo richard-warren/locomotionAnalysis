@@ -140,6 +140,10 @@ function var = getVar(dvName)
             [~, inds] = intersect(allMouseSessions, sessions, 'stable');
             var = num2cell(inds);
             
+        case 'whiskerTrimCondition'
+            % computes condition for whiskerTrim experiments only // in
+            % spreadshheet
+            
             
             
             

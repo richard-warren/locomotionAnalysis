@@ -4,12 +4,13 @@ function scatterPlotRick(vars, varNames, conditions, conditionNames)
 colors = hsv(length(conditionNames));
 circSize = 20;
 transparency = .2;
-maxScatterPoints = 1000;
+maxScatterPoints = 2000;
 
 
 % initializations
 scatters = nan(1, length(conditionNames));
 lines = nan(1, length(conditionNames));
+scatterPointsPerCondition = round(maxScatterPoints / length(conditionNames));
 
 
 % plot everything
@@ -18,9 +19,9 @@ for h = 1:length(conditionNames)
     % get paw and obs height for bin
     conditionBins = conditions==h & all(~isnan(vars),1);
     conditionBinsSub = conditionBins;
-    if sum(conditionBins)>maxScatterPoints
+    if sum(conditionBins)>scatterPointsPerCondition
         inds = find(conditionBins);
-        inds = inds(randperm(length(inds), maxScatterPoints));
+        inds = inds(randperm(length(inds), scatterPointsPerCondition));
         conditionBinsSub = false(size(conditions));
         conditionBinsSub(inds) = true;
     end
@@ -42,7 +43,7 @@ plot(vars(1,conditionBins), vars(1,conditionBins), '-', 'linewidth', 2, 'color',
 xlabel(varNames{1})
 ylabel(varNames{2})
 uistack(lines, 'top')
-if length(conditionNames)>1; legend(lines, conditionNames, 'location', 'northwest', 'box', 'off'); end
+if length(conditionNames)>1; legend(lines, conditionNames, 'location', 'best', 'box', 'off'); end
 pbaspect([1 1 1])
 
 % blackenFig

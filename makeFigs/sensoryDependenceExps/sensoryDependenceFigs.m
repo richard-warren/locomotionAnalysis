@@ -133,17 +133,18 @@ plotVar = vars.sensoryCondition;
 % big step prob by predicted distance to obs (manip)
 conditions = cellfun(@(x) find(ismember(plotVar.levels,x)), {flat.(plotVar.name)});
 mice = unique({flat.mouse});
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 200 300*length(mice) 600])
+figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 200 300*length(mice) 250])
 
 for i = 1:length(mice)
-    subplot(2,length(mice),i)
+    subplot(1,length(mice),i)
     bins = strcmp({flat.mouse}, mice{i});
     logPlotRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).isBigStep], ...
         {'predicted distance to obstacle (m)', 'big step probability'}, conditions(bins))
     title(mice{i})
 end
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'sensoryDependence', 'sensoryDependence_bigStepProbability_mice.fig'))
 
-subplot(2,length(mice),length(mice)+1:length(mice)*2)
+figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 200 500 300])
 logPlotRick([flat.modPawPredictedDistanceToObs], [flat.isBigStep], ...
     {'predicted distance to obstacle (m)', 'big step probability'}, conditions, plotVar.levelNames)
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'sensoryDependence', 'sensoryDependence_bigStepProbability.fig'))
@@ -185,7 +186,7 @@ figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'positi
 rowVar = vars.isFore;
 colVar = vars.isLeading;
 scatVar = vars.sensoryCondition;
-xLims = [2 10];
+xLims = [3 10];
 yLims = [0 20];
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
