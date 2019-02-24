@@ -51,8 +51,8 @@ end
 % pimp figs
 for i = 1:length(dvs)
     subplot(rows, columns, i);
-    xLims = get(gca, 'xlim');
-    set(gca, 'xlim', [0.5 xLims(2)+.5], 'xtick', 1:xLims(2));
+    xMax = max([data.sessionNum]);
+    set(gca, 'xlim', [0.5 xMax+.5], 'xtick', 1:max([data.sessionNum]));
     ylabel(dvs{i}, 'interpreter', 'none');
 end
 xlabel('session number')

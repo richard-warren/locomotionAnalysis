@@ -27,6 +27,7 @@ if any(ismember(fields, varsToGet)) || any(isFieldStruct)
                 structData{row} = getNestedStructFields(data(row).(field{1}), varsToGet, dataOut(row)); %catch; keyboard; end
             end
         end
+%         try; dataOut = [structData{:}]; catch; keyboard; end
         dataOut = [structData{:}];
     end
     

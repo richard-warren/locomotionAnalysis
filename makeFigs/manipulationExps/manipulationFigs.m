@@ -151,8 +151,8 @@ if strcmp(manipulation, 'lesion')
         plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
         conditions = [vars.isLightOn];
         pre = getDvMatrix(data, dv{1}, conditions, varsToAvg, conditionals.isPre);
-        early = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isEarly]);
-        late = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isLate]);
+        early = getDvMatrix(data, dv{1}, conditions, varsToAvg, [figConditionals; conditionals.isPost; conditionals.isEarly]);
+        late = getDvMatrix(data, dv{1}, conditions, varsToAvg, [figConditionals; conditionals.isPost; conditionals.isLate]);
 
         dvMatrix = cat(length(conditions)+2, pre, early, late);
         dvMatrix = permute(dvMatrix, [1:length(conditions), length(conditions)+2, length(conditions)+1]); % swap last two dimensions

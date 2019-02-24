@@ -109,22 +109,6 @@ logPlotRick([flat.modPawPredictedDistanceToObs], [flat.isBigStep], ...
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_bigStepProbability.fig'))
 
 
-%% big step kinematics
-
-% settings
-rowVar = 'modPawPredictedDistanceToObs';
-numRows = 5;
-
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'isBigStep', 'isLightOn', ...
-    rowVar, 'preModPawDeltaLength', 'modPawDeltaLength', 'obsHgt', 'isTrialSuccess', 'isWheelBreak'});
-% flat = flat(~[flat.isLightOn]); % add conditionals here
-lims = prctile([flat.(rowVar)], [5 95]);
-rowInds = discretize([flat.(rowVar)], linspace(lims(1), lims(2), numRows+1));
-plotBigStepKin(flat, rowInds);
-set(gcf, 'Name', 'baseline')
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_bigStepKinControl.fig'))
-
-
 %% speed vs. position / time plots
 
 yLims = [.25 .55];
