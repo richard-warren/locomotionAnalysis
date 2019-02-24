@@ -81,6 +81,9 @@ for i = find(binsToAnalyze)
                 dvMatrixInds = num2cell([conditionInds j i]);
                 dvMatrix(dvMatrixInds{:}) = dvsFound(j);
             end
+%             dvMatrixInds
+%             dvMatrixInds = [num2cell(conditionInds), {':'}, {':'}];
+%             disp(squeeze(dvMatrix(dvMatrixInds{:})))
         
         % loop through nested structs if all dvs have yet to be found
         else
@@ -114,12 +117,11 @@ for i = find(binsToAnalyze)
                     x = squeeze(dvMatrices{i}(condDimsSub1{:}));
                     y = squeeze(dvMatrices{i}(condDimsSub2{:}));
                     bins = ~isnan(x) & ~isnan(y);
-                    if ~any(bins); keyboard; end
-                    fit = polyfit(x(bins), y(bins), 1);
                     
                     % store in newDvMatrix, which has 1 less dim than dvMatrices{i}
                     newDvMatrixInds = [condInds {1} {1}];
                     if sum(bins)>1
+                        fit = polyfit(x(bins), y(bins), 1);
                         newDvMatrix(newDvMatrixInds{:}) = fit(1);
                     else
                         newDvMatrix(newDvMatrixInds{:}) = nan;
@@ -134,8 +136,11 @@ end
 
 % concatenate matrices obtained from nested structs
 if numDvsFound<2; dvMatrix = cat(dimNum, dvMatrices{:}); end
-
 if isFirstPass; dvMatrix = squeeze(dvMatrix); end
+
+
+
+
 
 
 

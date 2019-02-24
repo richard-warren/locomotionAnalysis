@@ -25,6 +25,7 @@ conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
+conditionals.isHind = struct('name', 'isFore', 'condition', @(x) x==0);
 
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
@@ -34,11 +35,11 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
 data = getExperimentData(sessionInfo, 'all');
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrim_data.mat'), 'data');
 
 %% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
-disp([manipulation ' data loaded!'])
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrim_data.mat'), 'data');
+disp('whiskerTrim data loaded!')
 
 
 %% ----------
@@ -50,7 +51,6 @@ disp([manipulation ' data loaded!'])
 
 
 % settings
-close all
 rowVar = 4;
 colVar = 5;
 
@@ -113,10 +113,8 @@ conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg, figConditionals)*-1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at contact (mm)'}, true)
 
-% height shaping !!! why is this different than before!
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd:plotInd+2); plotInd = plotInd+2;
-%%
-close all; figure
+% height shaping !!! why is this different than before?! should check with a more straightforward method
+plotInd = plotInd+1; subplot(rowVar, colVar, plotInd:plotInd+2);
 conditions = [vars.isFore; vars.isContra; vars.condition];
 dvMatrix = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, figConditionals); % perform regression for each session, then average slopes across sessions for each mouse
 barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
@@ -124,9 +122,9 @@ barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrim_bars.fig'))
 
 
-%% log plots
+%% !!! log plots
 
-flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', ...
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsHgt', ...
     'modPawPredictedDistanceToObs', 'isBigStep', 'condition'});
 if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>3 & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
 
@@ -338,6 +336,7 @@ for i = 1:rows
 end
 
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', [brainRegion '_' manipulation 'kinematics.fig']))
+
 
 
 

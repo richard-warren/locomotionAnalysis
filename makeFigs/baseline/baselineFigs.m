@@ -199,8 +199,8 @@ yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 700 900])
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
-    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess'});
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsHgt', ...
+    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'wiskContactPosition'});
 % flat = flat(~[flat.isTrialSuccess]); % set conditionals here
 mice = unique({flat.mouse});
 rows = length(rowVar.levels);
@@ -235,6 +235,14 @@ for i = 1:length(mice)
     title(mice{i})
 end
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_predictedDistanceHeatmaps_mice.fig'))
+
+
+%% whisker contact position vs obstacle height
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 300 400])
+heatmapRick([flat.obsHgt]*1000, [flat.wiskContactPosition]*1000, ...
+        {'obstacle height (mm)', 'distance from nose at conact (mm)'}); hold on
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_obsHgtContactPosHeatmaps_mice.fig'))
+
 
 % !!! predicted vs actual planting distance, one map per paw
 
