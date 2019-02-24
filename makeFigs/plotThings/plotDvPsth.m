@@ -54,8 +54,12 @@ for i = 1:length(rowConditions)
     if length(rowConditions)>1; subplot(length(rowConditions),1,i); end
     
     for j = 1:length(plotConditions)
-        shadedErrorBar(xGrid, squeeze(mouseAvgs(j,i,:,:)), {@nanmean, errorFcn}, ...
-            'lineprops', {'linewidth', 3, 'color', colors(j,:)}, 'patchSaturation', .05); hold on;
+        if length(mice)>1
+            shadedErrorBar(xGrid, squeeze(mouseAvgs(j,i,:,:)), {@nanmean, errorFcn}, ...
+                'lineprops', {'linewidth', 3, 'color', colors(j,:)}, 'patchSaturation', .05); hold on;
+        else
+            plot(xGrid, squeeze(mouseAvgs(j,i,:,:)), 'linewidth', 3, 'color', colors(j,:)); hold on;
+        end
         
         if plotMouseAvgs
             for k = 1:length(mice)

@@ -27,9 +27,9 @@ colors = jet(max(conditions));
 
 for i = 1:max(conditions)
     
-    % plot avg trajectory for condition
-    kinMean = squeeze(nanmean(trajectories(conditions==i,:,:), 1));
-    plot(kinMean(1,:), kinMean(2,:), ...
+    % plot median trajectory for condition
+    kinMedian = squeeze(nanmean(trajectories(conditions==i,:,:), 1));
+    plot(kinMedian(1,:), kinMedian(2,:), ...
         'LineWidth', 2, 'Color', colors(i,:)); hold on
     
     % draw obstacle

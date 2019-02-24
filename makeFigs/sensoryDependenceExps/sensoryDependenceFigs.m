@@ -15,7 +15,7 @@ vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'l
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.sensoryCondition = struct('name', 'sensoryCondition', 'levels', {{'WL', 'W', 'L', '-'}}, 'levelNames', {{'WL', 'W', 'L', '-'}});
-vars.condition = struct('name', 'condition', 'levels', {{'pre', 'post'}}, 'levelNames', {{'whiskers', 'no whiskers'}});
+vars.whiskers = struct('name', 'whiskers', 'levels', {{'full', 'none'}}, 'levelNames', {{'whiskers', 'no whiskers'}});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
@@ -31,7 +31,7 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
 data = getExperimentData(sessionInfo, 'all');
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data');
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('done saving')
 
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data');
@@ -220,13 +220,13 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'sensoryDependence', 'sensoryD
 
 % settings
 rowVar = vars.isLightOn;
-colVar = vars.condition;
+colVar = vars.whiskers;
 xLims = [-.03 .015];
 yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
 figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 100 700 900])
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', ...
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'whiskers', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess'});
 % flat = flat(~[flat.isTrialSuccess]); % set conditionals here
 mice = unique({flat.mouse});

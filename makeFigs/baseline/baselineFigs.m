@@ -4,7 +4,7 @@
 
 % settings
 varsToAvg = {'mouse'}; % {'mouse', 'session'}
-obsHgts = 5; % discretize obstacle heights into this many bins
+obsHgtBins = 5; % discretize obstacle heights into this many bins
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
@@ -16,7 +16,7 @@ vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF'
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'lead', 'lag'}});
 vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
-vars.obsHgtDiscretized = struct('name', 'obsHgtDiscretized', 'levels', 1:obsHgts, 'levelNames', {num2cell(1:obsHgts)});
+vars.obsHgtDiscretized = struct('name', 'obsHgtDiscretized', 'levels', 1:obsHgtBins, 'levelNames', {num2cell(1:obsHgtBins)});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
@@ -221,7 +221,7 @@ end
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_predictedDistanceHeatmaps_mice.fig'))
 
 
-%% whisker contact position vs obstacle height
+% whisker contact position vs obstacle height
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 300 400])
 heatmapRick([flat.obsHgt]*1000, [flat.wiskContactPosition]*1000, ...
         {'obstacle height (mm)', 'distance from nose at conact (mm)'}); hold on
@@ -242,7 +242,8 @@ plotVar = vars.obsHgtDiscretized;
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'stepOverKinInterp', 'isBigStep'});
-obsHgtDiscretized = num2cell(discretize([flat.obsHgt], linspace(3.4, 10, obsHgts+1)/1000));
+% flat = flat(~isnan([flat.obsHgt]));
+obsHgtDiscretized = num2cell(discretize([flat.obsHgt], linspace(3.4, 10, obsHgtBins+1)/1000));
 [flat.obsHgtDiscretized] = obsHgtDiscretized{:};
 if isequal(plotVar, vars.obsHgtDiscretized); flat = flat(~isnan([flat.obsHgtDiscretized])); end
 

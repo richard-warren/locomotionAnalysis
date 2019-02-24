@@ -32,6 +32,7 @@ totalConditions = prod(condLevels);
 conditionsMat = nan(length(conditionNames), totalConditions);
 labelVertSize = .15*length(conditionNames);
 dataDims = size(data);
+if length(dataDims)==length(conditionNames); dataDims = [dataDims 1]; end % add singleton dimension if there is only one sample in the dataset
 xJitters = linspace(-.5*lineWidth, .5*lineWidth, dataDims(end));
 xJitters = xJitters(randperm(length(xJitters)));
 if isWithinSubs

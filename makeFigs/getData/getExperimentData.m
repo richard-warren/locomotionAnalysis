@@ -18,7 +18,7 @@ preObsLim = .008;
 
 % initialiations
 mouseVars = {};
-sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum', 'sessionNum'};
+sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum', 'sessionNum', 'whiskers'};
 trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
              'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
@@ -140,13 +140,12 @@ function var = getVar(dvName)
             [~, inds] = intersect(allMouseSessions, sessions, 'stable');
             var = num2cell(inds);
             
-        case 'whiskerTrimCondition'
-            % computes condition for whiskerTrim experiments only // in
-            % spreadshheet
+        case 'whiskers'
+            var = getTableColumn('whiskers');
+        
             
             
-            
-            
+           
             
         % trial variables
         % ---------------
@@ -299,7 +298,6 @@ function var = getVar(dvName)
                 var{i} = actualLength - predictedLength;
             end
             
-            
         case 'preModPawDeltaLength'
             % change in length of step preceding first modified step of first modified paw (serves as control for modPawDeltaLength)
             var = num2cell(false(1,length(sesKinData)));
@@ -310,10 +308,13 @@ function var = getVar(dvName)
             end
             
         case 'sensoryCondition'
-            % for sensoryDependence experiments, stores whether trial had
-            % light + whiskers ('LW'), whiskers only ('W'), light only
-            % ('L'), or neither ('-')
-            hasWhiskers = strcmp(expData(mouse).sessions(session).condition, 'pre');
+            % encodes whether animal has light + whiskers ('LW'), whiskers only ('W'), light only ('L'), or neither ('-')
+             
+            if ismember('whiskers', sessionInfo.Properties.VariableNames)
+                hasWhiskers = ~strcmp(sessionInfo.whiskers{strcmp(sessionInfo.session, sessions{session})}, 'none');
+            else
+                hasWhiskers = true;
+            end
             if hasWhiskers; conditions = {'W', 'WL'}; else; conditions = {'-', 'L'}; end
             var = conditions([sesData.isLightOn]+1);
             

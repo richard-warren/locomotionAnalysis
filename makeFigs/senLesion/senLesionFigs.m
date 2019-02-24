@@ -4,14 +4,11 @@
 
 % settings
 varsToAvg = {'mouse'};
-manipulation = 'lesion';
-brainRegion = 'mtc';
 maxEarlySession = 3;
 
 % load session metadata
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [manipulation 'Notes']);
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & ...
-                          strcmp(sessionInfo.brainRegion, brainRegion),:); % remove empty rows, not included sessions, and those without correct brain region
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows, not included sessions, and those without correct brain region
 mice = unique(sessionInfo.mouse);
 
 % set categorical vars
@@ -21,11 +18,7 @@ vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ips
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
-if strcmp(manipulation, 'muscimol')
-    vars.condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'sal', 'mus'}});
-elseif strcmp(manipulation, 'lesion')
-    vars.condition = struct('name', 'condition', 'levels', {{'pre', 'post'}}, 'levelNames', {{'pre', 'post'}});
-end
+vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre'}}, 'levelNames', {{'preTrim', 'pre'}});
 manipConditions = vars.condition.levels;
 
 % set conditionals
@@ -33,11 +26,10 @@ conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 conditionals.isPre = struct('name', 'condition', 'condition', @(x) strcmp(x, 'pre'));
-conditionals.isPost = struct('name', 'condition', 'condition', @(x) strcmp(x, 'post'));
 conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) x<=maxEarlySession);
 conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<=8);
 
-if strcmp(manipulation, 'lesion'); figConditionals = [conditionals.isEarly]; else; figConditionals = struct('name', '', 'condition', @(x) x); end
+figConditionals = [conditionals.isEarly];
 
 %% compute kinData for all sessions (only need to do once)
 sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
@@ -45,12 +37,11 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
 data = getExperimentData(sessionInfo, 'all');
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
 
 %% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
-disp([manipulation ' data loaded!'])
-
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
+disp('senLesion data loaded!')
 
 %% ----------
 % PLOT THINGS
@@ -66,24 +57,24 @@ colVar = 4;
 
 
 % initializations
-figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
+figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
 plotInd = 0;
 
 % success (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.condition];
+conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
 % velocity
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.condition];
+conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'velocity (m/s)', true)
 
 % body angle
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.condition];
+conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'body angle (towards contra)', true)
 
@@ -95,7 +86,7 @@ barPlotRick(dvMatrix, {conditions.levelNames}, 'baseline step height (mm)', true
 
 % contra first rate (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.condition];
+conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'isContraFirst', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'contra paw first rate', true)
 
@@ -131,40 +122,38 @@ barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
 
 % big step probability (light, modPawContra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.isModPawContra; vars.condition];
+conditions = [vars.isModPawContra; vars.condition];
 dvMatrix = getDvMatrix(data, 'isBigStep', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'big step probability', true)
 
 % wisk contact position (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.condition];
+conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg, figConditionals)*-1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at contact (mm)'}, true)
 
 % tail height
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.condition];
+conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'tailHgt', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true)
 
 
 % compare early and late success
-if strcmp(manipulation, 'lesion')
-    dvs = {'isTrialSuccess', 'trialVel', 'tailHgt'};
-    for dv = dvs
-        plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-        conditions = [vars.isLightOn];
-        pre = getDvMatrix(data, dv{1}, conditions, varsToAvg, conditionals.isPre);
-        early = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isEarly]);
-        late = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isLate]);
+% dvs = {'isTrialSuccess', 'trialVel', 'tailHgt'};
+% for dv = dvs
+%     plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+%     conditions = [vars.isLightOn];
+%     pre = getDvMatrix(data, dv{1}, conditions, varsToAvg, conditionals.isPre);
+%     early = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isEarly]);
+%     late = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isLate]);
+% 
+%     dvMatrix = cat(length(conditions)+2, pre, early, late);
+%     dvMatrix = permute(dvMatrix, [1:length(conditions), length(conditions)+2, length(conditions)+1]); % swap last two dimensions
+%     barPlotRick(dvMatrix, {conditions.levelNames, {'pre', 'early', 'late'}}, dv{1}, true)
+% end
 
-        dvMatrix = cat(length(conditions)+2, pre, early, late);
-        dvMatrix = permute(dvMatrix, [1:length(conditions), length(conditions)+2, length(conditions)+1]); % swap last two dimensions
-        barPlotRick(dvMatrix, {conditions.levelNames, {'pre', 'early', 'late'}}, dv{1}, true)
-    end
-end
-
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bars.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bars.fig'))
 
 
 %% log plots
@@ -175,7 +164,7 @@ rows = 2;
 % initializations
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', ...
     'modPawPredictedDistanceToObs', 'isBigStep', 'condition'});
-if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>maxEarlySession & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 conditions = cellfun(@(x) find(ismember(vars.condition.levels,x)), {flat.condition});
 cols = ceil(length(mice)/rows);
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [100 100 300*cols 200*rows])
@@ -187,12 +176,12 @@ for i = 1:length(mice)
         {'predicted distance to obstacle (m)', 'big step probability'}, conditions(bins))
     title(mice{i})
 end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepProbability_mice.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bigStepProbability_mice.fig'))
 
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 200 600 400])
 logPlotRick([flat.modPawPredictedDistanceToObs], [flat.isBigStep], ...
     {'predicted distance to obstacle (m)', 'big step probability'}, conditions, vars.condition.levelNames)
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_bigStepProbability.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bigStepProbability.fig'))
 
 %% sessions over time
 
@@ -200,7 +189,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
 flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
 plotAcrossSessions2(flat, dvs);
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_sessionsOverTime.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_sessionsOverTime.fig'))
 
 
 %% speed vs. position / time plots
@@ -208,42 +197,33 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'conditionNum', 'isLightOn', 'condition', 'obsOnPositions', ...
     'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition'});
 flat = flat(~[flat.isWheelBreak]);
-if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>maxEarlySession & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
-yLims = [.2 .6];
+flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
+yLims = [.2 .8];
 
 % speed vs position, control vs manip
-figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
-plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'condition', 'isLightOn')
-conditions = unique({flat.condition});
-plotTitles = {'light off', 'light on'};
-for i = 1:length(conditions)
-    subplot(length(conditions),1,i)
-    title(plotTitles{i})
-    line(repmat(nanmean([flat.obsOnPositions]),1,2), yLims, 'color', [.5 .5 .5])
-    line([0 0], yLims, 'color', [.5 .5 .5])
-    set(gca, 'YLim', yLims)
-end
+figure('name', 'senLesion', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
+
+subplot(2,1,1)
+plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'condition')
+line([0 0], yLims, 'color', [.5 .5 .5])
+line(repmat(nanmean([flat.obsOnPositions]),1,2), yLims, 'color', [.5 .5 .5])
+set(gca, 'YLim', yLims)
 xlabel('position relaive to nose (m)')
 ylabel('velocity (m/s)')
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_speedVsPosition.fig']))
 
-% speed vs time centered around whisker contract
-figure('name', [brainRegion '_' manipulation], 'Color', 'white', 'MenuBar', 'none', 'Position', [2600 50 600 500], 'inverthardcopy', 'off')
-plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'condition', 'isLightOn')
-for i = 1:length(conditions)
-    subplot(length(conditions),1,i)
-    title(plotTitles{i})
-    line([0 0], yLims, 'color', [.5 .5 .5])
-    set(gca, 'YLim', yLims)
-end
+subplot(2,1,2)
+plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'condition')
+line([0 0], yLims, 'color', [.5 .5 .5])
+set(gca, 'YLim', yLims)
 xlabel('time relative to whisker contact (s)')
-ylabel('velocity (m/s)')
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_speedAroundContact.fig']))
+ylabel('velocity (m/s)')    
+
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_speed.fig'))
 
 
 %% height shaping scatters
 
-figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
+figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
 
 % settings
 rowVar = vars.isFore;
@@ -255,7 +235,7 @@ yLims = [0 20];
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition'});
-if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>maxEarlySession & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 % flat = flat(strcmp({flat.mouse})); % add conditionals here
 obsHgts = [flat.obsHgt]*1000;
 pawHgts = [flat.preObsHgt]*1000;
@@ -278,7 +258,7 @@ for i = 1:rows
     end
 end
 
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_heightShaping.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_heightShaping.fig'))
 
 %% heat maps
 
@@ -289,10 +269,10 @@ xLims = [-.03 .015];
 yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
+figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
-if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>maxEarlySession & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
 
@@ -309,7 +289,7 @@ for i = 1:rows
         plotInd = plotInd + 1;
     end
 end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_predictedDistanceHeatmapsMice.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_predictedDistanceHeatmapsMice'))
 
 % !!! predicted vs actual planting distance, one map per paw
 
@@ -318,7 +298,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 %% kinematics
 
-figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
+figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
 
 % settings
 rowVar = vars.isFore;
@@ -328,7 +308,7 @@ plotVar = vars.condition;
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'isBigStep'});
-if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>maxEarlySession & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
+flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 % flat = flat(~[flat.isBigStep]); % add conditionals here
 
 % initializations
@@ -350,7 +330,7 @@ for i = 1:rows
     end
 end
 
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_kinematics.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_kinematics.fig'))
 
 
 

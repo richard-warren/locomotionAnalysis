@@ -132,7 +132,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'whiskerTrim', 'whiskerTrim_ba
 %% log plots
 
 % settings
-rows = 3;
+rows = 2;
 
 % initializations
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', ...

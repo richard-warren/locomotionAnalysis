@@ -697,6 +697,9 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     
     
+    
+    
+    
     % save results
     if anythingAnalyzed
         save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct')
