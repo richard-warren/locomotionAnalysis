@@ -40,13 +40,13 @@ parfor i = 1:length(sessions)
     end
 end
 
-%% compute experiment data
-data = getExperimentData(sessionInfo, 'all');
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
-
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
 disp('senLesion data loaded!')
+
+%% compute experiment data
+data = getExperimentData(sessionInfo, 'all', data);
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
 
 %% ----------
 % PLOT THINGS

@@ -1,4 +1,4 @@
-function expData = getExperimentData(sessionInfo, vars)
+function expData = getExperimentData(sessionInfo, vars, oldData)
 
 % creates nested struct containing data for all mice, sessions, trials, and
 % paws // at each level in this heirarchy vars can be computed // add
@@ -14,7 +14,6 @@ function expData = getExperimentData(sessionInfo, vars)
 touchThresh = 5;
 speedTime = .01; % compute velocity over this interval
 preObsLim = .008;
-
 
 % initialiations
 mouseVars = {};
@@ -62,37 +61,53 @@ for mouse = 1:length(mice)
     % loop over sessions
     for session = 1:length(sessions)
         
-        % load data from session
-        fprintf('%s: computing\n', sessions{session})
-        sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'kinData.mat'), 'kinData'); sesKinData = sesKinData.kinData;
-        sesKinInds = find([sesKinData.isTrialAnalyzed]);
-        sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
-        sesBreaks = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks'); breakTimes = sesBreaks.breaks.times;
-        wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
-        
-        % get size of kin data entries
-        locationsSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
-        locationsInterpSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
-        
-        % get trial data
-        expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(sesKinData)));
-        for trialVar = 1:length(trialVars)
-            try
-            temp = getVar(trialVars{trialVar});
-            [expData(mouse).sessions(session).trials(1:length(sesKinData)).(trialVars{trialVar})] = temp{:};
-            catch; end
+        % check if session already exists in oldData
+        if exist('oldData', 'var')
+            mouseBin = strcmp({oldData.mouse}, mice{mouse});
+            sesBin = strcmp({oldData(mouseBin).sessions.session}, sessions{session});
+        else
+            sesBin = false;
         end
         
-        % loop over trials
-        for trial = 1:length(sesKinData)
-            
-            % get paw data
-            expData(mouse).sessions(session).trials(trial).paws = struct('paw', {1,2,3,4}, 'pawName', {'LH', 'LF', 'RF', 'RH'});
-            for pawVar = 1:length(pawVars)
+        % if session exists in old data, copy it over
+        if any(sesBin)
+            fprintf('%s: copying trials from previous data...\n', sessions{session})
+            expData(mouse).sessions(session).trials = oldData(mouseBin).sessions(sesBin).trials;
+        
+        % otherwise, compute de novo
+        else
+            % load data from session
+            fprintf('%s: computing...\n', sessions{session})
+            sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'kinData.mat'), 'kinData'); sesKinData = sesKinData.kinData;
+            sesKinInds = find([sesKinData.isTrialAnalyzed]);
+            sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
+            sesBreaks = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks'); breakTimes = sesBreaks.breaks.times;
+            wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
+
+            % get size of kin data entries
+            locationsSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
+            locationsInterpSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
+
+            % get trial data
+            expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(sesKinData)));
+            for trialVar = 1:length(trialVars)
                 try
-                temp = getVar(pawVars{pawVar});
-                [expData(mouse).sessions(session).trials(trial).paws(1:4).(pawVars{pawVar})] = temp{:};
+                temp = getVar(trialVars{trialVar});
+                [expData(mouse).sessions(session).trials(1:length(sesKinData)).(trialVars{trialVar})] = temp{:};
                 catch; end
+            end
+
+            % loop over trials
+            for trial = 1:length(sesKinData)
+
+                % get paw data
+                expData(mouse).sessions(session).trials(trial).paws = struct('paw', {1,2,3,4}, 'pawName', {'LH', 'LF', 'RF', 'RH'});
+                for pawVar = 1:length(pawVars)
+                    try
+                    temp = getVar(pawVars{pawVar});
+                    [expData(mouse).sessions(session).trials(trial).paws(1:4).(pawVars{pawVar})] = temp{:};
+                    catch; end
+                end
             end
         end
     end 
