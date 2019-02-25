@@ -45,7 +45,8 @@ load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data')
 disp('senLesion data loaded!')
 
 %% compute experiment data
-data = getExperimentData(sessionInfo, 'all', data);
+loadOldData = false;
+if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
 
 %% ----------
