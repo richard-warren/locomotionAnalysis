@@ -32,8 +32,13 @@ conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<
 figConditionals = [conditionals.isEarly];
 
 %% compute kinData for all sessions (only need to do once)
+overwriteKindata = false;
 sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
-parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
+parfor i = 1:length(sessions)
+    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'file') || overwriteKindata
+        getKinematicData5(sessions{i});
+    end
+end
 
 %% compute experiment data
 data = getExperimentData(sessionInfo, 'all');
@@ -46,7 +51,6 @@ disp('senLesion data loaded!')
 %% ----------
 % PLOT THINGS
 %  ----------
-
 
 %% bar plots
 
