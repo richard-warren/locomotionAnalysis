@@ -44,8 +44,18 @@ sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
+
+% parellelized
+tic
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo, 'all'); end
+data = cat(1, data);
+toc
+
+%% serial
 data = getExperimentData(sessionInfo, 'all');
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
+
+% save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
 
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');

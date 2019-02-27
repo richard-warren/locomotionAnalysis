@@ -10,6 +10,7 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 % ignore vars if can't be computed (eg if looking for field in sessionInfo that doest exist for given experiment)
 % parallelize...
 
+
 % settings
 touchThresh = 5;
 speedTime = .01; % compute velocity over this interval
@@ -61,6 +62,7 @@ for mouse = 1:length(mice)
     
     % loop over sessions
     for session = 1:length(sessions)
+        tic
         
         % check if session already exists in oldData
         if exist('oldData', 'var')
@@ -117,7 +119,8 @@ for mouse = 1:length(mice)
             fprintf('%s: analysis success rates -> %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
                 sessions{session}, stepOverAnalyzedRates{:})
         end
-    end 
+        toc
+    end
 end
 disp('all done getting experiment data! woo hoo!!!')
 
