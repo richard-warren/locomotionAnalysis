@@ -14,7 +14,7 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 touchThresh = 5;
 speedTime = .01; % compute velocity over this interval
 preObsLim = .008;
-clearanceBuffer = .0015; % trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
+clearanceBuffer = .001; % trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
 
 % initialiations
 mouseVars = {};
@@ -27,7 +27,7 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'modPawKinInterp', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
-           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp'};
+           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -83,6 +83,7 @@ for mouse = 1:length(mice)
             sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'runAnalyzed.mat'));
             sesBreaks = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{session}, 'run.mat'), 'breaks'); breakTimes = sesBreaks.breaks.times;
             wheelVel = getVelocity(sesData.wheelPositions, speedTime, 1000);
+            isValidZ = getSessionValidZ(sesKinData, sesData.obsHeightsVid/1000);
 
             % get size of kin data entries
             locationsSmps = size(sesKinData(find([sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
@@ -113,7 +114,7 @@ for mouse = 1:length(mice)
             end
             
             stepOverAnalyzedRates = num2cell(mean(isStepOverAnalyzed,1));
-            fprintf('%s: computed with analysis success rates of: paw1: %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
+            fprintf('%s: analysis success rates -> %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
                 sessions{session}, stepOverAnalyzedRates{:})
         end
     end 
@@ -302,11 +303,9 @@ function var = getVar(dvName)
             
             for i = sesKinInds
                 var{i} = squeeze(sesKinData(i).modifiedLocationsInterp{sesKinData(i).firstModPaw}(1,:,:));
-                if ~checkStepOverValidity(var{i}, sesData.obsHeightsVid(i)/1000) % if step doesn't pass over obstacle
-                    if size(sesKinData(i).modifiedLocations{sesKinData(i).firstModPaw},1)==1 % and step wasn't supposed to pass over obstacle
-                        var{i} = nan(3,locationsInterpSmps);
-%                         fprintf('mod paw kin invalid for trial %i, paw %i\n', i, sesKinData(i).firstModPaw);
-                    end                    
+                if ~isValidZ(i,sesKinData(i).firstModPaw) && size(sesKinData(i).modifiedLocations{sesKinData(i).firstModPaw},1)==1 % if step doesn't pass over obstacle and wasn't supposed to pass over obstacle
+                    var{i} = nan(3,locationsInterpSmps);
+%                     fprintf('mod paw kin invalid for trial %i, paw %i\n', i, sesKinData(i).firstModPaw);
                 end
             end
             
@@ -346,6 +345,13 @@ function var = getVar(dvName)
             if hasWhiskers; conditions = {'W', 'WL'}; else; conditions = {'-', 'L'}; end
             var = conditions([sesData.isLightOn]+1);
             
+        case 'isValidZ'
+            % checks whether step over obstacle passes under obstacle,
+            % indicating a tracking error // other variables that rely on z
+            % should check whether isValidZ
+            
+            var = num2cell(isValidZ(trial,:));
+            
             
             
 
@@ -370,15 +376,19 @@ function var = getVar(dvName)
             var = num2cell(sum(sesData.touchesPerPaw(sesKinData(trial).trialInds,:),1) < touchThresh);
         
         case 'stepOverMaxHgt'
+            % maximum height of paw on step over obstacle
+            
             var = num2cell(nan(1,4));
             if sesKinData(trial).isTrialAnalyzed
-                var = num2cell(cellfun(@(x) max(x(end,3,:)), sesKinData(trial).modifiedLocations));
+                var(isValidZ(trial,:)) = num2cell(cellfun(@(x) max(x(end,3,:)), sesKinData(trial).modifiedLocations(isValidZ(trial,:))));
             end
             
         case 'preObsHgt'
+            % height of paw when the step over is preObsLim in front of osbtacle
+            
             var = num2cell(nan(1,4));
             if sesKinData(trial).isTrialAnalyzed
-                for i = 1:4
+                for i = find(isValidZ(trial,:))
                     ind = find(sesKinData(trial).modifiedLocations{i}(end,1,:)>-preObsLim, 1, 'first');
                     if ind>1; var{i} = sesKinData(trial).modifiedLocations{i}(end,3,ind); end
                 end
@@ -410,12 +420,11 @@ function var = getVar(dvName)
             end
         
         case 'stepOverKinInterp'
+            % interpolated kinematics of step over obstacle
             var = repmat({nan(3,locationsInterpSmps)},1,4);
             if sesKinData(trial).isTrialAnalyzed
-                var = cellfun(@(x) squeeze(x(end,:,:)), sesKinData(trial).modifiedLocationsInterp, 'UniformOutput', false);
-                
-                % check that step didn't pass through obstacle!
-                for i = 1:4; if ~checkStepOverValidity(var{i}, sesData.obsHeightsVid(trial)/1000); var{i} = nan(3,locationsInterpSmps); end; end
+                var(isValidZ(trial,:)) = cellfun(@(x) squeeze(x(end,:,:)), ...
+                    sesKinData(trial).modifiedLocationsInterp(isValidZ(trial,:)), 'UniformOutput', false);
             end
     end
 end
@@ -449,16 +458,21 @@ function avgs = avgSignalPerTrial(sig, sigTimes)
     end
 end
 
-function isStepOverValid = checkStepOverValidity(stepKin, obsHgt)
-    % checks whether a step over the obstacle actually lifts higher than
-    % the obstacle // this is a sanity check, b/c if step over obs passes
-    % under obs then there was a tracking failure
+
+
+function isValidZ = getSessionValidZ(kinData, obsHgts)
+    % for each paw in each trial for a session, checks whether paws passes
+    % under rather than over the obstacle // returns [trials X paw] logical
+    % matrix
     
-    atObsInd = find(stepKin(1,:)>=0, 1, 'first'); % ind at which step is at the obstacle in the x dimension
-    if isempty(atObsInd)
-        isStepOverValid = true;
-    else
-        isStepOverValid = stepKin(3,atObsInd) > (obsHgt-clearanceBuffer); % .001 (m) is a forgiveness factor
+    isValidZ = false(length(kinData), 4);
+    for i = sesKinInds
+        for j = 1:4
+            atObsInd = find(kinData(i).modifiedLocationsInterp{j}(end,1,:)>=0, 1, 'first'); % ind at which step is at the obstacle in the x dimension
+            if ~isempty(atObsInd)
+                isValidZ(i,j) = kinData(i).modifiedLocationsInterp{j}(end,3,atObsInd) > (obsHgts(i)-clearanceBuffer); % .001 (m) is a forgiveness factor
+            end
+        end
     end
 end
 
