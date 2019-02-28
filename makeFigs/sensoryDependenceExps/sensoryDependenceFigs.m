@@ -8,6 +8,7 @@ varsToAvg = {'mouse'};
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'sensoryDependenceNotes');
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session), :); % remove empty rows
+mice = unique(sessionInfo.mouse);
 
 % set categorical vars
 vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
@@ -30,7 +31,9 @@ sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
-data = getExperimentData(sessionInfo, 'all');
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data = cat(2,data{:});
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('done saving')
 
 %% load experiment data

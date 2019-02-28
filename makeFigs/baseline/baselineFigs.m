@@ -9,6 +9,7 @@ obsHgtBins = 5; % discretize obstacle heights into this many bins
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
+mice = unique(sessionInfo.mouse);
 
 % set categorical vars
 vars.isTrialSuccess = struct('name', 'isTrialSuccess', 'levels', [1 0], 'levelNames', {{'success', 'not success'}});
@@ -30,7 +31,9 @@ sessions = unique(sessionInfo.session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
-data = getExperimentData(sessionInfo, 'all');
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data = cat(2,data{:});
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data');
 
 %% load experiment data

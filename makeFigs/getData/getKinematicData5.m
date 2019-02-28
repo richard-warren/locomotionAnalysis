@@ -313,3 +313,25 @@ end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models')
 
+
+% uncomment the following to show fits for step length for each paw
+figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
+colors = hsv(4);
+for i = 1:4
+    scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
+    xLims = get(gca, 'XLim');
+    coefs = models{i}.Coefficients.Estimate;
+    plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
+end
+xlabel('velocity (m/s)')
+ylabel('step length')
+for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
+legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
+
+
+
+
+
+
+
+

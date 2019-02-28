@@ -18,7 +18,7 @@ contrastLims = [.2 1]; % pixels at these proportional values are mapped to 0 and
 includeWiskCam = true;
 includeWebCam = false;
 showPawTouches = true;
-showTrialInfo = false;
+showTrialInfo = true;
 showWiskTouches = true;
 
 
@@ -28,23 +28,24 @@ vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 if includeWiskCam; vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']); end
 if includeWebCam; vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']); end
 
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositions', 'obsTimes', 'obsPixPositions',...
+load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositionsFixed', 'obsTimes', 'obsPixPositions',...
                                             'wheelPositions', 'wheelTimes',...
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', 'nosePos');
+obsPositions = obsPositionsFixed;
 if showPawTouches
     load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-        'touches', 'touchClassNames')
-    ventralClassBins = find(contains(touchClassNames, 'ventral'));
-    isTouchingVentral = ismember(touches, ventralClassBins);
-%     isTouchingVentral = touches<6; % temp
+        'touches', 'touchClassNames', 'touchesPerPaw')
+%     ventralClassBins = find(contains(touchClassNames, 'ventral'));
+%     isTouchingVentral = ismember(touches, ventralClassBins);
+    isTouching = any(touchesPerPaw,2);
 end
 if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'wiskContactFrames'); end
-if ~exist('obsPixPositions', 'var')
-    obsPositions = fixObsPositionsHacky(obsPositions);
-else
-    obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
-end
+% if ~exist('obsPixPositions', 'var')
+%     obsPositions = fixObsPositionsHacky(obsPositions);
+% else
+%     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
+% end
 
 
 % get position where wisk frame should overlap with runTop frame
@@ -113,7 +114,7 @@ end
 for i = trials
     
     % find trial indices
-    try; startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first'); catch; keyboard; end
+    startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
     endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
     
     % get frame indices
@@ -150,7 +151,7 @@ for i = trials
             
             % change color of frame if touching
             if showPawTouches
-                if isTouchingVentral(frameInds(j))
+                if isTouching(frameInds(j))
                 	frame(:,:,3) = frame(:,:,3)*.2;
                 end
             end
@@ -195,7 +196,8 @@ for i = trials
                         
             % add trial info text
             if showTrialInfo
-                frame = insertText(frame, [size(frame,2) size(frame,1)], num2str(i),...
+                text = sprintf('%s, trial %i, touch frames %i', session, i, sum(isTouching(frameInds)));
+                frame = insertText(frame, [size(frame,2) size(frame,1)], text,...
                                    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
             end
             

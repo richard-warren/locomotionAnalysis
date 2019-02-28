@@ -45,17 +45,10 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
 
-% parellelized
-tic
 data = cell(1,length(mice));
-parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo, 'all'); end
-data = cat(1, data);
-toc
-
-%% serial
-data = getExperimentData(sessionInfo, 'all');
-
-% save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data = cat(2,data{:});
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
 
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
@@ -299,7 +292,7 @@ xLims = [-.03 .015];
 yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
+figure('name', [brainRegion '_' manipulation], 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
 if strcmp(manipulation, 'lesion'); flat = flat(~([flat.conditionNum]>maxEarlySession & strcmp({flat.condition}, 'post'))); end % only use first 3 lesion sessions
@@ -319,7 +312,7 @@ for i = 1:rows
         plotInd = plotInd + 1;
     end
 end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_predictedDistanceHeatmapsMice.fig']))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_predictedDistanceHeatmaps.fig']))
 
 % !!! predicted vs actual planting distance, one map per paw
 

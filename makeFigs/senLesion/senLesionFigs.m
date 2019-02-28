@@ -19,7 +19,9 @@ vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre'}}, 'levelNames', {{'preTrim', 'pre'}});
+vars.sessionNum = struct('name', 'sessionNum', 'levels', 1:100, 'levelNames', {cellfun(@num2str, num2cell(1:100), 'UniformOutput', false)});
 manipConditions = vars.condition.levels;
+vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
@@ -275,8 +277,9 @@ yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
 figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', ...
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', 'sessionNum', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
+% colVar.levels = colVar.levels(1:max([flat.sessionNum])); colVar.levelNames = colVar.levelNames(1:max([flat.sessionNum]));
 flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
@@ -287,16 +290,52 @@ for i = 1:rows
         subplot(rows, cols, plotInd)
         bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
                cellfun(@(x) isequal(x, colVar.levels{j}), {flat.(colVar.name)});
-        heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
-            {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
-        plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+        if any(bins)
+            heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
+                {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
+            plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+        end
         title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
         plotInd = plotInd + 1;
     end
 end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_predictedDistanceHeatmapsMice'))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_predictedDistanceHeatmaps'))
 
-% !!! predicted vs actual planting distance, one map per paw
+%% mouse heat maps over time
+
+% settings
+% mouse = 'sen7';
+rowVar = vars.mouse;
+colVar = vars.sessionNum;
+xLims = [-.03 .015];
+yLims = [-.03 .03];
+
+% predicted vs. actual mod paw distance
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', 'sessionNum', ...
+    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
+colVar.levels = colVar.levels(1:max([flat.sessionNum])); colVar.levelNames = colVar.levelNames(1:max([flat.sessionNum]));
+flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
+rows = length(rowVar.levels);
+cols = length(colVar.levels);
+figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [100 50 200*cols 400*rows])
+
+plotInd = 1;
+for i = 1:rows
+    for j = 1:cols
+        subplot(rows, cols, plotInd)
+        bins = cellfun(@(x) isequal(x, rowVar.levels{i}), {flat.(rowVar.name)}) & ...
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
+        if any(bins)
+            heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
+                {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
+            plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+        end
+        condition = unique({flat(bins).condition});
+        title(sprintf('%s, %s', rowVar.levelNames{i}, condition{1}))
+        plotInd = plotInd + 1;
+    end
+end
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_predictedDistanceHeatmaps_mice'))
 
 
 

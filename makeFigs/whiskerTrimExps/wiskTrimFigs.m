@@ -42,7 +42,9 @@ sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
-data = getExperimentData(sessionInfo, 'all');
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data = cat(2,data{:});
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrim_data.mat'), 'data'); disp('done saving data!')
 
 %% load experiment data

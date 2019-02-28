@@ -24,7 +24,6 @@ makeMatrixVid2(sprintf('trackingEg%s', session), session, trials, true, slowSpee
 
 
 
-
 %% make video showing how we can monitor wisk and paw contacts for talks
 
 session = '180912_004';
@@ -34,8 +33,6 @@ trials = [1 6 11 20 31 35 41 46 51 56];
 
 
 makeVidWisk([getenv('OBSDATADIR') 'editedVid\talkExamle' session], session, obsPosRange, playbackSpeed, trials);
-
-
 
 %% make vid with obstacles
 
@@ -95,6 +92,7 @@ makeTrackingVidDLC(session, frameInds'); % make vid with markers
 
 
 %% simply concatenate top and bot only including frameInds(1:maxFrames)
+
 filename = ['noObsVid' session];
 vidTop = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runTop.mp4']);
 vidBot = VideoReader([getenv('OBSDATADIR') '\sessions\' session '\runBot.mp4']);
@@ -205,6 +203,36 @@ for i = 1:length(sessions)
     makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'wheelBreakOnlyVids', [sessions{i} 'WheelBreaks']), ...
         sessions{i}, [-.05 .1], .2, wheelBreakTrials);
 end
+
+
+%% make video comparing success and failure trials
+
+% settings
+sessions = {'180801_001', '180805_001', '180809_001', '180812_001', '190227_000'};
+maxTrialsToShow = 15;
+
+for i = 1:length(sessions)
+    
+    % identify success and failure trials
+    sessionData = getExperimentData(sessions{i}, {'isTrialSuccess'});
+    sessionData = getNestedStructFields(sessionData, {'mouse', 'session', 'trial', 'isTrialSuccess'});
+    successTrials = find([sessionData.isTrialSuccess]);
+    failTrials = find(~[sessionData.isTrialSuccess]);
+    
+    % limit to maxTrialsToShow per trial type
+    successTrials = successTrials(sort(randperm(length(successTrials), min(maxTrialsToShow, length(successTrials)))));
+    failTrials = failTrials(sort(randperm(length(failTrials), min(maxTrialsToShow, length(failTrials)))));
+    
+    % make vids
+    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'failureTrialComparison', [sessions{i} '_successTrials']), ...
+        sessions{i}, [-.05 .1], .2, successTrials);
+    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'failureTrialComparison', [sessions{i} '_failTrials']), ...
+        sessions{i}, [-.05 .1], .2, failTrials);    
+end
+
+
+
+
 
 
 
