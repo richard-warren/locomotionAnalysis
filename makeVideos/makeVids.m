@@ -230,6 +230,26 @@ for i = 1:length(sessions)
         sessions{i}, [-.05 .1], .2, failTrials);    
 end
 
+%% make videos with whisker contact to manually estimate reaction times
+
+% settings
+experiment = 'baseline';
+trialsPerSession = 5;
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [experiment 'Notes']);
+mice = unique(sessionInfo.mouse(~cellfun(@isempty, sessionInfo.session)));
+
+for i = 1:length(mice)
+    session = sessionInfo.session{find(strcmp(sessionInfo.mouse, mice{i}),1,'first')};
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsOnTimes', 'isLightOn')
+    trials = find(~isLightOn);
+    trials = sort(randperm(length(trials), trialsPerSession));
+    
+    slowSpeed = .15;
+    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', session), ...
+        session, [-.05 .1], .15, trials);
+end
+
 
 
 

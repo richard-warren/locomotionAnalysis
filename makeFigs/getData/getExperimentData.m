@@ -33,8 +33,8 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
-             'modPawKinInterp', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition'};
+             'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
+             'sensoryCondition', 'modPawContactInd'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ'};
 
@@ -323,20 +323,37 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var{i} = xStart + predictedLength;
             end
             
-        case 'modPawKinInterp'
+        case 'modPawKin'
             % kinematics of first modified step for first modified paw
+            var = repmat({nan(3,g.locationsSmps)},1,length(g.sesKinData));
+            
+            for i = g.sesKinInds
+                var{i} = squeeze(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,:,:));
+                if ~g.isValidZ(i,g.sesKinData(i).firstModPaw) && size(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw},1)==1 % if step doesn't pass over obstacle and wasn't supposed to pass over obstacle
+                    var{i} = nan(3,g.locationsSmps);
+                end
+            end
+            
+        case 'modPawKinInterp'
+            % kinematics (interpolated) of first modified step for first modified paw
             var = repmat({nan(3,g.locationsInterpSmps)},1,length(g.sesKinData));
             
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).modifiedLocationsInterp{g.sesKinData(i).firstModPaw}(1,:,:));
                 if ~g.isValidZ(i,g.sesKinData(i).firstModPaw) && size(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw},1)==1 % if step doesn't pass over obstacle and wasn't supposed to pass over obstacle
                     var{i} = nan(3,g.locationsInterpSmps);
-%                     fprintf('mod paw kin invalid for trial %i, paw %i\n', i, g.sesKinData(i).firstModPaw);
                 end
             end
             
-        case 'preModPawKinInterp'
+        case 'preModPawKin'
             % kinematics of step preceding first modified step for first modified paw
+            var = repmat({nan(3,g.locationsSmps)},1,length(g.sesKinData));
+            for i = g.sesKinInds
+                var{i} = squeeze(g.sesKinData(i).controlLocations{g.sesKinData(i).firstModPaw}(end,:,:));
+            end
+            
+        case 'preModPawKinInterp'
+            % kinematics (interpolated) of step preceding first modified step for first modified paw
             var = repmat({nan(3,g.locationsInterpSmps)},1,length(g.sesKinData));
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).controlLocationsInterp{g.sesKinData(i).firstModPaw}(end,:,:));
@@ -377,6 +394,14 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             % should check whether isValidZ
             
             var = num2cell(g.isValidZ(g.trial,:));
+            
+        case 'modPawContactInd'
+            % ind in modPawKin at which whiskers contact obstacle
+            
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                var{i} = g.sesKinData(i).pawObsPosInd(g.sesKinData(i).firstModPaw); 
+            end
             
             
             
