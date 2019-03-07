@@ -34,7 +34,7 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd'};
+             'sensoryCondition', 'modPawContactInd', 'trialDuration'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ'};
 
@@ -76,7 +76,7 @@ for mouse = 1:length(g.mice)
         % check if session already exists in oldData
         if exist('oldData', 'var')
             mouseBin = strcmp({oldData.mouse}, g.mice{mouse});
-            sesBin = strcmp({oldData(mouseBin).sessions.session}, g.sessions{session});
+            if any(mouseBin); sesBin = strcmp({oldData(mouseBin).sessions.session}, g.sessions{session}); end
         else
             sesBin = false;
         end
@@ -346,11 +346,16 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             end
             
         case 'preModPawKin'
-            % kinematics of step preceding first modified step for first modified paw
-            var = repmat({nan(3,g.locationsSmps)},1,length(g.sesKinData));
+            % kinematics of steps! preceding first modified step for first modified paw
+            % note: this matrix contains MULTIPLE steps, and has 3 dimensions as a results ([step X dimension (xyz) X time])
+            
+            try
+            numControlSteps = size(g.sesKinData(find(g.sesKinInds,1,'first')).controlLocations{1},1);
+            var = repmat({nan(numControlSteps,3,g.locationsSmps)}, 1, length(g.sesKinData));
             for i = g.sesKinInds
-                var{i} = squeeze(g.sesKinData(i).controlLocations{g.sesKinData(i).firstModPaw}(end,:,:));
+                var{i} = squeeze(g.sesKinData(i).controlLocations{g.sesKinData(i).firstModPaw});
             end
+            catch; keyboard; end
             
         case 'preModPawKinInterp'
             % kinematics (interpolated) of step preceding first modified step for first modified paw
@@ -402,6 +407,11 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             for i = g.sesKinInds
                 var{i} = g.sesKinData(i).pawObsPosInd(g.sesKinData(i).firstModPaw); 
             end
+            
+        case 'trialDuration'
+            % duration of trial (from obstalce on to obstacle off time)
+            
+            var = num2cell(g.sesData.obsOffTimes - g.sesData.obsOnTimes);
             
             
             

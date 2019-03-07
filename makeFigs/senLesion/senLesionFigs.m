@@ -18,7 +18,7 @@ vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ips
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
-vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre'}}, 'levelNames', {{'preTrim', 'pre'}});
+vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi'}});
 vars.sessionNum = struct('name', 'sessionNum', 'levels', 1:100, 'levelNames', {cellfun(@num2str, num2cell(1:100), 'UniformOutput', false)});
 manipConditions = vars.condition.levels;
 vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
@@ -47,7 +47,7 @@ load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data')
 disp('senLesion data loaded!')
 
 %% compute experiment data
-loadOldData = false;
+loadOldData = true;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
 

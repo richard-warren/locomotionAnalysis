@@ -41,7 +41,7 @@ colors(trailBins,:) = colors(trailBins,:) * trailDarkening;
 
 vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
-vidWriter = VideoWriter([getenv('OBSDATADIR') 'editedVid\' filename '.mp4'], 'MPEG-4');
+vidWriter = VideoWriter(filename, 'MPEG-4');
 frameRate = 50; % frameRate of video file to be written
 set(vidWriter, 'FrameRate', frameRate);
 open(vidWriter);

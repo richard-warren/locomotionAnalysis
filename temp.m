@@ -1,18 +1,37 @@
-session = '190205_001';
-
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), 'whEncodA')
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'wheelPositions', 'wheelTimes')
-
-wheelCircumference = 0.5984734005; % meters
-encoderTicks = 1440; % how many encoder ticks per rotation
-
-times = whEncodA.times;
-diffs = diff(times);
-vel = repmat((wheelCircumference/encoderTicks), 1, length(diffs)) ./ diffs';
-velMl = getVelocity(wheelPositions, .02, 1000);
+close all; 
 
 
-fprintf('mean: %.4f\nmatlab mean: %.4f\n', mean(vel), nanmean(abs(velMl)));
+con = squeeze(controlDifs(:,1,:));
+man = squeeze(modDifs(:,1,:));
 
-close all; figure; plot(times(1:end-1), vel); hold on; plot(wheelTimes, abs(velMl))
-figure; histogram(vel); hold on; histogram(velMl);
+
+figure;
+plot(times, nanmean(man([flat.isBigStep],:),1)); hold on;
+plot(times, nanmean(man(~[flat.isBigStep],:),1)); hold on;
+plot(times, nanmean(con([flat.isBigStep],:),1));
+plot(times, nanmean(con(~[flat.isBigStep],:),1));
+legend('big', 'small', 'control big', 'control small');
+% plot(times, nanmean(con,1));
+% legend('big', 'small', 'control');
+
+
+
+
+
+aucs = nan(2, size(con,2));
+for i = 1:size(con,2)
+    labels = repelem([0 1], size(con,1));
+    scores = cat(1, con(:,i), man(:,i));
+    
+    oneBins = ~isnan(scores) & repmat([flat.isBigStep],1,2)';
+    twoBins = ~isnan(scores) & repmat(~[flat.isBigStep],1,2)';
+    
+    if any(oneBins); [~,~,~,aucs(1,i)] = perfcurve(labels(oneBins), scores(oneBins), 1); end
+    if any(twoBins); [~,~,~,aucs(2,i)] = perfcurve(labels(twoBins), scores(twoBins), 1); end
+end
+
+
+
+figure;
+plot(times, aucs)
+legend({'one step', 'two step'});

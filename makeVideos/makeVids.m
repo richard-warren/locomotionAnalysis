@@ -17,10 +17,10 @@ makeMatrixVid2(sprintf('matrixVidSlow%s', session), session, trials, false, slow
 
 %% make slowed down example for tracking
 
-session = '180715_004';
-trials = 1:10; % 5 14 43
+session = '190302_000';
+trials = 55:65; % 5 14 43
 slowSpeed = .15;
-makeMatrixVid2(sprintf('trackingEg%s', session), session, trials, true, slowSpeed)
+makeMatrixVid2(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, trials, false, slowSpeed)
 
 
 
@@ -249,9 +249,6 @@ for i = 1:length(mice)
     makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', session), ...
         session, [-.05 .1], .15, trials);
 end
-
-
-
 
 
 
