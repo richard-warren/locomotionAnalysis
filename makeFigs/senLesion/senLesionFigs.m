@@ -18,7 +18,7 @@ vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ips
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
-vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi'}});
+vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi', 'postBi'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postBi'}});
 vars.sessionNum = struct('name', 'sessionNum', 'levels', 1:100, 'levelNames', {cellfun(@num2str, num2cell(1:100), 'UniformOutput', false)});
 manipConditions = vars.condition.levels;
 vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
@@ -47,7 +47,7 @@ load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data')
 disp('senLesion data loaded!')
 
 %% compute experiment data
-loadOldData = true;
+loadOldData = false;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
 
@@ -314,7 +314,7 @@ yLims = [-.03 .03];
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', 'sessionNum', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
 colVar.levels = colVar.levels(1:max([flat.sessionNum])); colVar.levelNames = colVar.levelNames(1:max([flat.sessionNum]));
-flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
+% flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
 figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [100 50 200*cols 400*rows])
@@ -329,9 +329,9 @@ for i = 1:rows
             heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
                 {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
             plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
+            condition = unique({flat(bins).condition});
+            title(sprintf('%s, %s', rowVar.levelNames{i}, condition{1}));
         end
-        condition = unique({flat(bins).condition});
-        title(sprintf('%s, %s', rowVar.levelNames{i}, condition{1}))
         plotInd = plotInd + 1;
     end
 end

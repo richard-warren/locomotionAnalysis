@@ -17,7 +17,7 @@ makeMatrixVid2(sprintf('matrixVidSlow%s', session), session, trials, false, slow
 
 %% make slowed down example for tracking
 
-session = '190302_000';
+session = '190308_000';
 trials = 55:65; % 5 14 43
 slowSpeed = .15;
 makeMatrixVid2(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, trials, false, slowSpeed)
@@ -234,21 +234,35 @@ end
 
 % settings
 experiment = 'baseline';
-trialsPerSession = 5;
+trialsPerSession = 15;
+modPawLims = [5, 20]; % only include trials where contact occurs within modPawLims samples of swing start
+minVel = .4;
 
+% initializations
+varsToGet = {'mouse', 'session', 'trial', 'preModPawKin', 'modPawKin', 'isBigStep', 'isLightOn', 'modPawContactInd', 'velAtWiskContact'};
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', [experiment 'Notes']);
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows, not included sessions, and those without correct brain region
 mice = unique(sessionInfo.mouse(~cellfun(@isempty, sessionInfo.session)));
+data = getExperimentData(sessionInfo, varsToGet);
+flat = getNestedStructFields(data, varsToGet);
+flat = flat([flat.modPawContactInd]>=modPawLims(1) & [flat.modPawContactInd]<=modPawLims(2) & ...
+            ~[flat.isLightOn] & ...
+            [flat.velAtWiskContact]>minVel); % add conditionals here
+flat = struct2table(flat);
+spreadsheet = array2table(zeros(0,3), 'VariableNames', {'mouse', 'session', 'trial'});
 
 for i = 1:length(mice)
     session = sessionInfo.session{find(strcmp(sessionInfo.mouse, mice{i}),1,'first')};
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsOnTimes', 'isLightOn')
-    trials = find(~isLightOn);
-    trials = sort(randperm(length(trials), trialsPerSession));
+    inds = find(strcmp(flat.session, session));
+    inds = inds(sort(randperm(length(inds), min(trialsPerSession, length(inds)))));
+    spreadsheet = cat(1, spreadsheet, flat(inds, 1:3));
     
-    slowSpeed = .15;
-    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', session), ...
-        session, [-.05 .1], .15, trials);
+    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'edited0Vid', 'reactionTimeVids', session), ...
+        session, [-.05 .1], .15, flat.trial(inds)');
 end
+
+file = fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', [experiment '_reactionTimes.csv']);
+if ~exist(file, 'file'); writetable(spreadsheet, file); else; disp('file already exists!'); end
 
 
 
