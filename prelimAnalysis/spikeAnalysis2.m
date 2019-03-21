@@ -360,9 +360,9 @@ function spikeAnalysis2(session, varsToOverWrite)
             fprintf('%s: getting webcam time stamps\n', session)
 
             % load data
-            camMetadataWisk = dlmread([sessionDir '\wisk.csv']);
-            camSysClock = camMetadataWisk(:,1) / 1000;
-            camSpikeClock = varStruct.frameTimeStampsWisk; % !!! wh
+            camMetadataRun = dlmread([sessionDir '\run.csv']);
+            camSysClock = camMetadataRun(:,1) / 1000;
+            camSpikeClock = varStruct.frameTimeStamps; % !!! wh
             webCamSysClock = dlmread([sessionDir '\webCam.csv']) / 1000; % convert from ms to s
 
             % remove discontinuities
@@ -384,6 +384,7 @@ function spikeAnalysis2(session, varsToOverWrite)
                 varStruct.webCamTimeStamps = webCamSpikeClock;
                 anythingAnalyzed = true;
             catch
+                keyboard
                 fprintf('%s: PROBLEM GETTING WEBCAM TIMESTAMPS\n', session)
             end
         end

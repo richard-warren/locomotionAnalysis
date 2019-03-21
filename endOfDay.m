@@ -26,8 +26,9 @@ problemSessions = cell(1,length(sessions));
 for i = 1:length(sessions)
     try
         if sessionInfo.include(strcmp(sessionInfo.session, sessions{i}))
-            spikeAnalysis2(sessions{i}, {'wiskContactFrames'});
-            showWiskContactFrames(sessions{i})
+            spikeAnalysis2(sessions{i}, {'webCamTimeStamps'});
+            checkObsLight(sessions{i})
+%             showWiskContactFrames(sessions{i})
         end
 %         try; showWiskContactFrames(sessions{i}); catch; end
     catch

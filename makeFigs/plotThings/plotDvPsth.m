@@ -27,7 +27,7 @@ if isa(data(1).(plotVar), 'char'); plotConditions = unique({data.(plotVar)}); el
 if isa(data(1).(rowVar), 'char'); rowConditions = unique({data.(rowVar)}); else; rowConditions = num2cell(unique([data.(rowVar)])); end
 colors = hsv(length(plotConditions));
 mice = unique({data.mouse});
-xGrid = data(1).(dv)(2,:); % this will fail if first trial has not been
+xGrid = data(find(cellfun(@length, {data.velVsPosition}),1,'first')).(dv)(2,:); % this will fail if first trial has not been analyzed
 
 
 % collect data for each mouse in each condition for both light on and light off trials

@@ -4,52 +4,42 @@
 
 % settings
 varsToAvg = {'mouse'};
-maxEarlySession = 3;
+session = '190315_002'; % set to 'all' to analyze all sessions
 
 % load session metadata
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows, not included sessions, and those without correct brain region
+if ~strcmp(session, 'all')
+    sessionInfo = sessionInfo(strcmp(sessionInfo.session, session),:);
+    data = getExperimentData(sessionInfo, 'all');
+end
 mice = unique(sessionInfo.mouse);
 
 % set categorical vars
 vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
+vars.isOptoOn = struct('name', 'isOptoOn', 'levels', [0 1], 'levelNames', {{'no opto', 'opto'}});
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'lead', 'lag'}});
 vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
-vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi'}});
-vars.sessionNum = struct('name', 'sessionNum', 'levels', 1:100, 'levelNames', {cellfun(@num2str, num2cell(1:100), 'UniformOutput', false)});
-manipConditions = vars.condition.levels;
 vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
-conditionals.isPre = struct('name', 'condition', 'condition', @(x) strcmp(x, 'pre'));
-conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) x<=maxEarlySession);
-conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<=8);
+figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
-figConditionals = [conditionals.isEarly];
-
-%% compute kinData for all sessions (only need to do once)
-overwriteKindata = false;
-sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
-parfor i = 1:length(sessions)
-    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'file') || overwriteKindata
-        getKinematicData5(sessions{i});
-    end
-end
 
 %% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
-disp('senLesion data loaded!')
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'opto_data.mat'), 'data');
+disp('opto data loaded!')
 
 %% compute experiment data
-loadOldData = true;
+loadOldData = false;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'opto_data.mat'), 'data'); disp('data saved')
 
 %% ----------
 % PLOT THINGS
@@ -64,103 +54,89 @@ colVar = 4;
 
 
 % initializations
-figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
+figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
 plotInd = 0;
 
 % success (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.condition];
+conditions = [vars.isLightOn; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
 % velocity
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.condition];
+conditions = [vars.isLightOn; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'velocity (m/s)', true)
 
 % body angle
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.condition];
+conditions = [vars.isLightOn; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'body angle (towards contra)', true)
 
 % baseline step height
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.condition];
+conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, 'baseline step height (mm)', true)
 
 % contra first rate (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.condition];
+conditions = [vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'isContraFirst', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'contra paw first rate', true)
 
 % penult step length (light, fore/hind, ipsi/contra, manip) - hgt, vel?
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd:plotInd);
-conditions = [vars.condition; vars.isFore; vars.isLeading];
+conditions = [vars.isOptoOn; vars.isFore; vars.isLeading];
 dvMatrix = getDvMatrix(data, 'penultStepLength', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'penultimate step length', true)
 
 % paw error rate
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.condition];
+conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
 % planting step distance (light, fore/hind, ipsi/contra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.condition];
+conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'stepOverStartingDistance', conditions, varsToAvg, [figConditionals; conditionals.isLagging])*-1000; % only take lagging paws
 barPlotRick(dvMatrix, {conditions.levelNames}, 'planting foot distance (mm)', true)
 
 % step over height (light, fore/hind, ipsi/contra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.condition];
+conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'step over anticipatory height', true)
 
 % height shaping
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isLeading; vars.condition];
+conditions = [vars.isFore; vars.isLeading; vars.isOptoOn];
 dvMatrix = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, figConditionals); % perform regression for each session, then average slopes across sessions for each mouse
 barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
 
 % big step probability (light, modPawContra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isModPawContra; vars.condition];
+conditions = [vars.isModPawContra; vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'isBigStep', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'big step probability', true)
 
 % wisk contact position (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.condition];
+conditions = [vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg, figConditionals)*-1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at contact (mm)'}, true)
 
 % tail height
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.condition];
+conditions = [vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'tailHgt', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true)
 
 
-% compare early and late success
-% dvs = {'isTrialSuccess', 'trialVel', 'tailHgt'};
-% for dv = dvs
-%     plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-%     conditions = [vars.isLightOn];
-%     pre = getDvMatrix(data, dv{1}, conditions, varsToAvg, conditionals.isPre);
-%     early = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isEarly]);
-%     late = getDvMatrix(data, dv{1}, conditions, varsToAvg, [conditionals.isPost; conditionals.isLate]);
-% 
-%     dvMatrix = cat(length(conditions)+2, pre, early, late);
-%     dvMatrix = permute(dvMatrix, [1:length(conditions), length(conditions)+2, length(conditions)+1]); % swap last two dimensions
-%     barPlotRick(dvMatrix, {conditions.levelNames, {'pre', 'early', 'late'}}, dv{1}, true)
-% end
-
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bars.fig'))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_bars.fig'))
 
 
 %% log plots
@@ -169,12 +145,11 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bars.f
 rows = 2;
 
 % initializations
-flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'obsHgt', ...
-    'modPawPredictedDistanceToObs', 'isBigStep', 'condition'});
-flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
-conditions = cellfun(@(x) find(ismember(vars.condition.levels,x)), {flat.condition});
+flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'isOptoOn', 'obsHgt', ...
+    'modPawPredictedDistanceToObs', 'isBigStep'});
+conditions = [flat.isOptoOn]+1;
 cols = ceil(length(mice)/rows);
-figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [100 100 300*cols 200*rows])
+figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [100 100 300*cols 200*rows])
 
 for i = 1:length(mice)
     subplot(rows, cols,i)
@@ -183,35 +158,25 @@ for i = 1:length(mice)
         {'predicted distance to obstacle (m)', 'big step probability'}, conditions(bins))
     title(mice{i})
 end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bigStepProbability_mice.fig'))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_bigStepProbability_mice.fig'))
 
-figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 200 600 400])
+figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 200 600 400])
 logPlotRick([flat.modPawPredictedDistanceToObs], [flat.isBigStep], ...
-    {'predicted distance to obstacle (m)', 'big step probability'}, conditions, vars.condition.levelNames)
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bigStepProbability.fig'))
-
-%% sessions over time
-
-% success, vel, body angle, baseline step height, 
-dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
-flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
-plotAcrossSessions2(flat, dvs);
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_sessionsOverTime.fig'))
-
+    {'predicted distance to obstacle (m)', 'big step probability'}, conditions, vars.isOptoOn.levelNames)
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_bigStepProbability.fig'))
 
 %% speed vs. position / time plots
 
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'conditionNum', 'isLightOn', 'condition', 'obsOnPositions', ...
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'conditionNum', 'isLightOn', 'isOptoOn', 'obsOnPositions', ...
     'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition'});
 flat = flat(~[flat.isWheelBreak]);
-flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 yLims = [.2 .8];
 
 % speed vs position, control vs manip
-figure('name', 'senLesion', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
+figure('name', 'opto', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 500], 'inverthardcopy', 'off')
 
 subplot(2,1,1)
-plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'condition')
+plotDvPsth(flat, 'velVsPosition', [-.5 .2], 'isOptoOn')
 line([0 0], yLims, 'color', [.5 .5 .5])
 line(repmat(nanmean([flat.obsOnPositions]),1,2), yLims, 'color', [.5 .5 .5])
 set(gca, 'YLim', yLims)
@@ -219,31 +184,30 @@ xlabel('position relaive to nose (m)')
 ylabel('velocity (m/s)')
 
 subplot(2,1,2)
-plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'condition')
+plotDvPsth(flat, 'velContinuousAtContact', [-.5 .5], 'isOptoOn')
 line([0 0], yLims, 'color', [.5 .5 .5])
 set(gca, 'YLim', yLims)
 xlabel('time relative to whisker contact (s)')
 ylabel('velocity (m/s)')    
 
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_speed.fig'))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_speed.fig'))
 
 
 %% height shaping scatters
 
-figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
+figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
 
 % settings
-rowVar = vars.isFore;
+rowVar = vars.isContra;
 colVar = vars.isLeading;
-scatVar = vars.condition;
+scatVar = vars.isOptoOn;
 xLims = [2 10];
 yLims = [0 20];
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
-flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition'});
-flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
-% flat = flat(strcmp({flat.mouse})); % add conditionals here
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn'});
+flat = flat([flat.isFore]); % add conditionals here
 obsHgts = [flat.obsHgt]*1000;
 pawHgts = [flat.preObsHgt]*1000;
 
@@ -265,22 +229,20 @@ for i = 1:rows
     end
 end
 
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_heightShaping.fig'))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_heightShaping.fig'))
 
 %% heat maps
 
 % settings
 rowVar = vars.isModPawContra;
-colVar = vars.condition;
+colVar = vars.isOptoOn;
 xLims = [-.03 .015];
 yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
-figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 100 400*length(vars.condition.levels) 800])
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', 'sessionNum', ...
+figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
+flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'isOptoOn', 'sessionNum', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
-% colVar.levels = colVar.levels(1:max([flat.sessionNum])); colVar.levelNames = colVar.levelNames(1:max([flat.sessionNum]));
-flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
 
@@ -289,7 +251,7 @@ for i = 1:rows
     for j = 1:cols
         subplot(rows, cols, plotInd)
         bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
-               cellfun(@(x) isequal(x, colVar.levels{j}), {flat.(colVar.name)});
+               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
         if any(bins)
             heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
                 {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
@@ -299,61 +261,22 @@ for i = 1:rows
         plotInd = plotInd + 1;
     end
 end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_predictedDistanceHeatmaps'))
-
-%% mouse heat maps over time
-
-% settings
-% mouse = 'sen7';
-rowVar = vars.mouse;
-colVar = vars.sessionNum;
-xLims = [-.03 .015];
-yLims = [-.03 .03];
-
-% predicted vs. actual mod paw distance
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'condition', 'sessionNum', ...
-    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
-colVar.levels = colVar.levels(1:max([flat.sessionNum])); colVar.levelNames = colVar.levelNames(1:max([flat.sessionNum]));
-% flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
-rows = length(rowVar.levels);
-cols = length(colVar.levels);
-figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [100 50 200*cols 400*rows])
-
-plotInd = 1;
-for i = 1:rows
-    for j = 1:cols
-        subplot(rows, cols, plotInd)
-        bins = cellfun(@(x) isequal(x, rowVar.levels{i}), {flat.(rowVar.name)}) & ...
-               cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
-        if any(bins)
-            heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
-                {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
-            plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
-            condition = unique({flat(bins).condition});
-            title(sprintf('%s, %s', rowVar.levelNames{i}, condition{1}));
-        end
-        plotInd = plotInd + 1;
-    end
-end
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_predictedDistanceHeatmaps_mice'))
-
-
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_predictedDistanceHeatmaps'))
 
 
 %% kinematics
 
-figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
+figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
 
 % settings
 rowVar = vars.isFore;
 colVar = vars.isLeading;
-plotVar = vars.condition;
+plotVar = vars.isOptoOn;
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
-flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'isBigStep'});
-flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
-% flat = flat(~[flat.isBigStep]); % add conditionals here
+flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep'});
+flat = flat(logical([flat.isContra])); % add conditionals here
 
 % initializations
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
@@ -374,10 +297,31 @@ for i = 1:rows
     end
 end
 
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_kinematics.fig'))
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_kinematics.fig'))
+
+%% make example videos
+
+% settings
+% session = '190313_001';
+lightTrialsToShow = 15;
 
 
+% sesData = getExperimentData(sess, 'isOptoOn');
+isOptoOn = ~isnan([data.sessions.trials.optoOnTimes]);
+optoTrials = find(isOptoOn);
+noOptoTrials = find(~isOptoOn);
 
+optoTrials = optoTrials(sort(randperm(length(optoTrials), lightTrialsToShow)));
+noOptoTrials = noOptoTrials(sort(randperm(length(noOptoTrials), lightTrialsToShow)));
+trials = sort([optoTrials, noOptoTrials]);
+
+
+% makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', ...
+%             [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW']), ...
+%             session, [-.05 .1], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
+makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', 'trialStartVids', ...
+            [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW_trialStart']), ...
+            session, [-.45 -.2], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
 
 
 

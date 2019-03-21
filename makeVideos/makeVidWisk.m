@@ -13,13 +13,14 @@ function makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProporti
 maxTrialTime = 1; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
-contrastLims = [.2 1]; % pixels at these proportional values are mapped to 0 and 255
+contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
 
 includeWiskCam = true;
-includeWebCam = false;
+includeWebCam = true;
 showPawTouches = true;
 showTrialInfo = true;
 showWiskTouches = true;
+showObsOn = true;
 
 
 % initializations
@@ -29,7 +30,7 @@ if includeWiskCam; vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' sessi
 if includeWebCam; vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']); end
 
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositionsFixed', 'obsTimes', 'obsPixPositions',...
-                                            'wheelPositions', 'wheelTimes',...
+                                            'wheelPositions', 'wheelTimes', 'isLightOn', ...
                                             'obsOnTimes', 'obsOffTimes',...
                                             'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', 'nosePos');
 obsPositions = obsPositionsFixed;
@@ -114,12 +115,22 @@ end
 for i = trials
     
     % find trial indices
-    startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
-    endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
+%     keyboard
+%     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
+%     endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
+    
+    obsAtNoseTime = obsTimes(find(obsPositions>=0 & obsTimes>obsOnTimes(i), 1, 'first'));
+    obsAtNosePos = wheelPositions(find(wheelTimes>=obsAtNoseTime,1,'first'));
+    inds = find((wheelPositions > obsAtNosePos+obsPosRange(1)) & (wheelPositions < obsAtNosePos+obsPosRange(2)));
+    startInd = inds(1);
+    endInd = inds(end);
+    
+%     trialPos = g.sesData.wheelPositions(trialBins) - obsAtNosePos; % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
+%     trialVel = g.wheelVel(trialBins); % wheel vel for trial
     
     % get frame indices
-    endTime = min(obsTimes(startInd)+maxTrialTime, obsTimes(endInd));
-    frameInds = find(frameTimeStamps>obsTimes(startInd) & frameTimeStamps<endTime);
+    endTime = min(wheelTimes(startInd)+maxTrialTime, wheelTimes(endInd));
+    frameInds = find(frameTimeStamps>wheelTimes(startInd) & frameTimeStamps<endTime);
     
     if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
         fprintf('skipping trial %i\n', i)
@@ -127,7 +138,7 @@ for i = trials
         
         % get webCame frame indices
         if includeWebCam
-            webFrameInds = find(webCamTimeStamps>obsTimes(startInd) & webCamTimeStamps<endTime);
+            webFrameInds = find(webCamTimeStamps>wheelTimes(startInd) & webCamTimeStamps<endTime);
             webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
             webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
 
@@ -196,7 +207,8 @@ for i = trials
                         
             % add trial info text
             if showTrialInfo
-                text = sprintf('%s, trial %i, touch frames %i', session, i, sum(isTouching(frameInds)));
+                if isLightOn(i); lightText = 'light on'; else; lightText = 'light off'; end
+                text = sprintf('%s, trial %i, touch frames %i, %s', session, i, sum(isTouching(frameInds)), lightText);
                 frame = insertText(frame, [size(frame,2) size(frame,1)], text,...
                                    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
             end
@@ -208,12 +220,20 @@ for i = trials
                     textColor = 'white';
                 else
                     boxColor = 'blue';
-                    textColor = 'black';
+                    textColor = 'white';
                 end
                 frame = insertText(frame, [size(frame,2), 0], trialLabels{trialInds(i)},...
                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
                 frame = insertText(frame, [size(frame,2), size(frameTop,1)+size(frameBot,1)], trialLabels{trialInds(i)},...
                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
+            end
+            
+            % show when obstacle turns on
+            if showObsOn
+                if frameTimeStamps(frameInds(j))>=obsOnTimes(i)
+                    frame = insertText(frame, [0 size(frame,1)], 'OBSTACLE ON', 'BoxOpacity', 1, ...
+                                   'BoxColor', 'white', 'anchorpoint', 'LeftBottom', 'textcolor', 'black');
+                end
             end
                         
 

@@ -265,6 +265,64 @@ file = fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', [experime
 if ~exist(file, 'file'); writetable(spreadsheet, file); else; disp('file already exists!'); end
 
 
+%% make vid, and tracking spreadsheet, with no obstacles (for hyun soo park)
+
+session = '190222_002';
+trialsToInclude = 20;
+
+file = fullfile(getenv('OBSDATADIR'), 'other', 'hyunSooParkData', session);
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+    'obsPixPositions', 'frameTimeStamps', 'obsOnTimes', 'obsOffTimes')
+trackingData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
+
+% take only trialsToInclude fastest trials
+[~, sortInds] = sort(obsOffTimes - obsOnTimes);
+% sortInds = flipud(sortInds); % uncomment this line to take the slowest trials!
+trials = sort(sortInds(1:trialsToInclude));
+
+vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
+vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
+vidWriter = VideoWriter(file);
+set(vidWriter, 'FrameRate', 50)
+open(vidWriter)
+
+inds = cell(1,trialsToInclude);
+
+for i = 1:trialsToInclude
+    
+    % get trial inds
+    inds{i} = find(frameTimeStamps>obsOnTimes(trials(i)) & ...
+                frameTimeStamps<obsOffTimes(trials(i)) & ...
+                obsPixPositions'>(vidTop.Width+20));
+    
+    % write trial inds to video
+    for j = inds{i}'
+        frame = cat(1, read(vidTop,j), read(vidBot,j));
+        writeVideo(vidWriter, frame);
+    end
+end
+close(vidWriter)
+
+frameInds = cat(1,inds{:});
+noObsColBins = ~contains(trackingData.Properties.VariableNames, 'obs') & ...
+               ~strcmp(trackingData.Properties.VariableNames, 'Var1');
+
+% change column headings to make easier to understand
+for i = find(noObsColBins)
+    varEnd = trackingData.Properties.VariableNames{i}(end-1:end);
+    if strcmp(varEnd, '_1')
+        trackingData.Properties.VariableNames{i} = [trackingData.Properties.VariableNames{i}(1:end-1) 'y'];
+    elseif strcmp(varEnd, '_2')
+        trackingData.Properties.VariableNames{i} = [trackingData.Properties.VariableNames{i}(1:end-1) 'confidence'];
+    else
+        trackingData.Properties.VariableNames{i} = [trackingData.Properties.VariableNames{i} '_x'];
+    end
+end
+writetable(trackingData(frameInds, noObsColBins), ...
+    fullfile(getenv('OBSDATADIR'), 'other', 'hyunSooParkData', 'deepLabCutOutput.csv'));
+disp('all done!')
+
+
 
 
 
