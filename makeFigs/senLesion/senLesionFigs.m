@@ -18,7 +18,7 @@ vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ips
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
-vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi'}});
+vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});
 vars.sessionNum = struct('name', 'sessionNum', 'levels', 1:100, 'levelNames', {cellfun(@num2str, num2cell(1:100), 'UniformOutput', false)});
 manipConditions = vars.condition.levels;
 vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
@@ -33,6 +33,14 @@ conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<
 
 figConditionals = [conditionals.isEarly];
 
+%% recompute touches with different fore-dorsal thresholds
+
+sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
+parfor i = 1:length(sessions)
+    try spikeAnalysis2(sessions{i}, {'touches'});
+    catch; fprintf('%s: problem with spike analysis!', sessions{i}); end
+end
+
 %% compute kinData for all sessions (only need to do once)
 overwriteKindata = false;
 sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
@@ -46,10 +54,16 @@ end
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
 disp('senLesion data loaded!')
 
-%% compute experiment data
+% compute new data and append to loaded data
 loadOldData = true;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
+
+% %% compute experiment from scratch, in parallel
+% data = cell(1,length(mice));
+% parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+% data = cat(2,data{:});
+% save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
 
 %% ----------
 % PLOT THINGS
@@ -351,7 +365,7 @@ plotVar = vars.condition;
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'isBigStep'});
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'isBigStep', 'preObsKin'});
 flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, 'post'))); % only use first 3 lesion sessions
 % flat = flat(~[flat.isBigStep]); % add conditionals here
 
@@ -359,7 +373,8 @@ flat = flat(~([flat.conditionNum]>maxEarlySession & contains({flat.condition}, '
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
-kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+% kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
 kinData = kinData(:,[1,3],:); % keep only x and z dimensions
         
 plotInd = 1;

@@ -234,7 +234,7 @@ end
 
 % settings
 experiment = 'baseline';
-trialsPerSession = 15;
+trialsPerSession = 10;
 modPawLims = [5, 20]; % only include trials where contact occurs within modPawLims samples of swing start
 minVel = .4;
 
@@ -250,19 +250,21 @@ flat = flat([flat.modPawContactInd]>=modPawLims(1) & [flat.modPawContactInd]<=mo
             [flat.velAtWiskContact]>minVel); % add conditionals here
 flat = struct2table(flat);
 spreadsheet = array2table(zeros(0,3), 'VariableNames', {'mouse', 'session', 'trial'});
-
+%%
 for i = 1:length(mice)
     session = sessionInfo.session{find(strcmp(sessionInfo.mouse, mice{i}),1,'first')};
     inds = find(strcmp(flat.session, session));
     inds = inds(sort(randperm(length(inds), min(trialsPerSession, length(inds)))));
-    spreadsheet = cat(1, spreadsheet, flat(inds, 1:3));
-    
-    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'edited0Vid', 'reactionTimeVids', session), ...
-        session, [-.05 .1], .15, flat.trial(inds)');
+    if ~isempty(inds)
+        spreadsheet = cat(1, spreadsheet, flat(inds, 1:3));
+        makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', session), ...
+            session, [-.05 .1], .15, flat.trial(inds)');
+    end
 end
 
 file = fullfile(getenv('OBSDATADIR'), 'editedVid', 'reactionTimeVids', [experiment '_reactionTimes.csv']);
 if ~exist(file, 'file'); writetable(spreadsheet, file); else; disp('file already exists!'); end
+disp('all done')
 
 
 %% make vid, and tracking spreadsheet, with no obstacles (for hyun soo park)

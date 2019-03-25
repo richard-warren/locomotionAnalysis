@@ -565,7 +565,8 @@ function spikeAnalysis2(session, varsToOverWrite)
         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
-        confidenceThreshForeDorsal = .9; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
+%         confidenceThreshForeDorsal = .9; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
+        confidenceThreshForeDorsal = .6; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
         proximityThresh = 20;
         classesToAssignToPaw = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
 
@@ -667,7 +668,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-            [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            [~, ~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         

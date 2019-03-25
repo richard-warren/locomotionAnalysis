@@ -53,6 +53,7 @@ while true
         try 
             spikeAnalysis2(newSessions{1});
             showWiskContactFrames(newSessions{1});
+            checkObsLight(sessions{1});
         catch
             fprintf('%s: problem with spike analysis!\n', newSessions{1})
         end

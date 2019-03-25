@@ -28,7 +28,13 @@ figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 %% compute kinData for all sessions (only need to do once)
 sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
-parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
+parfor i = 1:length(sessions)
+    if strcmp(sessionInfo.whiskers{strcmp(sessionInfo.session, sessions{i})}, 'none') % if no whiskers
+        getKinematicData5(sessions{i});
+    else
+        getKinematicData5(sessions{i});
+    end
+end
 
 %% compute experiment data
 data = cell(1,length(mice));
@@ -266,14 +272,15 @@ plotVar = vars.sensoryCondition;
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'isBigStep', 'sensoryCondition'});
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'condition', 'stepOverKinInterp', 'preObsKin', 'isBigStep', 'sensoryCondition'});
 % flat = flat(~[flat.isBigStep]); % add conditionals here
 
 % initializations
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
-kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+% kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
 kinData = kinData(:,[1,3],:); % keep only x and z dimensions
         
 plotInd = 1;

@@ -26,8 +26,8 @@ problemSessions = cell(1,length(sessions));
 for i = 1:length(sessions)
     try
         if sessionInfo.include(strcmp(sessionInfo.session, sessions{i}))
-            spikeAnalysis2(sessions{i}, {'webCamTimeStamps'});
-            checkObsLight(sessions{i})
+            spikeAnalysis2(sessions{i}, {'touches'});
+%             checkObsLight(sessions{i})
 %             showWiskContactFrames(sessions{i})
         end
 %         try; showWiskContactFrames(sessions{i}); catch; end
@@ -38,6 +38,7 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
+% problem sessions when re-analyzing 'touches': {'180807_000'}    {'181213_002'}    {'181226_000'}    {'190317_001'}    {'190320_001'}
 
 %% make video with trials labelled by condition
 vidTrialProportion = 0.1;

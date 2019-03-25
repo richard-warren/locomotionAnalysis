@@ -4,7 +4,7 @@
 
 % settings
 varsToAvg = {'mouse'};
-session = '190315_002'; % set to 'all' to analyze all sessions
+session = '190320_005'; % set to 'all' to analyze all sessions
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');

@@ -81,7 +81,7 @@ for i = 1:(length(ttlTrialStartInds)-1)
     end
 end
 
-%% remove nan values
+% remove nan values
 frameTimes = frameTimes(~isnan(frameTimes));
 
 % set 0 values to nan to signify that timestamps are unavailable for frames
@@ -89,12 +89,6 @@ frameTimes(frameTimes==0) = nan;
 
 % display number of missed frames
 fprintf('  %s: total missed frames: %i\n', session, length(missedFrameInds));
-
-
-
-
-
-
 
 
 

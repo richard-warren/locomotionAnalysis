@@ -34,9 +34,9 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes'};
+             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
-           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ'};
+           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ', 'preObsKin'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -76,7 +76,11 @@ for mouse = 1:length(g.mice)
         % check if session already exists in oldData
         if exist('oldData', 'var')
             mouseBin = strcmp({oldData.mouse}, g.mice{mouse});
-            if any(mouseBin); sesBin = strcmp({oldData(mouseBin).sessions.session}, g.sessions{session}); end
+            if any(mouseBin)
+                sesBin = strcmp({oldData(mouseBin).sessions.session}, g.sessions{session});
+            else
+                sesBin = false;
+            end
         else
             sesBin = false;
         end
@@ -98,6 +102,7 @@ for mouse = 1:length(g.mice)
             g.sesKinData = g.sesKinData.kinData;
             g.sesKinInds = find([g.sesKinData.isTrialAnalyzed]);
             g.sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'runAnalyzed.mat'));
+            warning('off', 'MATLAB:load:variableNotFound');
             g.sesSpikeData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'run.mat'), 'breaks', 'stimulus');
             g.wheelVel = getVelocity(g.sesData.wheelPositions, g.speedTime, 1000);
             g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeightsVid/1000, g);
@@ -128,12 +133,12 @@ for mouse = 1:length(g.mice)
                     [g.expData(mouse).sessions(session).trials(trial).paws(1:4).(pawVars{pawVar})] = temp{:};
                     catch; end
                 end
-                
+
                 if ismember('stepOverKinInterp', vars)
                     isStepOverAnalyzed(trial,:) = cellfun(@(x) ~all(isnan(x(:))), {g.expData(mouse).sessions(session).trials(trial).paws.stepOverKinInterp});
                 end
             end
-            
+
             stepOverAnalyzedRates = num2cell(mean(isStepOverAnalyzed,1));
             fprintf('%s: analysis success rates -> paw1: %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
                 g.sessions{session}, stepOverAnalyzedRates{:})
@@ -408,7 +413,6 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell(g.sesData.obsOffTimes - g.sesData.obsOnTimes);
             
         case 'optoOnTimes' % for optogenetics experiments, encodes whether optogenetic stimulation occured for every trial
-            try
             light = zscore(g.sesSpikeData.stimulus.values);
             times = g.sesSpikeData.stimulus.times;
             
@@ -419,7 +423,9 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 lightOnInd = find(times>g.sesData.obsOnTimes(i) & times<g.sesData.obsOffTimes(i) & light>1, 1, 'first');
                 if ~isempty(lightOnInd); var{i} = times(lightOnInd); end
             end
-            catch; keyboard; end
+            
+        case 'isOptoOn'
+            var = num2cell(cellfun(@isnan, getVar('optoOnTimes', g)));
             
             
             
@@ -454,9 +460,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var(g.isValidZ(g.trial,:)) = num2cell(cellfun(@(x) max(x(end,3,:)), g.sesKinData(g.trial).modifiedLocations(g.isValidZ(g.trial,:))));
             end
             
-        case 'preObsHgt'
-            % height of paw when the step over is preObsLim in front of osbtacle
-            
+        case 'preObsHgt' % height of paw when the step over is preObsLim in front of osbtacle
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 for i = find(g.isValidZ(g.trial,:))
@@ -490,12 +494,26 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var = num2cell(cellfun(@(x) x(end,1,1), g.sesKinData(g.trial).modifiedLocations));
             end
         
-        case 'stepOverKinInterp'
-            % interpolated kinematics of step over obstacle
+        case 'stepOverKinInterp' % interpolated kinematics of step over obstacle
             var = repmat({nan(3,g.locationsInterpSmps)},1,4);
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var(g.isValidZ(g.trial,:)) = cellfun(@(x) squeeze(x(end,:,:)), ...
                     g.sesKinData(g.trial).modifiedLocationsInterp(g.isValidZ(g.trial,:)), 'UniformOutput', false);
+            end
+            
+        case 'preObsKin' % interpolated kinematics before step reaches obstacle
+            var = repmat({nan(3,g.locationsInterpSmps)},1,4);
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                for i = find(g.isValidZ(g.trial,:))
+                    ind = find(g.sesKinData(g.trial).modifiedLocations{i}(end,1,:)>-g.preObsLim, 1, 'first');
+                    kin = squeeze(g.sesKinData(g.trial).modifiedLocations{i}(end,:,1:ind));
+                    
+                    if ind>1
+                        for j = 1:3 % x, y, z
+                            var{i}(j,:) = interp1(1:size(kin,2), kin(j,:), linspace(1,size(kin,2), g.locationsInterpSmps), 'linear');
+                        end 
+                    end
+                end
             end
     end
 end

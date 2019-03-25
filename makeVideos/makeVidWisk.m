@@ -16,7 +16,7 @@ scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values,
 contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
 
 includeWiskCam = true;
-includeWebCam = true;
+includeWebCam = false;
 showPawTouches = true;
 showTrialInfo = true;
 showWiskTouches = true;
@@ -208,7 +208,12 @@ for i = trials
             % add trial info text
             if showTrialInfo
                 if isLightOn(i); lightText = 'light on'; else; lightText = 'light off'; end
-                text = sprintf('%s, trial %i, touch frames %i, %s', session, i, sum(isTouching(frameInds)), lightText);
+                wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
+                framesFromContact = nan;
+                if ~isempty(wiskFrameInd); framesFromContact = wiskFrameInd - wiskContactFrames(i); end
+                wiskFrameInd>=wiskContactFrames(i);
+                text = sprintf('%s, trial %i, touch frames %i, %s, %i', ...
+                    session, i, sum(isTouching(frameInds)), lightText, framesFromContact);
                 frame = insertText(frame, [size(frame,2) size(frame,1)], text,...
                                    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
             end
