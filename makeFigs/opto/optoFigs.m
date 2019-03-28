@@ -4,7 +4,7 @@
 
 % settings
 varsToAvg = {'mouse'};
-session = '190320_005'; % set to 'all' to analyze all sessions
+session = '190325_005'; % set to 'all' to analyze all sessions
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
@@ -275,14 +275,15 @@ plotVar = vars.isOptoOn;
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep'});
-flat = flat(logical([flat.isContra])); % add conditionals here
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep', 'preObsKin'});
+flat = flat(logical(~[flat.isContra])); % add conditionals here
 
 % initializations
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
-kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+% kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
 kinData = kinData(:,[1,3],:); % keep only x and z dimensions
         
 plotInd = 1;
@@ -307,7 +308,9 @@ lightTrialsToShow = 15;
 
 
 % sesData = getExperimentData(sess, 'isOptoOn');
-isOptoOn = ~isnan([data.sessions.trials.optoOnTimes]);
+% condition = ~[data.sessions.trials.isLightOn];
+condition = true(1,length([data.sessions.trials.isOptoOn]));
+isOptoOn = [data.sessions.trials.isOptoOn] & condition;
 optoTrials = find(isOptoOn);
 noOptoTrials = find(~isOptoOn);
 
@@ -316,12 +319,12 @@ noOptoTrials = noOptoTrials(sort(randperm(length(noOptoTrials), lightTrialsToSho
 trials = sort([optoTrials, noOptoTrials]);
 
 
-% makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', ...
-%             [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW']), ...
-%             session, [-.05 .1], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
-makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', 'trialStartVids', ...
-            [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW_trialStart']), ...
-            session, [-.45 -.2], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
+makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', ...
+            [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW']), ...
+            session, [-.05 .1], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
+% makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', 'trialStartVids', ...
+%             [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW_trialStart']), ...
+%             session, [-.45 -.2], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
 
 
 

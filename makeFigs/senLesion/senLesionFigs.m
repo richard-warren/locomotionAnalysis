@@ -33,13 +33,7 @@ conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<
 
 figConditionals = [conditionals.isEarly];
 
-%% recompute touches with different fore-dorsal thresholds
 
-sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
-parfor i = 1:length(sessions)
-    try spikeAnalysis2(sessions{i}, {'touches'});
-    catch; fprintf('%s: problem with spike analysis!', sessions{i}); end
-end
 
 %% compute kinData for all sessions (only need to do once)
 overwriteKindata = false;
@@ -54,16 +48,16 @@ end
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
 disp('senLesion data loaded!')
 
-% compute new data and append to loaded data
+%% compute new data and append to loaded data
 loadOldData = true;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
 
-% %% compute experiment from scratch, in parallel
-% data = cell(1,length(mice));
-% parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
-% data = cat(2,data{:});
-% save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
+%% compute experiment from scratch, in parallel
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data = cat(2,data{:});
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
 
 %% ----------
 % PLOT THINGS

@@ -196,8 +196,8 @@ makeUnitVid(session, unit_id, timeEpochs)
 
 %% make video of all wheel break trials for a session
 
-sessions = selectSessions;
-
+% sessions = selectSessions;
+sessions = {'190325_005'};
 for i = 1:length(sessions)
     wheelBreakTrials = find(getIsWheelBreak(sessions{i}))';
     makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'wheelBreakOnlyVids', [sessions{i} 'WheelBreaks']), ...

@@ -24,14 +24,25 @@ frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed
 % ensure the correct number of trials were detected
 if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
     
-    % this bit of code removes frameTrialStartInds that do not align with ttlTrialStartInds (the latter and not the former being reliable)
     ttlTrialLengths = diff(ttlTimes(ttlTrialStartInds));
     camTrialLengths = diff(frameTrialStartInds)/250;
     
-    for i = 2:length(ttlTrialLengths) % start at second frame because first trial often has many missing frames...
-        if abs(ttlTrialLengths(i) - camTrialLengths(i)) > 1
-            camTrialLengths = camTrialLengths([1:i-1 i+1:end]); % remove element i from camTrialLengths
-            frameTrialStartInds = frameTrialStartInds([1:i-1 i+1:end]);
+    % if there are more cam trials than ttl trials, remove some of the former
+    if length(frameTrialStartInds)>length(ttlTrialStartInds)
+        for i = 2:length(ttlTrialLengths) % start at second trial because first trial often has many missing frames...
+            if abs(ttlTrialLengths(i) - camTrialLengths(i)) > 1
+                camTrialLengths = camTrialLengths([1:i-1 i+1:end]); % remove element i from camTrialLengths
+                frameTrialStartInds = frameTrialStartInds([1:i-1 i+1:end]);
+            end
+        end
+        
+    % if there are more ttl trials than cam trials, remove some of the former
+    else
+        for i = 2:length(camTrialLengths) % start at second trial because first trial often has many missing frames...
+            if abs(ttlTrialLengths(i) - camTrialLengths(i)) > 1
+                ttlTrialLengths = ttlTrialLengths([1:i-1 i+1:end]); % remove element i from camTrialLengths
+                ttlTrialStartInds = ttlTrialStartInds([1:i-1 i+1:end]); 
+            end
         end
     end
     fprintf('  %s: same number of rewards not detected! WTF!!! attempted to fix with a hack!!!\n', session)

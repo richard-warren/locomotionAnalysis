@@ -425,7 +425,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             end
             
         case 'isOptoOn'
-            var = num2cell(cellfun(@isnan, getVar('optoOnTimes', g)));
+            var = num2cell(~cellfun(@isnan, getVar('optoOnTimes', g)));
             
             
             

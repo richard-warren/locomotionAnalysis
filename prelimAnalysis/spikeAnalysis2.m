@@ -290,7 +290,7 @@ function spikeAnalysis2(session, varsToOverWrite)
             frameCounts = camMetadata(:,2);
             timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
 
-            frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session);
+            try; frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session); catch; keyboard; end
 
             % !!! the following should fix sessions where spike is stopped
             % before the camera is stopped // not sure it will worked if

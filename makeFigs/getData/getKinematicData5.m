@@ -124,7 +124,9 @@ for j = 1:length(obsOnTimes)
     for k = 1:controlSteps; if ~all(any(trialControlStepIds==k,1)); missingControlStep = true; end; end
     for k = 1:noObsSteps; if ~all(any(trialNoObsStepIds==k,1)); missingObsOffStep = true; end; end
     missingModStep = any(all(isnan(trialModStepIds),1));
-    isTrialAnalyzed(j) = ~missingModStep && ~missingControlStep && ~missingObsOffStep && ~isnan(wiskContactPositions(j));
+    wiskContactFrameFound = any(frameTimeStamps(trialInds)==wiskContactTimes(j)); % 
+    isTrialAnalyzed(j) = ~missingModStep && ~missingControlStep && ~missingObsOffStep && ...
+                         ~isnan(wiskContactPositions(j)) && wiskContactFrameFound;
     
     % ANALYZE KINEMATIC DATA
     if isTrialAnalyzed(j)
