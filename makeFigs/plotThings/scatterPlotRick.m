@@ -32,8 +32,10 @@ for h = 1:length(conditionNames)
         'MarkerEdgeAlpha', transparency, 'MarkerFaceAlpha', transparency); hold on
     
     % add best fit line
+    try
     fit = polyfit(vars(1,conditionBins), vars(2,conditionBins), 1);
     lines(h) = plot(vars(1,conditionBins), polyval(fit, vars(1,conditionBins)), 'linewidth', 4, 'color', colors(h,:));
+    catch; keyboard; end
 end
 
 % add obs height line

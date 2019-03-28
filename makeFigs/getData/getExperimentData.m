@@ -277,16 +277,22 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = avgSignalPerTrial(g.sesData.bodyAngles, g.sesData.frameTimeStamps, g);
             
         case 'trialAngleContra'
-            var = getVar('trialAngle', g);
-            if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
+            side = g.expData(g.mouse).sessions(g.session).side;
+            if strcmp(side, 'left') || strcmp(side, 'right')
+                var = getVar('trialAngle', g);
+                if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
+            end
         
         case 'angleAtWiskContact'
             bins = ~isnan(g.sesData.frameTimeStamps);
             var = num2cell(interp1(g.sesData.frameTimeStamps(bins), g.sesData.bodyAngles(bins), g.sesData.wiskContactTimes));
             
         case 'angleAtWiskContactContra'
-            var = getVar('angleAtWiskContact', g);
-            if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
+            side = g.expData(g.mouse).sessions(g.session).side;
+            if strcmp(side, 'left') || strcmp(side, 'right')
+                var = getVar('angleAtWiskContact', g);
+                if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
+            end
             
         case 'wiskContactPosition'
             var = num2cell([g.sesKinData.wiskContactPositions]);
@@ -295,9 +301,12 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell([g.sesKinData.wiskContactTimes]);
             
         case 'isContraFirst'
-            var = num2cell(false(1,length(g.sesKinData)));
-            for i = g.sesKinInds; var{i} = ismember(g.sesKinData(i).pawOverSequence(1), [1, 2]); end % is first paw over on left side of body
-            if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@not, var)); end % if side is left, then contra limbs are on the right side
+            side = g.expData(g.mouse).sessions(g.session).side;
+            if strcmp(side, 'left') || strcmp(side, 'right')
+                var = num2cell(false(1,length(g.sesKinData)));
+                for i = g.sesKinInds; var{i} = ismember(g.sesKinData(i).pawOverSequence(1), [1, 2]); end % is first paw over on left side of body
+                if strcmp(side, 'left'); var = num2cell(cellfun(@not, var)); end % if side is left, then contra limbs are on the right side
+            end
             
         case 'isBigStep'
             var = num2cell(false(1,length(g.sesKinData)));
@@ -306,9 +315,12 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             end
             
         case 'isModPawContra'
-            var = num2cell(false(1,length(g.sesKinData)));
-            if strcmp(g.expData(g.mouse).sessions(g.session).side, 'right'); contraPaw = 2; else; contraPaw = 3; end
-            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.firstModPaw]==contraPaw);
+            side = g.expData(g.mouse).sessions(g.session).side;
+            if strcmp(side, 'left') || strcmp(side, 'right')
+                var = num2cell(false(1,length(g.sesKinData)));
+                if strcmp(side, 'right'); contraPaw = 2; else; contraPaw = 3; end
+                var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.firstModPaw]==contraPaw);
+            end
             
         case 'tailHgt'
             tailHgts = nan(size(g.sesData.frameTimeStamps));
@@ -436,9 +448,12 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         % paw variables
         % -------------
         case 'isContra'
-            var = [1 1 0 0]; % left side contra by default
-            if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = ~var; end % if side is left, then contra limbs are on the right side
-            var = num2cell(var);
+            side = g.expData(g.mouse).sessions(g.session).side;
+            if strcmp(side, 'left') || strcmp(side, 'right')
+                var = [1 1 0 0]; % left side contra by default
+                if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = ~var; end % if side is left, then contra limbs are on the right side
+                var = num2cell(var);
+            end
             
         case 'isFore'
             var = num2cell(logical([0 1 1 0]));

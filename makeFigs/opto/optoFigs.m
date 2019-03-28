@@ -4,7 +4,7 @@
 
 % settings
 varsToAvg = {'mouse'};
-session = '190325_005'; % set to 'all' to analyze all sessions
+session = '190324_004'; % set to 'all' to analyze all sessions
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
@@ -30,6 +30,8 @@ conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+
+isSided = strcmp(sessionInfo.side{1}, 'left') || strcmp(sessionInfo.side{1}, 'right');
 
 
 %% load experiment data
@@ -70,22 +72,26 @@ dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg, figConditionals)
 barPlotRick(dvMatrix, {conditions.levelNames}, 'velocity (m/s)', true)
 
 % body angle
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isLightOn; vars.isOptoOn];
-dvMatrix = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'body angle (towards contra)', true)
+if isSided
+    plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+    conditions = [vars.isLightOn; vars.isOptoOn];
+    dvMatrix = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg, figConditionals);
+    barPlotRick(dvMatrix, {conditions.levelNames}, 'body angle (towards contra)', true)
+end
 
 % baseline step height
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
+if isSided; conditions = [vars.isFore; vars.isContra; vars.isOptoOn]; else; conditions = [vars.isFore; vars.isOptoOn]; end
 dvMatrix = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dvMatrix, {conditions.levelNames}, 'baseline step height (mm)', true)
 
 % contra first rate (light, manip)
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isOptoOn];
-dvMatrix = getDvMatrix(data, 'isContraFirst', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'contra paw first rate', true)
+if isSided
+    plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+    conditions = [vars.isOptoOn];
+    dvMatrix = getDvMatrix(data, 'isContraFirst', conditions, varsToAvg, figConditionals);
+    barPlotRick(dvMatrix, {conditions.levelNames}, 'contra paw first rate', true)
+end
 
 % penult step length (light, fore/hind, ipsi/contra, manip) - hgt, vel?
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd:plotInd);
@@ -95,19 +101,19 @@ barPlotRick(dvMatrix, {conditions.levelNames}, 'penultimate step length', true)
 
 % paw error rate
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
+if isSided; conditions = [vars.isFore; vars.isContra; vars.isOptoOn]; else; conditions = [vars.isFore; vars.isLeading; vars.isOptoOn]; end
 dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
 % planting step distance (light, fore/hind, ipsi/contra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
+if isSided; conditions = [vars.isFore; vars.isContra; vars.isOptoOn]; else; conditions = [vars.isFore; vars.isLeading; vars.isOptoOn]; end
 dvMatrix = getDvMatrix(data, 'stepOverStartingDistance', conditions, varsToAvg, [figConditionals; conditionals.isLagging])*-1000; % only take lagging paws
 barPlotRick(dvMatrix, {conditions.levelNames}, 'planting foot distance (mm)', true)
 
 % step over height (light, fore/hind, ipsi/contra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.isContra; vars.isOptoOn];
+if isSided; conditions = [vars.isFore; vars.isContra; vars.isOptoOn]; else; conditions = [vars.isFore; vars.isLeading; vars.isOptoOn]; end
 dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'step over anticipatory height', true)
 
@@ -119,7 +125,7 @@ barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
 
 % big step probability (light, modPawContra, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isModPawContra; vars.isOptoOn];
+if isSided; conditions = [vars.isModPawContra; vars.isOptoOn]; else; conditions = [vars.isOptoOn]; end
 dvMatrix = getDvMatrix(data, 'isBigStep', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'big step probability', true)
 
@@ -198,7 +204,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_speed.fig'))
 figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
 
 % settings
-rowVar = vars.isContra;
+if isSided; rowVar = vars.isContra; else; rowVar = vars.isFore; end
 colVar = vars.isLeading;
 scatVar = vars.isOptoOn;
 xLims = [2 10];
@@ -207,7 +213,7 @@ yLims = [0 20];
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn'});
-flat = flat([flat.isFore]); % add conditionals here
+if ~isequal(rowVar, vars.isFore); flat = flat([flat.isFore]); end
 obsHgts = [flat.obsHgt]*1000;
 pawHgts = [flat.preObsHgt]*1000;
 
@@ -234,7 +240,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'opto_heightShaping.fi
 %% heat maps
 
 % settings
-rowVar = vars.isModPawContra;
+if isSided; rowVar = vars.isModPawContra; else; rowVar = vars.isLightOn; end
 colVar = vars.isOptoOn;
 xLims = [-.03 .015];
 yLims = [-.03 .03];
@@ -276,7 +282,7 @@ plotVar = vars.isOptoOn;
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep', 'preObsKin'});
-flat = flat(logical(~[flat.isContra])); % add conditionals here
+if isSided; flat = flat(logical([flat.isContra])); end % add conditionals here
 
 % initializations
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
