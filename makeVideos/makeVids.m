@@ -26,13 +26,13 @@ makeMatrixVid2(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, tr
 
 %% make video showing how we can monitor wisk and paw contacts for talks
 
-session = '180912_004';
+session = '190327_003';
 obsPosRange = [-.05 .1];
 playbackSpeed = .1;
 trials = [1 6 11 20 31 35 41 46 51 56];
 
 
-makeVidWisk([getenv('OBSDATADIR') 'editedVid\talkExamle' session], session, obsPosRange, playbackSpeed, trials);
+makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, obsPosRange, playbackSpeed, trials);
 
 %% make vid with obstacles
 

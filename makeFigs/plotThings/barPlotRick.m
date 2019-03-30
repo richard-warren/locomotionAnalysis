@@ -1,4 +1,4 @@
-function barPlotRick(data, conditionNames, dvName, isWithinSubs)
+function barPlotRick(data, conditionNames, dvName, isWithinSubs, smpNames)
 
 % TO DO: should allow user to define whether each var is between or within, and also to define arbitrary stat comparisons //deal with legend...
 % document // replace my hacky code with combvec! //

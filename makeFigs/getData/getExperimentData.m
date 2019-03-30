@@ -34,7 +34,7 @@ trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLig
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn'};
+             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn', 'touchFrames'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
            'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ', 'preObsKin'};
 
@@ -439,7 +439,11 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'isOptoOn'
             var = num2cell(~cellfun(@isnan, getVar('optoOnTimes', g)));
             
-            
+        case 'touchFrames'
+            var = cell(1,length(g.sesKinData));
+            for i = 1:length(g.sesKinData)
+                var{i} = sum(any(g.sesData.touchesPerPaw(g.sesKinData(i).trialInds,:),2));
+            end
             
             
             

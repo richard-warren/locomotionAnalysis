@@ -75,7 +75,7 @@ colVar = 4;
 figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
 plotInd = 0;
 
-% success (light, manip)
+% success
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
@@ -151,7 +151,7 @@ barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'tailHgt', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true)
+barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true, mice)
 
 
 % compare early and late success
@@ -386,7 +386,26 @@ end
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_kinematics.fig'))
 
 
+%% render experiment vids
 
+trialsPerSession = 15;
+flat = getNestedStructFields(data, {'mouse', 'session', 'condition', 'trial', 'velAtWiskContact'});
+
+for i = 1:length(mice)
+    
+    mouseConditions = unique({flat(strcmp({flat.mouse}, mice{i})).condition});
+    for j = 1:length(mouseConditions)
+        conditionSessions = unique({flat(strcmp({flat.mouse}, mice{i}) & ...
+                                         strcmp({flat.condition}, mouseConditions{j})).session});
+        session = conditionSessions{1};
+        trials = sort(randperm(max([flat(strcmp({flat.session}, session)).trial]), trialsPerSession));
+        
+        makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'senLesion', ...
+            [mice{i} '_' session '_' mouseConditions{j}]), session, [-.05 .1], .15, trials);
+        
+    end
+    
+end
 
 
 

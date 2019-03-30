@@ -1,37 +1,24 @@
-close all; 
 
 
-con = squeeze(controlDifs(:,1,:));
-man = squeeze(modDifs(:,1,:));
+binEdges = -.5:20.5;
 
+flat = getNestedStructFields(data, {'mouse', 'session', 'frameCounts', 'touchFrames', 'condition'});
 
-figure;
-plot(times, nanmean(man([flat.isBigStep],:),1)); hold on;
-plot(times, nanmean(man(~[flat.isBigStep],:),1)); hold on;
-plot(times, nanmean(con([flat.isBigStep],:),1));
-plot(times, nanmean(con(~[flat.isBigStep],:),1));
-legend('big', 'small', 'control big', 'control small');
-% plot(times, nanmean(con,1));
-% legend('big', 'small', 'control');
+flat = flat(ismember({flat.mouse}, {'sen7', 'sen8'}) & ...
+            ismember({flat.condition}, {'pre', 'noWisk'}));
 
+        
+%%
+close all; figure
+histogram([flat(strcmp({flat.condition}, 'pre')).touchFrames], binEdges, 'Normalization', 'probability'); hold on
+histogram([flat(strcmp({flat.condition}, 'noWisk')).touchFrames], binEdges, 'Normalization', 'probability');
+legend({'pre', 'noWisk'})
 
+%%
+thresholds = 0:20;
 
-
-
-aucs = nan(2, size(con,2));
-for i = 1:size(con,2)
-    labels = repelem([0 1], size(con,1));
-    scores = cat(1, con(:,i), man(:,i));
-    
-    oneBins = ~isnan(scores) & repmat([flat.isBigStep],1,2)';
-    twoBins = ~isnan(scores) & repmat(~[flat.isBigStep],1,2)';
-    
-    if any(oneBins); [~,~,~,aucs(1,i)] = perfcurve(labels(oneBins), scores(oneBins), 1); end
-    if any(twoBins); [~,~,~,aucs(2,i)] = perfcurve(labels(twoBins), scores(twoBins), 1); end
+successes = nan(length(thresholds),2);
+for i = 1:length(thresholds)
+    successes(i,1) = mean([flat(strcmp({flat.condition}, 'pre')).touchFrames]<thresholds(i));
+    successes(i,2) = mean([flat(strcmp({flat.condition}, 'noWisk')).touchFrames]<thresholds(i));
 end
-
-
-
-figure;
-plot(times, aucs)
-legend({'one step', 'two step'});
