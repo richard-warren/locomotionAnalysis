@@ -5,14 +5,13 @@
 % settings
 % varsToAvg = {'mouse'};
 varsToAvg = {'mouse'};
-exp = 'mtcHighPower'; % session, mtc, mtcHighPower (set to 'session' if you want to analyze only a single session)
+exp = 'vermis'; % session, mtc, mtcHighPower, vermis, cerInt (set to 'session' if you want to analyze only a single session)
 session = '190406_002';
 minSpeed = .35;
 % sessions = '190327_004'; % set to 'all' to analyze all sessions
 
 
 % load session metadata
-isSingleSession = isstr(sessions);
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & [sessionInfo.include],:); % remove empty rows, not included sessions
 
@@ -23,6 +22,10 @@ switch exp
                     '190401_002', '190401_003', '190402_002', '190403_002', '190403_003', '190404_001', '190406_002'}; % 190406_002 has dft coordinates
     case 'mtcHighPower'
         sessions = {'190401_002', '190401_003', '190402_002', '190403_002', '190403_003', '190404_001', '190406_002'}; % mtc opto
+    case 'vermis'
+        sessions = {'190325_005', '190326_005', '190327_004', '190329_006', '190402_004'};
+    case 'cerInt'
+        sessions = {'190331_005', '190402_003', '190404_002'};
     case 'session'
         sessions = {session};
         sessionInfo = sessionInfo(strcmp(sessionInfo.session, sessions),:);
@@ -30,6 +33,8 @@ switch exp
 end
 sessionInfo = sessionInfo(ismember(sessionInfo.session, sessions), :); % only keep sessions to be analyzed
 mice = unique(sessionInfo.mouse);
+isSingleSession = isstr(sessions);
+
 
 % set categorical vars
 vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
@@ -50,26 +55,6 @@ figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 % figConditionals = [conditionals.highSpeed];
 
 isSided = strcmp(sessionInfo.side{1}, 'left') || strcmp(sessionInfo.side{1}, 'right');
-
-
-%% create table to show what has been done so far
-
-sessionInfoTemp = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
-sessionInfoTemp = sessionInfoTemp(~cellfun(@isempty, sessionInfoTemp.session) & [sessionInfoTemp.include],:); % remove empty rows, not included sessions
-mice = unique(sessionInfoTemp.mouse);
-% brainRegions = unique(sessionInfoTemp.brainRegion);
-brainRegions = {'alm', 'mtc', 'olf', 'vermis', 'cerInt', 'cerLat'};
-summary = cell2table(cell(length(mice), length(brainRegions)+1), 'VariableNames', [{'mouse'} brainRegions]);
-
-for i = 1:length(mice)
-    for j = 1:length(brainRegions)
-        inds = find(strcmp(sessionInfoTemp.mouse, mice{i}) & strcmp(sessionInfoTemp.brainRegion, brainRegions{j}))';
-        entry = '';
-        for k = inds; entry = [entry num2str(sessionInfoTemp.mW(k)) upper(sessionInfoTemp.side{k}(1)) ' ']; end
-        summary.(brainRegions{j}){i} = entry(1:end-1);
-    end
-end
-summary.mouse = mice;
 
 
 
