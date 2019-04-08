@@ -179,16 +179,19 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = getTableColumn('brainRegion', g);
             
         case 'mW'
-            var = {num2str(getTableColumn('mW', g))};
+            var = getTableColumn('mW', g);
             
         case 'conditionNum'
-            var = num2cell(nan(1,length(g.expData(g.mouse).sessions)));
             sessionInfoSub = g.sessionInfo(strcmp(g.sessionInfo.mouse, g.expData(g.mouse).mouse),:);
+            var = num2cell(nan(1,height(sessionInfoSub)));
             conditions = unique(sessionInfoSub.condition);
             for i = conditions'
+%                 if strcmp(i{1}, 'postContra'); keyboard; end
                 bins = strcmp(sessionInfoSub.condition, i{1});
                 var(bins) = num2cell(1:sum(bins));
             end
+            var = var(logical(sessionInfoSub.include));
+            
             
         case 'sessionNum'
             allMouseSessions = g.sessionInfo.session(strcmp(g.sessionInfo.mouse, g.mice{g.mouse})); % all sessions, including those where .include==false
@@ -545,6 +548,7 @@ function col = getTableColumn(colName, g)
     
     [~, inds] = intersect(g.sessionInfo.session, g.sessions, 'stable');
     col = g.sessionInfo.(colName)(inds);
+    if isnumeric(col); col = cellstr(num2str(col)); end
 end
 
 

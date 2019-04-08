@@ -31,8 +31,8 @@ conditionals.isPre = struct('name', 'condition', 'condition', @(x) strcmp(x, 'pr
 conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) x<=maxEarlySession);
 conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<=8);
 
-figConditionals = [conditionals.isEarly];
-
+% figConditionals = [conditionals.isEarly];
+figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
 %% compute kinData for all sessions (only need to do once)
@@ -403,8 +403,7 @@ for i = 1:length(mice)
         makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'senLesion', ...
             [mice{i} '_' session '_' mouseConditions{j}]), session, [-.05 .1], .15, trials);
         
-    end
-    
+    end    
 end
 
 

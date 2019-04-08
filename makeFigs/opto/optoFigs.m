@@ -5,27 +5,29 @@
 % settings
 % varsToAvg = {'mouse'};
 varsToAvg = {'mouse'};
-exp = 'mtc'; % session, mtc, vermis, sen, int, ctrl
-session = '190328_004';
+exp = 'mtcHighPower'; % session, mtc, mtcHighPower (set to 'session' if you want to analyze only a single session)
+session = '190406_002';
+minSpeed = .35;
 % sessions = '190327_004'; % set to 'all' to analyze all sessions
-
-
-
-% initialize session
-switch exp
-    case 'mtc'
-        sessions = {'190324_005', '190324_006', '190326_004', '190327_005', '190327_006', '190328_004'}; % mtc opto
-    case 'session'
-        sessions = {session};
-        sessionInfo = sessionInfo(strcmp(sessionInfo.session, sessions),:);
-        data = getExperimentData(sessionInfo, 'all');
-end
 
 
 % load session metadata
 isSingleSession = isstr(sessions);
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows, not included sessions, and those without correct brain region
+sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session) & [sessionInfo.include],:); % remove empty rows, not included sessions
+
+% initialize sessions
+switch exp
+    case 'mtc'
+        sessions = {'190324_005', '190324_006', '190326_004', '190327_005', '190327_006', '190328_004', '190330_003', '190331_004', ...
+                    '190401_002', '190401_003', '190402_002', '190403_002', '190403_003', '190404_001', '190406_002'}; % 190406_002 has dft coordinates
+    case 'mtcHighPower'
+        sessions = {'190401_002', '190401_003', '190402_002', '190403_002', '190403_003', '190404_001', '190406_002'}; % mtc opto
+    case 'session'
+        sessions = {session};
+        sessionInfo = sessionInfo(strcmp(sessionInfo.session, sessions),:);
+        data = getExperimentData(sessionInfo, 'all');
+end
 sessionInfo = sessionInfo(ismember(sessionInfo.session, sessions), :); % only keep sessions to be analyzed
 mice = unique(sessionInfo.mouse);
 
@@ -41,27 +43,56 @@ vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
+conditionals.highSpeed = struct('name', 'trialVel', 'condition', @(x) x>.35);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+% figConditionals = [conditionals.highSpeed];
 
 isSided = strcmp(sessionInfo.side{1}, 'left') || strcmp(sessionInfo.side{1}, 'right');
 
 
+%% create table to show what has been done so far
+
+sessionInfoTemp = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
+sessionInfoTemp = sessionInfoTemp(~cellfun(@isempty, sessionInfoTemp.session) & [sessionInfoTemp.include],:); % remove empty rows, not included sessions
+mice = unique(sessionInfoTemp.mouse);
+% brainRegions = unique(sessionInfoTemp.brainRegion);
+brainRegions = {'alm', 'mtc', 'olf', 'vermis', 'cerInt', 'cerLat'};
+summary = cell2table(cell(length(mice), length(brainRegions)+1), 'VariableNames', [{'mouse'} brainRegions]);
+
+for i = 1:length(mice)
+    for j = 1:length(brainRegions)
+        inds = find(strcmp(sessionInfoTemp.mouse, mice{i}) & strcmp(sessionInfoTemp.brainRegion, brainRegions{j}))';
+        entry = '';
+        for k = inds; entry = [entry num2str(sessionInfoTemp.mW(k)) upper(sessionInfoTemp.side{k}(1)) ' ']; end
+        summary.(brainRegions{j}){i} = entry(1:end-1);
+    end
+end
+summary.mouse = mice;
+
+
+
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data');
-disp('opto data loaded!')
+disp([exp ' opto data loaded!'])
+% data = data(strcmp({data.mouse}, 'vgt6')); varsToAvg = {'session'}; % run this line to show bars for all sessions of a given mouse!
 
 %% compute experiment data
-loadOldData = false;
+loadOldData = true;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data'); disp('data saved')
 
 %% compute experiment from scratch, in parallel
-data = cell(1,length(mice));
+data = cell(1,length(mice));    
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data = cat(2,data{:});
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data');
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data'); disp('all done!')
+
+%% restrict analysis to single mouse
+mouse = 'vgt6';
+varsToAvg = {'session'};
+data = data(strcmp({data.mouse}, mouse));
 
 %% ----------
 % PLOT THINGS
@@ -81,8 +112,8 @@ plotInd = 0;
 
 % success (light, manip)
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-% conditions = [vars.isLightOn; vars.isOptoOn];
-conditions = [vars.isOptoOn];
+conditions = [vars.isLightOn; vars.isOptoOn];
+% conditions = [vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
 
@@ -160,8 +191,12 @@ barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.isOptoOn];
 dvMatrix = getDvMatrix(data, 'tailHgt', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true, mice)
-
+if strcmp(varsToAvg{1}, 'mouse')
+    barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true, mice)
+elseif strcmp(varsToAvg{1}, 'session')
+    sessions = unique(squeeze(struct2cell(getNestedStructFields(data, 'session'))));
+    barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true, sessions)
+end
 
 
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', [exp '_opto_bars.fig']))
@@ -303,15 +338,15 @@ plotVar = vars.isOptoOn;
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep', 'preObsKin'});
-if isSided; figs = {'_ipsi', '_contra'}; else; figs = ''; end % add conditionals here
+if isSided; figs = {'_ipsi', '_contra'}; else; figs = {''}; end % add conditionals here
 
 % initializations
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
 
-kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
-% kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
+% kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
+kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
 kinData = kinData(:,[1,3],:); % keep only x and z dimensions
 
 for fig = 1:length(figs)
@@ -321,7 +356,7 @@ for fig = 1:length(figs)
     % select subset of figure trials
     if strcmp(figs{fig}, '_ipsi'); sideBins = logical(~[flat.isContra]);
     elseif strcmp(figs{fig}, '_contra'); sideBins = logical([flat.isContra]);
-    else flat = true(1,size(kinData,1)); end
+    else sideBins = true(1,size(kinData,1)); end
     
     plotInd = 1;
     for i = 1:rows
@@ -343,26 +378,27 @@ end
 % settings
 % session = '190313_001';
 lightTrialsToShow = 15;
+overWriteVids = true;
 
+for i = 1:length(data)
+    for j = 1:length(data(i).sessions)
+    
+        condition = true(1,length([data(i).sessions(j).trials.isOptoOn]));
+        isOptoOn = [data(i).sessions(j).trials.isOptoOn] & condition;
+        optoTrials = find(isOptoOn);
+        noOptoTrials = find(~isOptoOn);
 
-% sesData = getExperimentData(sess, 'isOptoOn');
-% condition = ~[data.sessions.trials.isLightOn];
-condition = true(1,length([data.sessions.trials.isOptoOn]));
-isOptoOn = [data.sessions.trials.isOptoOn] & condition;
-optoTrials = find(isOptoOn);
-noOptoTrials = find(~isOptoOn);
+        optoTrials = optoTrials(sort(randperm(length(optoTrials), lightTrialsToShow)));
+        noOptoTrials = noOptoTrials(sort(randperm(length(noOptoTrials), lightTrialsToShow)));
+        trials = sort([optoTrials, noOptoTrials]);
 
-optoTrials = optoTrials(sort(randperm(length(optoTrials), lightTrialsToShow)));
-noOptoTrials = noOptoTrials(sort(randperm(length(noOptoTrials), lightTrialsToShow)));
-trials = sort([optoTrials, noOptoTrials]);
-
-
-makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', ...
-            [sessions '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW']), ...
-            sessions, [-.05 .1], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
-% makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', 'trialStartVids', ...
-%             [session '_' data.mouse '_' data.sessions.brainRegion '_' data.sessions.side '_' data.sessions.mW 'mW_trialStart']), ...
-%             session, [-.45 -.2], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1);
+        file = fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', exp, ...
+            [data(i).sessions(j).session '_' data(i).mouse '_' data(i).sessions(j).brainRegion '_' data(i).sessions(j).side '_' data(i).sessions(j).mW 'mW.avi']);
+        if ~exist(file, 'file') || overWriteVids
+            makeVidWisk(file, data(i).sessions(j).session, [-.45 .1], .15, trials, {'NO OPTO', 'OPTO'}, isOptoOn+1); % [-.05 .1] f
+        end
+    end
+end
 
 
 

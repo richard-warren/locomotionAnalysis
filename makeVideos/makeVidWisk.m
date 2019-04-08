@@ -10,7 +10,7 @@ function makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProporti
 
 
 % settings
-maxTrialTime = 1; % trials exceeding maxTrialTime will be trimmed to this duration (s)
+maxTrialTime = 10; % trials exceeding maxTrialTime will be trimmed to this duration (s)
 border = 4; % thickness (pixels) to draw around the wisk frame
 scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
 contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255

@@ -1,7 +1,7 @@
 function dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionals, conditionInds)
 
 
-% TO DO: multiple dvs // how to add conditionals // how to bin variables // return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
+% TO DO: multiple dvs // how to bin variables // return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
 
 
 % initializations
@@ -37,7 +37,6 @@ if ~dvFound && isempty(structFieldInds)
 
 % otherwise, loop through rows
 else
-    
     % find rows that meet conditionals
     binsToAnalyze = true(1,length(data));
     if ~isempty(conditionalInds)    
@@ -54,6 +53,9 @@ else
     
     
     for i = find(binsToAnalyze)
+        
+%         try; disp(data(i).session); catch; end
+%         try; if strcmp(data(i).mouse, 'sen11'); keyboard; end; catch; end
 
         % add vars to conditionInds
         skipRow = false;
@@ -76,12 +78,16 @@ else
             % otherwise loop through nested structs
             else
                 for j = structFieldInds
+%                     try; if strcmp(data(i).session, '190326_001'); keyboard; end; catch; end
                     dvMatrices{i} = getDvMatrix(data(i).(fields{j}), ...
                         dv, vars, varsToAvg, conditionals, conditionIndsSub);
                     if ~isempty(dvMatrices{i}); break; end % terminate loop once a branch containing dv is found
                 end
 
-                if avgDvs; dvMatrices{i} = nanmean(dvMatrices{i}, length(vars)+1); end % avg matrix if data contains field in varsToAvg
+                if avgDvs
+%                     if i==2; keyboard; end
+                    dvMatrices{i} = nanmean(dvMatrices{i}, length(vars)+1);
+                end % avg matrix if data contains field in varsToAvg
             end
         end
     end

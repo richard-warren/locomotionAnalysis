@@ -44,7 +44,6 @@ sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
 parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 
 %% compute experiment data
-
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data = cat(2,data{:});
@@ -357,8 +356,37 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 
 
+%% make videos
 
+trialsPerSession = 15;
+postSessions = [1 3 5];
+flat = getNestedStructFields(data, {'mouse', 'session', 'condition', 'trial', 'elAtWiskContact'});
 
+for i = 1:length(mice)
+    
+    mouseConditions = unique({flat(strcmp({flat.mouse}, mice{i})).condition});
+    for j = 1:length(mouseConditions)
+        conditionSessions = unique({flat(strcmp({flat.mouse}, mice{i}) & ...
+                                         strcmp({flat.condition}, mouseConditions{j})).session});
+        
+        if strcmp(mouseConditions{j}, 'post') % post lesion, render postSessions to track progress over time
+            sesInds = postSessions;
+        elseif strcmp(mouseConditions{j}, 'pre') % pre lesion, only render final pre sessions
+            sesInds = length(conditionSessions);
+        else % otherwise render first session in condition (for muscimol and saline)
+            sesInds = 1;
+        end
+        
+        for k = sesInds
+            session = conditionSessions{k};
+            trials = sort(randperm(max([flat(strcmp({flat.session}, session)).trial]), trialsPerSession));
+
+            makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', manipulation, ...
+                [mice{i} '_' session '_' mouseConditions{j} num2str(k)]), session, [-.05 .1], .15, trials);
+        end
+    end    
+end
+disp('all done!')
 
 
 
