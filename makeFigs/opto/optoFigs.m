@@ -5,9 +5,9 @@
 % settings
 % varsToAvg = {'mouse'};
 varsToAvg = {'mouse'};
-exp = 'cerInt'; % session, mtc, mtcHighPower, vermis, cerInt, alm (set to 'session' if you want to analyze only a single session)
+exp = 'mtcHighPower'; % session, mtc, mtcHighPower, vermis, cerInt, alm (set to 'session' if you want to analyze only a single session)
 session = '190331_005';
-minSpeed = .35;
+minVel = .35;
 % sessions = '190327_004'; % set to 'all' to analyze all sessions
 
 
@@ -50,11 +50,12 @@ vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
 
 % set conditionals
 conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
-conditionals.highSpeed = struct('name', 'trialVel', 'condition', @(x) x>.35);
+conditionals.highSpeed = struct('name', 'trialVel', 'condition', @(x) x>minVel);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
-figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
-% figConditionals = [conditionals.highSpeed];
+conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
+% figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+figConditionals = [conditionals.highSpeed];
 
 isSided = strcmp(sessionInfo.side{1}, 'left') || strcmp(sessionInfo.side{1}, 'right');
 
@@ -196,7 +197,8 @@ rows = 2;
 
 % initializations
 flat = getNestedStructFields(data, {'mouse', 'session', 'conditionNum', 'trial', 'isLightOn', 'isOptoOn', 'obsHgt', ...
-    'modPawPredictedDistanceToObs', 'isBigStep'});
+    'modPawPredictedDistanceToObs', 'isBigStep', 'trialVel'});
+% flat = flat([flat.trialVel]>minVel);
 conditions = [flat.isOptoOn]+1;
 cols = ceil(length(mice)/rows);
 figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [100 100 300*cols 200*rows])
@@ -218,8 +220,9 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'opto', [exp '_opto_bigStepPro
 %% speed vs. position / time plots
 
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'conditionNum', 'isLightOn', 'isOptoOn', 'obsOnPositions', ...
-    'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition'});
+    'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition', 'trialVel'});
 flat = flat(~[flat.isWheelBreak]);
+% flat = flat([flat.trialVel]>minVel);
 yLims = [.2 .8];
 
 % speed vs position, control vs manip
@@ -256,7 +259,8 @@ yLims = [0 20];
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn'});
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'trialVel'});
+% flat = flat([flat.trialVel]>minVel);
 if ~isequal(rowVar, vars.isFore); flat = flat([flat.isFore]); end
 obsHgts = [flat.obsHgt]*1000;
 pawHgts = [flat.preObsHgt]*1000;
@@ -292,7 +296,8 @@ yLims = [-.03 .03];
 % predicted vs. actual mod paw distance
 figure('name', 'opto', 'color', 'white', 'menubar', 'none', 'position', [2000 100 800 800])
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'sensoryCondition', 'isOptoOn', 'sessionNum', ...
-    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum'});
+    'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'isModPawContra', 'conditionNum', 'trialVel'});
+% flat = flat([flat.trialVel]>minVel);
 rows = length(rowVar.levels);
 cols = length(colVar.levels);
 
@@ -324,8 +329,9 @@ plotVar = vars.isOptoOn;
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep', 'preObsKin'});
+    'obsHgt', 'preObsHgt', 'isFore', 'isContra', 'isLeading', 'isOptoOn', 'stepOverKinInterp', 'isBigStep', 'preObsKin', 'trialVel'});
 if isSided; figs = {'_ipsi', '_contra'}; else; figs = {''}; end % add conditionals here
+% flat = flat([flat.trialVel]>minVel);
 
 % initializations
 conditions = cellfun(@(x) find(ismember(plotVar.levels, x)), {flat.(plotVar.name)});
