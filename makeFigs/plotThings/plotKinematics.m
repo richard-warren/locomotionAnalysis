@@ -20,8 +20,8 @@ function plotKinematics(trajectories, obsHgts, conditions, conditionNames)
 
 % settings
 obsRadius = 3.175 / 2 / 1000; % (m)
-% colors = hsv(max(conditions));
-colors = jet(max(conditions));
+colors = hsv(max(conditions));
+% colors = jet(max(conditions));
 
 
 

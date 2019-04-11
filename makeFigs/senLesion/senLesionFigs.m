@@ -19,6 +19,7 @@ vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isModPawContra = struct('name', 'isModPawContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, 'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});
+vars.conditionSub = struct('name', 'condition', 'levels', {{'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, 'levelNames', {{'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});
 vars.sessionNum = struct('name', 'sessionNum', 'levels', 1:100, 'levelNames', {cellfun(@num2str, num2cell(1:100), 'UniformOutput', false)});
 manipConditions = vars.condition.levels;
 vars.mouse = struct('name', 'mouse', 'levels', {mice}, 'levelNames', {mice});
@@ -51,7 +52,7 @@ disp('senLesion data loaded!')
 %% compute new data and append to loaded data
 loadOldData = true;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('data saved')
+tic; save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data', '-v7.3'); disp('data saved'); toc
 
 %% compute experiment from scratch, in parallel
 data = cell(1,length(mice));
