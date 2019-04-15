@@ -37,8 +37,7 @@ data = cat(2,data{:});
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data');
 
 %% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data');
-disp('baseline data loaded!')
+printf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 
 %% ----------

@@ -5,6 +5,7 @@
 % settings
 varsToAvg = {'mouse'};
 maxEarlySession = 3;
+minObsHgt = .008;
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
@@ -31,9 +32,10 @@ conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 conditionals.isPre = struct('name', 'condition', 'condition', @(x) strcmp(x, 'pre'));
 conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) x<=maxEarlySession);
 conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<=8);
+conditionals.isObsHigh = struct('name', 'obsHgt', 'condition', @(x) x>minObsHgt);
 
-% figConditionals = [conditionals.isEarly];
-figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+figConditionals = [conditionals.isObsHigh];
+% figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
 %% compute kinData for all sessions (only need to do once)
@@ -46,13 +48,12 @@ parfor i = 1:length(sessions)
 end
 
 %% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
-disp('senLesion data loaded!')
+disp('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('senLesion data loaded!')
 
 %% compute new data and append to loaded data
 loadOldData = true;
 if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
-tic; save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data', '-v7.3'); disp('data saved'); toc
+disp('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data', '-v7.3'); disp('data saved');
 
 %% compute experiment from scratch, in parallel
 data = cell(1,length(mice));
@@ -391,19 +392,19 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_kinema
 
 trialsPerSession = 15;
 flat = getNestedStructFields(data, {'mouse', 'session', 'condition', 'trial', 'velAtWiskContact'});
+overWriteVids = false;
 
 for i = 1:length(mice)
-    
+
     mouseConditions = unique({flat(strcmp({flat.mouse}, mice{i})).condition});
     for j = 1:length(mouseConditions)
         conditionSessions = unique({flat(strcmp({flat.mouse}, mice{i}) & ...
-                                         strcmp({flat.condition}, mouseConditions{j})).session});
-        session = conditionSessions{1};
+                                         strcmp({flat.condition}, mouseConditions{j})).session});                                     
+        session = conditionSessions{end};
         trials = sort(randperm(max([flat(strcmp({flat.session}, session)).trial]), trialsPerSession));
         
-        makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'senLesion', ...
-            [mice{i} '_' session '_' mouseConditions{j}]), session, [-.05 .1], .15, trials);
-        
+        file = fullfile(getenv('OBSDATADIR'), 'editedVid', 'senLesion', [mice{i} '_' session '_' mouseConditions{j}]);
+        if ~exist(file, 'file') || overWriteVids; makeVidWisk(file, session, [-.05 .1], .15, trials); end        
     end    
 end
 

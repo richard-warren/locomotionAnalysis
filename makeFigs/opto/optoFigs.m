@@ -54,16 +54,15 @@ conditionals.highSpeed = struct('name', 'trialVel', 'condition', @(x) x>minVel);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
-% figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
-figConditionals = [conditionals.highSpeed];
+figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+% figConditionals = [conditionals.highSpeed];
 
 isSided = strcmp(sessionInfo.side{1}, 'left') || strcmp(sessionInfo.side{1}, 'right');
 
 
 
 %% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data');
-disp([exp ' opto data loaded!'])
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data'); disp([exp ' opto data loaded!'])
 % data = data(strcmp({data.mouse}, 'vgt6')); varsToAvg = {'session'}; % run this line to show bars for all sessions of a given mouse!
 
 %% compute experiment data
