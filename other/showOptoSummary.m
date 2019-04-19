@@ -13,7 +13,7 @@ for i = 1:length(mice)
     for j = 1:length(brainRegions)
         inds = find(strcmp(sessionInfoTemp.mouse, mice{i}) & strcmp(sessionInfoTemp.brainRegion, brainRegions{j}))';
         entry = '';
-        for k = inds; entry = [entry num2str(sessionInfoTemp.mW(k)) upper(sessionInfoTemp.side{k}(1)) ' ']; end
+        for k = inds; entry = [entry num2str(sessionInfoTemp.mWpeak(k)) upper(sessionInfoTemp.side{k}(1)) ' ']; end
         summary.(brainRegions{j}){i} = entry(1:end-1);
     end
 end
