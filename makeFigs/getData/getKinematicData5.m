@@ -291,44 +291,48 @@ fprintf('%s: got kinematicData with %.2f of trials successfully analyzed\n', ...
 
 
 
-% MAKE SWING LENGTH PREDICTIVE MODELS
-% make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
+try
+    % MAKE SWING LENGTH PREDICTIVE MODELS
+    % make model to predict would-be mod swing length of first modified paw using wheel vel and previous swing lengths as predictors
 
-% generate models
-models = cell(1,4);
-controlVels = cat(1,kinData.controlWheelVels);
-controlLengths = cat(1,kinData.controlSwingLengths);
-for paw = 1:4
-    validInds = ~isnan(controlVels(:,paw)) & ~isnan(controlLengths(:,paw));
-    models{paw} = fitlm(controlVels(validInds,paw), controlLengths(validInds,paw), 'Linear', 'RobustOpts', 'on');
-end
-
-% make predictions
-for j = find(isTrialAnalyzed)
-    kinData(j).controlPredictedLengths = nan(size(kinData(j).controlWheelVels));
-    kinData(j).modPredictedLengths = nan(size(kinData(j).modifiedWheelVels));
+    % generate models
+    models = cell(1,4);
+    controlVels = cat(1,kinData.controlWheelVels);
+    controlLengths = cat(1,kinData.controlSwingLengths);
     for paw = 1:4
-        kinData(j).controlPredictedLengths(:,paw) = predict(models{paw}, kinData(j).controlWheelVels(:,paw));
-        kinData(j).modPredictedLengths(:,paw) = predict(models{paw}, kinData(j).modifiedWheelVels(:,paw));
+        validInds = ~isnan(controlVels(:,paw)) & ~isnan(controlLengths(:,paw));
+        models{paw} = fitlm(controlVels(validInds,paw), controlLengths(validInds,paw), 'Linear', 'RobustOpts', 'on');
     end
+
+    % make predictions
+    for j = find(isTrialAnalyzed)
+        kinData(j).controlPredictedLengths = nan(size(kinData(j).controlWheelVels));
+        kinData(j).modPredictedLengths = nan(size(kinData(j).modifiedWheelVels));
+        for paw = 1:4
+            kinData(j).controlPredictedLengths(:,paw) = predict(models{paw}, kinData(j).controlWheelVels(:,paw));
+            kinData(j).modPredictedLengths(:,paw) = predict(models{paw}, kinData(j).modifiedWheelVels(:,paw));
+        end
+    end
+
+    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models')
+
+
+    % uncomment the following to show fits for step length for each paw
+    figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
+    colors = hsv(4);
+    for i = 1:4
+        scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
+        xLims = get(gca, 'XLim');
+        coefs = models{i}.Coefficients.Estimate;
+        plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
+    end
+    xlabel('velocity (m/s)')
+    ylabel('step length')
+    for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
+    legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
+catch
+    fprintf('%s: failed to make swing length model!\n', session)
 end
-
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models')
-
-
-% uncomment the following to show fits for step length for each paw
-figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
-colors = hsv(4);
-for i = 1:4
-    scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
-    xLims = get(gca, 'XLim');
-    coefs = models{i}.Coefficients.Estimate;
-    plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
-end
-xlabel('velocity (m/s)')
-ylabel('step length')
-for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
-legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
 
 
 

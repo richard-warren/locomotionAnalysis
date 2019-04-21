@@ -1,115 +1,119 @@
+function showTrackingOverFrames(session, trials, imgs)
+
 % generates figures with raw tracking data for a single trial show, along
 % with images overlaid on top of the traces that show snapshots of
-% the behavior over time! so cool
+% the behavior over time! so cool // imgs is number of imgs to show on the
+% left and right of center img, which contains obstacle
+
 
 % settings
-session = '180703_000';
-trialNum = 10;
-pixStart = 700; % what pixel to start at
-edgeFading = 60;
-contrastLims = [.2 .8]; % pixels at these proportional values are mapped to 0 and 255
+% session = '180703_000';
+% trials = 10;
+% imgs = 1; % how many images to add to the left and right
+imgSpacing = 0; % spacing between image tiles
+obsFramePixels = 300; % in the middle frame, at what pixel is the obstacle
 featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
                   'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot'};
+
+edgeFading = 60; % fading at the edges of images
+contrastLims = [.2 .8]; % pixels at these proportional values are mapped to 0 and 255
 pawColors = jet(4);
-imgs = 3; % how many images to overlay on figures
 scatSize = 80;
+obsWidth = 5;
+lineAlpha = .8;
 
 
-%% initializations
+% initializations
 vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
 vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPixPositions', 'wheelPositions', ...
-    'wheelTimes', 'wheelCenter', 'wheelRadius', 'mToPixMapping');
+    'wheelTimes', 'wheelCenter', 'wheelRadius', 'mToPixMapping', 'obsPosToWheelPosMappings', 'obsPixPositionsUninterped');
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-
-%%
 [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
-topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
-stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, ...
-    wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
+% topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
+% stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, ...
+%     wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
+obsPixPositionsContinuous = getObsPixPositionsContinuous(...
+    obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
+    obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes);
 fade = repmat(linspace(0,1,edgeFading), vidTop.Height+vidBot.Height, 1);
-frameOffsets = round(-obsPixPositions' + max(obsPixPositions));
-locations(:,1,:) = locations(:,1,:) + frameOffsets; % unravel coordinates to account for movement of wheel
 
-% trials = sort(randperm(length(obsOnTimes), trialNum));
-trials = 99;
+
+
+
+
 
 for trial = trials
-    startInd = find(frameTimeStamps>obsOnTimes(trial) & obsPixPositions'<pixStart, 1, 'first');
-    endInd = find(frameTimeStamps<obsOffTimes(trial), 1, 'last');
-    trialInds = startInd:endInd;
-    imgOffsets = linspace(frameOffsets(trialInds(1)), frameOffsets(trialInds(end)), imgs); % evenly spaced image offsets
-    imgInds = trialInds(knnsearch(frameOffsets(trialInds), imgOffsets'));
-    dims = [vidBot.Height+vidTop.Height range(frameOffsets(trialInds))+vidTop.Width];
-    allImgs = double(zeros(imgs, dims(1), dims(2)));
+    
+    trialLocations = locations;
+    trialLocations(:,1,:) = trialLocations(:,1,:) - obsPixPositionsContinuous(trial,:)'; % unravel coordinates to account for movement of wheel
+    
+    middleFrameInd = find(obsPixPositionsContinuous(trial,:)<obsFramePixels, 1, 'first'); % ind of frame where mouse is getting over obstacle
+    middleFrameObsPos = round(obsPixPositionsContinuous(trial,middleFrameInd));
+    frameObsPosits = middleFrameObsPos + fliplr(-imgs:imgs)*(vidTop.Width+imgSpacing); % obsPixPositions for frames, from left to right
+    imgInds = knnsearch(obsPixPositionsContinuous(trial,:)', frameObsPosits'); % inds of imgs corresponding to the desired frame positions (framePosits)
+    imgOffsets = -frameObsPosits + max(frameObsPosits) + 1; % positions in the image of all of the frames
+    obsPos = middleFrameObsPos + imgOffsets(imgs+1); % position of obstacle in final frame
+    
+    imgDims = [vidBot.Height+vidTop.Height imgOffsets(end)+vidTop.Width];
+    allImgs = double(zeros(imgs, imgDims(1), imgDims(2)));
+    
+    figure('Color', 'white', 'Position', [100 442 imgDims(2) imgDims(1)], 'MenuBar', 'none', 'visible', 'off')
 
 
-
-    % plot image
+    % create image montage
     for i = 1:length(imgInds)
         img = double(cat(1, rgb2gray(read(vidTop, imgInds(i))), rgb2gray(read(vidBot, imgInds(i)))));
         img(:,1:edgeFading) = img(:,1:edgeFading) .* fade; % left fade
         img(:,end+1-edgeFading:end) = img(:,end+1-edgeFading:end) .* fliplr(fade); % right fade
-        allImgs(i,:,frameOffsets(imgInds(i))+1:frameOffsets(imgInds(i))+vidTop.Width) = double(img)*imgs;
+        allImgs(i,:,imgOffsets(i)+1:imgOffsets(i)+vidTop.Width) = double(img)*imgs;
     end
     
-    close all;
-    figure('Color', 'white', 'Position', [2000 442 dims(2) dims(1)], 'MenuBar', 'none')
+    
+    % pimp and show image
     colormap gray
     montage = squeeze(mean(allImgs,1));
     montage = uint8(montage * (255/max(montage(:))));
     montage = imadjust(montage, contrastLims, [0 1]);
-    
-    % add obstacle
-    obsInd = round(frameOffsets(imgInds(2)) + obsPixPositions(imgInds(2)));
-    obsWidth = 5;
-    montage(vidTop.Height+1:end, obsInd-obsWidth:obsInd+obsWidth) = 255;
-    
     image(montage, 'cdatamapping', 'scaled'); hold on;
     
     
-    
-    
-
-    % plot traces
+    % and kinematic traces and scatters
     for i = 1:length(features)
         if ismember(features{i}, featuresToShow)
             if contains(features{i}, 'paw')
                 pawNum = str2double(features{i}(4));
-    %             inds = trialInds(~stanceBins(trialInds,pawNum)); % use this instead of subsequent line to hide kinematics during stance
-                inds = trialInds;
                 color = pawColors(pawNum,:);
             else
-                inds = trialInds;
                 color = [.8 .8 .8];
             end
-            plot(locations(inds,1,i), locations(inds,2,i), ...
-                'LineWidth', 2, 'Color', color); hold on
+            
+            % traces
+            x = trialLocations(imgInds(1):imgInds(end),1,i) + obsPos;
+            y = trialLocations(imgInds(1):imgInds(end),2,i);
+            plot(x, y, 'LineWidth', 2, 'Color', [color lineAlpha]); hold on
+            
+            % scatters
+            x = trialLocations(imgInds,1,i) + obsPos;
+            y = trialLocations(imgInds,2,i);
+            scatter(x, y, scatSize, color, 'filled')
         end
     end
+    
+    
+    % add obstacle
+    rectangle('Position', [obsPos-obsWidth, vidTop.Height, obsWidth*2, vidBot.Height], ...
+        'EdgeColor', 'none', 'FaceColor', [1 1 1 .8]);
 
-    % add scatters
-    for i = 1:length(features)
-        if ismember(features{i}, featuresToShow)
-            if contains(features{i}, 'paw')
-                color = pawColors(str2double(features{i}(4)),:);
-            else
-                color = [.8 .8 .8];
-            end
-            x = squeeze(locations(imgInds,1,i));
-            y = squeeze(locations(imgInds,2,i));
-            scatter(x,y, scatSize, color, 'filled')
-        end
-    end
 
     % pimp fig
-    set(gca, 'DataAspectRatio', [1 1 1], ...
-        'XLim', [frameOffsets(trialInds(1)) frameOffsets(trialInds(end))+vidTop.Width], ...
-        'YLim', [0 (vidBot.Height+vidTop.Height)], ...
-        'visible', 'off', 'color', 'black', ...
-        'Position', [0 0 1 1]);
+    set(gca, 'XLim', [1,imgDims(2)], 'YLim', [1,imgDims(1)], ...
+        'visible', 'off', 'Units', 'pixels', 'Position', [1 1 imgDims(2) imgDims(1)]);
 
     % save
-    saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'trackingOverFrames', [session '_trial_' num2str(trial) '.png']))
+    file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'trackingOverFrames', ...
+        [session '_imgs' num2str(imgs*2+1) '_trial' num2str(trial) '.png']);
+    fprintf('writing %s to disk...\n', file)
+    saveas(gcf, file)
 end

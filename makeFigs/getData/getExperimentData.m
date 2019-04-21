@@ -96,7 +96,11 @@ for mouse = 1:length(g.mice)
             if exist(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'file')
                 g.sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'kinData');
             else
-                getKinematicData5(g.sessions{session});
+                try
+                    getKinematicData5(g.sessions{session});
+                catch
+                    fprintf('%s: problem with getKinematicData!', g.sessions{session});
+                end
                 g.sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'kinData');
             end
             g.sesKinData = g.sesKinData.kinData;
@@ -232,7 +236,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             % 2xn matrix, with first row containing velocity
             % signal and second row containing position
             
-            prePost = [-.8 .4]; % (m) time before and after whisker contact to collect velocity data
+            prePost = [-.8 .4]; % (m) positions before and after whisker contact to collect velocity data
             posInterp = linspace(prePost(1), prePost(2), 500);
             
             var = cell(1,length(g.sesKinData));
@@ -246,7 +250,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 % remove duplicate positional values (would be better to average all values in a particular bin)
                 [trialPos, uniqueInds] = unique(trialPos, 'stable');
                 trialVel = trialVel(uniqueInds);
-
+                
                 % interpolate velocities across positional grid and store results
                 var{i} = [interp1(trialPos, trialVel, posInterp, 'linear'); posInterp];
             end

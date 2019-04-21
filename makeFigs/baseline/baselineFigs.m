@@ -26,10 +26,6 @@ conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
-%% compute kinData for all sessions (only need to do once)
-sessions = unique(sessionInfo.session);
-parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
-
 %% compute experiment data
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
@@ -230,14 +226,13 @@ heatmapRick([flat.obsHgt]*1000, [flat.wiskContactPosition]*1000, ...
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_obsHgtContactPosHeatmaps_mice.fig'))
 
 
-% !!! predicted vs actual planting distance, one map per paw
 
 %% kinematics
 
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 566 1250 384])
 
 % settings
-rowVar = vars.isFore;
+rowVar = vars.isFore;w
 colVar = vars.isLeading;
 plotVar = vars.obsHgtDiscretized;
 
