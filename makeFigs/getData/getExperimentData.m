@@ -18,6 +18,9 @@ g.touchThresh = 5;
 g.speedTime = .01; % compute velocity over this interval
 g.preObsLim = .008;
 g.clearanceBuffer = .001; % trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
+g.
+
+
 
 % initialiations
 if ischar(sessionInfo) % if sessionInfo is a string, then it contains the name of a single session, and we will get sesionInfo for this session automatically

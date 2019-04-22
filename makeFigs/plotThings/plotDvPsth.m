@@ -14,8 +14,10 @@ function plotDvPsth(data, dv, xLims, plotVar, rowVar)
 % settings
 errorFcn = @(x) nanstd(x)/sqrt(size(x,1)); % function for error bars
 plotMouseAvgs = false;
+showLegend = true;
 % errorFcn = @(x) nanstd(x);
 
+% eval(opts); % a hack to change settings outside of function
 
 % create dummy plotvar and rowVar if not provided by user (all ones)
 temp = num2cell(ones(size(data)));
@@ -75,18 +77,20 @@ for i = 1:length(rowConditions)
 end
 
 % add legend
-for i = 1:length(plotConditions); lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
-if islogical(plotConditions{1})
-    conditionNames = {[plotVar ': false'], [plotVar ': true']};
-    if plotConditions{1}; conditionNames = fliplr(conditionNames); end % if [1 0] rather than [0 1], flip condition names
-elseif ischar(plotConditions{1})
-    conditionNames = plotConditions;
-elseif isnumeric(plotConditions{1})
-    conditionNames = cellfun(@(x) {num2str(x)}, plotConditions);
+if showLegend
+    
+    for i = 1:length(plotConditions); lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
+    if islogical(plotConditions{1})
+        conditionNames = {[plotVar ': false'], [plotVar ': true']};
+        if plotConditions{1}; conditionNames = fliplr(conditionNames); end % if [1 0] rather than [0 1], flip condition names
+    elseif ischar(plotConditions{1})
+        conditionNames = plotConditions;
+    elseif isnumeric(plotConditions{1})
+        conditionNames = cellfun(@(x) {num2str(x)}, plotConditions);
+    end
+    
+    legend(lines, conditionNames, 'Location', 'best', 'Box', 'off', 'AutoUpdate', 'off');
 end
-    
-    
-legend(lines, conditionNames, 'Location', 'best', 'Box', 'off', 'AutoUpdate', 'off');
 
 
 
