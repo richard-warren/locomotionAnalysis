@@ -27,10 +27,11 @@ if isa(data(1).(plotVar), 'char'); plotConditions = unique({data.(plotVar)}); el
 if isa(data(1).(rowVar), 'char'); rowConditions = unique({data.(rowVar)}); else; rowConditions = num2cell(unique([data.(rowVar)])); end
 colors = hsv(length(plotConditions));
 mice = unique({data.mouse});
-xGrid = data(find(cellfun(@length, {data.velVsPosition}),1,'first')).(dv)(2,:); % this will fail if first trial has not been analyzed
+% keyboard
+xGrid = data(find(cellfun(@length, {data.(dv)}),1,'first')).(dv)(2,:);
 
 
-% collect data for each mouse in each condition for both light on and light off trials
+% collect data for each mouse in each condition
 mouseAvgs = nan(length(plotConditions), length(rowConditions), length(mice), length(xGrid)); % condition X mouse X light off/on X position
 for i = 1:length(plotConditions)
     for j = 1:length(rowConditions)
@@ -80,7 +81,10 @@ if islogical(plotConditions{1})
     if plotConditions{1}; conditionNames = fliplr(conditionNames); end % if [1 0] rather than [0 1], flip condition names
 elseif ischar(plotConditions{1})
     conditionNames = plotConditions;
+elseif isnumeric(plotConditions{1})
+    conditionNames = cellfun(@(x) {num2str(x)}, plotConditions);
 end
+    
     
 legend(lines, conditionNames, 'Location', 'best', 'Box', 'off', 'AutoUpdate', 'off');
 

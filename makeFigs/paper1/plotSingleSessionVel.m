@@ -4,7 +4,7 @@ function plotSingleSessionVel(session)
 % fcn of position relative to reward // position of 3 osbtacle will be
 % overlaid on plot // single trials with be plotted over session mean
 
-% TO DO: add at nose lines // fix vel interpolation
+% TO DO: ***change line to wisk contact position, not nose position
 
 % settings
 % session = '180714_004';
@@ -17,6 +17,7 @@ obsOnAlpha = .1;
 trialAlpha = .4;
 smoothing = .5; % (m)
 topArea = .2; % add area to plot above to put lines indicating water reward and obstacle periods, with text // expressed as fraction of y range
+
 
 obsOnColor = [0 0 0];
 meanColor = [48 135 227]*.75 / 255;

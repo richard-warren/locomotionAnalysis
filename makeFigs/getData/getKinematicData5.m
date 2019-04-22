@@ -283,6 +283,9 @@ for j = 1:length(obsOnTimes)
         kinData(j).noObsWheelVels = noObsWheelVels;
     end
     kinData(j).isTrialAnalyzed = isTrialAnalyzed(j);
+    if ~isTrialAnalyzed(j) % still useful to compute trialInds even when kinematics can't be analyzed...
+        kinData(j).trialInds = find(frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j));
+    end
 end
 if timeOperations; fprintf('getting data for all trials: %i seconds\n', round(toc)); end
 fprintf('%s: got kinematicData with %.2f of trials successfully analyzed\n', ...
@@ -318,20 +321,22 @@ try
 
 
     % uncomment the following to show fits for step length for each paw
-    figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
-    colors = hsv(4);
-    for i = 1:4
-        scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
-        xLims = get(gca, 'XLim');
-        coefs = models{i}.Coefficients.Estimate;
-        plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
-    end
-    xlabel('velocity (m/s)')
-    ylabel('step length')
-    for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
-    legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
+%     figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
+%     colors = hsv(4);
+%     for i = 1:4
+%         scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
+%         xLims = get(gca, 'XLim');
+%         coefs = models{i}.Coefficients.Estimate;
+%         plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
+%     end
+%     xlabel('velocity (m/s)')
+%     ylabel('step length')
+%     for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
+%     legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
+
 catch
     fprintf('%s: failed to make swing length model!\n', session)
+    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins')
 end
 
 

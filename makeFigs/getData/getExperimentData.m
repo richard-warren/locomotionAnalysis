@@ -28,7 +28,7 @@ end
 g.sessionInfo = sessionInfo;
 mouseVars = {};
 sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
-trialVars = {'obsOnPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
+trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
              'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
@@ -112,8 +112,10 @@ for mouse = 1:length(g.mice)
             g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeightsVid/1000, g);
 
             % get size of kin data entries
-            g.locationsSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
-            g.locationsInterpSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
+            try
+                g.locationsSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
+                g.locationsInterpSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
+            end
 
             % get trial data
             g.expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(g.sesKinData)));
@@ -216,6 +218,10 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             % position of the obstacle relative to mouse nose at the moment it turns on
             var = num2cell(interp1(g.sesData.obsTimes, g.sesData.obsPositionsFixed, g.sesData.obsOnTimes, 'linear'));
             
+        case 'obsOffPositions'
+            % position of the obstacle relative to mouse nose at the momentit turns off
+            var = num2cell(interp1(g.sesData.obsTimes, g.sesData.obsPositionsFixed, g.sesData.obsOffTimes, 'linear'));
+        
         case 'velContinuousAtContact'
             % continuous velocity vector surrouding moment of whisker
             % contact // 2xn matrix, with first row containing velocity
@@ -225,7 +231,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             times = prePost(1):(1/g.sesData.targetFs):prePost(2);
             var = cell(1,length(g.sesKinData));
             for i = g.sesKinInds
-               startInd = find(g.sesData.wheelTimes >= g.sesData.wiskContactTimes(i) + prePost(1), 1, 'first');
+                startInd = find(g.sesData.wheelTimes >= g.sesData.wiskContactTimes(i) + prePost(1), 1, 'first');
                 if ~isempty(startInd)
                     var{i} = [g.wheelVel(startInd:startInd+length(times)-1); times];
                 end

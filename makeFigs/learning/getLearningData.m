@@ -16,13 +16,13 @@
 noBrSessions = 2;
 brSessions = 5;
 wildTypeOnly = true;
-vars = {'condition', 'conditionNum', 'sessionNum', 'isTrialSuccess', 'trialVel', 'velVsPosition', 'isPawSuccess'}; % only compute these variables for each session
+vars = {'condition', 'conditionNum', 'sessionNum', 'isTrialSuccess', 'trialVel', ...
+    'velVsPosition', 'isWheelBreak'}; % only compute these variables for each session
 
 
-%% compute learning metadata
 
 
-% initializations
+% compute learning metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
 mouseInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'mice');
 mice = unique(sessionInfo.mouse);
@@ -69,6 +69,23 @@ for i = 1:length(mice)
 end
 
 sessionInfo = learningInfo;
+mice = unique(sessionInfo.mouse);
+
+%% compute kinData for all sessions (only need to do once)
+overwriteKindata = false;
+sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
+for i = 1:length(sessions)
+    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'file') || overwriteKindata
+        getKinematicData5(sessions{i});
+    end
+end
+
+%% overwrite kinData for a given mice
+mice = {'sen2', 'sen3', 'sen6'};
+sessions = unique(sessionInfo(logical([sessionInfo.include]) & ismember(sessionInfo.mouse, mice),:).session);
+for i = 1:length(sessions)
+    try; getKinematicData5(sessions{i}); catch; fprintf('%s: error!', sessions{i}); end
+end
 
 
 %% load experiment data
@@ -76,15 +93,15 @@ disp('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'learning_
 
 %% compute new data and append to loaded data
 loadOldData = true;
-if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
+if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, vars, data); else; data = getExperimentData(sessionInfo, 'all'); end
 disp('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'learning_data.mat'), 'data', '-v7.3'); disp('data saved');
 
 %% compute experiment from scratch, in parallel
 data = cell(1,length(mice));
-for i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), vars); end
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), vars); end
 data = cat(2,data{:});
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'learning_data.mat'), 'data');
-%%
+
 
 
 
