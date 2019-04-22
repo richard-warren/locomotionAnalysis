@@ -10,16 +10,21 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 % ignore vars if can't be computed (eg if looking for field in sessionInfo that doest exist for given experiment)
 % parallelize...
 
-% 'g' stores global variables!
+% 'g' stores global variables, allowing things to be passed around!
 
 
 % settings
+metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};
 g.touchThresh = 5;
-g.speedTime = .01; % compute velocity over this interval
-g.preObsLim = .008;
-g.clearanceBuffer = .001; % trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
-g.
+g.speedTime = .01; % (s) compute velocity over this interval
+g.preObsLim = .008; % (m) compute paw height this many meters before it reaches obstacle x postion
+g.clearanceBuffer = .001; % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
 
+g.velVsPositionPrePost = [-.8 .4]; % (m) positions before and after whisker contact to collect velocity data
+g.velVsPositionRes = 500; % (tics) how many samples in the x grid
+
+g.velContinuousAtContactPrePost = [-1 1]; % (s) how many seconds before and after wisk contact to compute velocity
+g.velContinuousAtContactRes = 500; % (tics) how many samples in the x grid
 
 
 % initialiations
@@ -29,6 +34,10 @@ if ischar(sessionInfo) % if sessionInfo is a string, then it contains the name o
     sessionInfo = sessionInfo(strcmp(sessionInfo.session, sessionName),:);
 end
 g.sessionInfo = sessionInfo;
+g.velVsPositionX = linspace(g.velVsPositionPrePost(1), g.velVsPositionPrePost(2), g.velVsPositionRes);
+g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velContinuousAtContactPrePost(2), g.velContinuousAtContactRes);
+
+
 mouseVars = {};
 sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
 trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
@@ -158,6 +167,12 @@ expData = g.expData;
 % disp('all done getting experiment data! woo hoo!!!')
 
 
+% save experiment metadata
+dataTemp = expData; clear expData; % nest expData within itself
+expData.data = dataTemp; clear dataTemp;
+for m = 1:length(metadata); expData.(metadata{m}) = g.(metadata{m}); end % add one field per metadatum
+
+
 
 
 
@@ -226,33 +241,23 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell(interp1(g.sesData.obsTimes, g.sesData.obsPositionsFixed, g.sesData.obsOffTimes, 'linear'));
         
         case 'velContinuousAtContact'
-            % continuous velocity vector surrouding moment of whisker
-            % contact // 2xn matrix, with first row containing velocity
-            % signal and second row containing time relative to contact for
-            % given trial
-            prePost = [-1 1]; % (s) time before and after whisker contact to collect velocity data
-            times = prePost(1):(1/g.sesData.targetFs):prePost(2);
-            var = cell(1,length(g.sesKinData));
+            % continuous velocity vector surrouding moment of whisker contact
+            times = g.velContinuousAtContactX;
+            var = repmat({nan(1, length(times))},1,length(g.sesKinData));
+            
             for i = g.sesKinInds
-                startInd = find(g.sesData.wheelTimes >= g.sesData.wiskContactTimes(i) + prePost(1), 1, 'first');
-                if ~isempty(startInd)
-                    var{i} = [g.wheelVel(startInd:startInd+length(times)-1); times];
-                end
+                bins = g.sesData.wheelTimes>g.sesData.obsOnTimes(i) & g.sesData.wheelTimes<g.sesData.obsOffTimes(i);
+                var{i} = interp1(g.sesData.wheelTimes(bins), g.wheelVel(bins), times+g.sesData.wiskContactTimes(i));
             end
             
         case 'velVsPosition'
             % continuous velocity as a function of position of obstacle relative to nose
-            % 2xn matrix, with first row containing velocity
-            % signal and second row containing position
+            var = repmat({nan(1, length(g.velVsPositionX))},1,length(g.sesKinData));
             
-            prePost = [-.8 .4]; % (m) positions before and after whisker contact to collect velocity data
-            posInterp = linspace(prePost(1), prePost(2), 500);
-            
-            var = cell(1,length(g.sesKinData));
             for i = g.sesKinInds
                 obsAtNoseTime = g.sesData.obsTimes(find(g.sesData.obsPositionsFixed>=0 & g.sesData.obsTimes>g.sesData.obsOnTimes(i), 1, 'first'));
                 obsAtNosePos = g.sesData.wheelPositions(find(g.sesData.wheelTimes>obsAtNoseTime,1,'first'));
-                trialBins = (g.sesData.wheelPositions > obsAtNosePos+prePost(1)) & (g.sesData.wheelPositions < obsAtNosePos+prePost(2));
+                trialBins = (g.sesData.wheelPositions > obsAtNosePos+g.velVsPositionPrePost(1)) & (g.sesData.wheelPositions < obsAtNosePos+g.velVsPositionPrePost(2));
                 trialPos = g.sesData.wheelPositions(trialBins) - obsAtNosePos; % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
                 trialVel = g.wheelVel(trialBins); % wheel vel for trial
 
@@ -261,7 +266,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 trialVel = trialVel(uniqueInds);
                 
                 % interpolate velocities across positional grid and store results
-                var{i} = [interp1(trialPos, trialVel, posInterp, 'linear'); posInterp];
+                var{i} = interp1(trialPos, trialVel, g.velVsPositionX, 'linear');
             end
             
         case 'isLightOn'
