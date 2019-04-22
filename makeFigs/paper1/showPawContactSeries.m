@@ -1,18 +1,18 @@
-function showPawContactSeries(session)
+function showPawContactSeries(session, preContactFrames, totalFrames)
 
 % shows paw series of frames surrounding paw contacts of different types to
 % demonstrate the contact analysis
 
 % settings
 % session = '180703_000';
-preContactFrames = 2; % how many frames to show before the contact occurs
-totalFrames = 8;
+% preContactFrames = 2; % how many frames to show before the contact occurs
+% totalFrames = 8;
 touchLengthLims = [2 inf]; % only include touches with consecutive frames between these limits
 touchTypes = {'fore_ventral', 'fore_dorsal', 'hind_ventral_low', 'hind_dorsal'};
 obsCropping = 100; % frames are cropped around obstacle in top view
 contrastLims = [.1 .7]; % pixels at these proportional values are mapped to 0 and 255
 
-verticalSpacing = 20; % number of pixels separating rows
+verticalSpacing = 10; % number of pixels separating rows
 
 % initializations
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));

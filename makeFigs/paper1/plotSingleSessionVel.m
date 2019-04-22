@@ -18,10 +18,10 @@ trialAlpha = .4;
 smoothing = .5; % (m)
 topArea = .2; % add area to plot above to put lines indicating water reward and obstacle periods, with text // expressed as fraction of y range
 
-
 obsOnColor = [0 0 0];
 meanColor = [48 135 227]*.75 / 255;
-trialColors = lines(trialsToShow);
+% trialColors = lines(trialsToShow);
+trialColors = repmat([1 1 1]*.4, trialsToShow,1);
 
 
 

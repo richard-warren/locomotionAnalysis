@@ -14,7 +14,7 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 
 
 % settings
-metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};
+metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'}; % these parameters will be stored as experiment metadata
 g.touchThresh = 5;
 g.speedTime = .01; % (s) compute velocity over this interval
 g.preObsLim = .008; % (m) compute paw height this many meters before it reaches obstacle x postion
@@ -246,7 +246,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = repmat({nan(1, length(times))},1,length(g.sesKinData));
             
             for i = g.sesKinInds
-                bins = g.sesData.wheelTimes>g.sesData.obsOnTimes(i) & g.sesData.wheelTimes<g.sesData.obsOffTimes(i);
+                bins = g.sesData.wheelTimes>g.sesData.obsOnTimes(i)-range(times) & ...
+                    g.sesData.wheelTimes<g.sesData.obsOffTimes(i)+range(times); % add range(times) as a buffer in case the desired times fall outside the range of the obstacle being on
                 var{i} = interp1(g.sesData.wheelTimes(bins), g.wheelVel(bins), times+g.sesData.wiskContactTimes(i));
             end
             

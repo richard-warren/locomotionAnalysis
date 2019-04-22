@@ -28,9 +28,9 @@ figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 %% compute experiment data
 data = cell(1,length(mice));
-for i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
-data = cat(2,data{:});
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data');
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data{1}.data = cellfun(@(x) x.data, data); data = data{1};
+printf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
 %% load experiment data
 printf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
@@ -111,7 +111,8 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'baseline', 'baseline_bigStepP
 
 yLims = [.25 .55];
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', ...
-    'velContinuousAtContact', 'velVsPosition', 'isWheelBreak', 'wiskContactPosition', 'isBigStep'});
+    'velContinuousAtContact', 'velContinuousAtContactX', 'velVsPosition', 'velVsPositionX', ...
+    'isWheelBreak', 'wiskContactPosition', 'isBigStep'});
 flat = flat(~[flat.isWheelBreak]);
 
 % speed vs position, 
