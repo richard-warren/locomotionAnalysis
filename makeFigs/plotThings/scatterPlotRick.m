@@ -1,54 +1,57 @@
-function scatterPlotRick(vars, varNames, conditions, conditionNames)
+function corrs = scatterPlotRick(x, y, conditions, opts)
+
+% scatters x vs y and fits a line through them // conditions contains
+% condition # for each xy pair // dft conditions are plotted in dft colors
+% and each have their own line fit! // returns corrs, the correlation btwn
+% x and y for each condition
 
 % settings
-colors = hsv(length(conditionNames));
-circSize = 20;
-transparency = .2;
-maxScatterPoints = 2000;
+s.colors = 'hsv'; % color scheme // can be specified either as a string, or as an nX3 color map, where n is number of conditions
+s.scatSize = 20; % scatter size
+s.scatAlpha = .2; % scatter circle transparency
+s.lineAlpha = 1; % line transparency
+s.maxScatterPoints = 2000; % don't show any more than this many scatter points
+s.conditionNames = {}; % cell array with names of conditions // user can specify this by passing in via 'opts' // if specified, a legend is added
 
+% reassign settings contained in opts
+if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 % initializations
-scatters = nan(1, length(conditionNames));
-lines = nan(1, length(conditionNames));
-scatterPointsPerCondition = round(maxScatterPoints / length(conditionNames));
+x = x'; y=y'; conditions=conditions'; % ensure similar orientation
+conditionNum = length(unique(conditions));
+if ischar(s.colors); s.colors = eval([s.colors '(conditionNum)']); end % set colorspace if color is specified as a string
+scatters = nan(1, conditionNum);
+lines = nan(1, conditionNum);
+scatterPointsPerCondition = round(s.maxScatterPoints / conditionNum);
+corrs = nan(1,conditionNum);
 
 
 % plot everything
-for h = 1:length(conditionNames)
+for h = 1:conditionNum
     
     % get paw and obs height for bin
-    conditionBins = conditions==h & all(~isnan(vars),1);
-    conditionBinsSub = conditionBins;
-    if sum(conditionBins)>scatterPointsPerCondition
-        inds = find(conditionBins);
+    bins = conditions==h & ~isnan(x)' & ~isnan(y)';
+    binsSub = bins;
+    if sum(bins)>scatterPointsPerCondition
+        inds = find(bins);
         inds = inds(randperm(length(inds), scatterPointsPerCondition));
-        conditionBinsSub = false(size(conditions));
-        conditionBinsSub(inds) = true;
+        binsSub = false(size(conditions));
+        binsSub(inds) = true;
     end
-        
     
     % scatter that shit
-    scatters(h) = scatter(vars(1,conditionBinsSub), vars(2,conditionBinsSub), circSize, colors(h,:), 'filled', ...
-        'MarkerEdgeAlpha', transparency, 'MarkerFaceAlpha', transparency); hold on
+    scatters(h) = scatter(x(binsSub), y(binsSub), s.scatSize, s.colors(h,:), 'filled', ...
+        'MarkerEdgeAlpha', s.scatAlpha, 'MarkerFaceAlpha', s.scatAlpha); hold on
     
     % add best fit line
-    try
-    fit = polyfit(vars(1,conditionBins), vars(2,conditionBins), 1);
-    lines(h) = plot(vars(1,conditionBins), polyval(fit, vars(1,conditionBins)), 'linewidth', 4, 'color', colors(h,:));
-    catch; keyboard; end
+    fit = polyfit(x(bins), y(bins), 1);
+    lines(h) = plot(x(bins), polyval(fit, x(bins)), 'linewidth', 4, 'color', [s.colors(h,:) s.lineAlpha]);
+    corrs(h) = corr(x(bins), y(bins));
 end
 
-% add obs height line
-plot(vars(1,conditionBins), vars(1,conditionBins), '-', 'linewidth', 2, 'color', [.5 .5 .5])
-
 % pimp fig
-xlabel(varNames{1})
-ylabel(varNames{2})
 uistack(lines, 'top')
-if length(conditionNames)>1; legend(lines, conditionNames, 'location', 'best', 'box', 'off'); end
-pbaspect([1 1 1])
-
-% blackenFig
+if ~isempty(s.conditionNames); legend(lines, s.conditionNames, 'location', 'best', 'box', 'off'); end
 
 
 
