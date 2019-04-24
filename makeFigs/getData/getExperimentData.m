@@ -48,7 +48,7 @@ trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'vel
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn', 'touchFrames'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
-           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'isValidZ', 'preObsKin'};
+           'penultStepLength', 'stepOverStartingDistance', 'stepOverKinInterp', 'controlStepKinInterp', 'isValidZ', 'preObsKin'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -540,6 +540,13 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var(g.isValidZ(g.trial,:)) = cellfun(@(x) squeeze(x(end,:,:)), ...
                     g.sesKinData(g.trial).modifiedLocationsInterp(g.isValidZ(g.trial,:)), 'UniformOutput', false);
+            end
+            
+        case 'controlStepKinInterp' % interpolated kinematics of step over obstacle
+            var = repmat({nan(3,g.locationsInterpSmps)},1,4);
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                var(g.isValidZ(g.trial,:)) = cellfun(@(x) squeeze(x(end,:,:)), ...
+                    g.sesKinData(g.trial).controlLocationsInterp(g.isValidZ(g.trial,:)), 'UniformOutput', false);
             end
             
         case 'preObsKin' % interpolated kinematics before step reaches obstacle
