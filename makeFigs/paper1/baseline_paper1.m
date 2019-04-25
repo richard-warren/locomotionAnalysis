@@ -1,7 +1,6 @@
 %% load experiment data
 fprintf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
-
 %% ----------
 % PLOT THINGS
 %  ----------
@@ -69,7 +68,7 @@ flat = flat(~isnan([flat.obsHgtDiscretized]) & ...
             [flat.isLightOn]);
 
 
-%% get kin data
+% get kin data
 kinData = permute(cat(3, flat.stepOverKinInterp), [3,1,2]);
 kinData = cat(1, kinData, permute(cat(3, flat.controlStepKinInterp), [3,1,2])); % append with control steps temporarily
 
@@ -122,7 +121,7 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-%% TOP VIEW OVERLAYS
+% TOP VIEW OVERLAYS
 
 % initializations
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 500 900 150])
@@ -162,27 +161,30 @@ saveas(gcf, file, 'svg');
 %% HEIGHT SHAPING SCATTER
 
 
+% SCATTER ACROSS ALL ANIMALS
+
 % settings
 colors = hsv(4);
-xLims = [2 10];
-yLims = [2 20];
+xLims = [3 10];
+yLims = [3 20];
+isLeading = [false false true true];
+isFore = [false true false true];
+isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isLeading', 'stepOverMaxHgt'});
 flat = flat([flat.isLightOn]); % add conditionals here
 
-% get condition numbers, where each condition is unique combinate of isLeading and isFore
+% get condition numbers, where each condition is unique combination of isLeading and isFore
 a = [isLeading; isFore]'; % each row is a condition (00,01,10,11)
 b = [[flat.isLeading]; [flat.isFore]]';
 [~, conditions] = ismember(b, a, 'rows');
 
-%%
+if isHgtPreObs; pawHgts = [flat.preObsHgt]*1000; else; pawHgts = [flat.stepOverMaxHgt]*1000; end
 obsHgts = [flat.obsHgt]*1000;
-pawHgts = [flat.preObsHgt]*1000;
-% pawHgts = [flat.stepOverMaxHgt]*1000;
-close all; figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
-corrs = scatterPlotRick(obsHgts, pawHgts, conditions, ...
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
+[corrs, slopes] = scatterPlotRick(obsHgts, pawHgts, conditions, ...
     {'colors', colors, 'maxScatterPoints', 5000, 'lineAlpha', 1, 'scatAlpha', .1, 'scatSize', 40});
 set(gca, 'XLim', xLims, 'YLim', yLims)
 
@@ -196,6 +198,76 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
         'baselineHeightShapingScatters');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
+
+%% BINNED BY ANIMAL, SPEED
+
+
+% settings
+binNum = 40;
+scatAlpha = .1;
+scatSize = 50;
+connectMouseDots = false;
+
+% initializations
+mice = unique({flat.mouse});
+binEdges = linspace(xLims(1), xLims(2), binNum+1);
+binCenters = binEdges(1:end-1) + .5*diff(binEdges(1:2));
+bins = discretize(obsHgts, binEdges);
+
+% collect data
+medianHgts = nan(4, length(mice), binNum); % contains the median paw height for each conditino, mouse, and paw height
+for c = 1:4
+    for m = 1:length(mice)
+        for b = 1:binNum
+            medianHgts(c,m,b) = nanmean(pawHgts((conditions==c)' & strcmp({flat.mouse}, mice{m}) & bins==b));
+        end
+    end
+end
+
+%% plot condition data
+% close all
+figure('position', [2000 400 500 400], 'color', 'white', 'menubar', 'none');
+lines = nan(1,5);
+lines(5) = plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3); hold on; % add unity line;
+corrs = nan(1,4);
+
+for c = 1:4
+    cData = squeeze(medianHgts(c,:,:));
+    x = repelem(binCenters,length(mice));
+    y = cData(:)';
+    validBins = ~isnan(x) & ~isnan(y);
+    
+    if connectMouseDots % add lines connected mouse across bins
+        for m = 1:length(mice); plot(binCenters, cData(m,:), 'LineWidth', 1, 'Color', repelem(1-scatAlpha,1,3)); end
+    end
+    scatter(x(validBins), y(validBins), scatSize, colors(c,:), 'filled', ...
+        'MarkerEdgeAlpha', scatAlpha, 'MarkerFaceAlpha', scatAlpha); hold on;
+    fit = polyfit(x(validBins), y(validBins), 1);
+    corrs(c) = corr(x(validBins)', y(validBins)');
+    lines(c) = plot(binEdges, polyval(fit, binEdges), 'linewidth', 4, 'color', colors(c,:));
+end
+
+uistack(lines, 'top')
+set(gca, 'box', 'off', 'XLim', xLims)
+xlabel('obstacle height (mm)')
+ylabel('paw height (mm)')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baselineHeightShapingScatters_perMouse');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+
+
+
+
+
+
+
+
+
 
 
 

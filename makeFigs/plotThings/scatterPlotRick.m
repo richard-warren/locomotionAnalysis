@@ -1,4 +1,4 @@
-function corrs = scatterPlotRick(x, y, conditions, opts)
+function [corrs, slopes] = scatterPlotRick(x, y, conditions, opts)
 
 % scatters x vs y and fits a line through them // conditions contains
 % condition # for each xy pair // dft conditions are plotted in dft colors
@@ -24,6 +24,7 @@ scatters = nan(1, conditionNum);
 lines = nan(1, conditionNum);
 scatterPointsPerCondition = round(s.maxScatterPoints / conditionNum);
 corrs = nan(1,conditionNum);
+slopes = nan(1,conditionNum);
 
 
 % plot everything
@@ -47,6 +48,7 @@ for h = 1:conditionNum
     fit = polyfit(x(bins), y(bins), 1);
     lines(h) = plot(x(bins), polyval(fit, x(bins)), 'linewidth', 4, 'color', [s.colors(h,:) s.lineAlpha]);
     corrs(h) = corr(x(bins), y(bins));
+    slopes(h) = fit(1);
 end
 
 % pimp fig
