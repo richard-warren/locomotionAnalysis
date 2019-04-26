@@ -498,15 +498,17 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
-                var(g.isValidZ(g.trial,:)) = num2cell(cellfun(@(x) max(x(end,3,:)), g.sesKinData(g.trial).modifiedLocations(g.isValidZ(g.trial,:))));
+                var(g.isValidZ(g.trial,:)) = num2cell(cellfun(@(x) max(x(end,3,:)), ...
+                    g.sesKinData(g.trial).modifiedLocationsInterp(g.isValidZ(g.trial,:))));
+                if any(cellfun(@(x) x<0, var(g.isValidZ(g.trial,:)))); keyboard; end
             end
             
         case 'preObsHgt' % height of paw when the step over is preObsLim in front of osbtacle
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 for i = find(g.isValidZ(g.trial,:))
-                    ind = find(g.sesKinData(g.trial).modifiedLocations{i}(end,1,:)>-g.preObsLim, 1, 'first');
-                    if ind>1; var{i} = g.sesKinData(g.trial).modifiedLocations{i}(end,3,ind); end
+                    ind = find(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,1,:)>-g.preObsLim, 1, 'first');
+                    if ind>1; var{i} = g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,3,ind); end
                 end
             end
             
@@ -549,7 +551,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                     g.sesKinData(g.trial).controlLocationsInterp(g.isValidZ(g.trial,:)), 'UniformOutput', false);
             end
             
-        case 'preObsKin' % interpolated kinematics before step reaches obstacle
+        case 'preObsKin' % interpolated kinematics of step over obs, but only before step reaches obstacle
             var = repmat({nan(3,g.locationsInterpSmps)},1,4);
             if g.sesKinData(g.trial).isTrialAnalyzed
                 for i = find(g.isValidZ(g.trial,:))

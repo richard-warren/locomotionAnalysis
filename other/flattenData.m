@@ -1,4 +1,4 @@
-function dataOut = getNestedStructFields(data, varsToGet, varsGotten)
+function dataOut = flattenData(data, varsToGet, varsGotten)
 
 % to do: don't go deeper in tree if all vars are already gotten // how to
 % deal with bins of continuous variables?
@@ -24,7 +24,7 @@ if any(ismember(fields, varsToGet)) || any(isFieldStruct)
         structData = cell(1,length(data));
         for row = 1:length(data)
             for field = fields(isFieldStruct)'
-                structData{row} = getNestedStructFields(data(row).(field{1}), varsToGet, dataOut(row));
+                structData{row} = flattenData(data(row).(field{1}), varsToGet, dataOut(row));
             end
         end
 %         try; dataOut = [structData{:}]; catch; keyboard; end
