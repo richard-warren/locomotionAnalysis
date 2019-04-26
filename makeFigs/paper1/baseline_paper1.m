@@ -2,9 +2,6 @@
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 
-
-
-
 %% ----------
 % PLOT THINGS
 %  ----------
@@ -178,7 +175,10 @@ isHgtPreObs = true; % do you measure the height at peak (false) or before the pa
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isLeading', 'stepOverMaxHgt'});
-flat = flat([flat.isLightOn]); % add conditionals here
+flat = flat([flat.isLightOn] & ...
+            ~isnan([flat.obsHgt]) & ...
+            ~isnan([flat.stepOverMaxHgt]) & ...
+            ~isnan([flat.preObsHgt])); % add conditionals here
 
 % get condition numbers, where each condition is unique combination of isLeading and isFore
 a = [isLeading; isFore]'; % each row is a condition (00,01,10,11)
@@ -188,7 +188,7 @@ b = [[flat.isLeading]; [flat.isFore]]';
 if isHgtPreObs; pawHgts = [flat.preObsHgt]*1000; else; pawHgts = [flat.stepOverMaxHgt]*1000; end
 obsHgts = [flat.obsHgt]*1000;
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
-[corrs, slopes] = scatterPlotRick(obsHgts, pawHgts, conditions, ...
+scatterPlotRick(obsHgts, pawHgts, conditions, ...
     {'colors', colors, 'maxScatterPoints', 5000, 'lineAlpha', 1, 'scatAlpha', .1, 'scatSize', 40});
 set(gca, 'XLim', xLims, 'YLim', yLims)
 
@@ -261,6 +261,55 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
         'baselineHeightShapingScatters_perMouse');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
+
+
+
+% HEIGHT SHAPING BARS
+[corrs, slopes] = deal(nan(length(mice), 4)) ;
+
+for i = 1:length(mice)
+    for j = 1:4
+        bins = (conditions==j)' & strcmp({flat.mouse}, mice{i});
+        x = obsHgts(bins);
+        y = pawHgts(bins);
+        validBins = ~isnan(x) & ~isnan(y);
+        
+        corrs(i,j) = corr(x(validBins)', y(validBins)');
+        fit = polyfit(x(validBins), y(validBins), 1);
+        slopes(i,j) = fit(1);
+    end
+end
+
+
+close all;
+figure('position', [2000 400 1000 400], 'color', 'white', 'menubar', 'none');
+
+subplot(1,2,1)
+barPlotRick(corrs', {'conditionNames', {{'TH','TF','LH','LF'}}, 'ylabel', 'paw/obstacle height correlation', ...
+    'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colors*.8, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'ylim', [0 1]})
+set(gca, 'YTick', 0:.5:1)
+
+subplot(1,2,2)
+barPlotRick(slopes', {'conditionNames', {{'TH','TF','LH','LF'}}, 'ylabel', 'paw/obstacle height slope', ...
+    'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colors*.8, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'ylim', [0 1.5]})
+set(gca, 'YTick', 0:.5:1.5)
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baselineHeightShapingBars');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+
+
+
+
+
+
+
 
 
 

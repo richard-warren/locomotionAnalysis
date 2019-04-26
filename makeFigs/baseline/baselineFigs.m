@@ -25,6 +25,13 @@ conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
+%% temp
+
+close all; figure;
+conditions = [vars.isFore; vars.isLeading];
+dvMatrix = getDvMatrix(data, 'penultStepLength', conditions, varsToAvg, figConditionals);
+barPlotRick(dvMatrix);
+
 
 %% compute experiment data
 data = cell(1,length(mice));
@@ -33,7 +40,7 @@ data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
 %% load experiment data
-printf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+fprintf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 
 %% ----------

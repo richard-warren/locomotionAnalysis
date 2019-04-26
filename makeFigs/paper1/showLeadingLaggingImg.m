@@ -17,12 +17,13 @@ imgSpacing = 0; % pixels for separating images
 edgeFading = 60; % fading at the edges of images
 contrastLims = [.05 .8]; % pixels at these proportional values are mapped to 0 and 255
 colors = hsv(4);
+colors = colors([4 2 3 1],:); % this is a hack to shuffle the colors
 
 overlays = 8; % how many trial kinematics to overlay
-overlayAlpha = .2;
+overlayAlpha = .5;
 overlayWidth = 2;
-mainWidth = 4;
-mainAlpha = 1;
+mainWidth = 2;
+mainAlpha = .5;
 
 
 % initializations
