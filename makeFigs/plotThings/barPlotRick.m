@@ -50,7 +50,7 @@ elseif isequal(size(s.conditionColors), [1 3]) % if specified as a single rbg va
 end
 
 if ischar(s.scatColors) % set bar colors if color is specified as a string
-    if s.isWithinSub
+    if s.isWithinSubs
         s.scatColors = eval([s.scatColors '(dataDims(end))']);
     else
         s.scatColors = [.5 .5 .5];
@@ -89,7 +89,7 @@ if s.isWithinSubs && dataDims(end)<40
         % draw lines connecting data only across levels of last condition
         for j = unique(condInds)'
             line(xPositions(condInds==j)+xJitters(i), smpData(condInds==j), ...
-                'linewidth', 1, 'color', [.8 .8 .8]);
+                'linewidth', 1, 'color', [.8 .8 .8 s.scatAlpha]);
         end
     end
 end
@@ -184,7 +184,7 @@ set(gca, 'XColor', 'none', ...
 line([0 0], [yLims(1)-labelVertSize*range(yLims), yLims(1)], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
 
 % add labels
-for i = 1:numVariables
+for i = 1:length(s.conditionNames)
     
     parentConditions = unique(conditionsMat(1:i-1,:)','rows');
     
@@ -214,7 +214,12 @@ for i = 1:numVariables
         end
     end
 end
-if ~isempty(s.ylabel); ylabel(s.ylabel); end
+if ~isempty(s.ylabel)
+    lab = ylabel(s.ylabel);
+    labPos = get(lab, 'position');
+    labPos(2) = mean(yLims);
+    set(lab, 'position', labPos);
+end
 
 
 

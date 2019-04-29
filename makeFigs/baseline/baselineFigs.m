@@ -25,13 +25,6 @@ conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
-%% temp
-
-close all; figure;
-conditions = [vars.isFore; vars.isLeading];
-dvMatrix = getDvMatrix(data, 'penultStepLength', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix);
-
 
 %% compute experiment data
 data = cell(1,length(mice));

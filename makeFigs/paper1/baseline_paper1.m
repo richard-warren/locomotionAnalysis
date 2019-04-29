@@ -1,10 +1,21 @@
 %% load experiment data
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
+% global settings
+colors = hsv(4);  % last term is control step color
+ctlColor = [.5 .5 .5];
+isLeading = [true false true false]; % sequence of conditions for plots
+isFore = [true true false false];
+conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
+
 
 %% ----------
 % PLOT THINGS
 %  ----------
+
+%% IMAGE MONTAGE OF LEADING/LAGGING/HIND/FORE
+
+showLeadingLaggingImg('190318_000', 43, colors)
 
 %% SPEED VS. POSITION
 
@@ -18,7 +29,6 @@ meanColor = [0 0 0];
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
     'velVsPosition', 'velVsPositionX', 'isWheelBreak', 'wiskContactPosition'});
 flat = flat([flat.isLightOn]);
-flat = flat(~[flat.isWheelBreak]);
 close all; figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off')
 
 % add obstacle rectangle and lines
@@ -46,16 +56,13 @@ saveas(gcf, file, 'svg');
 %% KINEMATICS
 
 % settings
-colNames = {'hind limb', 'fore limb'};
-rowNames = {'lagging', 'leading'};
-isLeading = [false false true true];
-isFore = [false true false true];
-ctlColor = [.5 .5 .5];
+colNames = {'hind paw', 'fore paw'};
+rowNames = {'trailing', 'leading'};
+conditionSequence = [4 2 3 1]; % mapping between plot index and condition sequence, which is specified above
 
 obsHgtBins = 4; % discretize obstacle heights into this many bins
 xLims = [-.05 .05];
 yLims = [0 .016];
-colors = hsv(4);  % last term is control step color
 fading = .25; % within a plot, each paw's color fades from fading*color -> color
 
 % HEIGHT BINNED KINEMATICS (leading/lagging, fore/hind)
@@ -91,8 +98,9 @@ kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
 conditions = [[flat.obsHgtDiscretized] ones(1,length(flat))*(obsHgtBins+1)]; % add an extra condition for the control kinematics!
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 700 1600 250])
 
-for i = 1:4
-    subplot(2,2,i)
+plotInd = 1;
+for i = conditionSequence
+    subplot(2,2,plotInd)
     plotColor = repmat(colors(i,:), obsHgtBins, 1) .* linspace(fading,1,obsHgtBins)'; % create color matrix fading from colors(i,:) -> colors(i,:)*fading
     bins = [flat.isLeading]==isLeading(i) & ...
            [flat.isFore]==isFore(i);
@@ -104,6 +112,7 @@ for i = 1:4
     plotKinematics(kinData(bins,[1,3],:), [flat(bins).obsHgt], conditions(bins), ...
         {'colors', plotColor, 'obsAlpha', 1, 'lineAlpha', .8, 'mouseNames', {flat(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     set(gca, 'XLim', xLims, 'YLim', yLims)
+    plotInd = plotInd+1;
 end
 
 % add row, col labels
@@ -130,9 +139,9 @@ figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [200
 % get condition numbers, where each condition is unique combinate of isLeading and isFore
 a = [isLeading; isFore]'; % each row is a condition (00,01,10,11)
 b = [[flat.isLeading]; [flat.isFore]]';
-[~, conditions] = ismember(b, a, 'rows');
+[~, stepTypeConditions] = ismember(b, a, 'rows');
 
-plotKinematics(kinDataTop, [flat.obsHgt], conditions', ...
+plotKinematics(kinData(:,[1,3],:), [flat.obsHgt], stepTypeConditions', ...
     {'colors', colors, 'obsAlpha', .25, 'lineAlpha', 1, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @nanstd, 'lineWidth', 3}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
 set(gca, 'XLim', xLims)
@@ -147,29 +156,26 @@ saveas(gcf, file, 'svg');
 yLimsBot = [-1 1]*.02;
 
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 900 300])
-plotKinematics(kinDataBot, [flat.obsHgt], conditions', ...
+plotKinematics(kinData(:,[1,2],:), [flat.obsHgt], stepTypeConditions', ...
     {'colors', colors, 'obsAlpha', .25, 'lineAlpha', 1, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @nanstd, 'lineWidth', 3, 'isBotView', true}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
 set(gca, 'XLim', xLims, 'YLim', yLimsBot)
 
-%save
+% save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'baselineKinematics_overlayBot');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-%% HEIGHT SHAPING SCATTER
+%% HEIGHT SHAPING
 
 
 % SCATTER ACROSS ALL ANIMALS
 
 % settings
-colors = hsv(4);
 xLims = [3 10];
 yLims = [3 20];
-isLeading = [false false true true];
-isFore = [false true false true];
 isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
@@ -183,17 +189,17 @@ flat = flat([flat.isLightOn] & ...
 % get condition numbers, where each condition is unique combination of isLeading and isFore
 a = [isLeading; isFore]'; % each row is a condition (00,01,10,11)
 b = [[flat.isLeading]; [flat.isFore]]';
-[~, conditions] = ismember(b, a, 'rows');
+[~, stepTypeConditions] = ismember(b, a, 'rows');
 
 if isHgtPreObs; pawHgts = [flat.preObsHgt]*1000; else; pawHgts = [flat.stepOverMaxHgt]*1000; end
 obsHgts = [flat.obsHgt]*1000;
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
-scatterPlotRick(obsHgts, pawHgts, conditions, ...
+scatterPlotRick(obsHgts, pawHgts, stepTypeConditions, ...
     {'colors', colors, 'maxScatterPoints', 5000, 'lineAlpha', 1, 'scatAlpha', .1, 'scatSize', 40});
 set(gca, 'XLim', xLims, 'YLim', yLims)
 
 % add unity line
-plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.8, 'LineWidth', 2) % add unity line
+plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3) % add unity line
 xlabel('obstacle height (mm)')
 ylabel('paw height (mm)')
 
@@ -211,48 +217,32 @@ saveas(gcf, file, 'svg');
 binNum = 40;
 scatAlpha = .1;
 scatSize = 50;
-connectMouseDots = false;
 
 % initializations
 mice = unique({flat.mouse});
 binEdges = linspace(xLims(1), xLims(2), binNum+1);
 binCenters = binEdges(1:end-1) + .5*diff(binEdges(1:2));
-bins = discretize(obsHgts, binEdges);
+binIds = discretize(obsHgts, binEdges);
 
 % collect data
-meanHgts = nan(4, length(mice), binNum); % contains the median paw height for each conditino, mouse, and paw height
+binnedHgts = nan(4, length(mice), binNum); % contains the median paw height for each conditino, mouse, and paw height
 for c = 1:4
     for m = 1:length(mice)
         for b = 1:binNum
-            meanHgts(c,m,b) = nanmean(pawHgts((conditions==c)' & strcmp({flat.mouse}, mice{m}) & bins==b));
+            binnedHgts(c,m,b) = nanmean(pawHgts((stepTypeConditions==c)' & strcmp({flat.mouse}, mice{m}) & binIds==b));
         end
     end
 end
 
+
 % plot condition data
-figure('position', [2000 400 500 400], 'color', 'white', 'menubar', 'none');
-lines = nan(1,5);
-lines(5) = plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3); hold on; % add unity line;
-corrs = nan(1,4);
+figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
+scatterPlotRick(repelem(binCenters,length(mice)*4), binnedHgts(:), repmat(1:4,1,binNum*length(mice)), ...
+    {'colors', colors, 'maxScatterPoints', 5000, 'lineAlpha', 1, 'scatAlpha', .1, 'scatSize', 40});
+set(gca, 'XLim', xLims)
 
-for c = 1:4
-    cData = squeeze(meanHgts(c,:,:));
-    x = repelem(binCenters,length(mice));
-    y = cData(:)';
-    validBins = ~isnan(x) & ~isnan(y);
-    
-    if connectMouseDots % add lines connected mouse across bins
-        for m = 1:length(mice); plot(binCenters, cData(m,:), 'LineWidth', 1, 'Color', repelem(1-scatAlpha,1,3)); end
-    end
-    scatter(x(validBins), y(validBins), scatSize, colors(c,:), 'filled', ...
-        'MarkerEdgeAlpha', scatAlpha, 'MarkerFaceAlpha', scatAlpha); hold on;
-    fit = polyfit(x(validBins), y(validBins), 1);
-    corrs(c) = corr(x(validBins)', y(validBins)');
-    lines(c) = plot(binEdges, polyval(fit, binEdges), 'linewidth', 4, 'color', colors(c,:));
-end
-
-uistack(lines, 'top')
-set(gca, 'box', 'off', 'XLim', xLims)
+% add unity line
+plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3) % add unity line
 xlabel('obstacle height (mm)')
 ylabel('paw height (mm)')
 
@@ -263,37 +253,41 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-
 % HEIGHT SHAPING BARS
-[corrs, slopes] = deal(nan(length(mice), 4)) ;
+[corrs, slopes] = deal(nan(2,2,length(mice))); % isFore(10) X isLeading(10) X mouse
+foreSequence = [true false];
+leadingSequence = [true false];
 
-for i = 1:length(mice)
-    for j = 1:4
-        bins = (conditions==j)' & strcmp({flat.mouse}, mice{i});
-        x = obsHgts(bins);
-        y = pawHgts(bins);
-        validBins = ~isnan(x) & ~isnan(y);
-        
-        corrs(i,j) = corr(x(validBins)', y(validBins)');
-        fit = polyfit(x(validBins), y(validBins), 1);
-        slopes(i,j) = fit(1);
+for i = 1:2 % isFore
+    for j = 1:2 % isLeading
+        for k = 1:length(mice)
+            
+            bins = [flat.isFore]==foreSequence(i) & ...
+                   [flat.isLeading]==leadingSequence(j) & ...
+                   strcmp({flat.mouse}, mice{k});
+            x = obsHgts(bins);
+            y = pawHgts(bins);
+            fit = polyfit(x, y, 1);
+            corrs(i,j,k) = corr(x', y');
+            slopes(i,j,k) = fit(1);
+        end
     end
 end
 
 
-close all;
 figure('position', [2000 400 1000 400], 'color', 'white', 'menubar', 'none');
 
+% correlations
 subplot(1,2,1)
-barPlotRick(corrs', {'conditionNames', {{'TH','TF','LH','LF'}}, 'ylabel', 'paw/obstacle height correlation', ...
+barPlotRick(corrs, {'conditionNames', conditionNames, 'ylabel', 'paw/obstacle height correlation', ...
     'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colors*.8, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'ylim', [0 1]})
-set(gca, 'YTick', 0:.5:1)
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'ylim', [0 1]})
 
+% slopes
 subplot(1,2,2)
-barPlotRick(slopes', {'conditionNames', {{'TH','TF','LH','LF'}}, 'ylabel', 'paw/obstacle height slope', ...
+barPlotRick(slopes, {'conditionNames', conditionNames, 'ylabel', 'paw/obstacle height slope', ...
     'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colors*.8, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'ylim', [0 1.5]})
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'ylim', [0 1.5]})
 set(gca, 'YTick', 0:.5:1.5)
 
 % save
@@ -303,23 +297,81 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
+%% BORING REPLICATIONS
+
+rows = 2;
+cols = 4;
+figure('position', [2000 200 1600 700], 'color', 'white', 'menubar', 'none');
+
+% initializations
+vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
+vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore paw', 'hind paw'}});
+figVars = [vars.isFore; vars.isLeading];
+
+conditionals.lightOn = struct('name', 'isLightOn', 'condition', @(x) x==1);
+conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
+conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
+figConditionals = [conditionals.lightOn];
 
 
+% max height of paws
+subplot(rows,cols,1)
+matMod = getDvMatrix(data, 'stepOverMaxHgt', figVars, {'mouse'}, figConditionals) * 1000;
+matBl = getDvMatrix(data, 'baselineStepHgt', figVars, {'mouse'}, figConditionals) * 1000;
+mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
+colorsWithBl = repelem(ctlColor,8,1);
+colorsWithBl(2:2:8,:) = colors;
+barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'peak paw height (mm)', ...
+    'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colorsWithBl, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true, 'groupSeparation', .25})
 
+% x distance to obs at peak
+subplot(rows,cols,2)
+mat = getDvMatrix(data, 'xDistanceAtPeak', figVars, {'mouse'}, figConditionals) * 1000;
+barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'horizontal distance at peak (mm)', ...
+    'showViolins', true, 'lineThickness', 5, 'conditionColors', colors, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
 
+% x starting distance
+subplot(rows,cols,3)
+mat = abs(getDvMatrix(data, 'stepOverStartingDistance', figVars, {'mouse'}, figConditionals) * 1000);
+barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'horizontal distance at start (mm)', ...
+    'showViolins', true, 'lineThickness', 5, 'conditionColors', colors, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
 
+% x ending distance
+subplot(rows,cols,4)
+mat = getDvMatrix(data, 'stepOverEndingDistance', figVars, {'mouse'}, figConditionals) * 1000;
+barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'horizontal distance at end (mm)', ...
+    'showViolins', true, 'lineThickness', 5, 'conditionColors', colors, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
 
+% step over length
+subplot(rows,cols,5)
+mat = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
+barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'step over length (mm)', ...
+    'showViolins', true, 'lineThickness', 5, 'conditionColors', colors, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
 
+% length of steps leading up to obstacle
+subplot(rows,cols,6:7)
+matPrePre = getDvMatrix(data, 'prePreStepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
+matPre = getDvMatrix(data, 'preStepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
+mat = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
+mat = permute(cat(4,matPrePre,matPre,mat), [1 2 4 3]); % add baseline vs mod steps as additional conditions
 
+conditionNamesTemp = cat(2,conditionNames, {{'-2','-1','0'}});
+colorsTemp = repelem(colors,3,1) .* repmat(linspace(.5,1,3)',4,1); % each color is repeated thrice, fading from black to the full color... lol
+% close all; figure;
+barPlotRick(mat, {'conditionNames', conditionNamesTemp, 'ylabel', 'step length (mm)', ...
+    'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colorsTemp, ...
+    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'groupSeparation', .25, 'ylim' [20 120]})
 
-
-
-
-
-
-
-
-
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baselineBoringReplicationBars');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
 
 

@@ -17,7 +17,7 @@ s.conditionNames = {}; % cell array with names of conditions // user can specify
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 % initializations
-x = x'; y=y'; conditions=conditions'; % ensure similar orientation
+x = x(:); y=y(:); conditions=conditions(:); % ensure similar orientation
 conditionNum = length(unique(conditions));
 if ischar(s.colors); s.colors = eval([s.colors '(conditionNum)']); end % set colorspace if color is specified as a string
 scatters = nan(1, conditionNum);
@@ -31,7 +31,7 @@ slopes = nan(1,conditionNum);
 for h = 1:conditionNum
     
     % get paw and obs height for bin
-    bins = conditions==h & ~isnan(x)' & ~isnan(y)';
+    bins = conditions==h & ~isnan(x) & ~isnan(y);
     binsSub = bins;
     if sum(bins)>scatterPointsPerCondition
         inds = find(bins);
@@ -41,8 +41,10 @@ for h = 1:conditionNum
     end
     
     % scatter that shit
+    try
     scatters(h) = scatter(x(binsSub), y(binsSub), s.scatSize, s.colors(h,:), 'filled', ...
         'MarkerEdgeAlpha', s.scatAlpha, 'MarkerFaceAlpha', s.scatAlpha); hold on
+    catch; keyboard; end
     
     % add best fit line
     fit = polyfit(x(bins), y(bins), 1);
