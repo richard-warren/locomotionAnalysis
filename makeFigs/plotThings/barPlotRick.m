@@ -26,6 +26,9 @@ s.conditionColors = [.2 .2 .2];
 s.violinAlpha = .2; % alpha for violin plot fill
 s.scatColors = 'hsv'; % can be a single rgb value, a name of a color space, or a matrix of colors
 s.ylim = [];
+s.ytick = [];
+s.addBars = false; % if true, add real bars, instead of just horizontal line at mean
+s.barAlpha = .2; % transparency of bars
 
 s.groupSeparation = 1;
 s.circSize = 40;
@@ -58,7 +61,8 @@ if ischar(s.scatColors) % set bar colors if color is specified as a string
 end
 
 conditionsMat = nan(numVariables, totalConditions);
-labelVertSize = .15*numVariables;
+labelVertSize = .15*numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
+statsVertSpacing = .02; % vertical spacing of stat comparison lines, expressed as fraction of y range
 xJitters = linspace(-.5*s.lineWidth, .5*s.lineWidth, dataDims(end));
 xJitters = xJitters(randperm(length(xJitters)));
 hold on
@@ -96,9 +100,11 @@ end
 
 
 % plot data
+allData = cell(1,totalConditions);
 for i = 1:totalConditions
     inds = cat(1, num2cell(conditionsMat(:,i)), {1:size(data,length(dataDims))});
     condData = squeeze(data(inds{:}));
+    allData{i} = condData;
     if s.isWithinSubs; lineColor = [0 0 0]; else; lineColor = scatColors(conditionsMat(end,i),:); end
     
     % add probability density estimate
@@ -122,10 +128,27 @@ for i = 1:totalConditions
     end
     
     % add mean
-    line([-.5 .5]*s.lineWidth + xPositions(i), repmat(nanmean(condData),1,2), ...
-        'color', s.conditionColors(i,:), 'linewidth', s.lineThickness)
+    if ~s.addBars
+        line([-.5 .5]*s.lineWidth + xPositions(i), repmat(nanmean(condData),1,2), ...
+            'color', s.conditionColors(i,:), 'linewidth', s.lineThickness)
+    end
 end
-axisData = get(gca);
+
+
+% get or set y limit information
+if ~isempty(s.ylim)
+    set(gca, 'YLim', s.ylim);
+    yLims = s.ylim;
+else
+    yLims = get(gca, 'ylim');
+end
+
+if ~isempty(s.ytick)
+    set(gca, 'YTick', s.ytick);
+    yTicks = s.ytick;
+else
+    yTicks = get(gca, 'ytick');
+end
 
 
 
@@ -149,7 +172,8 @@ if s.showStats
         end
         
         % vertical position of each line, expressed as fraction of y range
-        yPosits = linspace(1.0, 1.0+.01*size(dimPairs,1), size(dimPairs,1)); 
+        yMax = yLims(2) + statsVertSpacing*range(yLims)*size(dimPairs,1);
+        yPosits = linspace(yLims(2), yMax, size(dimPairs,1)); 
         inds = conditionsMat(1:end-1, find(condInds==i,1,'first'))'; % matrix inds for conditions higher up in the hierarchy
         
         for j = 1:size(dimPairs,1)
@@ -163,25 +187,29 @@ if s.showStats
                 [~,p] = ttest2(data(inds1{:}), data(inds2{:}));
             end
             if p<s.pThresh; lineColor = 'red'; else; lineColor = [.5 .5 .5]; end
-            line(xPositions(condPairs(j,:)), max(data(:))*[yPosits(j) yPosits(j)], ...
+            line(xPositions(condPairs(j,:)), [yPosits(j) yPosits(j)], ...
                 'color', lineColor, 'linewidth', 1.0);
         end
     end
-    
-    set(gca, 'YTick', axisData.YTick, 'YLim', [axisData.YLim(1), max(data(:))*max(yPosits)])
 end
 
 
+% add bars
+if s.addBars
+    for i = 1:totalConditions
+        x = [-.5 .5]*s.lineWidth + xPositions(i);
+        y = [yLims(1), nanmean(allData{i})];
+        plot([x(1) x(1) x(2) x(2)], [y(1) y(2) y(2) y(1)], ...
+            'LineWidth', s.lineThickness, 'Color', s.conditionColors(i,:));
+        
+        if s.barAlpha>0
+            rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, nanmean(allData{i})-yLims(1)], ...
+                'LineWidth', s.lineThickness, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha]);
+        end
+    end
+end
 
 
-% add room beneath x axis for condition labels
-if ~isempty(s.ylim); set(gca, 'YLim', s.ylim); end
-yLims = get(gca, 'ylim');
-yTicks = get(gca, 'ytick');
-set(gca, 'XColor', 'none', ...
-    'YLim', [yLims(1)-labelVertSize*range(yLims), yLims(2)], 'YTick', yTicks, ...
-    'XLim', [0 xPositions(end)+1], 'XTick', xPositions, 'XTickLabel', [])
-line([0 0], [yLims(1)-labelVertSize*range(yLims), yLims(1)], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
 
 % add labels
 for i = 1:length(s.conditionNames)
@@ -214,13 +242,35 @@ for i = 1:length(s.conditionNames)
         end
     end
 end
+
+
+
+% hide original x axis
+set(gca, 'XColor', 'none', 'XLim', [0 xPositions(end)+1])
+
+if s.showStats % add room below for stats and condition labels
+    set(gca, 'YLim', [yLims(1), yMax], 'YTick', yTicks)
+    line([0 0], [yLims(2), yMax], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
+else
+    set(gca, 'YLim', yLims)
+end
+
+% else % add room beneath x axis for condition labels
+%     set(gca, 'XColor', 'none', ...
+%         'YLim', [yLims(1)-labelVertSize*range(yLims), yLims(2)], 'YTick', yTicks, ...
+%         'XLim', [0 xPositions(end)+1], 'XTick', xPositions, 'XTickLabel', [])
+% end
+% line([0 0], [yLims(1)-labelVertSize*range(yLims), yLims(1)], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
+
+
+
+% add y axis label
 if ~isempty(s.ylabel)
     lab = ylabel(s.ylabel);
     labPos = get(lab, 'position');
     labPos(2) = mean(yLims);
     set(lab, 'position', labPos);
 end
-
 
 
 % add legend

@@ -1,40 +1,29 @@
-%% -------------- 
-% INITIALIZATIONS
-% ---------------
+% load experiment data
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('baseline data loaded!')
 
-% settings
+%% global settings
+colorWisk = [51 204 255]; %[255 204 51];
+colorVision = [255 221 21]; %[51 204 255];
+colorNone = [.2 .2 .2];
+ctlColor = [.5 .5 .5];
 varsToAvg = {'mouse'};
+miceToExclude = {'sen1'};
 
-% load session metadata
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'sensoryDependenceNotes');
-sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session), :); % remove empty rows
-mice = unique(sessionInfo.mouse);
 
-% set categorical vars
-vars.paw = struct('name', 'paw', 'levels', 1:4, 'levelNames', {{'LH', 'LF', 'RF', 'RH'}});
-vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'lead', 'lag'}});
-vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
+% initializations
+data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
+colors = [mean([colorWisk;colorVision],1); colorWisk; colorVision; colorNone]/255;
+
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
-vars.sensoryCondition = struct('name', 'sensoryCondition', 'levels', {{'WL', 'W', 'L', '-'}}, 'levelNames', {{'WL', 'W', 'L', '-'}});
+vars.sensoryCondition = struct('name', 'sensoryCondition', 'levels', {{'WL', 'W', 'L', '-'}}, 'levelNames', {{'W+V', 'W', 'V', '-'}});
 vars.whiskers = struct('name', 'whiskers', 'levels', {{'full', 'none'}}, 'levelNames', {{'whiskers', 'no whiskers'}});
+vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
+vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore paw', 'hind paw'}});
 
-% set conditionals
-conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
-conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
-conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
-
-figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
+conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 
 
-%% compute experiment data
-data = cell(1,length(mice));
-parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
-data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
-
-%% load experiment data
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data');
-disp('sensoryDependence data loaded!')
 
 
 %% ----------
@@ -42,85 +31,78 @@ disp('sensoryDependence data loaded!')
 %  ----------
 
 
-%% bar plots
-
-
-% settings
-rowVar = 4;
-colVar = 3;
-
+%% BARS
 
 % initializations
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1000 900])
-plotInd = 0;
+rows = 2;
+cols = 4;
+figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1200 400])
 
-% success (light, manip)
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+% success
+subplot(rows, cols, 1);
 conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
+dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg);
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 1], 'ytick', 0:.5:1, ...
+    'compareToFirstOnly', true})
 
 % velocity
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+subplot(rows, cols, 2);
 conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'velocity (m/s)', true)
-
-% baseline step height
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg, figConditionals) * 1000;
-barPlotRick(dvMatrix, {conditions.levelNames}, 'baseline step height (mm)', true)
-
-% penult step length (light, fore/hind, ipsi/contra, manip) - hgt, vel?
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd:plotInd);
-conditions = [vars.isFore; vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'penultStepLength', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'penultimate step length', true)
+dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg);
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'wheel velocity (m/s)', ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 .75], 'ytick', 0:.25:.75, ...
+    'compareToFirstOnly', false})
 
 % paw error rate
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
+subplot(rows, cols, 3:4);
+conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
+dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg);
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'paw error rate', ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', repmat(colors,4,1), 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 1], 'ytick', 0:.5:1, ...
+    'compareToFirstOnly', false, 'lineWidth', 1.5})
 
-% planting step distance (light, fore/hind, ipsi/contra, manip)
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'stepOverStartingDistance', conditions, varsToAvg, [figConditionals; conditionals.isLagging])*-1000; % only take lagging paws
-barPlotRick(dvMatrix, {conditions.levelNames}, 'planting foot distance (mm)', true)
+% step over height for all paws
+subplot(rows, cols, 5:6);
+conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
+dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg) * 1000;
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'step over height (mm)', ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', repmat(colors,4,1), 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
+    'compareToFirstOnly', false})
 
-% step over height (light, fore/hind, ipsi/contra, manip)
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'step over anticipatory height', true)
-
-% height shaping
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.isFore; vars.sensoryCondition];
-dvMatrix = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, figConditionals); % perform regression for each session, then average slopes across sessions for each mouse
-barPlotRick(dvMatrix, {conditions.levelNames}, 'height shaping', true)
-
-% big step probability (light, modPawContra, manip)
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+% step over height for leading forelimbs
+subplot(rows, cols, 7)
 conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'isBigStep', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'big step probability', true)
+figConditionals = [conditionals.isFore; conditionals.isLeading];
+matMod = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals) * 1000;
+matBl = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg, figConditionals) * 1000;
+dvMatrix = permute(cat(3,matBl,matMod), [1 3 2]); % add baseline vs mod steps as additional conditions
+colorsWithBl = repelem(ctlColor,8,1);
+colorsWithBl(2:2:8,:) = colors;
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'leading fore paw', 'step over height (mm)'}, ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', colorsWithBl, 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
+    'compareToFirstOnly', false, 'lineWidth', 1.5})
 
 % wisk contact position (light, manip)
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+subplot(rows, cols, 8);
 conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg, figConditionals)*-1000;
-barPlotRick(dvMatrix, {conditions.levelNames}, {'obstacle distance', 'to nose at contact (mm)'}, true)
+dvMatrix = abs(getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg)) * 1000;
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'distance to nose', 'at whisker contact (mm)'}, ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
+    'compareToFirstOnly', false})
 
-% tail height
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
-conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'tailHgt', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'tail height (m)', true)
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'sensoryDependenceBars');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'sensoryDependence', 'sensoryDependennce_bars.fig'))
 
 
 %% log plots
