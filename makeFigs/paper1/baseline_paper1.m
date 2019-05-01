@@ -95,7 +95,6 @@ kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
 
 
 % initializations
-conditions = [[flat.obsHgtDiscretized] ones(1,length(flat))*(obsHgtBins+1)]; % add an extra condition for the control kinematics!
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 700 1600 250])
 
 plotInd = 1;
@@ -109,7 +108,7 @@ for i = conditionSequence
     plotKinematics(kinDataCtl(bins,[1,3],:), [flat(bins).obsHgt], ones(1,sum(bins)), ...
         {'colors', ctlColor, 'obsAlpha', 0, 'lineAlpha', .8}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     
-    plotKinematics(kinData(bins,[1,3],:), [flat(bins).obsHgt], conditions(bins), ...
+    plotKinematics(kinData(bins,[1,3],:), [flat(bins).obsHgt], [flat(bins).obsHgtDiscretized], ...
         {'colors', plotColor, 'obsAlpha', 1, 'lineAlpha', .8, 'mouseNames', {flat(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     set(gca, 'XLim', xLims, 'YLim', yLims)
     plotInd = plotInd+1;

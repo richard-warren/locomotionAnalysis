@@ -41,10 +41,8 @@ for h = 1:conditionNum
     end
     
     % scatter that shit
-    try
     scatters(h) = scatter(x(binsSub), y(binsSub), s.scatSize, s.colors(h,:), 'filled', ...
         'MarkerEdgeAlpha', s.scatAlpha, 'MarkerFaceAlpha', s.scatAlpha); hold on
-    catch; keyboard; end
     
     % add best fit line
     fit = polyfit(x(bins), y(bins), 1);
