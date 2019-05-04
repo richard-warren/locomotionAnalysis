@@ -34,9 +34,9 @@ conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 %% BARS
 
 % initializations
-rows = 2;
+rows = 3;
 cols = 4;
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1200 400])
+figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1200 600])
 
 % success
 subplot(rows, cols, 1);
@@ -51,7 +51,7 @@ barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'suc
 subplot(rows, cols, 2);
 conditions = [vars.sensoryCondition];
 dvMatrix = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velovity at whisker contact (m/s)', ...
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'velovity at', 'whisker contact (m/s)'}, ...
     'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 .75], 'ytick', 0:.25:.75, ...
     'compareToFirstOnly', false})
@@ -79,7 +79,7 @@ subplot(rows, cols, 7)
 conditions = [vars.sensoryCondition];
 figConditionals = [conditionals.isFore; conditionals.isLeading];
 matMod = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals) * 1000;
-matBl = getDvMatrix(data, 'baselineStepHgt', conditions, varsToAvg, figConditionals) * 1000;
+matBl = getDvMatrix(data, 'controlPreObsHgt', conditions, varsToAvg, figConditionals) * 1000;
 dvMatrix = permute(cat(3,matBl,matMod), [1 3 2]); % add baseline vs mod steps as additional conditions
 colorsWithBl = repelem(ctlColor,8,1);
 colorsWithBl(2:2:8,:) = colors;
@@ -94,6 +94,15 @@ conditions = [vars.sensoryCondition];
 dvMatrix = abs(getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg)) * 1000;
 barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'distance to nose', 'at whisker contact (mm)'}, ...
     'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
+    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
+    'compareToFirstOnly', false})
+
+% baseline step hgt
+subplot(rows, cols, 9);
+conditions = [vars.isFore; vars.sensoryCondition];
+dvMatrix = abs(getDvMatrix(data, 'controlStepHgt', conditions, varsToAvg)) * 1000;
+barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'baseline step height (mm)', ...
+    'showViolins', false, 'lineThickness', 2, 'conditionColors', repmat(colors,4,1), 'addBars', true, ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
     'compareToFirstOnly', false})
 
@@ -120,13 +129,13 @@ colorsTemp = [colors(1:end-1,:); .6 .6 .6]; % the no vision no whisker condition
 
 % speed vs position
 figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 700 400], 'inverthardcopy', 'off')
+x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
     'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
 line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
 plotDvPsth(flat, 'velVsPosition', 'sensoryCondition', ...
     {'showLegend', false, 'conditionColors', colorsTemp(plotSequence,:), 'xlim', [-.5 .2], ... 
      'plotConditions', vars.sensoryCondition.levels(plotSequence), 'errorAlpha', .1, 'lineWidth', 4})
-x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
 xlabel('position relaive to nose (m)')
 ylabel('velocity (m/s)')
@@ -145,7 +154,6 @@ saveas(gcf, file, 'svg');
 
 % settings
 xLims = [3 10];
-yLims = [3 20];
 isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
@@ -160,23 +168,6 @@ flat = flat(~isnan([flat.obsHgt]) & ...
 if isHgtPreObs; pawHgts = [flat.preObsHgt]*1000; else; pawHgts = [flat.stepOverMaxHgt]*1000; end
 obsHgts = [flat.obsHgt]*1000;
 [~, conditions] = ismember({flat.sensoryCondition}, vars.sensoryCondition.levels);
-
-figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
-scatterPlotRick(obsHgts, pawHgts, conditions, ...
-    {'colors', colors, 'maxScatterPoints', 5000, 'lineAlpha', 1, 'scatAlpha', .1, 'scatSize', 40});
-set(gca, 'XLim', xLims, 'YLim', yLims)
-
-% add unity line
-plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3) % add unity line
-xlabel('obstacle height (mm)')
-ylabel('paw height (mm)')
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'sensoryDependenceHeightShapingScatters');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
 
 
 % BINNED BY ANIMAL, SPEED
@@ -238,7 +229,7 @@ for i = 1:4
 end
 
 
-figure('position', [2000 400 1000 400], 'color', 'white', 'menubar', 'none');
+figure('position', [2000 400 600 200], 'color', 'white', 'menubar', 'none');
 
 % correlations
 subplot(1,2,1)
@@ -246,6 +237,7 @@ barPlotRick(corrs, {'conditionNames', {vars.sensoryCondition.levelNames}, 'ylabe
     'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [-.2 .6], 'ytick', -.2:.4:.6, ...
     'compareToFirstOnly', true})
+line(get(gca, 'XLim'), [0 0], 'color', [.4 .4 .4]) % add horizontal line at y=0
 
 % slopes
 subplot(1,2,2)
@@ -253,10 +245,28 @@ barPlotRick(slopes, {'conditionNames', {vars.sensoryCondition.levelNames}, 'ylab
     'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [-.2 .8], 'ytick', -.2:.5:.8, ...
     'compareToFirstOnly', true})
+line(get(gca, 'XLim'), [0 0], 'color', [.4 .4 .4]) % add horizontal line at y=0
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'sensoryDependenceHeightShapingBars');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+
+% PAW HEIGHT BY OBS HGT RUNNING AVERAGE
+figure('Color', 'white', 'Position', [2000 400 500 400], 'MenuBar', 'none');
+plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3) % add unity line
+logPlotRick([flat.obsHgt]*1000, [flat.preObsHgt]*1000, ...
+    {'colors', colors, 'conditions', conditions, 'xlabel', 'obstacle height', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
+    'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
+    'errorFcn', @(x) std(x)/sqrt(size(x,1))})
+set(gca, 'xlim', [4 10])
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'sensoryDependence_heightShapingMovingAvgs');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -282,8 +292,7 @@ kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
 kinDataCtl = permute(cat(3, flat.controlStepKinInterp), [3,1,2]);
 kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1); % change the x starting x position of ctl steps to match steps over
 
-%%
-close all;
+
 figure('position', [2000 200 400 800], 'color', 'white', 'menubar', 'none'); hold on;
 colorsTemp = [colors(1:end-1,:); .8 .8 .8];
 for i = 1:4
@@ -291,8 +300,8 @@ for i = 1:4
     bins = conditions==i;
     plotColor = repmat(colorsTemp(i,:), obsHgtBins, 1) .* linspace(fading,1,obsHgtBins)'; % create color matrix fading from colors(i,:) -> colors(i,:)*fading
     
-    plotKinematics(kinDataCtl(bins,[1,3],:), [flat(bins).obsHgt], ones(1,sum(bins)), ...
-        {'colors', ctlColor, 'obsAlpha', 0, 'lineAlpha', .8}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
+%     plotKinematics(kinDataCtl(bins,[1,3],:), [flat(bins).obsHgt], ones(1,sum(bins)), ...
+%         {'colors', ctlColor, 'obsAlpha', 0, 'lineAlpha', .8}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     plotKinematics(kinData(bins,[1,3],:), [flat(bins).obsHgt], [flat(bins).obsHgtDiscretized], ...
         {'colors', plotColor, 'obsAlpha', 1, 'lineAlpha', .8, 'mouseNames', {flat(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     set(gca, 'XLim', xLims, 'YLim', yLims)
@@ -311,6 +320,46 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
+
+% BROKEN DOWN BY OBS HEIGHT
+figure('position', [2400 200 400 800], 'color', 'white', 'menubar', 'none'); hold on;
+
+
+for i = 1:obsHgtBins
+    subplot(obsHgtBins,1,i)
+    bins = [flat.obsHgtDiscretized]==i;
+    plotKinematics(kinData(bins,[1,3],:), [flat(bins).obsHgt], conditions(bins), ...
+        {'colors', colors, 'obsAlpha', .25, 'lineAlpha', 1, 'mouseNames', {flat(bins).mouse}, ...
+        'errorFcn', @nanstd, 'lineWidth', 3}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
+    set(gca, 'XLim', xLims, 'YLim', yLims)
+end
+
+
+%% SUCCESS BY OBS HGT
+flat = flattenData(data, {'mouse', 'session', 'trial', 'sensoryCondition', 'isTrialSuccess', 'obsHgt', 'preObsHgt', 'sensoryCondition'});
+[~, conditions] = ismember({flat.sensoryCondition}, vars.sensoryCondition.levels);
+
+
+figure('Color', 'white', 'Position', [2000 400 800 300], 'MenuBar', 'none');
+subplot(1,2,1)
+logPlotRick([flat.obsHgt]*1000, [flat.preObsHgt]*1000, ...
+    {'colors', colors, 'conditions', conditions, 'xlabel', 'obstacle height', 'ylabel', 'paw height variance', 'plotMice', false, ...
+    'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', true})
+set(gca, 'xlim', [4 10])
+
+subplot(1,2,2)
+logPlotRick([flat.obsHgt]*1000, [flat.isTrialSuccess], ...
+    {'colors', colors, 'conditions', conditions, 'xlabel', 'obstacle height', 'ylabel', 'success rate', 'plotMice', false, ...
+    'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false})
+set(gca, 'xlim', [4 10])
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'sensoryDependenceKinematics_successByHeight');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
 
 

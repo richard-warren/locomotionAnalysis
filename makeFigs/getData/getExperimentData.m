@@ -47,9 +47,9 @@ trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'vel
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn', 'touchFrames'};
-pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'baselineStepHgt', ...
+pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
-           'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength'};
+           'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -513,24 +513,28 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 end
             end
             
-        case 'baselineStepHgt'
+        case 'controlPreObsHgt' % for last control step, find height at same ind in step over at which paw reaches preObsLim in front of obstalce // this is intended to allow comparison of preObsHgt to a similar position in control steps
+            var = num2cell(nan(1,4));
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                for i = find(g.isValidZ(g.trial,:))
+                    ind = find(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,1,:)>-g.preObsLim, 1, 'first');
+                    if ind>1; var{i} = g.sesKinData(g.trial).controlLocationsInterp{i}(end,3,ind); end
+                end
+            end
+            
+        case 'noObsStepHgt' % get avg step hgt for steps before the obstalce turns on
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var = cellfun(@(x) nanmean(max(squeeze(x(:,3,:)),[],2)), ... % avg the max z for each noObsStep
-                    g.sesKinData(g.trial).noObsLocations, 'UniformOutput', false);
+                    g.sesKinData(g.trial).noObsLocationsInterp, 'UniformOutput', false);
             end
             
-%         case 'penultStepLength'
-%             var = num2cell(nan(1,4));
-%             if g.sesKinData(g.trial).isTrialAnalyzed
-%                 for i = 1:4
-%                     if max(g.sesKinData(g.trial).modifiedStepIdentities(:,i))==1 % if 1 mod step, penultimate step is final control step
-%                         var{i} = g.sesKinData(g.trial).controlSwingLengths(end,i);
-%                     else
-%                         var{i} = g.sesKinData(g.trial).modifiedSwingLengths(end-1,i); % otherwise it is the second to last mod step
-%                     end 
-%                 end
-%             end
+        case 'controlStepHgt' % get avg step hgt for steps before first modified step
+            var = num2cell(nan(1,4));
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                var = cellfun(@(x) nanmean(max(squeeze(x(:,3,:)),[],2)), ... % avg the max z for each noObsStep
+                    g.sesKinData(g.trial).controlLocationsInterp, 'UniformOutput', false);
+            end
             
         case 'stepOverStartingDistance' % distance of paw to obs at start of step over obs
             var = num2cell(nan(1,4));
@@ -551,7 +555,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                     g.sesKinData(g.trial).modifiedLocationsInterp(g.isValidZ(g.trial,:)), 'UniformOutput', false);
             end
             
-        case 'controlStepKinInterp' % interpolated kinematics of step over obstacle
+        case 'controlStepKinInterp' % interpolated kinematics of last control step
             var = repmat({nan(3,g.locationsInterpSmps)},1,4);
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var(g.isValidZ(g.trial,:)) = cellfun(@(x) squeeze(x(end,:,:)), ...
@@ -585,11 +589,17 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'stepOverLength' % length of step over obstacle
             var = getTrialStepLengthsAndDurations(g.sesKinData(g.trial), 0);
         
-        case 'preStepOverLength' % length of step over obstacle
+        case 'preStepOverLength' % length of step before step over obstacle
             var = getTrialStepLengthsAndDurations(g.sesKinData(g.trial), -1);
             
-        case 'prePreStepOverLength' % length of step over obstacle
+        case 'prePreStepOverLength' % length of step before step before step over obstacle
             var = getTrialStepLengthsAndDurations(g.sesKinData(g.trial), -2);
+            
+        case 'controlStepLength'
+            var = num2cell(nan(1,4));
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                var = num2cell(g.sesKinData(g.trial).controlSwingLengths(end,:));
+            end
     end
 end
 

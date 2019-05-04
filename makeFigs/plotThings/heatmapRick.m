@@ -22,3 +22,8 @@ imagesc(xBins, yBins, heatmap)
 set(gca, 'YDir', 'normal', 'DataAspectRatio', [1 1 1], 'TickDir', 'out', 'Box', 'off')
 xlabel(varNames{1})
 ylabel(varNames{2})
+
+%% SUCCESS BY HEIGHT FOR EACH CONDITION
+
+% settings
+bins = 

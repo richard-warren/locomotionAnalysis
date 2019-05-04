@@ -28,7 +28,7 @@ if timeOperations; fprintf('loading session data and fixing tracking: %i seconds
 
 
 
-% determine whisker contact positions and times (only if obsPos provided, which means whiskers were trimmed for the sessions)
+% determine whisker contact positions and times (only if obsPos provided, which means whiskers were trimmed for the sessions // otherwise, they are inherited from runAnalyzed)
 if timeOperations; tic; end
 if exist('obsPos', 'var')
     wiskContactPositions = ones(size(obsOnTimes))*obsPos;

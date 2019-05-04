@@ -26,6 +26,28 @@ conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
+%% compute kinematic data for sessions with no whiskers, which require static obsPos (only needs to be done once)
+
+% for each mouse, computes median wiskContactPosition across all whisker
+% sessions, then computes kinData for no whisker sessions assuming obs
+% contact at that average position
+for i = 1:length(mice)
+    
+    wiskSessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{i}) & ~strcmp(sessionInfo.whiskers, 'none'));
+    noWiskSessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{i}) & strcmp(sessionInfo.whiskers, 'none'));
+    
+    contactPositions = cell(1,length(wiskSessions));
+    for j = 1:length(wiskSessions)
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', wiskSessions{j}, 'kinData.mat'), 'kinData')
+        contactPositions{j} = kinData.wiskContactPositions;
+    end
+    
+    medianWiskPos = nanmedian(cat(2, contactPositions{:}));
+    fprintf('GETTING KINEMATIC DATA FOR %s WITH MEDIAN CONTACT POSITION OF %.03f\n', mice{i}, medianWiskPos)
+    for j = 1:length(noWiskSessions); getKinematicData5(noWiskSessions{j}, medianWiskPos); end
+end
+
+
 %% compute experiment data
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
