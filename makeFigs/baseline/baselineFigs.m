@@ -26,6 +26,14 @@ conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
+%% recompute kinData
+
+for i = 1:length(mice)
+    sessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{i}));
+    for j = 1:length(sessions); getKinematicData5(sessions{j}); end
+end
+
+
 %% compute experiment data
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end

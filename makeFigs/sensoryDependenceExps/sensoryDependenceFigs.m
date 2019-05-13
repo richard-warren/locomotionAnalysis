@@ -31,15 +31,20 @@ figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 % for each mouse, computes median wiskContactPosition across all whisker
 % sessions, then computes kinData for no whisker sessions assuming obs
 % contact at that average position
+
+recomputeWiskSessions = true; % set to true to recompute kinData for wisk sessions as well
+
 for i = 1:length(mice)
     
     wiskSessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{i}) & ~strcmp(sessionInfo.whiskers, 'none'));
     noWiskSessions = sessionInfo.session(strcmp(sessionInfo.mouse, mice{i}) & strcmp(sessionInfo.whiskers, 'none'));
     
+    if recomputeWiskSessions; for j = 1:length(wiskSessions); getKinematicData5(wiskSessions{j}); end; end
+    
     contactPositions = cell(1,length(wiskSessions));
     for j = 1:length(wiskSessions)
         load(fullfile(getenv('OBSDATADIR'), 'sessions', wiskSessions{j}, 'kinData.mat'), 'kinData')
-        contactPositions{j} = kinData.wiskContactPositions;
+        contactPositions{j} = [kinData.wiskContactPositions];
     end
     
     medianWiskPos = nanmedian(cat(2, contactPositions{:}));

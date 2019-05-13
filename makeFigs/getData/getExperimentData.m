@@ -398,8 +398,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var{i} = squeeze(g.sesKinData(i).controlLocations{g.sesKinData(i).firstModPaw});
             end
             
-        case 'preModPawKinInterp'
-            % kinematics (interpolated) of step preceding first modified step for first modified paw
+        case 'preModPawKinInterp' % kinematics (interpolated) of step preceding first modified step for first modified paw
             var = repmat({nan(3,g.locationsInterpSmps)},1,length(g.sesKinData));
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).controlLocationsInterp{g.sesKinData(i).firstModPaw}(end,:,:));

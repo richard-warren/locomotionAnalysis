@@ -16,11 +16,13 @@ s.colors = 'hsv';
 s.conditionNames = {}; % user can specify this by passing in via 'opts'
 s.obsAlpha = .8; % transparency of obstacles
 s.lineAlpha = 1; % transparency of plot lines
+s.trialAlpha = .2; % transparency of individual trial lines
 s.lineWidth = 2;
 s.mouseNames = {}; % if this exists (is set in opts), kinematics are first averaged within, then across mice // cell array of mouse name corresponding to each trial
 s.errorFcn = []; % if this is set to an anonymous function, e.g. "@(x) nanstd(x)/sqrt(size(x,1))", then error bars are plotted over traces
 s.errorAlpha = .2; % transparency of error bars
 s.isBotView = false; % if true, then plots are assumed to plot kinematics from the bottom view (xy)
+s.trialsToOverlay = []; % if not empty, plot individual trials for each condition
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -54,6 +56,19 @@ for i = 1:max(conditions)
         shadedErrorBar(kinMean(1,:), squeeze(conditionTrajectories(:,2,:)), {@nanmean, s.errorFcn}, ...
             'lineprops', {'linewidth', s.lineWidth, 'color', [s.colors(i,:) s.lineAlpha]}, 'patchSaturation', s.errorAlpha); hold on;
     end
+    
+    % plot individual trials
+    if ~isempty(s.trialsToOverlay)
+        inds = randperm(size(conditionTrajectories,1), min(s.trialsToOverlay, size(conditionTrajectories,1)));
+        
+        for j = inds
+            plot(squeeze(conditionTrajectories(j,1,:)), squeeze(conditionTrajectories(j,2,:)), ...
+                'LineWidth', 1, 'Color', [s.colors(i,:) s.trialAlpha]); hold on
+        end
+%         keyboard
+        scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
+            20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
+    end
 end
 % keyboard
 
@@ -70,7 +85,7 @@ for i = 1:max(conditions)
 end
 
 % pimp fig
-if ~s.isBotView; line([-.1 .1], [0 0], 'color', 'black'); end% add line at top of wheel
+if ~s.isBotView; line([-.2 .2], [0 0], 'color', 'black'); end% add line at top of wheel
 set(gca, 'DataAspectRatio', [1 1 1], 'YLim', max(get(gca, 'YLim'), 0), ...
     'XColor', 'none', 'YColor', 'none')
 if ~isempty(s.conditionNames); legend(s.conditionNames, 'box', 'off', 'Location', 'best'); end

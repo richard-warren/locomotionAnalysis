@@ -251,8 +251,8 @@ for j = 1:length(obsOnTimes)
         kinData(j).trialInds = trialInds;
         kinData(j).locations = trialLocations;
         kinData(j).locationsTail = trialLocationsTail;
-        kinData(j).wiskContactPositions = wiskContactPositions;
-        kinData(j).wiskContactTimes = wiskContactTimes;
+        kinData(j).wiskContactPositions = wiskContactPositions(j);
+        kinData(j).wiskContactTimes = wiskContactTimes(j);
         
         kinData(j).controlLocations = allLocations{1};
         kinData(j).noObsLocations = allLocations{2};
@@ -260,7 +260,8 @@ for j = 1:length(obsOnTimes)
         kinData(j).controlLocationsInterp = allLocationsInterp{1};
         kinData(j).noObsLocationsInterp = allLocationsInterp{2};
         kinData(j).modifiedLocationsInterp = allLocationsInterp{3};
-        kinData(j).trialControlStepIdentities = trialControlStepIds;
+        kinData(j).controlStepIdentities = trialControlStepIds;
+        kinData(j).noObsStepIdentities = noObsStepIdentities;
         kinData(j).modifiedStepIdentities = trialModStepIds;
         kinData(j).pawObsPosInd = pawObsPosInd;% ind in first mod paws at which obs contacts wisks for locations for each paw
         kinData(j).pawObsPosIndInterp = pawObsPosIndInterp; % ind in first mod paws at which obs contacts wisks for interp locations for each paw
@@ -317,7 +318,7 @@ try
         end
     end
 
-    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models')
+    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models', '-v7.3')
 
 
     % uncomment the following to show fits for step length for each paw
@@ -336,7 +337,7 @@ try
 
 catch
     fprintf('%s: failed to make swing length model!\n', session)
-    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins')
+    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', '-v7.3')
 end
 
 
