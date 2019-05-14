@@ -9,6 +9,7 @@ s.colors = 'hsv'; % color scheme // can be specified either as a string, or as a
 s.xLims = [];
 s.yLims = [];
 s.scatAlpha = .08;
+s.scatSize = 20;
 s.scatPlotSize = .65; % fraction of plot to be occupied by the scatter
 s.border = .15; % fraction of plot to be occupied by the border
 s.xlabel = [];
@@ -72,7 +73,7 @@ mainPlot = subplot(2,2,3); hold on;
 set(gca, 'Position', [s.border s.border s.scatPlotSize s.scatPlotSize])
 if groupNum>1
     for i  = 1:groupNum
-        scatter(x(s.groupId==i), y(s.groupId==i), 50, s.colors(i,:), 'filled', 'MarkerFaceAlpha', s.scatAlpha);
+        scatter(x(s.groupId==i), y(s.groupId==i), s.scatSize, s.colors(i,:), 'filled', 'MarkerFaceAlpha', s.scatAlpha);
     end
 else
     scatter(x, y, 50, s.colors, 'filled', 'MarkerFaceAlpha', s.scatAlpha);

@@ -131,8 +131,9 @@ for j = 1:length(obsOnTimes)
     % ANALYZE KINEMATIC DATA
     if isTrialAnalyzed(j)
         % determine whether left and right forepaws are in swing at obsPos moment
-        isLeftSwingAtContact = ~isnan(trialModStepIds(frameTimeStamps(trialInds)==wiskContactTimes(j),2));
-        isRightSwingAtContact = ~isnan(trialModStepIds(frameTimeStamps(trialInds)==wiskContactTimes(j),3));
+        contactInd = find(frameTimeStamps(trialInds)==wiskContactTimes(j)); % ind within trial at which contact occurs
+        isLeftSwingAtContact = ~isnan(trialModStepIds(contactInd,2));
+        isRightSwingAtContact = ~isnan(trialModStepIds(contactInd,3));
 
         % determine sequence with which paws cross obstacle
         isStepping = ~isnan(trialModStepIds);
@@ -235,7 +236,7 @@ for j = 1:length(obsOnTimes)
 
                     % things to do only for modified locations
                     if stepType==3 && m==1 % get ind of obs hit in interpolated coordinates only for first mod steps
-                        pawObsPosInd(k) = find(frameTimeStamps(trialInds)==wiskContactTimes(j)) - find(stepBins,1,'first') + 1;
+                        pawObsPosInd(k) = contactInd - find(stepBins,1,'first') + 1;
                         pawObsPosIndInterp(k) = interp1(linspace(1,sum(stepBins), interpSmps), ...
                             1:interpSmps, pawObsPosInd(k), 'nearest');
                     end
@@ -253,6 +254,7 @@ for j = 1:length(obsOnTimes)
         kinData(j).locationsTail = trialLocationsTail;
         kinData(j).wiskContactPositions = wiskContactPositions(j);
         kinData(j).wiskContactTimes = wiskContactTimes(j);
+        kinData(j).contactInd = contactInd;
         
         kinData(j).controlLocations = allLocations{1};
         kinData(j).noObsLocations = allLocations{2};
@@ -261,8 +263,9 @@ for j = 1:length(obsOnTimes)
         kinData(j).noObsLocationsInterp = allLocationsInterp{2};
         kinData(j).modifiedLocationsInterp = allLocationsInterp{3};
         kinData(j).controlStepIdentities = trialControlStepIds;
-        kinData(j).noObsStepIdentities = noObsStepIdentities;
+        kinData(j).noObsStepIdentities = trialNoObsStepIds;
         kinData(j).modifiedStepIdentities = trialModStepIds;
+        kinData(j).stanceBins = stanceBins(trialInds,:);
         kinData(j).pawObsPosInd = pawObsPosInd;% ind in first mod paws at which obs contacts wisks for locations for each paw
         kinData(j).pawObsPosIndInterp = pawObsPosIndInterp; % ind in first mod paws at which obs contacts wisks for interp locations for each paw
 

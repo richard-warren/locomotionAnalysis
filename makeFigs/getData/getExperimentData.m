@@ -41,7 +41,7 @@ g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velCo
 mouseVars = {};
 sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
 trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
-             'isTrialSuccess', 'trialVel', 'velAtWiskContact', ...
+             'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
@@ -296,6 +296,10 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'velAtWiskContact'
             var = num2cell(interp1(g.sesData.wheelTimes, g.wheelVel, g.sesData.wiskContactTimes));
             
+        case 'firstModPaw' % first modified paw identity
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.firstModPaw]);
+            
         case 'trialAngle'
             var = avgSignalPerTrial(g.sesData.bodyAngles, g.sesData.frameTimeStamps, g);
             
@@ -318,7 +322,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             end
             
         case 'wiskContactPosition'
-            var = num2cell([g.sesKinData.wiskContactPositions]);
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactPositions]);
             
         case 'wiskContactTimes'
             var = num2cell([g.sesKinData.wiskContactTimes]);
@@ -366,8 +371,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var{i} = xStart + predictedLength;
             end
             
-        case 'modPawKin'
-            % kinematics of first modified step for first modified paw
+        case 'modPawKin' % kinematics of first modified step for first modified paw
             var = repmat({nan(3,g.locationsSmps)},1,length(g.sesKinData));
             
             for i = g.sesKinInds

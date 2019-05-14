@@ -23,6 +23,7 @@ s.errorFcn = []; % if this is set to an anonymous function, e.g. "@(x) nanstd(x)
 s.errorAlpha = .2; % transparency of error bars
 s.isBotView = false; % if true, then plots are assumed to plot kinematics from the bottom view (xy)
 s.trialsToOverlay = []; % if not empty, plot individual trials for each condition
+s.yLimZero = true; % makes min of y axis zero so traces don't dip beneathe 'floor' on plots
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -33,6 +34,8 @@ if ~isempty(s.mouseNames); mice = unique(s.mouseNames); end
 
 
 
+% add line at top of wheel
+if ~s.isBotView; line([-.2 .2], [0 0], 'color', 'black'); end
 
 % plot kinematics for each condition
 for i = 1:max(conditions)
@@ -65,12 +68,10 @@ for i = 1:max(conditions)
             plot(squeeze(conditionTrajectories(j,1,:)), squeeze(conditionTrajectories(j,2,:)), ...
                 'LineWidth', 1, 'Color', [s.colors(i,:) s.trialAlpha]); hold on
         end
-%         keyboard
         scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
             20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
     end
 end
-% keyboard
 
 % draw obstacles for each condition
 for i = 1:max(conditions)
@@ -85,9 +86,8 @@ for i = 1:max(conditions)
 end
 
 % pimp fig
-if ~s.isBotView; line([-.2 .2], [0 0], 'color', 'black'); end% add line at top of wheel
-set(gca, 'DataAspectRatio', [1 1 1], 'YLim', max(get(gca, 'YLim'), 0), ...
-    'XColor', 'none', 'YColor', 'none')
+set(gca, 'DataAspectRatio', [1 1 1], 'XColor', 'none', 'YColor', 'none')
+if s.yLimZero && ~s.isBotView; set(gca, 'YLim', max(get(gca, 'YLim'),0)); end
 if ~isempty(s.conditionNames); legend(s.conditionNames, 'box', 'off', 'Location', 'best'); end
 
 

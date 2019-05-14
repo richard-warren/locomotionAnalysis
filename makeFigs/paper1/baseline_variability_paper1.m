@@ -26,6 +26,7 @@ for i = 1:length(mice)
     fprintf('%s: collectin data, ya heard...\n', mice{i})
     sessions = {data.data(i).sessions.session}; % sessions for mouse
     
+    [distances{i}, times{i}] = deal([]);
     for j = 1:length(sessions)
         
         % load session data
@@ -33,7 +34,6 @@ for i = 1:length(mice)
         load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{j}, 'runAnalyzed.mat'), 'frameTimeStamps');
         secondsPerFrame = nanmedian(diff(frameTimeStamps)); % seconds per frame
         
-        [distances{i}, times{i}] = deal([]);
         for k = find([kinData.isTrialAnalyzed])
             
             % get distance of leading paw at contact
@@ -49,22 +49,21 @@ for i = 1:length(mice)
         clear kinData frameTimeStamps
     end
 end
-
+disp('all done!')
 
 %% PLOT DISTANCE AND TIME TO CONTACT
 
 % settings
 xLims = [15 50];
 yLims = [0 150];
-scatAlpha = .08;
+scatSize = 3;
+scatAlpha = .5;
 mouseColors = true;
 scatPlotSize = .7;
 border = .15;
 
 
 % initializations
-xGrid = linspace(xLims(1), xLims(2), 200);
-yGrid = linspace(yLims(1), yLims(2), 200);
 d = abs(cat(2, distances{:}));
 t = abs(cat(2, times{:}));
 mouseIds = repelem(1:length(mice), cellfun(@length, distances));
@@ -76,7 +75,7 @@ figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
 scatterHistoRick(d,t, ...
     {'groupId', mouseIds, 'colors', 'lines', ...
     'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
-    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', false});
+    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', false, 'scatSize', scatSize, 'scatAlpha', scatAlpha});
 
 
 % save
@@ -95,12 +94,11 @@ xLims = [0 1];
 yLims = [-30 30];
 
 % initializations
-close all;
 figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
 scatterHistoRick([flat.velAtWiskContact], [flat.angleAtWiskContact], ...
     {'groupId', mouseIds, 'colors', 'lines', ...
     'xlabel', 'velocity (m/s)', 'ylabel', ['body angle (' char(176) ')'], ...
-    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', false});
+    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', false, 'scatSize', scatSize, 'scatAlpha', scatAlpha});
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
@@ -122,7 +120,7 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
 wiskContactTimes = wiskContactTimes(~isnan(wiskContactTimes));
 frameTimes = sort(wiskContactTimes(randperm(length(wiskContactTimes), trialsToOverlay)));
 
-imgs = uint8(zeros(vidTop.Height+vidBot.Height, vid.Width, trialsToOverlay));
+imgs = uint8(zeros(vidTop.Height+vidBot.Height, vidTop.Width, trialsToOverlay));
 
 for i = 1:trialsToOverlay
     top = rgb2gray(read(vidTop, knnsearch(frameTimeStamps, frameTimes(i))));
@@ -132,8 +130,7 @@ for i = 1:trialsToOverlay
 end
 
 overlay = overlayImgs(imgs, {'colors', 'lines', 'contrastLims', [.3 .75], 'cutoff', 100, 'projection', 'mean'});
-% overlay = flip(permute(overlay, [2 1 3]),1); % rotate image so it is vertical
-imshow(overlay); pimpFig
+figure; imshow(overlay); pimpFig
 
 
 % write image to desk
@@ -151,11 +148,10 @@ colors = lines(2);
 ctlColor = [.2 .2 .2];
 histoFillAlpha = .2;
 
-close all;
 
 
 % initializations
-% flat = flattenData(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'obsHgt'});
+flat = flattenData(data, {'mouse', 'session', 'trial', 'modPawKinInterp', 'preModPawKinInterp', 'obsHgt'});
 [~,~,mouseIds] = unique({flat.mouse});
 kinData = permute(cat(3, flat.modPawKinInterp), [3,1,2]);
 kinDataCtl = permute(cat(3, flat.preModPawKinInterp), [3,1,2]);
@@ -170,28 +166,32 @@ figure('Color', 'white', 'Position', [2000 400 900 250], 'MenuBar', 'none');
 % plot kinematics
 subplot(2,1,1)
 plotKinematics(kinData(:,[1 3],:), [flat.obsHgt], condition, ...
-    {'colors', colors, 'trialsToOverlay', trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0})
+    {'colors', colors, 'trialsToOverlay', trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false})
 plotKinematics(kinDataCtl(:,[1 3],:), [flat.obsHgt], ones(1,length(flat)), ...
-    {'colors', [.2 .2 .2], 'lineWidth', 5})
+    {'colors', [.2 .2 .2], 'lineWidth', 5, 'yLimZero', false})
 set(gca, 'XLim', xLims)
 
 
+% plot pdfs
 subplot(2,1,2); hold on;
-% esimate pdfs
+
 xGrid = linspace(xLims(1), xLims(2), 500);
+longShortRatio = sum(condition==1)/length(condition);
+
 kdCtl = ksdensity(kinDataCtl(:,1,end), xGrid);
-kdLong = ksdensity(kinData(condition==1,1,end), xGrid);
-kdShort = ksdensity(kinData(condition==2,1,end), xGrid);
+kdLong = ksdensity(kinData(condition==1,1,end), xGrid) * longShortRatio;
+kdShort = ksdensity(kinData(condition==2,1,end), xGrid) * (1-longShortRatio);
+
 
 % plot that shit
 fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], ctlColor, 'FaceAlpha', histoFillAlpha)
-plot(xGrid, kdCtl, 'Color', ctlColor, 'LineWidth', 3)
+plot(xGrid, kdCtl, 'Color', ctlColor, 'LineWidth', 4)
 
 fill([xGrid xGrid(1)], [kdLong kdLong(1)], colors(1,:), 'FaceAlpha', histoFillAlpha)
-plot(xGrid, kdLong, 'Color', colors(1,:), 'LineWidth', 3)
+plot(xGrid, kdLong, 'Color', colors(1,:), 'LineWidth', 4)
 
 fill([xGrid xGrid(1)], [kdShort kdShort(1)], colors(2,:), 'FaceAlpha', histoFillAlpha)
-plot(xGrid, kdShort, 'Color', colors(2,:), 'LineWidth', 3)
+plot(xGrid, kdShort, 'Color', colors(2,:), 'LineWidth', 4)
 
 set(gca, 'XLim', xLims, 'YDir', 'reverse', 'Visible', 'off')
 
