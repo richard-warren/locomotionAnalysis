@@ -17,6 +17,9 @@ s.ylabel = [];
 s.groupId = []; % group id for each element in x and y, categorical variable deterimining color of scatter point 
 s.groupFcn = @nanmean; % summary state used to collapse across items within a group (eg. change to median if you want to take the median within each group)
 s.showCrossHairs = true; % whether to show crosshairs showing std and mean for each variable
+s.groupHistoLineWidth = 1; % width of group histograms
+s.groupHistoAlpha = .4; % alpha for group histos
+s.histoAlpha = 1; % alpha of main histos
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -48,12 +51,14 @@ set(gca, 'Position', [s.border s.scatPlotSize+s.border s.scatPlotSize 1-s.scatPl
 if groupNum>1
     for m = 1:groupNum
         kd = ksdensity(x(s.groupId==m), xGrid);
-        plot(xGrid, kd, 'LineWidth', 1, 'Color', [s.colors(m,:) .4]);
+        plot(xGrid, kd, 'LineWidth', s.groupHistoLineWidth, 'Color', [s.colors(m,:) s.groupHistoAlpha]);
     end
 end
 kd = ksdensity(x, xGrid);
-plot(xGrid, kd, 'Color', [.2 .2 .2], 'LineWidth', 3);
+plot(xGrid, kd, 'Color', [.2 .2 .2 s.histoAlpha], 'LineWidth', 3);
 set(gca, 'XLim', s.xLims, 'Visible', 'off')
+
+
 
 % right histo
 subplot(2,2,4); hold on;
@@ -61,12 +66,14 @@ set(gca, 'Position', [s.scatPlotSize+s.border s.border 1-s.scatPlotSize-s.border
 if groupNum>1
     for m = 1:groupNum
         kd = ksdensity(y(s.groupId==m), yGrid);
-        plot(kd, yGrid, 'LineWidth', 1, 'Color', [s.colors(m,:) .4]);
+        plot(kd, yGrid, 'LineWidth', s.groupHistoLineWidth, 'Color', [s.colors(m,:) s.groupHistoAlpha]);
     end
 end
 kd = ksdensity(y, yGrid);
-plot(kd, yGrid, 'Color', [.2 .2 .2], 'LineWidth', 3);
+plot(kd, yGrid, 'Color', [.2 .2 .2 s.histoAlpha], 'LineWidth', 3);
 set(gca, 'YLim', s.yLims, 'Visible', 'off')
+
+
 
 % scatter
 mainPlot = subplot(2,2,3); hold on;
@@ -83,8 +90,11 @@ if ~isempty(s.xlabel); ylabel(s.ylabel); end
 set(gca, 'XLim', s.xLims, 'YLim', s.yLims, 'Box', 'off', 'TickDir', 'out')
 uistack(mainPlot, 'bottom')
 
+
+
 % add group mean scatters
 if groupNum>1; scatter(groupX, groupY, 50, s.colors, 'filled', 'MarkerEdgeColor', 'black'); end
+
 
 
 % add crosshair for mean, std for time and distance

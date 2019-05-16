@@ -1,0 +1,214 @@
+%% COMPUTE PREDICTORS
+
+% global settings
+referenceModPaw = 2;
+velSmps = 10; % how many samples to compute velocity over
+frameRate = 250;
+stepTypeColors = [0.850 0.325 0.098; 0 0.447 0.741]; % first entry is small step, second is big step
+
+% load experiment data
+fprintf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+
+% flatten data and compute predictors
+flat = flattenData(data, {'mouse', 'session', 'trial', ...
+    'firstModPaw', 'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'isBigStep', ...
+    'modPawKinInterp', 'preModPawKinInterp', 'isLightOn'});
+flat = struct2table(flat);
+
+% flip predictors in flat so everything is relative to firstModPaw
+flipBins = [flat.firstModPaw]==referenceModPaw;
+flat.angleAtWiskContact(flipBins) = -flat.angleAtWiskContact(flipBins);
+
+
+% add predictors not in flat already
+sessions = unique(flat.session);
+
+for i = 1:length(sessions)
+    
+    fprintf('%s: computing extra predictor variables\n', sessions{i})
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'kinData')
+    sessionBins = strcmp(flat.session, sessions{i});
+    if sum(sessionBins)~=length(kinData); disp('WTF! mismatch in number of trials! fucking shit!!!'); end
+    
+    % loop over paws
+    for j = find([kinData.isTrialAnalyzed])
+        
+        % flip everything relative to first modified paw
+        if kinData(j).firstModPaw==referenceModPaw; pawSequence = [1 2 3 4]; else; pawSequence = [4 3 2 1]; end
+        flatBin = sessionBins & [flat.trial]==j;
+        
+        for k = 1:4
+            
+            % starting paw position
+            flat.(['modStepStart_paw' num2str(k)])(flatBin) = kinData(j).modifiedLocations{pawSequence(k)}(1,1,1);
+            
+            % is in stance
+            flat.(['isStance_paw' num2str(k)])(flatBin) = kinData(j).stanceBins(kinData(j).contactInd,pawSequence(k));
+            
+            % x and z positions
+            flat.(['x_paw' num2str(k)])(flatBin) = kinData(j).locations(kinData(j).contactInd, 1, pawSequence(k));
+            flat.(['z_paw' num2str(k)])(flatBin) = kinData(j).locations(kinData(j).contactInd, 3, pawSequence(k));
+            
+            % x and z velocity
+            kin = kinData(j).locations(kinData(j).contactInd-velSmps+1:kinData(j).contactInd, :, pawSequence(k));
+            flat.(['xVel_paw' num2str(k)])(flatBin) = (kin(end,1)-kin(1,1)) / velSmps / frameRate;
+            flat.(['zVel_paw' num2str(k)])(flatBin) = (kin(end,3)-kin(1,3)) / velSmps / frameRate;
+        end
+        
+        % ind in modPawKinInterp at which whiskers contact obs
+        flat.contactInd(flatBin) = kinData(j).pawObsPosIndInterp(kinData(j).firstModPaw);
+    end
+    
+    % remove unanalyzed trials
+    validBins = ~(sessionBins & ismember(flat.trial, find(~[kinData.isTrialAnalyzed]))); % all trial not in ssession OR in session but analyzed
+    flat = flat(validBins,:);
+end
+disp('all done!')
+
+% restrict to light off
+flatLightOnOff = flat;
+flat = flat(flat.isLightOn,:);
+
+
+%% BUILD MODELS
+
+% settings
+useAllPaws = [true false false];
+predictors = {{'all'}, {'all'}, {'x_paw2', 'obsHgt', 'velAtWiskContact'}};
+outcome = 'isBigStep';
+iterations = 20;
+normalizeData = true;
+
+
+accuracies = nan(length(useAllPaws), 2, iterations);
+[nnets, glms] = deal(cell(1,length(useAllPaws)));
+
+for i = 1:length(useAllPaws)
+    
+    [X, y, ~, isCategorical] = ...
+        prepareDecisionModelData(flat, predictors{i}, outcome, useAllPaws(i), referenceModPaw, normalizeData);
+    
+    [accuracies(i,:,:), nnets{i}, glms{i}] = trainDecisionModels(X, y, iterations, isCategorical);
+    
+end
+
+
+%% PLOT MODEL ACCURACY
+
+% figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 600 300]);
+% barPlotRick(accuracies, {'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
+%     'ylim', [.5 1], 'ytick', [.5 .75 1], 'ylabel', 'accuracy'})
+% set(gca, 'Position', [0.1300 0.2 0.7750 0.79])
+
+
+% get 4 out of all 6 conditions
+accuraciesSub = nan(4,iterations);
+accuraciesSub(1,:) = accuracies(1,1,:); % all features, NN
+accuraciesSub(2,:) = accuracies(2,1,:); % one paw features, NN
+accuraciesSub(3,:) = accuracies(2,2,:); % one paw features, GLM
+accuraciesSub(4,:) = accuracies(3,2,:); % minimal features, GLM
+colors = repelem([0 .24 .49; .6 .75 .23],2,1) .* [1 .5 1 .5]';
+
+
+figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
+barPlotRick(accuraciesSub, {'conditionNames', {{'NN full', 'NN 1paw', 'GLM 1paw', 'GLM pos+vel+hgt'}}, ...
+    'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
+    'ylim', [.5 1], 'ytick', [.5 .75 1], 'ylabel', 'accuracy', 'conditionColors', colors})
+set(gca, 'Position', [0.15 0.2 0.75 0.79])
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baseline_decision_modelAccuracies');
+saveas(gcf, file, 'svg');
+
+
+
+
+%% PREDICTOR SCATTERS
+
+
+figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
+scatterHistoRick([flat.x_paw2]*1000, [flat.obsHgt]*1000, ...
+    {'groupId', [flat.isBigStep]+1, 'colors', stepTypeColors, ...
+    'xlabel', 'paw position (mm)', 'ylabel', 'obstalce height (mm)', ...
+    'showCrossHairs', false, 'scatSize', 4, 'scatAlpha', .4, ...
+    'xLims', [-70 -15], 'yLims', [3 11], 'groupHistoLineWidth', 3, ...
+    'groupHistoAlpha', .8, 'histoAlpha', 0});
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baseline_decision_PositionObsHgtScatter');
+saveas(gcf, file, 'svg');
+
+
+%% BINNED KINEMATICS
+
+% settings
+netNum = 1;
+binNum = 3;
+
+
+% initializations
+kin = permute(cat(3,flat.modPawKinInterp{:}), [3,1,2]);
+kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
+binEdges = linspace(0,1,binNum+1);
+[X, y, predictorNames, isCategorical] = ...
+        prepareDecisionModelData(flat, predictors{netNum}, outcome, useAllPaws(netNum), referenceModPaw, normalizeData, ...
+        {'balanceClasses', false, 'removeNans', false});
+binVar = nnets{netNum}(X');
+condition = discretize(binVar, binEdges);
+
+% close all;
+figure('color', 'white', 'menubar', 'none', 'position', [2000 200 750 150*binNum], 'InvertHardcopy', 'off');
+plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
+    {'colors', stepTypeColors, 'xLims', [-.08 .05], 'addHistos', true, 'lineWid', 3, ...
+    'contactInds', flat.contactInd, 'histoHgt', .3})
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baseline_decision_PositionObsHgtScatter');
+saveas(gcf, file, 'svg');
+
+
+
+%% SANDBOX
+
+
+
+% LASSO
+[glmLasso, lassoFit] = lassoglm(xNorm([tr.trainInd tr.valInd],:), y([tr.trainInd tr.valInd]), ...
+    'binomial', 'PredictorNames', predictors); % !!! categofical vars not explicitly defined???
+% fprintf('GLM_lasso train: %.2f, test: %.3f\n', mean(round(predict(glmLasso, xNorm(tr.trainInd,:)))==y(tr.trainInd)), ...
+%     mean(round(predict(glmLasso, xNorm(tr.testInd,:)))==y(tr.testInd)))
+
+zeroInds = nan(1, length(predictors));
+for i = 1:size(glmLasso,1); zeroInds(i) = find(abs(glmLasso(i,:))>0,1,'last'); end
+[~, sortInds] = sort(zeroInds, 'descend');
+predictorsSorted = predictors(sortInds)
+
+% lassoPlot(glmLasso, lassoFit, 'PlotType', 'Lambda', 'PredictorNames', predictors); legend(predictors)
+
+% !!! check accuracy with different numbers of predictors here...
+
+
+
+
+% STEPWISE REGRESSION
+
+glmStepwise = stepwiseglm(xNorm([tr.trainInd tr.valInd],:), y([tr.trainInd tr.valInd]), 'constant', ...
+    'Upper', 'linear', 'Distribution', 'binomial', 'VarNames', [predictors outcome], 'PEnter', .001, 'CategoricalVars', isCategorical);
+fprintf('GLM_stepwise train: %.2f, test: %.3f\n', mean(round(predict(glmStepwise, xNorm(tr.trainInd,:)))==y(tr.trainInd)), ...
+    mean(round(predict(glmStepwise, xNorm(tr.testInd,:)))==y(tr.testInd)))
+
+
+
+
+
+
+
+
+
+
+
+
+
