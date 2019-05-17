@@ -190,7 +190,7 @@ yLims = [-.03 .03];
 
 % predicted vs. actual mod paw distance
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 700 900])
-flat = getNestedStructFields(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsHgt', ...
+flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsHgt', ...
     'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isTrialSuccess', 'wiskContactPosition'});
 % flat = flat(~[flat.isTrialSuccess]); % set conditionals here
 mice = unique({flat.mouse});
@@ -204,7 +204,7 @@ for i = 1:rows
         bins = cellfun(@(x) isequal(x, rowVar.levels(i)), {flat.(rowVar.name)}) & ...
                cellfun(@(x) isequal(x, colVar.levels(j)), {flat.(colVar.name)});
         heatmapRick([flat(bins).modPawPredictedDistanceToObs], [flat(bins).modPawDistanceToObs], ...
-            {'predicted distance to obs', 'actual distance'}, xLims, yLims); hold on
+            {'xLims', xLims}); hold on
         plot(xLims, xLims, 'color', [.6 .6 1], 'LineWidth', 2)
         title(sprintf('%s, %s', rowVar.levelNames{i}, colVar.levelNames{j}))
         plotInd = plotInd + 1;

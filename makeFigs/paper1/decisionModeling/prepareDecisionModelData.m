@@ -67,8 +67,9 @@ if s.balanceClasses
 end
 
 if normalizeData
+    Xtemp = X;
     X = normalize(X,1); % !!! should not normalize logical vars...
-    X(:,isCategorical) = X(:,isCategorical); % make sure you don't z score logical / categorical vars!
+    X(:,isCategorical) = Xtemp(:,isCategorical); % make sure you don't z score logical / categorical vars!
 end
 
 

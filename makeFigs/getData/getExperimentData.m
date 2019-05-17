@@ -357,7 +357,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             end
             var = avgSignalPerTrial(tailHgts, g.sesData.frameTimeStamps, g);
             
-        case 'modPawDistanceToObs'
+        case 'modPawDistanceToObs' % distance of mod paw to obstacle at end of first mod step
             var = num2cell(false(1,length(g.sesKinData)));
             for i = g.sesKinInds
                 var{i} = g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,1,end);

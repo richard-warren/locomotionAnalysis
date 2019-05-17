@@ -5,14 +5,15 @@ referenceModPaw = 2;
 velSmps = 10; % how many samples to compute velocity over
 frameRate = 250;
 stepTypeColors = [0.850 0.325 0.098; 0 0.447 0.741]; % first entry is small step, second is big step
+useReferencePaw = true; % if true, flip everything with respect to referenceModPaw
 
 % load experiment data
 fprintf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 % flatten data and compute predictors
-flat = flattenData(data, {'mouse', 'session', 'trial', ...
+flat = flattenData(data, {'mouse', 'session', 'trial', 'isTrialSuccess', ...
     'firstModPaw', 'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'isBigStep', ...
-    'modPawKinInterp', 'preModPawKinInterp', 'isLightOn'});
+    'modPawKinInterp', 'preModPawKinInterp', 'isLightOn', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs'});
 flat = struct2table(flat);
 
 % flip predictors in flat so everything is relative to firstModPaw
@@ -34,7 +35,8 @@ for i = 1:length(sessions)
     for j = find([kinData.isTrialAnalyzed])
         
         % flip everything relative to first modified paw
-        if kinData(j).firstModPaw==referenceModPaw; pawSequence = [1 2 3 4]; else; pawSequence = [4 3 2 1]; end
+        pawSequence = [1 2 3 4];
+        if useReferencePaw && kinData(j).firstModPaw~=referenceModPaw; pawSequence = [4 3 2 1]; end
         flatBin = sessionBins & [flat.trial]==j;
         
         for k = 1:4
@@ -65,12 +67,25 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
-% restrict to light off
-flatLightOnOff = flat;
-flat = flat(flat.isLightOn,:);
+% keep copy of data prior to applying restrictions below
+flatAll = flat;
+
+
 
 
 %% BUILD MODELS
+
+% NOTES: important considerations: do we restrict to light off // do we
+% restrict to trials where only mod paw is in the air // in theory neural
+% net should not need things flipped wrt mod paw, bc mod paw can be
+% inferred from stance positions... // should see if this is true
+
+% apply restrictions to dataset
+flat = flatAll;
+flat = flat(~flat.isLightOn,:);
+flat = flat((flat.isStance_paw2+flat.isStance_paw3)==1, :); % only trials where only mod paw is in air at contact!
+
+
 
 % settings
 useAllPaws = [true false false];
@@ -86,7 +101,8 @@ accuracies = nan(length(useAllPaws), 2, iterations);
 for i = 1:length(useAllPaws)
     
     [X, y, ~, isCategorical] = ...
-        prepareDecisionModelData(flat, predictors{i}, outcome, useAllPaws(i), referenceModPaw, normalizeData);
+        prepareDecisionModelData(flat, predictors{i}, outcome, useAllPaws(i), referenceModPaw, normalizeData, ...
+        {'balanceClasses', true});
     
     [accuracies(i,:,:), nnets{i}, glms{i}] = trainDecisionModels(X, y, iterations, isCategorical);
     
@@ -141,35 +157,69 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(gcf, file, 'svg');
 
 
-%% BINNED KINEMATICS
+%% BINNED KINEMATICS AND HEATMAP
 
 % settings
 netNum = 1;
-binNum = 3;
+binNum = 5;
+pctileBins = true;
 
 
 % initializations
 kin = permute(cat(3,flat.modPawKinInterp{:}), [3,1,2]);
 kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
-binEdges = linspace(0,1,binNum+1);
 [X, y, predictorNames, isCategorical] = ...
         prepareDecisionModelData(flat, predictors{netNum}, outcome, useAllPaws(netNum), referenceModPaw, normalizeData, ...
         {'balanceClasses', false, 'removeNans', false});
-binVar = nnets{netNum}(X');
+
+% choose binning variable
+binVar = nnets{netNum}(X'); % neural network output
+% binVar = -flat.x_paw2; % position of mod paw at moment of contact
+% binVar = flat.velAtWiskContact; % vel
+% binVar = flat.modStepStart_paw2; % starting position of mod paw
+% binVar = flat.modPawPredictedDistanceToObs;
+
+
+% perctentile bins    
+if pctileBins
+    binEdges = prctile(binVar, linspace(0, 100, binNum+1));
+% evenly spaced bins
+else
+    binEdges = linspace(min(binVar), max(binVar), binNum+1);
+end
 condition = discretize(binVar, binEdges);
 
-% close all;
-figure('color', 'white', 'menubar', 'none', 'position', [2000 200 750 150*binNum], 'InvertHardcopy', 'off');
+
+
+close all;
+figure('color', 'white', 'menubar', 'none', 'position', [2000 100 750 150*binNum], 'InvertHardcopy', 'off');
 plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
-    {'colors', stepTypeColors, 'xLims', [-.08 .05], 'addHistos', true, 'lineWid', 3, ...
-    'contactInds', flat.contactInd, 'histoHgt', .3})
+    {'colors', stepTypeColors, 'xLims', [-.09 .06], 'addHistos', true, 'lineWid', 3, ...
+    'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false})
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baseline_decision_PositionObsHgtScatter');
+        'baseline_decision_kinematics');
 saveas(gcf, file, 'svg');
 
 
+%% heatmap
+
+% settings
+xLims = [-.03 .015];
+yLims = [-.03 .03];
+
+figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
+heatmapRick(flat.modPawPredictedDistanceToObs, flat.modPawDistanceToObs, ...
+    {'xLims', xLims, 'yLims', yLims, ...
+    'xlabel', 'predicted distance to obstalce (m)', 'ylabel', 'distance to obstalce (m)'})
+set(gca, 'DataAspectRatio', [1 1 1])
+line(xLims, xLims, 'color', [0 0 0 .5], 'lineWidth', 3)
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'baseline_decision_heatmaps');
+saveas(gcf, file, 'svg');
 
 %% SANDBOX
 

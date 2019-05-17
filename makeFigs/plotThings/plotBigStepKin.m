@@ -24,10 +24,11 @@ s.addHistos = true;
 s.histoFillAlpha = .4;
 s.histoHgt = .5; % expressed as fraction of kinematic plots
 s.contactInds = []; % inds for each trial at which wisk contacts obs
+s.showSmpNum = false; % if true, shows number of big and small steps per bin
+s.ctlDistances = []; % if provided, uses this as control distro instead of the final x position of the control kinematics for each step
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
-
 
 
 % initializations
@@ -62,7 +63,6 @@ for h = 1:numRows
     % plot modified steps
     allBins = {twoStepBins, oneStepBins};
     ratios = [1-oneTwoRatio oneTwoRatio ];
-%     signs = [-1 1]; 
 
     for i = 1:2
         if any(allBins{i})
@@ -72,18 +72,6 @@ for h = 1:numRows
             plot(x, z, 'color', s.colors(i,:), 'linewidth', s.lineWid*ratios(i)*2); hold on;
             
             if ~isempty(s.contactInds) % !!! finding mean contact ind is not actually fair, bc excludes trials in which contact ind does not occur during swing // this is a little misleading...
-%                 x = []; z = []; % this commented stuff find mean x,z
-%                 positions at contact only for trials in which contactInd
-%                 is not nan, which is trials where mod paw is in swing at
-%                 moment of contact...
-% 
-%                 for j = find(allBins{i})'
-%                     if s.contactInds(j)>0
-%                         x(end+1) = kin(j,1,s.contactInds(j));
-%                         z(end+1) = kin(j,2,s.contactInds(j));
-%                     end
-%                 end
-%                 scatter(nanmean(x), nanmean(z), 100*ratios(i), s.colors(i,:), 'filled');
                 ind = round(nanmean(s.contactInds(allBins{i}))); % mean contact ind
                 scatter(nanmean(x(ind)), nanmean(z(ind)), 100*ratios(i), s.colors(i,:), 'filled');
             end
@@ -95,21 +83,33 @@ for h = 1:numRows
     rectangle('position', [0-s.obsRadius, avgObsHgt-2*s.obsRadius, 2*s.obsRadius, 2*s.obsRadius], ...
         'curvature', [1 1], 'facecolor', s.obsColor, 'edgecolor', 'none');
     
+    % add sample size
+    if s.showSmpNum
+        text(s.xLims(1), s.yLims(2), ...
+            sprintf('%i (%i,%i)', sum([oneStepBins; twoStepBins]), sum(oneStepBins), sum(twoStepBins)), 'VerticalAlignment', 'top')
+    end
+    
     % add god damn histograms
     if s.addHistos
         
         % control
-        kd = ksdensity(kinCtl(ctlBins,1,end), xGrid);
+        if isempty(s.ctlDistances)
+            kd = ksdensity(kinCtl(ctlBins,1,end), xGrid);
+        else
+            kd = ksdensity(s.ctlDistances(ctlBins), xGrid);
+        end
         kd = -kd * (s.yLims(2)/max(kd)) * s.histoHgt;
         fill([xGrid xGrid(end) xGrid(1)], [kd 0 kd(1)], s.controlColor, 'FaceAlpha', s.histoFillAlpha)
         plot(xGrid, kd, 'Color', s.controlColor, 'LineWidth', 2)
         
         % mod
         for i = 1:2
-            kd = ksdensity(kin(allBins{i},1,end), xGrid);
-            kd = -kd * (s.yLims(2)/max(kd)) * s.histoHgt * ratios(i);
-            fill([xGrid xGrid(end) xGrid(1)], [kd 0 kd(1)], s.colors(i,:), 'FaceAlpha', s.histoFillAlpha)
-            plot(xGrid, kd, 'Color', s.colors(i,:), 'LineWidth', 2)
+            if any(allBins{i})
+                kd = ksdensity(kin(allBins{i},1,end), xGrid);
+                kd = -kd * (s.yLims(2)/max(kd)) * s.histoHgt * ratios(i);
+                fill([xGrid xGrid(end) xGrid(1)], [kd 0 kd(1)], s.colors(i,:), 'FaceAlpha', s.histoFillAlpha)
+                plot(xGrid, kd, 'Color', s.colors(i,:), 'LineWidth', 2)
+            end
         end
     end
 
