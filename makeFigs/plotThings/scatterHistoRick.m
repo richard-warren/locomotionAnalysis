@@ -104,11 +104,20 @@ if s.showCrossHairs
             'linewidth', 5, 'color', 'black')
         line(nanmean(groupX) + [1 -1]*nanstd(groupX), nanmean(groupY)*[1 1], ...
             'linewidth', 5, 'color', 'black')
+        
+        % add thin lines that extend to edges of figure
+        line(nanmean(groupX) * [1 1], s.yLims, 'linewidth', 1, 'color', [0 0 0 .5])
+        line(s.xLims, nanmean(groupY)*[1 1], 'linewidth', 1, 'color', [0 0 0 .5])
+        
     else % average across individual samples
         line(nanmean(x) * [1 1], nanmean(y) + [-1 1]*nanstd(y), ...
             'linewidth', 5, 'color', 'black')
         line(nanmean(x) + [1 -1]*nanstd(x), nanmean(y)*[1 1], ...
             'linewidth', 5, 'color', 'black')
+        
+        % add thin lines that extend to edges of figure
+        line(nanmean(groupX) * [1 1], s.yLims, 'linewidth', 1, 'color', [0 0 0 .5])
+        line(s.xLims, nanmean(groupY)*[1 1], 'linewidth', 1, 'color', [0 0 0 .5])
     end
 end
 

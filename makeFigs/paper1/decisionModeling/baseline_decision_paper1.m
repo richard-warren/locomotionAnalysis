@@ -73,71 +73,117 @@ flatAll = flat;
 
 
 
+% %% BUILD MODELS
+% 
+% % NOTES: important considerations: do we restrict to light off // do we
+% % restrict to trials where only mod paw is in the air // in theory neural
+% % net should not need things flipped wrt mod paw, bc mod paw can be
+% % inferred from stance positions... // should see if this is true
+% 
+% % apply restrictions to dataset
+% flat = flatAll;
+% flat = flat(~flat.isLightOn,:);
+% flat = flat((flat.isStance_paw2+flat.isStance_paw3)==1, :); % only trials where only mod paw is in air at contact!
+% 
+% 
+% 
+% % settings
+% useAllPaws = [true false false];
+% predictors = {{'all'}, {'all'}, {'x_paw2', 'obsHgt', 'velAtWiskContact'}};
+% outcome = 'isBigStep';
+% iterations = 20;
+% normalizeData = true;
+% 
+% 
+% accuracies = nan(length(useAllPaws), 2, iterations);
+% [nnets, glms] = deal(cell(1,length(useAllPaws)));
+% 
+% for i = 1:length(useAllPaws)
+%     
+%     [X, y, ~, isCategorical] = ...
+%         prepareDecisionModelData(flat, predictors{i}, outcome, useAllPaws(i), referenceModPaw, normalizeData, ...
+%         {'balanceClasses', true});
+%     
+%     [accuracies(i,:,:), nnets{i}, glms{i}] = trainDecisionModels(X, y, iterations, isCategorical);
+%     
+% end
+% 
+% 
+% % PLOT MODEL ACCURACY
+% 
+% % figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 600 300]);
+% % barPlotRick(accuracies, {'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
+% %     'ylim', [.5 1], 'ytick', [.5 .75 1], 'ylabel', 'accuracy'})
+% % set(gca, 'Position', [0.1300 0.2 0.7750 0.79])
+% 
+% 
+% % get 4 out of all 6 conditions
+% accuraciesSub = nan(4,iterations);
+% accuraciesSub(1,:) = accuracies(1,1,:); % all features, NN
+% accuraciesSub(2,:) = accuracies(2,1,:); % one paw features, NN
+% accuraciesSub(3,:) = accuracies(2,2,:); % one paw features, GLM
+% accuraciesSub(4,:) = accuracies(3,2,:); % minimal features, GLM
+% colors = repelem([0 .24 .49; .6 .75 .23],2,1) .* [1 .5 1 .5]';
+% 
+% 
+% figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
+% barPlotRick(accuraciesSub, {'conditionNames', {{'NN full', 'NN 1paw', 'GLM 1paw', 'GLM pos+vel+hgt'}}, ...
+%     'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
+%     'ylim', [.5 1], 'ytick', [.5 .75 1], 'ylabel', 'accuracy', 'conditionColors', colors})
+% set(gca, 'Position', [0.15 0.2 0.75 0.79])
+% 
+% % save
+% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+%         'baseline_decision_modelAccuracies');
+% saveas(gcf, file, 'svg');
+
+
 %% BUILD MODELS
 
-% NOTES: important considerations: do we restrict to light off // do we
-% restrict to trials where only mod paw is in the air // in theory neural
-% net should not need things flipped wrt mod paw, bc mod paw can be
-% inferred from stance positions... // should see if this is true
-
-% apply restrictions to dataset
-flat = flatAll;
-flat = flat(~flat.isLightOn,:);
-flat = flat((flat.isStance_paw2+flat.isStance_paw3)==1, :); % only trials where only mod paw is in air at contact!
-
-
-
 % settings
-useAllPaws = [true false false];
-predictors = {{'all'}, {'all'}, {'x_paw2', 'obsHgt', 'velAtWiskContact'}};
-outcome = 'isBigStep';
 iterations = 20;
 normalizeData = true;
+barColors = [0 .24 .49; .6 .75 .23; .2 .2 .2];
 
+accuracies = nan(3,iterations);
 
-accuracies = nan(length(useAllPaws), 2, iterations);
-[nnets, glms] = deal(cell(1,length(useAllPaws)));
-
-for i = 1:length(useAllPaws)
+for i = 1:iterations
     
-    [X, y, ~, isCategorical] = ...
-        prepareDecisionModelData(flat, predictors{i}, outcome, useAllPaws(i), referenceModPaw, normalizeData, ...
-        {'balanceClasses', true});
+    predDistBin = ismember(predictorNames, 'modPawPredictedDistanceToObs'); % this var will ONLY be included in the GLM, not the neural net
     
-    [accuracies(i,:,:), nnets{i}, glms{i}] = trainDecisionModels(X, y, iterations, isCategorical);
+    % NEURAL NET
+    [X, y, predictorNames, isCategorical] = ...
+        prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
+    net = patternnet(100);
+    net.divideParam.trainRatio = .7;
+    net.divideParam.valRatio = .15;
+    net.divideParam.testRatio = .15;
+    [net, tr] = train(net, X(:,~predDistBin)', y');
+    outputs = net(X(:,~predDistBin)');
+    accuracies(1,i) = mean(round(outputs(tr.testInd))==y(tr.testInd)');
+    
+    % NN SHUFFLED
+    shuffleInds = randperm(length(tr.testInd));
+    accuracies(3,i) = mean(round(outputs(tr.testInd))==y(tr.testInd(shuffleInds))'); % NN shuffled
+    
+    % GLM
+    glm = fitglm(X([tr.trainInd tr.valInd], predDistBin), y([tr.trainInd tr.valInd]), ...
+        'Distribution', 'binomial', 'CategoricalVars', isCategorical(predDistBin));
+    accuracies(2,i) = mean(round(predict(glm, X(tr.testInd,colBins)))==y(tr.testInd));
     
 end
 
-
-%% PLOT MODEL ACCURACY
-
-% figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 600 300]);
-% barPlotRick(accuracies, {'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
-%     'ylim', [.5 1], 'ytick', [.5 .75 1], 'ylabel', 'accuracy'})
-% set(gca, 'Position', [0.1300 0.2 0.7750 0.79])
-
-
-% get 4 out of all 6 conditions
-accuraciesSub = nan(4,iterations);
-accuraciesSub(1,:) = accuracies(1,1,:); % all features, NN
-accuraciesSub(2,:) = accuracies(2,1,:); % one paw features, NN
-accuraciesSub(3,:) = accuracies(2,2,:); % one paw features, GLM
-accuraciesSub(4,:) = accuracies(3,2,:); % minimal features, GLM
-colors = repelem([0 .24 .49; .6 .75 .23],2,1) .* [1 .5 1 .5]';
-
-
+%%
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
-barPlotRick(accuraciesSub, {'conditionNames', {{'NN full', 'NN 1paw', 'GLM 1paw', 'GLM pos+vel+hgt'}}, ...
+barPlotRick(accuracies, {'conditionNames', {{'NN', 'GLM', 'shuffled'}}, ...
     'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
-    'ylim', [.5 1], 'ytick', [.5 .75 1], 'ylabel', 'accuracy', 'conditionColors', colors})
+    'ylim', [0 1], 'ytick', [0 .5 1], 'ylabel', 'accuracy', 'conditionColors', barColors})
 set(gca, 'Position', [0.15 0.2 0.75 0.79])
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'baseline_decision_modelAccuracies');
 saveas(gcf, file, 'svg');
-
-
 
 
 %% PREDICTOR SCATTERS
@@ -192,9 +238,9 @@ condition = discretize(binVar, binEdges);
 
 
 close all;
-figure('color', 'white', 'menubar', 'none', 'position', [2000 100 750 150*binNum], 'InvertHardcopy', 'off');
+figure('color', 'white', 'menubar', 'none', 'position', [2000 100 750 100*binNum], 'InvertHardcopy', 'off');
 plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
-    {'colors', stepTypeColors, 'xLims', [-.09 .06], 'addHistos', true, 'lineWid', 3, ...
+    {'colors', stepTypeColors, 'xLims', [-.09 .04], 'addHistos', false, 'lineWid', 3, ...
     'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false})
 
 % save
@@ -203,7 +249,7 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(gcf, file, 'svg');
 
 
-%% heatmap
+%% HEATMAP
 
 % settings
 xLims = [-.03 .015];
@@ -214,7 +260,7 @@ heatmapRick(flat.modPawPredictedDistanceToObs, flat.modPawDistanceToObs, ...
     {'xLims', xLims, 'yLims', yLims, ...
     'xlabel', 'predicted distance to obstalce (m)', 'ylabel', 'distance to obstalce (m)'})
 set(gca, 'DataAspectRatio', [1 1 1])
-line(xLims, xLims, 'color', [0 0 0 .5], 'lineWidth', 3)
+line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...

@@ -10,7 +10,7 @@ function [X, y, predictorNames, isCategorical] = ...
 
 % settings
 allPredictors = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', ...
-    'modPawStartingDistance', 'modStepStart', 'isStance', 'x', 'z', 'xVel', 'zVel'};
+    'modPawStartingDistance', 'modStepStart', 'isStance', 'x', 'z', 'xVel', 'zVel', 'modPawPredictedDistanceToObs'};
 s.removeNans = true; % whether to remove rows in X and y containing nans
 s.balanceClasses = true; % whether to remove entries of modal y s.t. groups are perfectly balanced
 
