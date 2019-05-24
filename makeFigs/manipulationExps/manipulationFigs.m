@@ -4,7 +4,7 @@
 
 % settings
 varsToAvg = {'mouse'};
-manipulation = 'lesion';
+manipulation = 'muscimol';
 brainRegion = 'mtc';
 maxEarlySession = 3;
 

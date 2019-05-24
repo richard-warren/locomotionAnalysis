@@ -61,7 +61,7 @@ if ischar(s.scatColors) % set bar colors if color is specified as a string
 end
 
 conditionsMat = nan(numVariables, totalConditions);
-labelVertSize = .15*numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
+labelVertSize = .25*numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
 statsVertSpacing = .02; % vertical spacing of stat comparison lines, expressed as fraction of y range
 xJitters = linspace(-.5*s.lineWidth, .5*s.lineWidth, dataDims(end));
 xJitters = xJitters(randperm(length(xJitters)));
@@ -203,8 +203,10 @@ if s.addBars
             'LineWidth', s.lineThickness, 'Color', s.conditionColors(i,:));
         
         if s.barAlpha>0
+            try
             rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, nanmean(allData{i})-yLims(1)], ...
                 'LineWidth', s.lineThickness, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha]);
+            catch; keyboard; end
         end
     end
 end
