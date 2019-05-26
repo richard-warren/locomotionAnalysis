@@ -86,7 +86,7 @@ else
     scatter(x, y, 50, s.colors, 'filled', 'MarkerFaceAlpha', s.scatAlpha);
 end
 if ~isempty(s.xlabel); xlabel(s.xlabel); end
-if ~isempty(s.xlabel); ylabel(s.ylabel); end
+if ~isempty(s.ylabel); ylabel(s.ylabel); end
 set(gca, 'XLim', s.xLims, 'YLim', s.yLims, 'Box', 'off', 'TickDir', 'out')
 uistack(mainPlot, 'bottom')
 

@@ -65,13 +65,17 @@ function spikeAnalysis2(session, varsToOverWrite)
     
     % analyze reward times
     if analyzeVar({'rewardTimes'}, varNames, varsToOverWrite)
-
+        
         fprintf('%s: getting reward times\n', session)
         load([sessionDir 'run.mat'], 'reward')
-
+        
         % find reward times
-        rewardInds = find(diff(reward.values>2)==1) + 1;
-        rewardTimes = reward.times(rewardInds);
+        if isfield(reward, 'values') % if recorded as analog input (sessions prior to 191523)
+            rewardInds = find(diff(reward.values>2)==1) + 1;
+            rewardTimes = reward.times(rewardInds);
+        else
+            rewardTimes = reward.times(logical(reward.level));
+        end
 
         % remove reward times occuring within minRewardInteveral seconds of eachother
         rewardTimes = rewardTimes(logical([1; diff(rewardTimes)>minRewardInteveral]));
@@ -222,25 +226,36 @@ function spikeAnalysis2(session, varsToOverWrite)
         fprintf('%s: getting obstacle light on and off times\n', session)
         load([sessionDir 'run.mat'], 'obsLight')
 
-        if exist('obsLight', 'var') && any(obsLight.values>2)
+        obsLightOnTimes = [];
+        obsLightOffTimes = [];
+        
+        if exist('obsLight', 'var')
+            
+            if isfield(obsLight, 'values') % if recorded as analog input (sessions prior to 191523)
+                if any(obsLight.values>2)
+                    obsLightOnInds  = find(diff(obsLight.values>2)==1) + 1;
+                    obsLightOffInds = find(diff(obsLight.values>2)==-1) + 1;
+                    obsLightOnTimes = obsLight.times(obsLightOnInds);
+                    obsLightOffTimes = obsLight.times(obsLightOffInds);
+                end
+            else
+                if ~isempty(obsLight.times)
+                    obsLightOnTimes = obsLight.times(logical(obsLight.level));
+                    obsLightOffTimes = obsLight.times(~logical(obsLight.level));
+                end
+            end
+            
+            if ~isempty(obsLightOnTimes)
+                
+                % remove reward times occuring within minRewardInteveral seconds of each other
+                obsLightOnTimes  = obsLightOnTimes(logical([1; diff(obsLightOnTimes)>minObsLightInterval]));
+                obsLightOffTimes = obsLightOffTimes(logical([1; diff(obsLightOffTimes)>minObsLightInterval]));
 
-            % find reward times
-            obsLightOnInds  = find(diff(obsLight.values>2)==1) + 1;
-            obsLightOffInds = find(diff(obsLight.values>2)==-1) + 1;
-            obsLightOnTimes = obsLight.times(obsLightOnInds);
-            obsLightOffTimes = obsLight.times(obsLightOffInds);
-
-            % remove reward times occuring within minRewardInteveral seconds of each other
-            obsLightOnTimes  = obsLightOnTimes(logical([1; diff(obsLightOnTimes)>minObsLightInterval]));
-            obsLightOffTimes = obsLightOffTimes(logical([1; diff(obsLightOffTimes)>minObsLightInterval]));
-
-            % ensure first time is on and last time is off
-            obsLightOnTimes =  obsLightOnTimes(obsLightOnTimes < obsLightOffTimes(end));
-            obsLightOffTimes = obsLightOffTimes(obsLightOffTimes > obsLightOnTimes(1));
-
-        else
-            obsLightOnTimes = [];
-            obsLightOffTimes = [];
+                % ensure first time is on and last time is off
+                obsLightOnTimes =  obsLightOnTimes(obsLightOnTimes < obsLightOffTimes(end));
+                obsLightOffTimes = obsLightOffTimes(obsLightOffTimes > obsLightOnTimes(1));
+                
+            end
         end
 
         % save values

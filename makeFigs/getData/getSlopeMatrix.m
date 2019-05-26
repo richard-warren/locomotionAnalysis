@@ -1,5 +1,5 @@
 function dvMatrix = getSlopeMatrix(data, dvs, vars, varsToAvg, varsToSlope, ...
-                                   conditionals, conditionInds, dvsFound, isDvFound)
+                                   conditionals, analysisType, conditionInds, dvsFound, isDvFound)
 
 % given nested struct data, finds TWO dvs, and computes the slope between
 % these dvs at the level of varsToSlope // eg, if varsToSlope is 'session',
@@ -7,7 +7,10 @@ function dvMatrix = getSlopeMatrix(data, dvs, vars, varsToAvg, varsToSlope, ...
 % for each session // dvMatrix has dimension [var1, var2, 2 (dv num), sample
 % num] // after slopes are computed, second to last dimension has length 1,
 % as the two vectors are replaced by a single number representing the slope
-% between the two vectors... god this is a mess
+% between the two vectors... god this is a mess // analysisType should be
+% either 'slope' or 'corr' to compute the slope or correlation
+
+
 
 % initializations
 isFirstPass = ~exist('conditionInds', 'var');
@@ -89,7 +92,7 @@ for i = find(binsToAnalyze)
         else
             for j = structFieldInds
                 dvMatrices{i} = getSlopeMatrix(data(i).(fields{j}), ...
-                    dvs, vars, varsToAvg, varsToSlope, conditionals, conditionInds, dvsFound, isDvFound);
+                    dvs, vars, varsToAvg, varsToSlope, conditionals, analysisType, conditionInds, dvsFound, isDvFound);
             end
 
             % avg matrix if data contains field in varsToAvg
@@ -121,8 +124,12 @@ for i = find(binsToAnalyze)
                     % store in newDvMatrix, which has 1 less dim than dvMatrices{i}
                     newDvMatrixInds = [condInds {1} {1}];
                     if sum(bins)>1
-                        fit = polyfit(x(bins), y(bins), 1);
-                        newDvMatrix(newDvMatrixInds{:}) = fit(1);
+                        if strcmp(analysisType, 'slope')
+                            fit = polyfit(x(bins), y(bins), 1);
+                            newDvMatrix(newDvMatrixInds{:}) = fit(1);
+                        else
+                            newDvMatrix(newDvMatrixInds{:}) = corr(x(bins), y(bins));
+                        end
                     else
                         newDvMatrix(newDvMatrixInds{:}) = nan;
                     end
