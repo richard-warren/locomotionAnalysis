@@ -3,10 +3,12 @@ function dvMatrix = getDvMatrix(data, dv, vars, varsToAvg, conditionals, conditi
 
 % TO DO: multiple dvs // how to bin variables // return values of fields that are avged over, eg mouse name // meaningful error messages... // document, explain code logic
 
+% analysisType is either 'mean' or 'median'
+
 
 % initializations
-if ~exist('conditionInds', 'var'); conditionInds = nan(1, length(vars)); end
 if ~exist('conditionals', 'var'); conditionals = struct('name', ''); end
+if ~exist('conditionInds', 'var'); conditionInds = nan(1, length(vars)); end
 fields = fieldnames(data);
 dvFound = ismember(dv, fields);
 
@@ -85,7 +87,6 @@ else
                 end
 
                 if avgDvs
-%                     if i==2; keyboard; end
                     dvMatrices{i} = nanmean(dvMatrices{i}, length(vars)+1);
                 end % avg matrix if data contains field in varsToAvg
             end

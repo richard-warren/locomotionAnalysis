@@ -4,7 +4,7 @@
 
 % settings
 varsToAvg = {'mouse'};
-manipulation = 'muscimol';
+manipulation = 'lesion';
 brainRegion = 'mtc';
 maxEarlySession = 3;
 
@@ -47,7 +47,7 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data = cat(2,data{:});
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
+fprintf('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
 
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');

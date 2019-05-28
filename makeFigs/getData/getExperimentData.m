@@ -50,7 +50,8 @@ trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'vel
              'modPawOnlySwing'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
-           'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength'};
+           'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
+           'isVentralContact', 'isDorsalContact'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -173,6 +174,7 @@ expData = g.expData;
 dataTemp = expData; clear expData; % nest expData within itself
 expData.data = dataTemp; clear dataTemp;
 for m = 1:length(metadata); expData.(metadata{m}) = g.(metadata{m}); end % add one field per metadatum
+
 
 
 
@@ -335,6 +337,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var = num2cell(false(1,length(g.sesKinData)));
                 for i = g.sesKinInds; var{i} = ismember(g.sesKinData(i).pawOverSequence(1), [1, 2]); end % is first paw over on left side of body
                 if strcmp(side, 'left'); var = num2cell(cellfun(@not, var)); end % if side is left, then contra limbs are on the right side
+            else % if side is 'both'
+                var = num2cell(nan(1,length(g.sesKinData)));
             end
             
         case 'isBigStep'
@@ -609,6 +613,38 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var = num2cell(g.sesKinData(g.trial).controlSwingLengths(end,:));
+            end
+        
+        case 'isVentralContact' % whether each paw contacts obs ventrally for >= touchThresh frames
+            var = num2cell(nan(1,4));
+            
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                foreVentInd = find(strcmp(g.sesData.touchClassNames, 'fore_ventral'));
+                hindVentInd = find(strcmp(g.sesData.touchClassNames, 'hind_ventral_low'));
+            
+                trialTouches = g.sesData.touches(g.sesKinData(g.trial).trialInds);
+                trialTouchesPerPaw = g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:);
+            
+                var{1} = sum(trialTouchesPerPaw(:,1)' & trialTouches==hindVentInd) >= g.touchThresh;
+                var{2} = sum(trialTouchesPerPaw(:,2)' & trialTouches==foreVentInd) >= g.touchThresh;
+                var{3} = sum(trialTouchesPerPaw(:,3)' & trialTouches==foreVentInd) >= g.touchThresh;
+                var{4} = sum(trialTouchesPerPaw(:,4)' & trialTouches==hindVentInd) >= g.touchThresh;
+            end
+            
+        case 'isDorsalContact' % whether each paw contacts obs dorsally for >= touchThresh frames
+            var = num2cell(nan(1,4));
+            
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                foreVentInd = find(strcmp(g.sesData.touchClassNames, 'fore_dorsal'));
+                hindVentInd = find(strcmp(g.sesData.touchClassNames, 'hind_dorsal'));
+            
+                trialTouches = g.sesData.touches(g.sesKinData(g.trial).trialInds);
+                trialTouchesPerPaw = g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:);
+            
+                var{1} = sum(trialTouchesPerPaw(:,1)' & trialTouches==hindVentInd) >= g.touchThresh;
+                var{2} = sum(trialTouchesPerPaw(:,2)' & trialTouches==foreVentInd) >= g.touchThresh;
+                var{3} = sum(trialTouchesPerPaw(:,3)' & trialTouches==foreVentInd) >= g.touchThresh;
+                var{4} = sum(trialTouchesPerPaw(:,4)' & trialTouches==hindVentInd) >= g.touchThresh;
             end
     end
 end

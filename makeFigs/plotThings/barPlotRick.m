@@ -29,6 +29,7 @@ s.ylim = [];
 s.ytick = [];
 s.addBars = false; % if true, add real bars, instead of just horizontal line at mean
 s.barAlpha = .2; % transparency of bars
+s.summaryFunction = @nanmean; % user can change this to nanmedian, for example
 
 s.groupSeparation = 1;
 s.circSize = 40;
@@ -61,7 +62,7 @@ if ischar(s.scatColors) % set bar colors if color is specified as a string
 end
 
 conditionsMat = nan(numVariables, totalConditions);
-labelVertSize = .25*numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
+labelVertSize = .15*numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
 statsVertSpacing = .02; % vertical spacing of stat comparison lines, expressed as fraction of y range
 xJitters = linspace(-.5*s.lineWidth, .5*s.lineWidth, dataDims(end));
 xJitters = xJitters(randperm(length(xJitters)));
@@ -123,13 +124,13 @@ for i = 1:totalConditions
     
     if s.showErrorBars
         err = nanstd(condData);
-        line([xPositions(i) xPositions(i)], [err -err] + nanmean(condData), ...
-        'color', s.conditionColors(i,:), 'linewidth', s.lineThickness*.5)
+        line([xPositions(i) xPositions(i)], [err -err] + s.summaryFunction(condData), ...
+            'color', s.conditionColors(i,:), 'linewidth', s.lineThickness*.5)
     end
     
     % add mean
     if ~s.addBars
-        line([-.5 .5]*s.lineWidth + xPositions(i), repmat(nanmean(condData),1,2), ...
+        line([-.5 .5]*s.lineWidth + xPositions(i), repmat(s.summaryFunction(condData),1,2), ...
             'color', s.conditionColors(i,:), 'linewidth', s.lineThickness)
     end
 end
@@ -198,13 +199,13 @@ end
 if s.addBars
     for i = 1:totalConditions
         x = [-.5 .5]*s.lineWidth + xPositions(i);
-        y = [yLims(1), nanmean(allData{i})];
+        y = [yLims(1), s.summaryFunction(allData{i})];
         plot([x(1) x(1) x(2) x(2)], [y(1) y(2) y(2) y(1)], ...
             'LineWidth', s.lineThickness, 'Color', s.conditionColors(i,:));
         
         if s.barAlpha>0
             try
-            rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, nanmean(allData{i})-yLims(1)], ...
+            rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, s.summaryFunction(allData{i})-yLims(1)], ...
                 'LineWidth', s.lineThickness, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha]);
             catch; keyboard; end
         end
@@ -228,7 +229,8 @@ for i = 1:length(s.conditionNames)
             yPos = yLims(1)-labelVertSize*range(yLims) + ((labelVertSize*range(yLims))/length(dataDims)*i);
             if i==numVariables; rotation = 25; else; rotation = 0; end
             if ~isempty(s.conditionNames)
-                condText = text(xPos, yPos, s.conditionNames{i}(k), 'HorizontalAlignment', 'center', 'rotation', rotation);
+                condText = text(xPos, yPos, s.conditionNames{i}(k), 'rotation', rotation, ...
+                    'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle');
             end
             
             % add lines on the side of condition name
@@ -247,25 +249,6 @@ end
 
 
 
-% hide original x axis
-set(gca, 'XColor', 'none', 'XLim', [0 xPositions(end)+1])
-
-if s.showStats % add room below for stats and condition labels
-    set(gca, 'YLim', [yLims(1), yMax], 'YTick', yTicks)
-    line([0 0], [yLims(2), yMax], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
-else
-    set(gca, 'YLim', yLims)
-end
-
-% else % add room beneath x axis for condition labels
-%     set(gca, 'XColor', 'none', ...
-%         'YLim', [yLims(1)-labelVertSize*range(yLims), yLims(2)], 'YTick', yTicks, ...
-%         'XLim', [0 xPositions(end)+1], 'XTick', xPositions, 'XTickLabel', [])
-% end
-% line([0 0], [yLims(1)-labelVertSize*range(yLims), yLims(1)], 'color', 'white', 'linewidth', 3) % cover bottom of y axis with white line
-
-
-
 % add y axis label
 if ~isempty(s.ylabel)
     lab = ylabel(s.ylabel);
@@ -273,6 +256,27 @@ if ~isempty(s.ylabel)
     labPos(2) = mean(yLims);
     set(lab, 'position', labPos);
 end
+
+
+% add room above figure for stat lines
+figColor = get(gcf, 'color');
+if s.showStats
+    line([0 0], [yLims(2), yMax], 'color', figColor, 'linewidth', 3) % cover top of y axis with white line
+    yLims = [yLims(1), yMax];
+end
+
+% add room below figure for labels
+if true
+    yMin = yLims(1)-labelVertSize*range(yLims);
+    line([0 0], [yMin, yLims(1)], 'color', figColor, 'linewidth', 3) % cover bottom of y axis with white line
+    yLims = [yMin, yLims(2)];
+end
+
+set(gca, 'YLim', yLims, 'YTick', yTicks, ...
+    'XLim', [0 xPositions(end)+1], 'XColor', 'none', ...
+    'Color', figColor)
+
+
 
 
 % add legend
