@@ -18,7 +18,7 @@ flat.isManip = isManip;
 % flatSub = flat(strcmp(flat.mouse, 'sen4') & ~flat.isLightOn, :);
 flatSub = flat;
 
-validBins = all(~isnan([table2array(flatSub(:, varBins)), flatSub.isManip]),2);
+% validBins = all(~isnan([table2array(flatSub(:, varBins)), flatSub.isManip]),2);
 validBins = ones(1, height(flatSub));
 % flatSub = flatSub(validBins,:);
 
@@ -27,7 +27,7 @@ y = flatSub.isManip;
 
 
 pairs = propensityMatching(X, y, ...
-    {'percentileThresh', 100, 'predictorNames', locoVars});
+    {'percentileThresh', 10, 'predictorNames', locoVars});
 
 %%
 flatMatched = flatSub(pairs(:),:);

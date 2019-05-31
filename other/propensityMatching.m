@@ -10,7 +10,8 @@ function pairs = propensityMatching(X, isManip, opts)
 
 % settings
 s.percentileThresh = 10; % only take trials pairs with propensity score differences in the top percentileThresh percentile
-s.predictorNames = {};
+s.predictorNames = {}; % names of columns of X // used to print out how the means of these variables are affected by matching
+s.verbose = true;
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -40,14 +41,17 @@ end
 
 
 % print matched sample predictor means
-fprintf('\nsamples:  %i/%i', numel(pairs), length(isManip))
-fprintf('\ncontrol:  ')
-fprintf('%.4f  ', nanmean(X(pairs(:,1),:),1));
-fprintf('\nmanip:    ')
-fprintf('%.4f  ', nanmean(X(pairs(:,2),:),1));
-if ~isempty(s.predictorNames); fprintf('\n          '); fprintf('%s ', s.predictorNames{:}); end
-fprintf('\n\n')
+if s.verbose
+    fprintf('\nsamples:  %i/%i', numel(pairs), length(isManip))
+    fprintf('\ncontrol:  ')
+    fprintf('%.4f  ', nanmean(X(pairs(:,1),:),1));
+    fprintf('\nmanip:    ')
+    fprintf('%.4f  ', nanmean(X(pairs(:,2),:),1));
+    if ~isempty(s.predictorNames); fprintf('\n          '); fprintf('%s ', s.predictorNames{:}); end
+    fprintf('\n\n')
+end
 
-% keyboard
+
+
 
 

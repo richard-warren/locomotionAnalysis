@@ -7,7 +7,8 @@ earlySessions = 1:3;
 lateSessions = 5:7;
 colors = [217, 65, 244; 244, 149, 66] / 255; % mus, lesion
 darkening = .25; % how much to darken control condition relative to manipulated condition
-propensityMatching = true;
+matchPropensities = false;
+manipPercent = 25; % take manipPercent percent of best matched manip trials
 
 
 
@@ -20,8 +21,11 @@ vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'l
 vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.conditionNum = struct('name', 'conditionNum', 'levels', 1:8);
-
-if propensityMatching; fileSuffix = '_matched'; else; fileSuffix = ''; end
+fileSuffix = '';
+if matchPropensities
+    fileSuffix = '_matched'; 
+    vars.condition = struct('name', 'conditionNew', 'levels', [1 2 3 4], 'levelNames', {{'sal', 'mus', 'pre', 'postE'}});
+end
 conditionNames = vars.condition.levelNames;
 
 conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) ismember(x,earlySessions));
@@ -45,10 +49,10 @@ clear data
 disp('data loaded!')
 
 % put together in one giant data structure
-for i = 1:length(dataMus)
+for i = 1:length(dataMus.data)
     
-    data(i,1).mouse = dataMus(i).data.mouse;
-    data(i,1).sessions = [dataMus(i).data.sessions; dataLes(i).data.sessions];
+    data(i,1).mouse = dataMus.data(i).mouse;
+    data(i,1).sessions = [dataMus.data(i).sessions; dataLes.data(i).sessions];
     
     bins = strcmp({data(i).sessions.condition}, 'saline');
     for j = 1:length(data(i).sessions)
@@ -67,15 +71,48 @@ end
 
 
 
-%% propensity score matching (optional)
+% propensity score matching
+if matchPropensities
+    varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra'};
+    experiments = {[1,2], [3,4]};
 
-if propensityMatching
-    
-    
-    
+    mice = {data.mouse};
+    flat = struct2table(flattenData(data, [{'mouse', 'session', 'trial', 'conditionNew', 'isLightOn'} varsToMatch]));
+    varBins = ismember(flat.Properties.VariableNames, varsToMatch);
+    metaBins = ismember(flat.Properties.VariableNames, {'mouse', 'session', 'trial'});
+
+    % find matched trials
+    matchedTrials = cell2table(cell(0,3), 'VariableNames', {'mouse', 'session', 'trial'});
+    for mouse = mice
+        for exp = experiments
+            for light = [false true]
+                bins = strcmp(flat.mouse, mouse{1}) & ...
+                       ismember(flat.conditionNew, exp{1}) & ...
+                       flat.isLightOn==light;
+                flatSub = flat(bins,:);
+                X = table2array(flatSub(:, varBins));
+                y = flatSub.conditionNew==exp{1}(2); % is trial in the manip condition
+                matchedPairs = propensityMatching(X, y, ...
+                    {'percentileThresh', manipPercent, 'predictorNames', varsToMatch, 'verbose', false});
+                matchedTrials = [matchedTrials; flatSub(matchedPairs(:), metaBins)];
+            end
+        end
+    end
+
+    % get rid ofnon-matched trials!
+    for i = 1:length(data)
+        for j = 1:length(data(i).sessions)
+            bins = strcmp(matchedTrials.mouse, data(i).mouse) & ...
+                   strcmp(matchedTrials.session, data(i).sessions(j).session);
+            sesTrials = matchedTrials.trial(bins);
+            data(i).sessions(j).trials = data(i).sessions(j).trials(sesTrials);
+        end
+
+        % remove unused sessions
+        isSessionUsed = ismember({data(i).sessions.session}, unique(matchedTrials.session));
+        data(i).sessions = data(i).sessions(isSessionUsed);
+    end
 end
-
-
 
 
 

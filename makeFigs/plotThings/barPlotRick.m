@@ -204,10 +204,10 @@ if s.addBars
             'LineWidth', s.lineThickness, 'Color', s.conditionColors(i,:));
         
         if s.barAlpha>0
-            try
-            rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, s.summaryFunction(allData{i})-yLims(1)], ...
-                'LineWidth', s.lineThickness, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha]);
-            catch; keyboard; end
+            if ~isnan(s.summaryFunction(allData{i}))
+                rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, s.summaryFunction(allData{i})-yLims(1)], ...
+                    'LineWidth', s.lineThickness, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha]);
+            end
         end
     end
 end

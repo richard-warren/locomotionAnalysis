@@ -322,6 +322,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             if strcmp(side, 'left') || strcmp(side, 'right')
                 var = getVar('angleAtWiskContact', g);
                 if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
+            else % if side is 'both'
+                var = num2cell(nan(1,length(g.sesKinData)));
             end
             
         case 'wiskContactPosition'

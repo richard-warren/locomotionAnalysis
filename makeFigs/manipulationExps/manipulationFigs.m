@@ -46,8 +46,8 @@ parfor i = 1:length(sessions); getKinematicData5(sessions{i}); end
 %% compute experiment data
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
-data = cat(2,data{:});
-fprintf('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved')
+data{1}.data = cellfun(@(x) x.data, data); data = data{1};
+fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data'); disp('data saved!')
 
 %% load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [brainRegion '_' manipulation '_data.mat']), 'data');
