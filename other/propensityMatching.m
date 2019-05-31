@@ -1,0 +1,53 @@
+function pairs = propensityMatching(X, isManip, opts)
+
+% performs propensity score matching // computes propensity score as likelihood that each trial
+% came from control or manip condition using logistic regression on
+% predictors, and finds matched populations of control and manip trials
+% that are matched for propensity score // X is samples X predictors matrix
+% of predictors, and isManip is boolean encoding whether a trial is in
+% manipulated condition // pairs is (num matched samples) X 2 matrix, where each row is a matched
+% control, manip ind (inds are wrt X and is Manip)
+
+% settings
+s.percentileThresh = 10; % only take trials pairs with propensity score differences in the top percentileThresh percentile
+s.predictorNames = {};
+
+% reassign settings contained in opts
+if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
+
+
+% fit logit model
+glm = fitglm(X, isManip, 'Distribution', 'binomial');
+p = predict(glm, X);
+ctlInds = find(~isManip);
+manipInds = find(isManip);
+distances = abs(repmat(p(isManip), 1, sum(~isManip)) - p(~isManip)'); % rows and manip trials, cols are control trials, and entries are propensity score differences between each pair of manip/control trials
+
+
+
+% greedy search for pairs (would be better to replace with hungarian algorithm...)
+distancesTemp = distances;
+pairNum = floor(s.percentileThresh/100*length(manipInds));
+pairs = nan(pairNum, 2); % numPairs X 2, where columns are control and manip inds
+
+for i = 1:pairNum
+    [~, minCol] = min(min(distancesTemp,[],1));
+    [~, minRow] = min(distancesTemp(:, minCol));
+    pairs(i,:) = [ctlInds(minCol), manipInds(minRow)]; % control ind, manip ind
+    distancesTemp(minRow,:) = nan;
+    distancesTemp(:,minCol) = nan;
+end
+
+
+% print matched sample predictor means
+fprintf('\nsamples:  %i/%i', numel(pairs), length(isManip))
+fprintf('\ncontrol:  ')
+fprintf('%.4f  ', nanmean(X(pairs(:,1),:),1));
+fprintf('\nmanip:    ')
+fprintf('%.4f  ', nanmean(X(pairs(:,2),:),1));
+if ~isempty(s.predictorNames); fprintf('\n          '); fprintf('%s ', s.predictorNames{:}); end
+fprintf('\n\n')
+
+% keyboard
+
+

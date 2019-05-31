@@ -7,6 +7,7 @@ earlySessions = 1:3;
 lateSessions = 5:7;
 colors = [217, 65, 244; 244, 149, 66] / 255; % mus, lesion
 darkening = .25; % how much to darken control condition relative to manipulated condition
+propensityMatching = true;
 
 
 
@@ -20,6 +21,7 @@ vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ips
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 vars.conditionNum = struct('name', 'conditionNum', 'levels', 1:8);
 
+if propensityMatching; fileSuffix = '_matched'; else; fileSuffix = ''; end
 conditionNames = vars.condition.levelNames;
 
 conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) ismember(x,earlySessions));
@@ -55,12 +57,24 @@ for i = 1:length(dataMus)
         if strcmp({data(i).sessions(j).condition}, 'saline'); c = 1;
         elseif strcmp({data(i).sessions(j).condition}, 'muscimol'); c = 2;
         elseif strcmp({data(i).sessions(j).condition}, 'pre'); c = 3;
-        elseif strcmp({data(i).sessions(j).condition}, 'post') & ismember(data(i).sessions(j).conditionNum, earlySessions); c = 4;
-        elseif strcmp({data(i).sessions(j).condition}, 'post') & ismember(data(i).sessions(j).conditionNum, lateSessions); c = 5;
+        elseif strcmp({data(i).sessions(j).condition}, 'post') && ismember(data(i).sessions(j).conditionNum, earlySessions); c = 4;
+        elseif strcmp({data(i).sessions(j).condition}, 'post') && ismember(data(i).sessions(j).conditionNum, lateSessions); c = 5;
         else; c = nan; end
         data(i).sessions(j).conditionNew = c;
     end
 end
+
+
+
+
+%% propensity score matching (optional)
+
+if propensityMatching
+    
+    
+    
+end
+
 
 
 
@@ -195,7 +209,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'dorsal to
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'motorCortex', 'bars');
-saveas(gcf, file, 'svg');
+saveas(gcf, [file fileSuffix], 'svg');
 
 %% VARS OVER TIME
 
@@ -264,7 +278,7 @@ for i = 1:8; subplot(rows,cols,i); line([-.5 -.5], get(gca,'YLim'), 'color', 're
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'motorCortex', 'sessionsOverTime');
-saveas(gcf, file, 'svg');
+saveas(gcf, [file fileSuffix], 'svg');
 
 %% KINEMATICS
 
@@ -308,7 +322,7 @@ text(xLims(1), mean(yLims), rowNames{2}, 'HorizontalAlignment', 'center', 'Verti
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'motorCortex', 'kinematics');
-saveas(gcf, file, 'svg');
+saveas(gcf, [file fileSuffix], 'svg');
 
 
 %%
