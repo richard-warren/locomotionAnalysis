@@ -75,7 +75,9 @@ else
             % if dv is in data, add to correct location in dvMatrix
             if dvFound
                 dvMatrixInds = num2cell([conditionIndsSub i]);
+%                 try
                 dvMatrix(dvMatrixInds{:}) = data(i).(dv);
+%                 catch; keyboard; end
 
             % otherwise loop through nested structs
             else

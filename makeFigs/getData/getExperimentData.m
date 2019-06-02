@@ -44,7 +44,7 @@ trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'vel
              'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
-             'tailHgt', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
+             'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn', 'touchFrames', ...
              'modPawOnlySwing'};
@@ -363,6 +363,15 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 tailHgts(g.sesKinData(i).trialInds) = g.sesKinData(i).locationsTail(:,3,1);
             end
             var = avgSignalPerTrial(tailHgts, g.sesData.frameTimeStamps, g);
+            
+        case 'tailHgtAtWiskContact' % height of base of tail at moment of whisker contact
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                t = g.sesData.frameTimeStamps(g.sesKinData(i).trialInds);
+                z = g.sesKinData(i).locationsTail(:,3,1);
+                bins = ~isnan(t) & ~isnan(z);
+                var{i} = interp1(t(bins), z(bins), g.sesKinData(i).wiskContactTimes);
+            end
             
         case 'modPawDistanceToObs' % distance of mod paw to obstacle at end of first mod step
             var = num2cell(false(1,length(g.sesKinData)));
@@ -688,8 +697,9 @@ end
 
 
 
-function avgs = avgSignalPerTrial(sig, sigTimes, g)
+function avgs = avgSignalPerTrial(sig, sigTimes, g, preObsOnly)
     % averages a signal (velocity, body angle, tail height) for each trial, but ommitting periods after wheel breaks for each trial
+    % if 'preObsOnly'
     
     avgs = cell(1, length(g.sesKinData));
     for i = 1:length(avgs)

@@ -7,12 +7,15 @@ earlySessions = 1:3;
 lateSessions = 5:7;
 colors = [217, 65, 244; 244, 149, 66] / 255; % mus, lesion
 darkening = .25; % how much to darken control condition relative to manipulated condition
-matchPropensities = false;
+matchPropensities = true;
+varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 25; % take manipPercent percent of best matched manip trials
 
 
 
 % initializations
+colors = [repmat(colors(1,:),2,1); repmat(colors(2,:),3,1)] .* ...
+         [linspace(darkening,1,2), linspace(darkening,1,3)]';
 vars.conditionMus = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'saline', 'muscimol'}});
 vars.conditionLes = struct('name', 'condition', 'levels', {{'pre', 'post'}}, 'levelNames', {{'pre', 'post'}});
 vars.condition = struct('name', 'conditionNew', 'levels', [1 2 3 4 5], 'levelNames', {{'sal', 'mus', 'pre', 'postE', 'postL'}});
@@ -25,6 +28,7 @@ fileSuffix = '';
 if matchPropensities
     fileSuffix = '_matched'; 
     vars.condition = struct('name', 'conditionNew', 'levels', [1 2 3 4], 'levelNames', {{'sal', 'mus', 'pre', 'postE'}});
+    colors = colors(1:4,:);
 end
 conditionNames = vars.condition.levelNames;
 
@@ -36,9 +40,6 @@ conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 conditionals.isHind = struct('name', 'isFore', 'condition', @(x) x==0);
 conditionals.none = struct('name', '', 'condition', @(x) x);
-
-colors = [repmat(colors(1,:),2,1); repmat(colors(2,:),3,1)] .* ...
-         [linspace(darkening,1,2), linspace(darkening,1,3)]';
      
 % load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'mtc_muscimol_data.mat'), 'data');
@@ -73,7 +74,6 @@ end
 
 % propensity score matching
 if matchPropensities
-    varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra'};
     experiments = {[1,2], [3,4]};
 
     mice = {data.mouse};
@@ -127,7 +127,7 @@ end
 % initializations
 rows = 4;
 cols = 3;
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1600 225*rows])
+figure('name', 'motorCortex', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1600 225*rows], 'Renderer', 'painters')
 
 % success
 subplot(rows, cols, 1);
@@ -141,7 +141,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'success r
 % vel
 subplot(rows, cols, 2);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'trialVel', conditions, varsToAvg);
+dv = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velocity (m/s)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [0 .6]...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -149,7 +149,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velocity 
 % angle
 subplot(rows, cols, 3);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'trialAngleContra', conditions, varsToAvg);
+dv = getDvMatrix(data, 'angleAtWiskContactContra', conditions, varsToAvg);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', ['body angle contra (' char(176) ')'], ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [-15 15], ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -157,7 +157,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', ['body ang
 % tail height
 subplot(rows, cols, 4);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'tailHgt', conditions, varsToAvg);
+dv = getDvMatrix(data, 'tailHgtAtWiskContact', conditions, varsToAvg);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'tail height (mm)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [], ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -199,7 +199,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'paw shapi
 flat = flattenData(data, {'mouse', 'modPawPredictedDistanceToObs', 'conditionNew', 'isBigStep', 'isLightOn'});
 mice = unique({flat.mouse});
 lightConditions = [false, true];
-[accuracies, thresholds] = deal(nan(2, length(conditionNames), length(mice)));
+[accuracies, thresholds, f1s] = deal(nan(2, length(conditionNames), length(mice)));
 
 for i = 1:2
     for m = 1:length(conditionNames)
@@ -208,8 +208,14 @@ for i = 1:2
                     [flat.isLightOn]==lightConditions(i) & ...
                     strcmp({flat.mouse}, mice{j});
             glm = fitglm([flat(bins).modPawPredictedDistanceToObs]', [flat(bins).isBigStep]', 'Distribution', 'binomial');
-            accuracies(i,m,j) = mean(round(predict(glm, [flat(bins).modPawPredictedDistanceToObs]'))==[flat(bins).isBigStep]');
             coeffs = glm.Coefficients.Estimate;
+            predictions = round(predict(glm, [flat(bins).modPawPredictedDistanceToObs]'));
+            confusion = confusionmat([flat(bins).isBigStep], logical(predictions));
+            precision = confusion(2,2)/sum(confusion(:,2));
+            recall = confusion(2,2)/sum(confusion(2,:));
+            
+            f1s(i,m,j) = harmmean([precision, recall]);
+            accuracies(i,m,j) = mean(predictions==[flat(bins).isBigStep]');
             thresholds(i,m,j) = (.5-coeffs(1)) / coeffs(2); % solve for prediction = .5
         end
     end
@@ -217,7 +223,7 @@ end
 
 % decision determinism (glm accuracy)
 subplot(rows, cols, 9);
-barPlotRick(accuracies, {'conditionNames', {{'light off', 'light on'}, conditionNames}, 'ylabel', 'glm accuracy', ...
+barPlotRick(f1s, {'conditionNames', {{'light off', 'light on'}, conditionNames}, 'ylabel', 'f1 score', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [.5 1]})
 
@@ -253,21 +259,19 @@ saveas(gcf, [file fileSuffix], 'svg');
 % settings
 rows = 3;
 cols = 3;
-sessionsPostLesion = -2:8;
+sessionsToShow = -2:8;
 
 
 % initializations
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1200 200*rows])
-vars.sessionsPostLesion = struct('name', 'sessionsPostLesion', 'levels', sessionsPostLesion);
+figure('name', 'motorCortex', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1200 200*rows])
+vars.sessionsPostLesion = struct('name', 'sessionsPostLesion', 'levels', sessionsToShow);
 
-for i = 1:length(dataMus) % compute session number relative to first lesion session
-    firstLesSession = find(strcmp({dataLes(i).data.sessions.condition}, 'post'), 1, 'first');
-    sessionsPostLesion = num2cell([dataLes(i).data.sessions.sessionNum] - firstLesSession);
-    [dataLes(i).data.sessions.sessionsPostLesion] = sessionsPostLesion{:};
+for i = 1:length(dataLes.data) % compute session number relative to first lesion session
+    firstLesSession = find(strcmp({dataLes.data(i).sessions.condition}, 'post'), 1, 'first');
+    sessionsPostLesion = num2cell([dataLes.data(i).sessions.sessionNum] - firstLesSession);
+    [dataLes.data(i).sessions.sessionsPostLesion] = sessionsPostLesion{:};
 end
 
-
-% success
 
 % success
 subplot(rows, cols, 1);
@@ -276,17 +280,17 @@ sesPlotRick(dv', {'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'success ra
 
 % velocity
 subplot(rows, cols, 2);
-dv = getDvMatrix(dataLes, 'trialVel', vars.sessionsPostLesion, {'mouse'});
+dv = getDvMatrix(dataLes, 'velAtWiskContact', vars.sessionsPostLesion, {'mouse'});
 sesPlotRick(dv', {'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'velocity (m/s)'});
 
 % body angle
 subplot(rows, cols, 3);
-dv = getDvMatrix(dataLes, 'trialAngleContra', vars.sessionsPostLesion, {'mouse'});
+dv = getDvMatrix(dataLes, 'angleAtWiskContactContra', vars.sessionsPostLesion, {'mouse'});
 sesPlotRick(dv', {'xvals', vars.sessionsPostLesion.levels, 'ylabel', ['body angle contra (' char(176) ')']});
 
 % tail height
 subplot(rows, cols, 4);
-dv = getDvMatrix(dataLes, 'tailHgt', vars.sessionsPostLesion, {'mouse'});
+dv = getDvMatrix(dataLes, 'tailHgtAtWiskContact', vars.sessionsPostLesion, {'mouse'});
 sesPlotRick(dv', {'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'tail height'});
 
 % pre obs height
@@ -328,6 +332,7 @@ yLims = [0 .016];
 colNames = {'contra', 'ipsi'};
 rowNames = {'muscimol', 'lesion'};
 conditions = {[1,2], [1,2], [3,4,5], [3,4,5]};
+if matchPropensities; conditions = {[1,2], [1,2], [3,4], [3,4]};; end
 isContraFirst = [true false true false];
 
 flat = flattenData(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
@@ -360,11 +365,6 @@ text(xLims(1), mean(yLims), rowNames{2}, 'HorizontalAlignment', 'center', 'Verti
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'motorCortex', 'kinematics');
 saveas(gcf, [file fileSuffix], 'svg');
-
-
-%%
-
-
 
 
 

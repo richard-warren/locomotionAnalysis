@@ -90,6 +90,6 @@ set(gca, 'DataAspectRatio', [1 1 1], 'XColor', 'none', 'YColor', 'none')
 if s.yLimZero && ~s.isBotView; set(gca, 'YLim', max(get(gca, 'YLim'),0)); end
 if ~isempty(s.conditionNames); legend(s.conditionNames, 'box', 'off', 'Location', 'best'); end
 
-
+pause(.001)
 
 

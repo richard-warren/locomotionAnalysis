@@ -277,13 +277,13 @@ set(gca, 'YLim', yLims, 'YTick', yTicks, ...
     'Color', figColor)
 
 
-
-
 % add legend
 if ~isempty(s.smpNames)
     for i = 1:length(s.smpNames); scatters(i) = scatter(nan,nan,50,scatColors(i,:),'o','filled'); end % create dummy scatters
     legend(scatters, s.smpNames, 'Location', 'northeastoutside', 'box', 'off')
 end
+
+pause(.001) % when doing many subplots, this makes sure they pop up one by one
 
 
 
