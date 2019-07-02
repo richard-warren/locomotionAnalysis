@@ -8,7 +8,7 @@ function sessionEphysInfo = getSessionEphysInfo(session)
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
 sessionEphysInfo.ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 
-% get source name (e.g. 100, 107) and number of chhannels
+% get source name (e.g. 100, 107) and number of channels
 contFiles = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, sessionEphysInfo.ephysFolder, '*.continuous'));
 contFiles = contFiles(~contains({contFiles.name}, 'AUX')); % remove AUX channels
 sessionEphysInfo.channelNum = length(contFiles);

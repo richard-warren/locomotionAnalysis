@@ -100,10 +100,10 @@ for i = 1:length(spkTimes)
     spkTimes{i} = spkTimes{i}(spkTimes{i}>cellMinTime & spkTimes{i}<cellMaxTime);
     
 end
-
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
+ave(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping')
 disp('all done!')
+s
 
 
 
