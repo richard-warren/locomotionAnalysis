@@ -9,9 +9,10 @@ function getTrialsFromVideo(fileIn, fileOut, opts)
     s.fs = 250;  % original speed of video
     s.outputSpeed = .15;  % factor by which to slow down playback
     s.trialBuffer = 3; % disallow trials this many seconds within one another
-    s.zScoreThresh = 6;  % how much does the ROI have to change for the trial to be detected
+    s.zScoreThresh = 10;  % how much does the ROI have to change for the trial to be detected
     s.roiPositions = []; % initial positions of ROI (Nx2 matrix of XY pairs describing positions of corners of polygon)
     s.previewAnalysis = true; % if true, shows the GUI, otherwise runs the analysis with specified settings
+    s.showZScores = true; % if true, plot z scores of ROI pixel values along with user threshold (use to figure out what appropriate threshold is)
     
     % reassign settings contained in opts
     if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -22,7 +23,7 @@ function getTrialsFromVideo(fileIn, fileOut, opts)
     mask = ones(vid.Height,vid.Width);
 
     playing = true;
-    diffHistory = [0 nan(1, vid.NumberOfFrames-1)];
+    roiIntensities = nan(1, vid.NumberOfFrames);
     prevFrame = rgb2gray(read(vid,1));
     
     
@@ -85,25 +86,43 @@ function getTrialsFromVideo(fileIn, fileOut, opts)
         
         playing = false;
         
-        % get all frame differences
-        f=1;
-        prevFrame = rgb2gray(read(vid,f));
-        w = waitbar(0, 'calculating frame differences...');
-        while f<vid.NumberOfFrames
-            f=f+1;
+        % get all roi intensities
+        w = waitbar(0, 'calculating ROI pixel intensities...');
+        for f = 1:vid.NumberOfFrames
             frame = rgb2gray(read(vid,f));
-            pixelDifs = double(frame).*double(mask) - double(prevFrame).*double(mask);
-            frameDif =  sum(abs(pixelDifs(:))) / sum(mask(:));
-            diffHistory(f) = frameDif;
-            prevFrame = frame;
+            roiIntensities(f) = sum(sum(double(frame).*double(mask)));
             waitbar(f/vid.NumberOfFrames)
         end
+        roiIntensities = zscore(roiIntensities);
         close(w)
         
         % get trial start times
-        trialStartInds = find(zscore(diffHistory)>s.zScoreThresh);
+        trialStartInds = find(roiIntensities>s.zScoreThresh);
         trialStartInds = trialStartInds(logical([1 diff(trialStartInds/s.fs)>s.trialBuffer])); % remove trial start times that are too close together
         fprintf('number of trials found: %i\n', length(trialStartInds));
+        
+        if s.showZScores
+            
+            % plot roi z scores
+            figure('name', fileIn, 'color', 'white', 'menubar', 'none', 'position', [680 671 997 307])
+            xVals = linspace(0, vid.NumberOfFrames/s.fs, vid.NumberOfFrames);
+            plot(xVals, roiIntensities)
+            yLims = get(gca, 'yLim');
+            
+            % add line for z score thresh
+            line([xVals(1) xVals(end)], [s.zScoreThresh s.zScoreThresh], 'color', 'red')
+            
+            % add boxes showing detected events and inter trial interval
+            for t = 1:length(trialStartInds)
+                rectangle('Position', [xVals(trialStartInds(t)) yLims(1) s.trialBuffer diff(yLims)], ...
+                    'FaceColor', [0 0 0 .1], 'EdgeColor', 'none');
+            end
+            
+            % pimp fig
+            set(gca, 'box', 'off')
+            xlabel('time (s)')
+            ylabel('ROI pixel intensity (z scores)')
+        end
         
         % create video
         writerobj = VideoWriter(fileOut, 'MPEG-4');
