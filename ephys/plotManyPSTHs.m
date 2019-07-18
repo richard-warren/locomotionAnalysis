@@ -1,68 +1,81 @@
-function plotManyPSTHs(session, cells)
+function plotManyPSTHs(session, opts)
+
+% for a given session, plots a series of PSTHs for each cell in the session
 
 
 % settings
-rows = 4;
-cols = 5;
-stepPercentiles = [40 60]; % only include steps with durations in between these percentile limits
-pawNames = {'LH', 'LF', 'RF', 'RH'};
-pawColors = hsv(4);
-mainColor = [.8 .4 1];
+s.folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'PSTHs');  % folder in which the PSTHs will be saved
+s.rows = 4;
+s.cols = 5;
+s.stepPercentiles = [40 60]; % only include steps with durations in between these percentile limits
+s.pawNames = {'LH', 'LF', 'RF', 'RH'};
+s.pawColors = hsv(4);
+s.mainColor = [.8 .4 1];
 
+% reassign settings contained in opts
+if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 
 % initializations
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+folder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
+load(fullfile(folder, 'runAnalyzed.mat'), ...
         'obsOnTimes', 'obsOffTimes',  'wiskContactFrames', 'frameTimeStamps', ...
         'frameTimeStampsWisk', 'rewardTimes', 'isLightOn', 'touches', 'touchesPerPaw', 'touchClassNames');
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
-[data, stanceBins] = getKinematicData4({session}, sessionInfo, []);
-stanceBins = stanceBins{1}; % stanceBins will always have only a single entry when getKinematicData is called with a single session
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'unit_ids');
-if ~exist('cells', 'var'); cells = 1:length(unit_ids); end
 
-for cellNum = cells
+% load kinData if it exists // otherwise compute kinData    
+if exist(fullfile(folder, 'kinData.mat'))
+    load(fullfile(folder, 'kinData.mat'), 'kinData', 'stanceBins')
+else
+    [kinData, stanceBins] = getKinematicData5(session);
+end
+
+load(fullfile(folder, 'neuralData.mat'), 'unit_ids');
+
+for cellNum = 1:length(unit_ids)
     
-    fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(cells))
+    fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(unit_ids))
     figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
         'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 20 1800 1000]); hold on
     plotInd = 0;
     
     % reward delivery
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
-    plotPSTH2(session, cellNum, rewardTimes, {}, mainColor);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
+    plotPSTH2(session, cellNum, rewardTimes);
     xlabel('reward delivery')
     
     % reward delivery -> reward delivery
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
     times = nan(length(rewardTimes)-1, 2);
     times(:,1) = rewardTimes(1:end-1);
     times(:,2) = rewardTimes(2:end);
-    plotPSTH2(session, cellNum, times, {}, mainColor);
+    plotPSTH2(session, cellNum, times);
     xlabel('reward delivery -> reward delivery')
     
     % obs on
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
     times = {obsOnTimes(isLightOn), obsOnTimes(~isLightOn)};
-    plotPSTH2(session, cellNum, times, {'light on', 'light off'}, [mainColor; mainColor*.25]);
+    plotPSTH2(session, cellNum, times, ...
+        {'conditionNames', {'light on', 'light off'}});
     xlabel('obstacle turns on')
     
     % obs on -> obs off
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
     times = {cat(2, obsOnTimes(isLightOn), obsOffTimes(isLightOn)), ...
              cat(2, obsOnTimes(~isLightOn), obsOffTimes(~isLightOn))};
-    plotPSTH2(session, cellNum, times, {'light on', 'light off'}, [mainColor; mainColor*.25]);
+    plotPSTH2(session, cellNum, times, ...
+        {'conditionNames', {'light on', 'light off'}});
     xlabel('obstacle on -> obstacle off')
     
     % wisk contact
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
     times = {frameTimeStampsWisk(wiskContactFrames(wiskContactFrames>0 & isLightOn)), ...
              frameTimeStampsWisk(wiskContactFrames(wiskContactFrames>0 & ~isLightOn))};
-    plotPSTH2(session, cellNum, times, {'light on', 'light off'}, [mainColor; mainColor*.25]);
+    plotPSTH2(session, cellNum, times, ...
+        {'conditionNames', {'light on', 'light off'}});
     xlabel('whisker contact')
     
     % obsOn -> wisk contact
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
     allTimes = nan(0,2);
     allTimesIsLightOn = false(0,0);
     wiskContactTimes = frameTimeStampsWisk(wiskContactFrames(wiskContactFrames>0));
@@ -74,12 +87,13 @@ for cellNum = cells
         end
     end
     times = {allTimes(allTimesIsLightOn,:), allTimes(~allTimesIsLightOn,:)};
-    plotPSTH2(session, cellNum, times, {'light on', 'light off'}, [mainColor; mainColor*.25]);
+    plotPSTH2(session, cellNum, times, ...
+        {'conditionNames', {'light on', 'light off'}});
     xlabel('obstacle on -> whisker contact')
     
     
     % step tuning for all paws
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+    plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
     times = cell(1,4);
     for paw = 1:4
         
@@ -92,37 +106,34 @@ for cellNum = cells
 
         % only take steps in middle of duration distribution
         durations = diff(sessionEvents,1,2);
-        durationLimits = prctile(durations, stepPercentiles);
+        durationLimits = prctile(durations, s.stepPercentiles);
         sessionEvents = sessionEvents(durations>durationLimits(1) & durations<durationLimits(2), :);
 
         times{paw} = sessionEvents;
     end
-    plotPSTH2(session, cellNum, times, pawNames, pawColors, false);
+    plotPSTH2(session, cellNum, times, ...
+        {'conditionNames', s.pawNames, 'errorFcn', false});
     xlabel('swing start -> stance end')
     
     
     % step over vs. control steps
     for paw = 1:4
         times = cell(1,2);
+        [times{:}] = deal(nan(length(kinData), 2));
         
-        % get mod step times
-        stepTimes = cellfun(@(x,y) x(y(:,paw)==max(y(:,paw))), ...
-            {data.frameTimeStamps}, {data.modifiedStepIdentities}, ...
-            'UniformOutput', false);
-        stepTimes = cellfun(@(x) [x(1) x(end)], stepTimes, 'UniformOutput', false);
-        times{1} = cat(1, stepTimes{:});
-        
-        % get control step times
-        stepTimes = cellfun(@(x,y) x(y(:,paw)==max(y(:,paw))), ...
-            {data.frameTimeStamps}, {data.trialControlStepIdentities}, ...
-            'UniformOutput', false);
-        stepTimes = cellfun(@(x) [x(1) x(end)], stepTimes, 'UniformOutput', false);
-        times{2} = cat(1, stepTimes{:});
-        
+        % get step start and stop times
+        for i = 1:length(kinData)
+            stepOverBins = kinData(i).modifiedStepIdentities(:,paw) == max(kinData(i).modifiedStepIdentities(:,paw));
+            ctlBins = kinData(i).controlStepIdentities(:,paw) == max(kinData(i).controlStepIdentities(:,paw));
+            times{1}(i,:) = frameTimeStamps(kinData(i).trialInds([find(stepOverBins,1,'first'), find(stepOverBins,1,'last')]));
+            times{2}(i,:) = frameTimeStamps(kinData(i).trialInds([find(ctlBins,1,'first'), find(ctlBins,1,'last')]));
+        end
+
         % plot it!
-        plotInd = plotInd + 1; subplot(rows, cols, plotInd);
-        plotPSTH2(session, cellNum, times, {'step over', 'control'}, [pawColors(paw,:); .6 .6 .6]);
-        xlabel(sprintf('%s: swing start -> swing end', pawNames{paw}))
+        plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
+        plotPSTH2(session, cellNum, times, ...
+            {'conditionNames', {'step over', 'control'}, 'colors', [s.pawColors(paw,:); s.pawColors(paw,:)*.2]});
+        xlabel(sprintf('%s: swing start -> swing end', s.pawNames{paw}))
     end
     
     
@@ -130,38 +141,23 @@ for cellNum = cells
     for paw = 2:3
         
         % get all step times
-        numModSteps = cellfun(@(x) x(1,paw), {data.modStepNum});
-        stepTimes = cellfun(@(x,y) x(y(:,paw)==1), ...
-            {data.frameTimeStamps}, {data.modifiedStepIdentities}, ...
-            'UniformOutput', false);
-        stepTimes = cellfun(@(x) [x(1) x(end)], stepTimes, 'UniformOutput', false);
-        stepTimes = cat(1, stepTimes{:});
-        
+        numModSteps = cellfun(@(x) max(x(:,paw)), {kinData.modifiedStepIdentities});
+        stepTimes = nan(length(kinData), 2);
+        for i = 1:length(kinData)
+            firstModBins = kinData(i).modifiedStepIdentities(:,paw) == 1;
+            stepTimes(i,:) = frameTimeStamps(kinData(i).trialInds([find(firstModBins,1,'first'), find(firstModBins,1,'last')]));
+        end
         times = cell(1,2);
-        times{1} = stepTimes([data.firstModPaw]==paw & numModSteps==1, :); % one step times
-        times{2} = stepTimes([data.firstModPaw]==paw & numModSteps==2, :); % two step times
+        times{1} = stepTimes([kinData.firstModPaw]==paw & numModSteps==1, :); % one step times
+        times{2} = stepTimes([kinData.firstModPaw]==paw & numModSteps==2, :); % two step times
         
         % plot it!
-        plotInd = plotInd + 1; subplot(rows, cols, plotInd);
-        plotPSTH2(session, cellNum, times, {'one step', 'two step'}, [pawColors(paw,:); .6 .6 .6]);
-        xlabel(sprintf('%s: swing start -> swing end', pawNames{paw}))
+        plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
+        plotPSTH2(session, cellNum, times, ...
+            {'conditionNames', {'one step', 'two step'}, 'colors', [s.pawColors(paw,:); s.pawColors(paw,:)*.2]});
+        xlabel(sprintf('%s: swing start -> swing end', s.pawNames{paw}))
     end
     
-    % first vs second paw over
-    times = cell(1,2);
-    firstAndSecondPawsOver = {[data.firstPawOver], ~([data.firstPawOver]-2)+2};
-    for i = 1:2
-        stepTimes = cellfun(@(times,ids,paw) times(ids(:,paw)==max(ids(:,paw))), ...
-                {data.frameTimeStamps}, {data.modifiedStepIdentities}, num2cell(firstAndSecondPawsOver{i}), ...
-                'UniformOutput', false);
-        stepTimes = cellfun(@(x) [x(1) x(end)], stepTimes, 'UniformOutput', false);
-        stepTimes = cat(1, stepTimes{:});
-        times{i} = stepTimes;
-    end
-    
-    plotInd = plotInd + 1; subplot(rows, cols, plotInd);
-    plotPSTH2(session, cellNum, times, {'first paw over', 'second paw over'}, [mainColor; .6 .6 .6]);
-    xlabel(sprintf('swing start -> swing end'))
     
     % ventral paw contacts
     minTouchInds = 1; % paw must be touching for at least this many inds for trial to be included
@@ -170,7 +166,7 @@ for cellNum = cells
     classInds = find(ismember(touchClassNames, contactsToInclude));
     
     for paw = 1:4
-        plotInd = plotInd + 1; subplot(rows, cols, plotInd);
+        plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
         times = [];
         
         % get first contact for paw on each trial
@@ -181,14 +177,14 @@ for cellNum = cells
             if sum(pawTouchBins)>=minTouchInds; times(end+1) = frameTimeStamps(pawTouchInd); end
         end
         
-        plotPSTH2(session, cellNum, times, {}, pawColors(paw,:));
-        xlabel(sprintf('%s: ventral touch', pawNames{paw}))
+        plotPSTH2(session, cellNum, times, {'colors', s.pawColors(paw,:)});
+        xlabel(sprintf('%s: ventral touch', s.pawNames{paw}))
     end
     
     
     % save
     pause(.01)
-    fileName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'PSTHs', [session 'unit' num2str(unit_ids(cellNum))]);
+    fileName = fullfile(folder, [session 'unit' num2str(unit_ids(cellNum))]);
 %     savefig(fileName)
     saveas(gcf, [fileName '.png'])
 end

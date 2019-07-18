@@ -340,7 +340,8 @@ try
 
 catch
     fprintf('%s: failed to make swing length model!\n', session)
-    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', '-v7.3')
+    save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), ...
+        'kinData', 'stanceBins', 'models', '-v7.3')
 end
 
 

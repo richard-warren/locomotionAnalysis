@@ -1,7 +1,7 @@
 function plotDvPsth(data, dv, plotVar, opts)
 
 
-% used to plot PSTHs of continuous data signals stored on data struct //
+% used to plot PSTHs of continuous data signals stored in data struct //
 % data has one row per trial // dv is the variable to be plotted as a
 % function of x (eg plotting velocity vs time) // plotVar is the field in data containing conditions that
 % should be plotted as different colored lines // rowVar is plotted as
