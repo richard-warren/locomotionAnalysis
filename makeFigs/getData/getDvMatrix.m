@@ -75,9 +75,7 @@ else
             % if dv is in data, add to correct location in dvMatrix
             if dvFound
                 dvMatrixInds = num2cell([conditionIndsSub i]);
-%                 try
                 dvMatrix(dvMatrixInds{:}) = data(i).(dv);
-%                 catch; keyboard; end
 
             % otherwise loop through nested structs
             else
@@ -94,8 +92,11 @@ else
             end
         end
     end
-
-    if ~dvFound; dvMatrix = cat(length(vars)+1, dvMatrices{:}); end % concatenate matrices obtained from nested structs
+    
+    if ~dvFound
+%         dvMatrices = dvMatrices(~cellfun(@isempty, dvMatrices));  %  remove empty entries (not sure if it is safe to do this)
+        dvMatrix = cat(length(vars)+1, dvMatrices{:});
+    end % concatenate matrices obtained from nested structs
 end
 
 

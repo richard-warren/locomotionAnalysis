@@ -200,7 +200,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion 
 
 % success, vel, body angle, baseline step height, 
 dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
-flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
+flat = flattenData(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
 plotAcrossSessions2(flat, dvs);
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'manipulations', [brainRegion '_' manipulation '_sessionsOverTime.fig']))
 

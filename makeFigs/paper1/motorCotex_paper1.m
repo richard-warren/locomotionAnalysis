@@ -7,7 +7,7 @@ earlySessions = 1:3;
 lateSessions = 5:7;
 colors = [217, 65, 244; 244, 149, 66] / 255; % mus, lesion
 darkening = .25; % how much to darken control condition relative to manipulated condition
-matchPropensities = true;
+matchPropensities = false;
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 25; % take manipPercent percent of best matched manip trials
 
@@ -39,7 +39,8 @@ conditionals.isPost = struct('name', 'condition', 'condition', @(x) strcmp(x, 'p
 conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 conditionals.isHind = struct('name', 'isFore', 'condition', @(x) x==0);
-conditionals.none = struct('name', '', 'condition', @(x) x);
+conditionals.none = struct('name', '', 'condition', @(x) x);  % what does this do???
+conditionals.isFast = struct('name', 'velAtWiskContact', 'condition', @(x) x>.3);
      
 % load experiment data
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'mtc_muscimol_data.mat'), 'data');
@@ -128,11 +129,12 @@ end
 rows = 4;
 cols = 3;
 figure('name', 'motorCortex', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1600 225*rows], 'Renderer', 'painters')
+figConditionals = [conditionals.none];
 
 % success
 subplot(rows, cols, 1);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg);
+dv = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 1], 'ytick', 0:.5:1, ...
@@ -141,7 +143,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'success r
 % vel
 subplot(rows, cols, 2);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
+dv = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velocity (m/s)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [0 .6]...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -149,7 +151,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velocity 
 % angle
 subplot(rows, cols, 3);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'angleAtWiskContactContra', conditions, varsToAvg);
+dv = getDvMatrix(data, 'angleAtWiskContactContra', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', ['body angle contra (' char(176) ')'], ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [-15 15], ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -157,7 +159,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', ['body ang
 % tail height
 subplot(rows, cols, 4);
 conditions = [vars.isLightOn; vars.condition];
-dv = getDvMatrix(data, 'tailHgtAtWiskContact', conditions, varsToAvg);
+dv = getDvMatrix(data, 'tailHgtAtWiskContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'tail height (mm)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [], ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -165,7 +167,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'tail heig
 % pre obs height
 subplot(rows, cols, 5);
 conditions = [vars.isFore; vars.isContra; vars.condition];
-dv = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg) * 1000;
+dv = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'pre paw height (mm)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -173,7 +175,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'pre paw h
 % max obs height
 subplot(rows, cols, 6);
 conditions = [vars.isFore; vars.isContra; vars.condition];
-dv = getDvMatrix(data, 'stepOverMaxHgt', conditions, varsToAvg) * 1000;
+dv = getDvMatrix(data, 'stepOverMaxHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'max paw height (mm)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -181,7 +183,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'max paw h
 % control step height
 subplot(rows, cols, 7);
 conditions = [vars.isFore; vars.isContra; vars.condition];
-dv = getDvMatrix(data, 'controlStepHgt', conditions, varsToAvg) * 1000;
+dv = getDvMatrix(data, 'controlStepHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'control step height (mm)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -189,7 +191,8 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'control s
 % height shaping (correlations)
 subplot(rows, cols, 8);
 conditions = [vars.isLightOn; vars.condition];
-dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, [conditionals.isFore; conditionals.isLeading], 'corr');
+dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, ...
+    [conditionals.isFore; conditionals.isLeading; figConditionals], 'corr');
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'paw shaping (correlation)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,8,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -222,12 +225,14 @@ for i = 1:2
 end
 
 % decision determinism (glm accuracy)
+% !!! how to apply fig conditionals to flattened data?
 subplot(rows, cols, 9);
 barPlotRick(f1s, {'conditionNames', {{'light off', 'light on'}, conditionNames}, 'ylabel', 'f1 score', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [.5 1]})
 
 % decision threshold
+% !!! how to apply fig conditionals to flattened data?
 subplot(rows, cols, 10);
 barPlotRick(thresholds*1000, {'conditionNames', {{'light off', 'light on'}, conditionNames}, 'ylabel', 'big step threshold (mm)', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
@@ -236,7 +241,7 @@ barPlotRick(thresholds*1000, {'conditionNames', {{'light off', 'light on'}, cond
 % ventral touches
 subplot(rows, cols, 11);
 conditions = [vars.isFore; vars.condition];
-dv = getDvMatrix(data, 'isVentralContact', conditions, varsToAvg);
+dv = getDvMatrix(data, 'isVentralContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'ventral touch probability', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
@@ -244,7 +249,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'ventral t
 % dorsal touches
 subplot(rows, cols, 12);
 conditions = [vars.isFore; vars.condition];
-dv = getDvMatrix(data, 'isDorsalContact', conditions, varsToAvg);
+dv = getDvMatrix(data, 'isDorsalContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'dorsal touch probability', ...
     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})

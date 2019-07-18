@@ -1,41 +1,18 @@
-%% play around with generating propensity scores for motor cortex data
-
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'mtc_muscimol_data.mat'), 'data');
-
-%% get full data table
-locoVars = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgt'};
-
-flat = flattenData(data, [{'mouse', 'session', 'trial', 'condition', 'isTrialSuccess', 'isLightOn'} locoVars]);
-flat = struct2table(flat);
-varBins = ismember(flat.Properties.VariableNames, locoVars);
-[~,~,y] = unique(flat.condition); % condition encoded numerically
-isManip = ~logical(y-1);
-flat.isManip = isManip;
+%%
 
 
-%% get sub data table
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'lesionNotes');
+sessionInfo = sessionInfo(strcmp(sessionInfo.mouse, 'sen4'), :);
 
-% flatSub = flat(strcmp(flat.mouse, 'sen4') & ~flat.isLightOn, :);
-flatSub = flat;
+data = getExperimentData(sessionInfo, 'all');
 
-% validBins = all(~isnan([table2array(flatSub(:, varBins)), flatSub.isManip]),2);
-validBins = ones(1, height(flatSub));
-% flatSub = flatSub(validBins,:);
+dv = getDvMatrix(data, 'isTrialSuccess', struct('name', 'sessionNum', 'levels', 1:25), {'mouse'});
 
-X = table2array(flatSub(:,varBins));
-y = flatSub.isManip;
-
-
-pairs = propensityMatching(X, y, ...
-    {'percentileThresh', 10, 'predictorNames', locoVars});
 
 %%
-flatMatched = flatSub(pairs(:),:);
-fprintf('\nvel decrease: %.2f, success decrease: %.2f\n', ...
-    nanmean(flatSub.velAtWiskContact(flatSub.isManip)) - nanmean(flatSub.velAtWiskContact(~flatSub.isManip)), ...
-    mean(flatSub.isTrialSuccess(flatSub.isManip)) - mean(flatSub.isTrialSuccess(~flatSub.isManip)));
-fprintf('matched vel decrease: %.2f, matched success decrease: %.2f\n', ...
-    nanmean(flatMatched.velAtWiskContact(flatMatched.isManip)) - nanmean(flatMatched.velAtWiskContact(~flatMatched.isManip)), ...
-    mean(flatMatched.isTrialSuccess(flatMatched.isManip)) - mean(flatMatched.isTrialSuccess(~flatMatched.isManip)));
-
-
+close all;
+figure('color', 'white', 'MenuBar', 'none', 'Position', [1936 473 1180 321])
+sesPlotRick(dv', {'ylabel', 'success rate'});
+set(gca, 'YLim', [0 1]);
+line([3.5 3.5], [0 1], 'color', 'red')
+line([15.5 15.5], [0 1], 'color', 'red')
