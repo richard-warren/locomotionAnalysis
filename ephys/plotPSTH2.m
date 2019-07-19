@@ -1,13 +1,14 @@
 function plotPSTH2(session, cellNum, eventTimes, opts)
 
-% to do: interp all cells within a session at the same time (to speed
-% things up) // plot multiple thing on top of eachother, which would let me
-% get rid of bootstrappinfg too... // add vertical line option for epoch
-% mode, eg to show swing and stance // accept previously computed data, and
-% replot only, mwahahahaha // number plots // add buffer to begining and
-% end of epoch plots
+% this function plots a PSTH
 
-% !!! need to document
+% TO DO: 
+add vertical line option for epoch psths // allow left and right buffers
+accept spike rates rather than session and cell number
+accept spike times as well, and convolve to get spike rates
+add raster option!
+auto y limits option
+
 
 
 % settings
@@ -52,7 +53,7 @@ else
     % create one time axis for each condition
     times = cell(1,length(eventTimes));
     for i = 1:length(eventTimes)
-        times{i} = linspace(0, median(diff(eventTimes{i},1,2)), s.xGridLength); % for this
+        times{i} = linspace(0, nanmedian(diff(eventTimes{i},1,2)), s.xGridLength); % for this
     end
 end
 
@@ -115,7 +116,7 @@ for i = 1:numConditions
     end
 
     % plot mean and std
-    if isequal(s.errorFcn, false) % plot only the mean
+    if isequal(s.errorFcn, false) ||  size(cellData{i},1)==1 % plot only the mean if errorFcn set to false or if there is only one trial
         plot(x, nanmean(cellData{i},1), 'linewidth', 3, 'color', s.colors(i,:));
     else
         shadedErrorBar(x, cellData{i}, {@nanmean, s.errorFcn}, ...

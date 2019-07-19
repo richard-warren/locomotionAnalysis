@@ -3,6 +3,7 @@
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 % ephysInfo = ephysInfo([strcmp(ephysInfo.map, 'D55F')], :); % uncomment to reanalyze data from specific probe
 ephysInfo = ephysInfo([strcmp(ephysInfo.spikesSorted, 'yes')], :); % uncomment to reanalyze data that were already spike sorted
+close all
 
 for i = 1:height(ephysInfo)
     try
@@ -12,6 +13,6 @@ for i = 1:height(ephysInfo)
 %         showChannelsOverTime(ephysInfo.session{i})
         plotManyPSTHs(ephysInfo.session{i}); close all
     catch
-        fprintf('problem with session %s\n', ephysInfo.session{i})
+        fprintf('PROBLEM WITH SESSION %s\n', ephysInfo.session{i})
     end
 end

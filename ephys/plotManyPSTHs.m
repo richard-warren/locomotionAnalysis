@@ -17,19 +17,19 @@ if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end;
 
 
 % initializations
-folder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
-load(fullfile(folder, 'runAnalyzed.mat'), ...
+sessionFolder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
+load(fullfile(sessionFolder, 'runAnalyzed.mat'), ...
         'obsOnTimes', 'obsOffTimes',  'wiskContactFrames', 'frameTimeStamps', ...
         'frameTimeStampsWisk', 'rewardTimes', 'isLightOn', 'touches', 'touchesPerPaw', 'touchClassNames');
 
 % load kinData if it exists // otherwise compute kinData    
-if exist(fullfile(folder, 'kinData.mat'))
-    load(fullfile(folder, 'kinData.mat'), 'kinData', 'stanceBins')
+if exist(fullfile(sessionFolder, 'kinData.mat'))
+    load(fullfile(sessionFolder, 'kinData.mat'), 'kinData', 'stanceBins')
 else
     [kinData, stanceBins] = getKinematicData5(session);
 end
 
-load(fullfile(folder, 'neuralData.mat'), 'unit_ids');
+load(fullfile(sessionFolder, 'neuralData.mat'), 'unit_ids');
 
 for cellNum = 1:length(unit_ids)
     
@@ -122,7 +122,7 @@ for cellNum = 1:length(unit_ids)
         [times{:}] = deal(nan(length(kinData), 2));
         
         % get step start and stop times
-        for i = 1:length(kinData)
+        for i = find([kinData.isTrialAnalyzed])
             stepOverBins = kinData(i).modifiedStepIdentities(:,paw) == max(kinData(i).modifiedStepIdentities(:,paw));
             ctlBins = kinData(i).controlStepIdentities(:,paw) == max(kinData(i).controlStepIdentities(:,paw));
             times{1}(i,:) = frameTimeStamps(kinData(i).trialInds([find(stepOverBins,1,'first'), find(stepOverBins,1,'last')]));
@@ -141,15 +141,18 @@ for cellNum = 1:length(unit_ids)
     for paw = 2:3
         
         % get all step times
-        numModSteps = cellfun(@(x) max(x(:,paw)), {kinData.modifiedStepIdentities});
+        [firstModPaws, numModSteps] = deal(nan(1, length(kinData)));
         stepTimes = nan(length(kinData), 2);
-        for i = 1:length(kinData)
+        for i = find([kinData.isTrialAnalyzed])
             firstModBins = kinData(i).modifiedStepIdentities(:,paw) == 1;
             stepTimes(i,:) = frameTimeStamps(kinData(i).trialInds([find(firstModBins,1,'first'), find(firstModBins,1,'last')]));
+            
+            numModSteps(i) = max(kinData(i).modifiedStepIdentities(:,paw));
+            firstModPaws(i) = kinData(i).firstModPaw;
         end
         times = cell(1,2);
-        times{1} = stepTimes([kinData.firstModPaw]==paw & numModSteps==1, :); % one step times
-        times{2} = stepTimes([kinData.firstModPaw]==paw & numModSteps==2, :); % two step times
+        times{1} = stepTimes(firstModPaws==paw & numModSteps==1, :); % one step times
+        times{2} = stepTimes(firstModPaws==paw & numModSteps==2, :); % two step times
         
         % plot it!
         plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
@@ -183,8 +186,7 @@ for cellNum = 1:length(unit_ids)
     
     
     % save
-    pause(.01)
-    fileName = fullfile(folder, [session 'unit' num2str(unit_ids(cellNum))]);
+    fileName = fullfile(s.folder, [session 'unit' num2str(unit_ids(cellNum))]);
 %     savefig(fileName)
     saveas(gcf, [fileName '.png'])
 end
