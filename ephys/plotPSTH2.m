@@ -3,11 +3,11 @@ function plotPSTH2(session, cellNum, eventTimes, opts)
 % this function plots a PSTH
 
 % TO DO: 
-add vertical line option for epoch psths // allow left and right buffers
-accept spike rates rather than session and cell number
-accept spike times as well, and convolve to get spike rates
-add raster option!
-auto y limits option
+% add vertical line option for epoch psths // allow left and right buffers
+% accept spike rates rather than session and cell number
+% accept spike times as well, and convolve to get spike rates
+% add raster option!
+% auto y limits option
 
 
 
