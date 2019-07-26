@@ -179,19 +179,60 @@ end
 
 
 
+%% make videos with neural firing for obstacles and rewards
+
+% settings
+timePrePost = [-1 1.5];
+
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+ephysInfo = ephysInfo(strcmp(ephysInfo.spikesSorted, 'yes') & ephysInfo.numGoodUnits>0, :);
+close all
+
+for i = 1:height(ephysInfo)
+    
+    % load session data
+    s1 = load(fullfile(getenv('OBSDATADIR'), 'sessions', ephysInfo.session{i}, 'runAnalyzed.mat'));
+    s2 = load(fullfile(getenv('OBSDATADIR'), 'sessions', ephysInfo.session{i}, 'neuralData.mat'));
+    
+    for j = s2.unit_ids'
+        try
+            fprintf('\n%s unit %i\n', ephysInfo.session{i}, j)
+            
+            % obstacle response vid
+            fileName = fullfile(getenv('OBSDATADIR'), 'editedVid', 'vidsWithNeurons', 'obstacleResponses', ...
+                [ephysInfo.session{i} 'unit' num2str(j) '.avi']);
+            timeEpochs = cat(2, s1.obsOnTimes, s1.obsOffTimes);
+            makeUnitVid(ephysInfo.session{i}, j, fileName, timeEpochs)
+
+            % reward response vid
+            fileName = fullfile(getenv('OBSDATADIR'), 'editedVid', 'vidsWithNeurons', 'rewardResponses', ...
+                [ephysInfo.session{i} 'unit' num2str(j) '.avi']);
+            timeEpochs = s1.rewardTimes + timePrePost;
+            makeUnitVid(ephysInfo.session{i}, j, fileName, timeEpochs)
+        catch
+            fprintf('PROBLEM WITH %s unit %i\n', ephysInfo.session{i}, j)
+        end
+    end
+end
+
+
+
+
+
 %% make video with neural firing for reward times
 
-session = '181001_002';
-unit_id = 6;
-trialDuration = 5;
+session = '181004_003';
+unit_id = 74;
+timePrePost = [-1 1.5];
 
 
 % load reward times
+fileName = fullfile(getenv('OBSDATADIR'), 'editedVid', 'vidsWithNeurons', 'rewardResponses', [session 'unit' num2str(unit_id) '.avi']);
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'rewardTimes')
-timeEpochs = cat(2, rewardTimes, rewardTimes+trialDuration);
+timeEpochs = rewardTimes + timePrePost;
 
 % make video
-makeUnitVid(session, unit_id, timeEpochs)
+makeUnitVid(session, unit_id, fileName, timeEpochs)
 
 
 %% make video of all wheel break trials for a session

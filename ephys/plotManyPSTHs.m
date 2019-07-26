@@ -33,6 +33,7 @@ load(fullfile(sessionFolder, 'neuralData.mat'), 'unit_ids');
 
 for cellNum = 1:length(unit_ids)
     
+    % !!! load cell firing rate and times
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(unit_ids))
     figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
         'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 20 1800 1000]); hold on
@@ -40,7 +41,7 @@ for cellNum = 1:length(unit_ids)
     
     % reward delivery
     plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
-    plotPSTH2(session, cellNum, rewardTimes);
+    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-5 2]});
     xlabel('reward delivery')
     
     % reward delivery -> reward delivery

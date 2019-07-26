@@ -1,4 +1,4 @@
-function plotPSTH2(session, cellNum, eventTimes, opts)
+ function plotPSTH2(session, cellNum, eventTimes, opts)
 
 % this function plots a PSTH
 
@@ -110,8 +110,10 @@ for i = 1:numConditions
     % plot individual trials
     if s.plotTrials>0
         randTrials = randperm(size(cellData{i},1), min(s.plotTrials, size(cellData{i},1)));
+        if numConditions==1; trialColor=[0 0 0]; else; trialColor=s.colors(i,:); end
         for trial = randTrials
-            plot(x, cellData{i}(trial,:), 'linewidth', 1, 'color', [s.colors(i,:) s.trialAlpha]);
+            
+            plot(x, cellData{i}(trial,:), 'linewidth', 1, 'color', [trialColor s.trialAlpha]);
         end
     end
 

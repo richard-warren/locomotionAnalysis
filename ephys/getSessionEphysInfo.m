@@ -16,7 +16,7 @@ sessionEphysInfo.fileNameBase = contFiles(1).name(1:3);
 
 % get probe mapping file
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 sessionEphysInfo.mapFile = ephysInfo.map{strcmp(session, ephysInfo.session)};
 

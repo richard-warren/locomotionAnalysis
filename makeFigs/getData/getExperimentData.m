@@ -40,7 +40,7 @@ g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velCo
 
 mouseVars = {};
 sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
-trialVars = {'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
+trialVars = {'obsOnTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
              'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
@@ -236,6 +236,10 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         % trial variables
         % ---------------
         
+        case 'obsOnTimes'
+            % times at which obstacle turns on
+            var = num2cell([g.sesData.obsOnTimes]);
+        
         case 'obsOnPositions'
             % position of the obstacle relative to mouse nose at the moment it turns on
             var = num2cell(interp1(g.sesData.obsTimes, g.sesData.obsPositionsFixed, g.sesData.obsOnTimes, 'linear'));
@@ -331,7 +335,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactPositions]);
             
         case 'wiskContactTimes'
-            var = num2cell([g.sesKinData.wiskContactTimes]);
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactTimes]);
             
         case 'isContraFirst'
             side = g.expData(g.mouse).sessions(g.session).side;
@@ -466,7 +471,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'trialDuration' % duration of trial (from obstalce on to obstacle off time)
             var = num2cell(g.sesData.obsOffTimes - g.sesData.obsOnTimes);
             
-        case 'optoOnTimes' % for optogenetics experiments, encodes whether optogenetic stimulation occured for every trial
+        case 'optoOnTimes' % for optogenetics experiments, encodes whether optogenetic stimulation occured for every trial // !!! this will break if there are no obstacle trials!
             light = zscore(g.sesSpikeData.stimulus.values);
             times = g.sesSpikeData.stimulus.times;
             
