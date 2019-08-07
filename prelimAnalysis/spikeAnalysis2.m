@@ -88,26 +88,26 @@ function spikeAnalysis2(session, varsToOverWrite)
 
 
 
-    % decode stepper motor commands
-    if analyzeVar({'motorPositions', 'motorTimes'}, varNames, varsToOverWrite)
-
-        load([sessionDir 'run.mat'], 'step', 'stepDir')
-
-        % decode stepper motor
-        if exist('stepDir', 'var') && ~isempty(stepDir.times)
-            fprintf('%s: decoding stepper motor commands\n', session)
-            [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
-        else
-            motorPositions = [];
-            motorTimes = [];
-        end
-
-        % save values
-        varStruct.motorPositions = motorPositions;
-        varStruct.motorTimes = motorTimes;
-        varStruct.targetFs = targetFs;
-        anythingAnalyzed = true;
-    end
+%     % decode stepper motor commands
+%     if analyzeVar({'motorPositions', 'motorTimes'}, varNames, varsToOverWrite)
+% 
+%         load([sessionDir 'run.mat'], 'step', 'stepDir')
+% 
+%         % decode stepper motor
+%         if exist('stepDir', 'var') && ~isempty(stepDir.times)
+%             fprintf('%s: decoding stepper motor commands\n', session)
+%             [motorPositions, motorTimes] = motorDecoder(stepDir.level, stepDir.times, step.times, targetFs);
+%         else
+%             motorPositions = [];
+%             motorTimes = [];
+%         end
+% 
+%         % save values
+%         varStruct.motorPositions = motorPositions;
+%         varStruct.motorTimes = motorTimes;
+%         varStruct.targetFs = targetFs;
+%         anythingAnalyzed = true;
+%     end
 
 
 
@@ -430,8 +430,9 @@ function spikeAnalysis2(session, varsToOverWrite)
     if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPositionsFixed', ...
             'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
        exist([sessionDir 'trackedFeaturesRaw.csv'], 'file') && ...
-       ~isempty(varStruct.obsOnTimes)
-
+       ~isempty(varStruct.obsOnTimes) && ...
+       ~isempty(varStruct.obsPositions)
+   
         fprintf('%s: tracking obstacles in bottom view\n', session)
         
         % load tracking data if not already open
@@ -671,6 +672,7 @@ function spikeAnalysis2(session, varsToOverWrite)
     % run whisker contact network
     if analyzeVar({'wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes'}, varNames, varsToOverWrite) && ...
             ~isempty(varStruct.obsOnTimes) && ...
+            ~isempty(varStruct.obsPositions)
             exist([sessionDir 'runWisk.mp4'], 'file')
         
         fprintf('%s: getting whisker contacts\n', session)

@@ -40,10 +40,10 @@ g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velCo
 
 mouseVars = {};
 sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
-trialVars = {'obsOnTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
+trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
              'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
-             'wiskContactPosition', 'wiskContactTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
+             'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn', 'touchFrames', ...
@@ -240,6 +240,10 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             % times at which obstacle turns on
             var = num2cell([g.sesData.obsOnTimes]);
         
+        case 'obsOffTimes'
+            % times at which obstacle turns on
+            var = num2cell([g.sesData.obsOffTimes]);
+        
         case 'obsOnPositions'
             % position of the obstacle relative to mouse nose at the moment it turns on
             var = num2cell(interp1(g.sesData.obsTimes, g.sesData.obsPositionsFixed, g.sesData.obsOnTimes, 'linear'));
@@ -337,6 +341,12 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'wiskContactTimes'
             var = num2cell(nan(1,length(g.sesKinData)));
             var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactTimes]);
+            
+        case 'lightOnTimes'
+            try
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesData.isLightOn]) = num2cell([g.sesData.obsLightOnTimes]);
+            catch; keyboard; end
             
         case 'isContraFirst'
             side = g.expData(g.mouse).sessions(g.session).side;
