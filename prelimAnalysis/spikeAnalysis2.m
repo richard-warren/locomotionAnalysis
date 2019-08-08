@@ -84,6 +84,84 @@ function spikeAnalysis2(session, varsToOverWrite)
         varStruct.rewardTimes = rewardTimes;
         anythingAnalyzed = true;
     end
+    
+    
+    
+    
+    % check that obstacle tracked wheel position well
+    if analyzeVar({'obsTracking'}, varNames, varsToOverWrite)
+        
+        fprintf('%s: checking obstacle tracking of wheel velocity\n', session)
+        
+        % settings
+        velTime = .01;  % (s) compute velocity over this time window
+        obsOnBuffer = .2;  % (s) don't consider obstacle tracking within obsOnBuffer of obstacle first turning on, because this is the time period where the speed is still ramping up
+        velTolerance = .02;  % (m/s) tracking is considered good when obstacle velocity is within velTolerance of wheel velocity
+        plotTracking = true;
+        plotRows = 9;
+        warningThresh = .1;  % if warningThresh of trial has poor obstacle tracking, a warning message is thrown
+
+        % initializations
+        wheelVel = getVelocity(varStruct.wheelPositions, velTime, targetFs);
+        obsVel = getVelocity(varStruct.obsPositions, velTime, targetFs);
+
+        % get trial data
+        obsTracking = struct();
+        rowInd = 1;
+        for i = 1:length(varStruct.obsOnTimes)
+
+            wheelBins = varStruct.wheelTimes>(varStruct.obsOnTimes(i)+obsOnBuffer) & ...
+                        varStruct.wheelTimes<varStruct.obsOffTimes(i);
+            obsBins = varStruct.obsTimes>varStruct.obsOnTimes(i) & ...
+                      varStruct.obsTimes<varStruct.obsOffTimes(i);
+            wheelVelTrial = wheelVel(wheelBins);
+            obsVelTrial = obsVel(obsBins);
+            times = varStruct.wheelTimes(wheelBins);
+
+            if ~isequal(times, varStruct.obsTimes(obsBins))
+                obsVelTrial = interp1(varStruct.obsTimes(obsBins), obsVelTrial, times);
+            end
+
+            obsTracking(rowInd).wheelVel = wheelVelTrial;
+            obsTracking(rowInd).obsVel = obsVelTrial;
+            obsTracking(rowInd).times = times;
+            obsTracking(rowInd).percentBadTracking = nanmean(abs(wheelVelTrial-obsVelTrial) > velTolerance);
+            if obsTracking(rowInd).percentBadTracking > warningThresh
+                fprintf('%s: WARNING: trial %i has poor obstacle tracking\n', session, i)
+            end
+            rowInd = rowInd + 1; 
+        end
+        
+        % plot tracking
+        if plotTracking  % each row shows plotCols trials, with scatter dots separating individual trials
+            
+            figure('name', [session ': obstacle tracking of wheel velocity'], ...
+                'color', 'white', 'position', [2002 41 1462 940])
+            plotCols = ceil(length(varStruct.obsOnTimes) / plotRows);
+            
+            for i = 1:plotRows
+                subplot(plotRows, 1, i)
+                rowInds = (i-1)*plotCols+1:min(i*plotCols+1, length(obsTracking));
+                wheelVelRow = [obsTracking(rowInds).wheelVel];
+                obsVelRow = [obsTracking(rowInds).obsVel];
+                
+                plot(wheelVelRow); hold on;
+                plot(obsVelRow);
+                
+                trialStartInds = cumsum(cellfun(@length, {obsTracking(rowInds).times}));
+                trialStartInds = [1 trialStartInds(1:end-1)];
+                scatter(trialStartInds, wheelVelRow(trialStartInds), 20, 'filled', 'black')
+                set(gca, 'xlim', [0, length(wheelVelRow)], 'ylim', [0 1], 'box', 'off', 'xtick', [], 'TickDir', 'out')
+                text(trialStartInds, zeros(1, length(trialStartInds)), sprintfc('%d', rowInds))
+            end
+            legend({'wheel', 'obstacle'})
+            pause(.001)
+        end
+        
+        % save values
+        varStruct.obsTracking = obsTracking;
+        anythingAnalyzed = true;
+    end
 
 
 

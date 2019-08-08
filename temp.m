@@ -8,6 +8,20 @@ medTimeUntilContact = nanmedian([flat.wiskContactTimes] - [flat.obsOnTimes]);
 medObsOnTime = nanmedian([flat.obsOffTimes] - [flat.obsOnTimes]);
 medTrackingTime = nanmedian([flat.lightOnTimes] - [flat.obsOnTimes]);
 
+
+%% measure time between rewards
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
+
+interRewardIntervals = nan(1, height(sessionInfo));
+for i = 1:height(sessionInfo)
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessionInfo.session{i}, 'runAnalyzed.mat'), 'rewardTimes')
+    interRewardIntervals(i) = nanmedian(diff(rewardTimes));
+end
+
+figure; histogram(interRewardIntervals)
+
+
 %% check obstacle tracking...
 % use as criterion number of samples where vel deviation is above some
 % threshold
@@ -16,8 +30,7 @@ medTrackingTime = nanmedian([flat.lightOnTimes] - [flat.obsOnTimes]);
 session = '190401_004';
 velTime = .01;
 obsOnBuffer = .2;
-velTolerance = .01;
-maxTime = .1;
+velTolerance = .02;
 
 
 % initializations
@@ -44,14 +57,25 @@ for i = 1:length(obsOnTimes)
     data(rowInd).wheelVel = wheelVelTrial;
     data(rowInd).obsVel = obsVelTrial;
     data(rowInd).times = times;
-    data(rowInd).goodTracking = nanmean(abs(wheelVelTrial-obsVelTrial));
+    data(rowInd).percentBadTracking = nanmean(abs(wheelVelTrial-obsVelTrial) > velTolerance);
     rowInd = rowInd + 1;
 end
-
-%%
-
 
 close all; figure; hold on;
 plot([data.wheelVel]);
 plot([data.obsVel])
+
+%% compute percentage bad tracking for all past sessions!
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
+
+for i = 1:height(sessionInfo); spikeAnalysis2(sessionInfo.session{i}, 'obsTracking'); end
+
+
+
+
+
+
+
 
