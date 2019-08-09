@@ -1,4 +1,4 @@
-% to do: make sure it doesnt get caught trying to reanalyze problematic
+% todo: make sure it doesnt get caught trying to reanalyze problematic
 % sessions // have separate memory for whether dlc and spike analyses are
 % done
 

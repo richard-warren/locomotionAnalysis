@@ -6,7 +6,8 @@
 % settings
 % sessions = {'190805_000', '190805_001', '190805_002', '190806_000', '190806_001', '190806_002'}; % old sessions with short light duration and old stim intensities
 % powers = [0, .25, .5, 1];  % laser percentages used in experiment
-sessions = {'190807_000', '190807_001', '190807_002'};
+sessions = {'190807_000', '190807_001', '190807_002', ...
+            '190808_000', '190808_001', '190808_002'};
 powers = [0, 0.12, 0.35, 1.0];
 normalizeVel = true;  % whether to subtract vel at moment of obs on
 
@@ -17,7 +18,7 @@ errorFcn = @(x) nanstd(x) /sqrt(size(x,1));
 rampUpTime = .2;
 sinFreq = 40;
 sinHgt = .15;
-yLims = [-.8 .8];
+yLims = [0 .8];
 yLimsNormalized = [-.6 .2];  % yLims to use when velocity is normalized
 
 
@@ -115,7 +116,7 @@ for i = 1:length(brainRegions)
     sinWave = (sin(sinX*2*pi*sinFreq)+1) * sinHgt/2;
     rampBins = sinX<=rampUpTime;
     sinWave(rampBins) = sinWave(rampBins) .* linspace(0,1,sum(rampBins));
-    rampDownStart = median([data.obsOnDurations]); % median time at which stim starts to ramp down
+    rampDownStart = median([data(strcmp({data.region}, brainRegions{i})).obsOnDurations]); % median time at which stim starts to ramp down
     rampBins = sinX>=rampDownStart & sinX<(rampDownStart+rampUpTime);
     sinWave(rampBins) = sinWave(rampBins) .* linspace(1,0,sum(rampBins));
     sinWave = sinWave(1:find(rampBins,1,'last'));
