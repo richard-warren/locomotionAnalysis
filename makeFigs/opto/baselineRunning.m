@@ -6,16 +6,23 @@
 % settings
 % sessions = {'190805_000', '190805_001', '190805_002', '190806_000', '190806_001', '190806_002'}; % old sessions with short light duration and old stim intensities
 % powers = [0, .25, .5, 1];  % laser percentages used in experiment
-sessions = {'190807_000', '190807_001', '190807_002', ...
-            '190808_000', '190808_001', '190808_002'};
-powers = [0, 0.12, 0.35, 1.0];
+
+% sessions = {'190809_000', '190809_001', '190809_002'};
+% powers = [0, 0.12, 0.35, 1.0];
+
+sessions = {'190812_000', '190812_001', '190812_002'};
+powers = [0, 0.10, 0.22, 0.5];
+
+
 normalizeVel = true;  % whether to subtract vel at moment of obs on
+stimDuration = 4;  % set to false if should match obsOn duration
 
 velWindow = .1;
-velTimes = [-.5 2];
+velTimes = [-.5 6];
 wheelFs = 1000;
 errorFcn = @(x) nanstd(x) /sqrt(size(x,1));
 rampUpTime = .2;
+rampDownTime = .2;
 sinFreq = 40;
 sinHgt = .15;
 yLims = [0 .8];
@@ -108,7 +115,6 @@ for i = 1:length(brainRegions)
         lineData = squeeze(dataMatrix(i,j,:,:));
         shadedErrorBar(x, lineData, {@nanmean, errorFcn}, ...
             'lineprops', {'linewidth', 5, 'color', colors(j,:)}, 'patchSaturation', .1);
-%         plot(x, nanmean(lineData, 1), 'linewidth', 5, 'color', colors(j,:));
     end
     
     % plot sin wave
@@ -116,7 +122,11 @@ for i = 1:length(brainRegions)
     sinWave = (sin(sinX*2*pi*sinFreq)+1) * sinHgt/2;
     rampBins = sinX<=rampUpTime;
     sinWave(rampBins) = sinWave(rampBins) .* linspace(0,1,sum(rampBins));
-    rampDownStart = median([data(strcmp({data.region}, brainRegions{i})).obsOnDurations]); % median time at which stim starts to ramp down
+    if stimDuration
+        rampDownStart = stimDuration - rampDownTime;
+    else
+        rampDownStart = median([data(strcmp({data.region}, brainRegions{i})).obsOnDurations]); % median time at which stim starts to ramp down
+    end
     rampBins = sinX>=rampDownStart & sinX<(rampDownStart+rampUpTime);
     sinWave(rampBins) = sinWave(rampBins) .* linspace(1,0,sum(rampBins));
     sinWave = sinWave(1:find(rampBins,1,'last'));
@@ -124,7 +134,7 @@ for i = 1:length(brainRegions)
     sinWave = sinWave + yLims(1);
     plot(sinX, sinWave, 'LineWidth', 2, 'Color', mean(colors,1));
     
-    set(gca, 'yLim', yLims, 'TickDir', 'out');
+    set(gca, 'xLim', velTimes, 'yLim', yLims, 'TickDir', 'out');
 end
 xlabel('time from laser (s)')
 if yLimsNormalized; yLabel='\Delta velocity (m/s)'; else; yLabel='velocity (m/s)'; end
@@ -133,7 +143,6 @@ ylabel(yLabel)
 
 % plot per mouse
 figure('color', 'white', 'menubar', 'none', 'Position', [1946 26 1032 443]);
-
 
 for i = 1:length(brainRegions) 
     for m = 1:length(mice)
@@ -147,7 +156,7 @@ for i = 1:length(brainRegions)
             plot(x, lineData, 'linewidth', 3, 'color', colors(j,:));
         end
         
-        set(gca, 'yLim', yLims, 'TickDir', 'out');
+        set(gca, 'xLim', velTimes, 'yLim', yLims, 'TickDir', 'out');
     end
 end
 

@@ -7,9 +7,7 @@ function showTrackingOverFrames(session, trials, imgs)
 
 
 % settings
-% session = '180703_000';
-% trials = 10;
-% imgs = 1; % how many images to add to the left and right
+kinematicsOnly = false;  % if true, don't show frames or overwrite obstalce
 imgSpacing = 0; % spacing between image tiles
 obsFramePixels = 300; % in the middle frame, at what pixel is the obstacle
 featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
@@ -49,34 +47,35 @@ for trial = trials
     trialLocations = locations;
     trialLocations(:,1,:) = trialLocations(:,1,:) - obsPixPositionsContinuous(trial,:)'; % unravel coordinates to account for movement of wheel
     
+    
     middleFrameInd = find(obsPixPositionsContinuous(trial,:)<obsFramePixels, 1, 'first'); % ind of frame where mouse is getting over obstacle
     middleFrameObsPos = round(obsPixPositionsContinuous(trial,middleFrameInd));
     frameObsPosits = middleFrameObsPos + fliplr(-imgs:imgs)*(vidTop.Width+imgSpacing); % obsPixPositions for frames, from left to right
     imgInds = knnsearch(obsPixPositionsContinuous(trial,:)', frameObsPosits'); % inds of imgs corresponding to the desired frame positions (framePosits)
     imgOffsets = -frameObsPosits + max(frameObsPosits) + 1; % positions in the image of all of the frames
     obsPos = middleFrameObsPos + imgOffsets(imgs+1); % position of obstacle in final frame
-    
     imgDims = [vidBot.Height+vidTop.Height imgOffsets(end)+vidTop.Width];
     allImgs = double(zeros(imgs, imgDims(1), imgDims(2)));
-    
     figure('Color', 'white', 'Position', [100 442 imgDims(2) imgDims(1)], 'MenuBar', 'none', 'visible', 'off')
 
+    if ~kinematicsOnly
+        
+        % create image montage
+        for i = 1:length(imgInds)
+            img = double(cat(1, rgb2gray(read(vidTop, imgInds(i))), rgb2gray(read(vidBot, imgInds(i)))));
+            img(:,1:edgeFading) = img(:,1:edgeFading) .* fade; % left fade
+            img(:,end+1-edgeFading:end) = img(:,end+1-edgeFading:end) .* fliplr(fade); % right fade
+            allImgs(i,:,imgOffsets(i)+1:imgOffsets(i)+vidTop.Width) = double(img)*imgs;
+        end
 
-    % create image montage
-    for i = 1:length(imgInds)
-        img = double(cat(1, rgb2gray(read(vidTop, imgInds(i))), rgb2gray(read(vidBot, imgInds(i)))));
-        img(:,1:edgeFading) = img(:,1:edgeFading) .* fade; % left fade
-        img(:,end+1-edgeFading:end) = img(:,end+1-edgeFading:end) .* fliplr(fade); % right fade
-        allImgs(i,:,imgOffsets(i)+1:imgOffsets(i)+vidTop.Width) = double(img)*imgs;
+
+        % pimp and show image
+        colormap gray
+        montage = squeeze(mean(allImgs,1));
+        montage = uint8(montage * (255/max(montage(:))));
+        montage = imadjust(montage, contrastLims, [0 1]);
+        image(montage, 'cdatamapping', 'scaled'); hold on;
     end
-    
-    
-    % pimp and show image
-    colormap gray
-    montage = squeeze(mean(allImgs,1));
-    montage = uint8(montage * (255/max(montage(:))));
-    montage = imadjust(montage, contrastLims, [0 1]);
-    image(montage, 'cdatamapping', 'scaled'); hold on;
     
     
     % and kinematic traces and scatters
@@ -101,10 +100,11 @@ for trial = trials
         end
     end
     
-    
     % add obstacle
-    rectangle('Position', [obsPos-obsWidth, vidTop.Height, obsWidth*2, vidBot.Height], ...
-        'EdgeColor', 'none', 'FaceColor', [1 1 1 .8]);
+    if ~kinematicsOnly
+        rectangle('Position', [obsPos-obsWidth, vidTop.Height, obsWidth*2, vidBot.Height], ...
+            'EdgeColor', 'none', 'FaceColor', [1 1 1 .8]);
+    end
 
 
     % pimp fig
@@ -112,7 +112,7 @@ for trial = trials
         'visible', 'off', 'Units', 'pixels', 'Position', [1 1 imgDims(2) imgDims(1)]);
 
     % save
-    file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'trackingOverFrames', ...
+    file = fullfile('Y:', 'papers', 'paper1', 'figures', 'imgs', 'trackingOverFrames', ...
         [session '_imgs' num2str(imgs*2+1) '_trial' num2str(trial) '.png']);
     fprintf('writing %s to disk...\n', file)
     saveas(gcf, file)

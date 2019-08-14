@@ -1,13 +1,15 @@
 % for each session, renders one video per light condition showing running
 % around the time of stimulation
 
+% todo: get fastest trials only?
+
 
 % settings
-sessions = {'190807_000', '190807_001', '190807_002'};
-powers = [0.12, 0.35, 1.0];
+% sessions = {'190809_000', '190809_001', '190809_002'};
+sessions = {'190812_000', '190812_001', '190812_002'};
 trialsPerVid = 5;
 targetFps = 50;
-timePrePost = [-.5 2]; % time before and after opto onset to show
+timePrePost = [-.5 4.5]; % time before and after opto onset to show
 baseDir = fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', 'noObstacles');
 
 
@@ -27,6 +29,9 @@ for i = 1:length(sessions)
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mat'), 'stimulus')
     vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runTop.mp4'));
     vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runBot.mp4'));
+    sessionBin = strcmp(sessionInfo.session, sessions{i});
+    powers = cellfun(@str2num, strsplit(sessionInfo.power___{sessionBin}, ', '), 'UniformOutput', false);
+    powers = [0, cat(2, powers{:})];
     
     % get light conditions for each trial
     trialPowers = nan(1, length(obsOnTimes));
@@ -42,7 +47,6 @@ for i = 1:length(sessions)
     % render videos, omg
     for j = 1:length(sessionPowers)
         
-        sessionBin = strcmp(sessionInfo.session, sessions{i});
         fileName = fullfile(baseDir, sprintf('%s, %s, %s, %.2fpower.mp4', ...
             sessions{i}, sessionInfo.mouse{sessionBin}, sessionInfo.brainRegion{sessionBin}, sessionPowers(j)));
         vidWriter = VideoWriter(fileName, 'MPEG-4');
@@ -63,9 +67,10 @@ for i = 1:length(sessions)
                 writeVideo(vidWriter, frame);
             end
         end
-        
+        close(vidWriter)
     end
 end
+disp('all done!')
 
 
 

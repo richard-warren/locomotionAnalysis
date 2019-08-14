@@ -67,14 +67,30 @@ plot([data.obsVel])
 
 %% compute percentage bad tracking for all past sessions!
 
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'whiskerTrimNotes');
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
-
+% !!! start with 54 for lesionNotes
 for i = 1:height(sessionInfo); spikeAnalysis2(sessionInfo.session{i}, 'obsTracking'); end
+disp('all done!')
 
 
+%% simulate stimuli without successive trials
 
 
+prob = 1/3;
+totalTrials = 10000;
+trials = true(1, totalTrials);
+
+for i = 2:totalTrials
+    
+    if ~trials(i-1)
+        trials(i) = prob>rand();
+    else
+        trials(i) = false;
+    end
+end
+
+disp(mean(trials))
 
 
 

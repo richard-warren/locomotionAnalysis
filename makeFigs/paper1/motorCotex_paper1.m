@@ -93,7 +93,7 @@ if matchPropensities
                 flatSub = flat(bins,:);
                 X = table2array(flatSub(:, varBins));
                 y = flatSub.conditionNew==exp{1}(2); % is trial in the manip condition
-                matchedPairs = propensityMa tching(X, y, ...
+                matchedPairs = propensityMatching(X, y, ...
                     {'percentileThresh', manipPercent, 'predictorNames', varsToMatch, 'verbose', false});
                 matchedTrials = [matchedTrials; flatSub(matchedPairs(:), metaBins)];
             end

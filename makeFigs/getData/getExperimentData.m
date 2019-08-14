@@ -541,7 +541,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var(g.isValidZ(g.trial,:)) = num2cell(cellfun(@(x) max(x(end,3,:)), ...
                     g.sesKinData(g.trial).modifiedLocationsInterp(g.isValidZ(g.trial,:))));
-                if any(cellfun(@(x) x<0, var(g.isValidZ(g.trial,:)))); keyboard; end
+                if any(cellfun(@(x) x<0, var(g.isValidZ(g.trial,:)))); disp('wtf...'); end
             end
             
         case 'preObsHgt' % height of paw when the step over is preObsLim in front of osbtacle

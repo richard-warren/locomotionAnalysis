@@ -248,22 +248,13 @@ for i = 1:length(s.conditionNames)
 end
 
 
-
-% add y axis label
-if ~isempty(s.ylabel)
-    lab = ylabel(s.ylabel);
-    labPos = get(lab, 'position');
-    labPos(2) = mean(yLims);
-    set(lab, 'position', labPos);
-end
-
-
 % add room above figure for stat lines
 figColor = get(gcf, 'color');
 if s.showStats
     line([0 0], [yLims(2), yMax], 'color', figColor, 'linewidth', 3) % cover top of y axis with white line
     yLims = [yLims(1), yMax];
 end
+
 
 % add room below figure for labels
 if true
@@ -281,6 +272,15 @@ set(gca, 'YLim', yLims, 'YTick', yTicks, ...
 if ~isempty(s.smpNames)
     for i = 1:length(s.smpNames); scatters(i) = scatter(nan,nan,50,scatColors(i,:),'o','filled'); end % create dummy scatters
     legend(scatters, s.smpNames, 'Location', 'northeastoutside', 'box', 'off')
+end
+
+
+% add y axis label
+if ~isempty(s.ylabel)
+    lab = ylabel(s.ylabel);
+    labPos = get(lab, 'position');
+    labPos(2) = mean(yLims);
+    set(lab, 'position', labPos);
 end
 
 pause(.001) % when doing many subplots, this makes sure they pop up one by one

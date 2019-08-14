@@ -100,7 +100,7 @@ for i = 1:3
     
     % line above obs on
     line([x(1) x(2)], [yLims(2) yLims(2)]+vertOffset, 'color', obsOnColor, 'linewidth', 3);
-    if i==1; text(x(1), yLims(2)+2*vertOffset, 'obstacle enngaged', 'VerticalAlignment', 'bottom'); end
+    if i==1; text(x(1), yLims(2)+2*vertOffset, 'obstacle engaged', 'VerticalAlignment', 'bottom'); end
 %     if i==1; text(x(2), yLims(2)+.5*topArea*range(yLims), 'obstacle enngaged'); end
     
     % line for obs at nose
