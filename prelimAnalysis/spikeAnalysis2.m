@@ -228,7 +228,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         
         % settings
         velTime = .01;  % (s) compute velocity over this time window
-        obsOnBuffer = .25;  % (s) don't consider obstacle tracking within obsOnBuffer of obstacle first turning on, because this is the time period where the speed is still ramping up
+        obsOnBuffer = .25;  % (.25 s) don't consider obstacle tracking within obsOnBuffer of obstacle first turning on, because this is the time period where the speed is still ramping up
         velTolerance = .02;  % (m/s) tracking is considered good when obstacle velocity is within velTolerance of wheel velocity
         plotTracking = true;
         plotRows = 9;
@@ -284,7 +284,7 @@ function spikeAnalysis2(session, varsToOverWrite)
                 trialStartInds = cumsum(cellfun(@length, {obsTracking(rowInds).times}));
                 trialStartInds = [1 trialStartInds(1:end-1)];
                 scatter(trialStartInds, wheelVelRow(trialStartInds), 20, 'filled', 'black')
-                set(gca, 'xlim', [0, length(wheelVelRow)], 'ylim', [0 .8], 'box', 'off', 'xtick', [], 'TickDir', 'out')
+                set(gca, 'xlim', [0, length(wheelVelRow)], 'ylim', [0 1], 'box', 'off', 'xtick', [], 'TickDir', 'out')
                 text(trialStartInds, zeros(1, length(trialStartInds)), sprintfc('%d', rowInds))
             end
             legend({'wheel', 'obstacle'})

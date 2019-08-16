@@ -23,6 +23,12 @@ slowSpeed = .15;
 makeMatrixVid2(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, trials, false, slowSpeed)
 
 
+%% website tracking vid
+
+session = '180715_004';
+trials = 20; % 5 14 43
+slowSpeed = .05;
+makeMatrixVid2(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, trials, false, slowSpeed, false)
 
 %% make video showing how we can monitor wisk and paw contacts for talks
 
@@ -45,8 +51,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'rewardTimes
 frameInds = [];
 trials = randperm(length(obsOnTimes), trialNum);
 
-for i = trials
-    
+for i = trials    
     trialInds = find(frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i));
     frameInds = cat(1, frameInds, trialInds);
 end

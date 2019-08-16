@@ -1,9 +1,10 @@
-function makeMatrixVid2(filename, session, trials, allSlowMotion, slowSpeed)
+function makeMatrixVid2(filename, session, trials, allSlowMotion, slowSpeed, dropEveryOtherFrame)
 % make sweet vid with mouse running at real splayback speed then going super slow mo at moment of wisk contact, and drawing kinematic traces on top of image // dope
 % if allSlowMotion true, then entire video is played back at slow speed
 
 % settings
-prePostTime = [-.2 .2]; % (s) time to add to beginning and end of a trial (before and after obs is engaged) // seconds are in real time
+% prePostTime = [-.2 .2]; % (s) time to add to beginning and end of a trial (before and after obs is engaged) // seconds are in real time
+prePostTime = [-.1 .1]; % (s) time to add to beginning and end of a trial (before and after obs is engaged) // seconds are in real time
 contrastLims = [.2 1]; % pixels at these proportional values are mapped to 0 and 255
 cmap = 'hsv';
 circSize = 60;
@@ -12,6 +13,9 @@ circSeparation = 2; % how many circs separate each frame
 trailDarkening = .5;
 iti = 0; % time to put black frames in between trials
 featuresToOmmit = {'obsHigh_bot', 'obsLow_bot', 'obs_top'};
+if ~exist('dropEveryOtherFrame', 'var'); dropEveryOtherFrame=false; end
+
+
 
 % initializations
 
@@ -43,6 +47,7 @@ vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
 vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
 vidWriter = VideoWriter(filename, 'MPEG-4');
 frameRate = 50; % frameRate of video file to be written
+if dropEveryOtherFrame; frameRate = frameRate/2; end
 set(vidWriter, 'FrameRate', frameRate);
 open(vidWriter);
 
@@ -64,6 +69,8 @@ for i = 1:length(trials)
     % iterate through fast frames (prior to wisk contact)
     fastInds = find(frameTimeStamps>=(obsOnTimes(trials(i))+prePostTime(1)) & ...
                     frameTimeStamps<=wiskContactTimes(trials(i)));
+    if dropEveryOtherFrame; fastInds = fastInds(1:2:length(fastInds)); end
+    
     trialFrameTimes = frameTimeStamps(fastInds(1)) : (1/frameRate) : frameTimeStamps(fastInds(end)); % these are the 'desired' frame times given the specified frameRate -- will find the frames closest to the desired frames
     trialFastInds = fastInds(knnsearch(frameTimeStamps(fastInds), trialFrameTimes'));
     
@@ -74,6 +81,9 @@ for i = 1:length(trials)
     else
         slowInds = find(frameTimeStamps>wiskContactTimes(trials(i)) & ...
                 frameTimeStamps<=(obsOffTimes(trials(i))+prePostTime(2)));
+        if dropEveryOtherFrame
+            slowInds = slowInds(1:2:length(slowInds));
+        end
     end
     trialFrameTimes = frameTimeStamps(slowInds(1)) : (slowSpeed/frameRate) : frameTimeStamps(slowInds(end)); % these are the 'desired' frame times given the specified frameRate -- will find the frames closest to the desired frames
     trialSlowInds = slowInds(knnsearch(frameTimeStamps(slowInds), trialFrameTimes'));

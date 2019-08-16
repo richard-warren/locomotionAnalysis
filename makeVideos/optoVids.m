@@ -6,11 +6,12 @@
 
 % settings
 % sessions = {'190809_000', '190809_001', '190809_002'};
-sessions = {'190812_000', '190812_001', '190812_002'};
+% sessions = {'190812_000', '190812_001', '190812_002'};
+sessions = {'190814_000', '190814_001', '190814_002'};  % motor fuckin cortex
 trialsPerVid = 5;
 targetFps = 50;
 timePrePost = [-.5 4.5]; % time before and after opto onset to show
-baseDir = fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto', 'noObstacles');
+baseDir = fullfile(getenv('OBSDATADIR'), 'editedVid', 'opto');
 
 
 % initializations
@@ -32,6 +33,7 @@ for i = 1:length(sessions)
     sessionBin = strcmp(sessionInfo.session, sessions{i});
     powers = cellfun(@str2num, strsplit(sessionInfo.power___{sessionBin}, ', '), 'UniformOutput', false);
     powers = [0, cat(2, powers{:})];
+    if contains(sessionInfo.experiment{sessionBin}, 'noObs'); folder='noObstacles'; else; folder='obstacles'; end
     
     % get light conditions for each trial
     trialPowers = nan(1, length(obsOnTimes));
@@ -47,7 +49,7 @@ for i = 1:length(sessions)
     % render videos, omg
     for j = 1:length(sessionPowers)
         
-        fileName = fullfile(baseDir, sprintf('%s, %s, %s, %.2fpower.mp4', ...
+        fileName = fullfile(baseDir, folder, sprintf('%s, %s, %s, %.2fpower.mp4', ...
             sessions{i}, sessionInfo.mouse{sessionBin}, sessionInfo.brainRegion{sessionBin}, sessionPowers(j)));
         vidWriter = VideoWriter(fileName, 'MPEG-4');
         set(vidWriter, 'FrameRate', targetFps);

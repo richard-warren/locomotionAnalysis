@@ -46,7 +46,7 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'isOptoOn', 'touchFrames', ...
+             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'optoOnPositions', 'isOptoOn', 'touchFrames', ...
              'modPawOnlySwing'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
@@ -482,6 +482,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell(g.sesData.obsOffTimes - g.sesData.obsOnTimes);
             
         case 'optoOnTimes' % for optogenetics experiments, encodes whether optogenetic stimulation occured for every trial // !!! this will break if there are no obstacle trials!
+            keyboard
             light = zscore(g.sesSpikeData.stimulus.values);
             times = g.sesSpikeData.stimulus.times;
             
@@ -492,6 +493,12 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 lightOnInd = find(times>g.sesData.obsOnTimes(i) & times<g.sesData.obsOffTimes(i) & light>1, 1, 'first');
                 if ~isempty(lightOnInd); var{i} = times(lightOnInd); end
             end
+            
+        case 'optoOnPositions'
+            keyboard
+            
+        case 'optoOnPower'
+            keyboard
             
         case 'isOptoOn'
             var = num2cell(~cellfun(@isnan, getVar('optoOnTimes', g)));
