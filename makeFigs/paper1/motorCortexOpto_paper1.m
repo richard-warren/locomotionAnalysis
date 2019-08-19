@@ -20,7 +20,7 @@ vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'l
 vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
 if matchPropensities; fileSuffix = '_matched'; else; fileSuffix = ''; end
-conditionNames = vars.isOptoOn.levelNames;
+conditionNames = vars.condition.levelNames;
 
 conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
