@@ -46,8 +46,8 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'optoOnPositions', 'isOptoOn', 'touchFrames', ...
-             'modPawOnlySwing'};
+             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'optoOnPositions', 'optoPower', 'isOptoOn', ...
+             'touchFrames', 'modPawOnlySwing'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
@@ -506,10 +506,19 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                     var{i} = interp1(g.sesData.wheelTimes, g.sesData.wheelPositions, optoOnTimes(i)) - obsAtNosePos;
                 end
             end
-%             figure; histogram([var{:}])
             
-        case 'optoOnPower'
-            keyboard
+        case 'optoPower'  % power of light stimulus, expressed as fraction of 5 volt max
+            light = g.sesSpikeData.stimulus.values;
+            times = g.sesSpikeData.stimulus.times;
+            optoOnTimes = [g.expData(mouse).sessions(session).trials.optoOnTimes];
+            
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = find(~isnan(optoOnTimes))
+                trialStim = light(times>g.sesData.obsOnTimes(i) & times<g.sesData.obsOffTimes(i));
+                var{i} = max(trialStim)/5;  % peak signal is trialPower fraction of 5V max
+            end
+            
+            
             
         case 'isOptoOn'
             var = num2cell(~isnan([g.expData(mouse).sessions(session).trials.optoOnTimes]));
