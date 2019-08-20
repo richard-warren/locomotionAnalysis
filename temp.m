@@ -74,23 +74,31 @@ for i = 1:height(sessionInfo); spikeAnalysis2(sessionInfo.session{i}, 'obsTracki
 disp('all done!')
 
 
-%% simulate stimuli without successive trials
+%% paw contact rate as function of obs height
 
 
-prob = 1/3;
-totalTrials = 10000;
-trials = true(1, totalTrials);
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
-for i = 2:totalTrials
-    
-    if ~trials(i-1)
-        trials(i) = prob>rand();
-    else
-        trials(i) = false;
-    end
-end
+flat = flattenData(data, {'obsHgt', 'numTouchFrames', 'paw', 'isPawSuccess', 'mouse'});
+anyTouches = num2cell([flat.numTouchFrames]>0);
+[flat.anyTouches] = deal(anyTouches{:});
 
-disp(mean(trials))
+%%
+
+close all; figure;
+logPlotRick([flat.obsHgt]*1000, [flat.anyTouches], ...
+    {'colors', 'hsv', 'conditions', [flat.paw], 'xlabel', 'obstacle height', 'ylabel', 'contact rate', 'plotMice', false, ...
+     'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'conditionNames', {'LH', 'LF', 'RF', 'RH'}, ...
+     'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'mouseNames', {flat.mouse}})
+
+
+
+
+
+
+
+
+
 
 
 

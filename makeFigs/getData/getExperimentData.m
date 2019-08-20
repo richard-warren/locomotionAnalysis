@@ -20,7 +20,7 @@ g.speedTime = .01; % (s) compute velocity over this interval
 g.preObsLim = .008; % (m) compute paw height this many meters before it reaches obstacle x postion
 g.clearanceBuffer = .001; % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
 
-g.velVsPositionPrePost = [-.8 .4]; % (m) positions before and after whisker contact to collect velocity data
+g.velVsPositionPrePost = [-1.5 .4]; % (m) positions before and after whisker contact to collect velocity data
 g.velVsPositionRes = 500; % (tics) how many samples in the x grid
 
 g.velContinuousAtContactPrePost = [-1 1]; % (s) how many seconds before and after wisk contact to compute velocity
@@ -47,11 +47,11 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'optoOnPositions', 'optoPower', 'isOptoOn', ...
-             'touchFrames', 'modPawOnlySwing'};
+             'earlyOptoTermination', 'touchFrames', 'modPawOnlySwing'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
-           'isVentralContact', 'isDorsalContact'};
+           'isVentralContact', 'isDorsalContact', 'numTouchFrames'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -71,6 +71,7 @@ for mouseVar = 1:length(mouseVars)
 end
 
 % loop over mice
+disp('getting experiment data...')
 for mouse = 1:length(g.mice)
     g.mouse = mouse;
     
@@ -512,16 +513,26 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             times = g.sesSpikeData.stimulus.times;
             optoOnTimes = [g.expData(mouse).sessions(session).trials.optoOnTimes];
             
-            var = num2cell(nan(1,length(g.sesKinData)));
+            var = num2cell(zeros(1,length(g.sesKinData)));  % start with zeros, not nans, bc assume no power unless otherwise detected
             for i = find(~isnan(optoOnTimes))
                 trialStim = light(times>g.sesData.obsOnTimes(i) & times<g.sesData.obsOffTimes(i));
                 var{i} = max(trialStim)/5;  % peak signal is trialPower fraction of 5V max
             end
             
-            
-            
-        case 'isOptoOn'
+        case 'isOptoOn'  % whether opto stim was on for trial
             var = num2cell(~isnan([g.expData(mouse).sessions(session).trials.optoOnTimes]));
+            
+        case 'earlyOptoTermination'  % whether the opto stim terminated before obs turned off (which occurs when mice slows down too much)
+            lightThresh = .1;  % volts // how high does signal have to rise for it to be considered a stimulus
+            light = g.sesSpikeData.stimulus.values;
+            times = g.sesSpikeData.stimulus.times;
+            
+            var = num2cell(nan(1,length(g.sesKinData)));  % start with zeros, not nans, bc assume no power unless otherwise detected
+            for i = find([g.expData(mouse).sessions(session).trials.isOptoOn])
+                lightOffInd = find(times<g.expData(mouse).sessions(session).trials(i).obsOffTimes & ...
+                                   light>lightThresh, 1, 'last');  % last light on ind during obsOn epoch
+                var{i} = times(lightOffInd) < g.expData(mouse).sessions(session).trials(i).obsOffTimes - .1;  % does light terminate earlier than .1 seconds before light off?
+            end
             
         case 'touchFrames'
             var = cell(1,length(g.sesKinData));
@@ -699,6 +710,9 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var{3} = sum(trialTouchesPerPaw(:,3)' & trialTouches==foreVentInd) >= g.touchThresh;
                 var{4} = sum(trialTouchesPerPaw(:,4)' & trialTouches==hindVentInd) >= g.touchThresh;
             end
+            
+        case 'numTouchFrames'  % number of frames in which paw is in contact with obstacles
+            var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:),1));
     end
 end
 

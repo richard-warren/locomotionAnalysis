@@ -44,7 +44,6 @@ xGrid = data(1).([dv 'X']);
 s.mouseColors = eval([s.mouseColors '(length(mice))']);
 if ischar(s.conditionColors); s.conditionColors = eval([s.conditionColors '(length(s.plotConditions))']); end % set colorspace if color is specified as a string
 
-
 % collect data for each mouse in each condition
 mouseAvgs = nan(length(s.plotConditions), length(rowConditions), length(mice), length(xGrid)); % condition X mouse X light off/on X position
 dvData = reshape([data.(dv)],[],length(data))'; % turn dv into matrix

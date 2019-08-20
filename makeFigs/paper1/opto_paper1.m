@@ -3,9 +3,10 @@
 
 % global settings
 sessions = {'190814_000', '190814_001', '190814_002'}; % ASSUMES ALL SESSIONS PROVIDED ONLY HAVE DATA FROM ONE BRAIN REGION
+% sessions = {'190819_000'};
 
+colors = [.2 .2 .2; .2 .6 .9];  % light off, light on
 varsToAvg = {'mouse'};
-colors = hsv(2);
 matchPropensities = false;
 varsToMatch = {'velAtWiskContact', 'tailHgtAtWiskContact'};
 manipPercent = 25; % take manipPercent percent of best matched manip trials
@@ -14,8 +15,12 @@ manipPercent = 25; % take manipPercent percent of best matched manip trials
 % initializations
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'optoNotes');
 sessionInfo = sessionInfo(ismember(sessionInfo.session, sessions),:);
+powers = cellfun(@str2num, strsplit(sessionInfo.power___{1}, ', '), 'UniformOutput', false);  % NOTE: assumes all sessions share the same power!
+powers = [0, cat(2, powers{:})];
+colorsPowers = [0 0 0; winter(length(powers)-1)]; % scale linearly from black to color
 
-vars.condition = struct('name', 'isOptoOn', 'levels', [0 1], 'levelNames', {{'no opto', 'opto'}});
+% vars.condition = struct('name', 'isOptoOn', 'levels', [0 1], 'levelNames', {{'no opto', 'opto'}});
+vars.condition = struct('name', 'powerCondition', 'levels', 1:length(powers), 'levelNames', {sprintfc('%.2f', powers)});
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'lead', 'lag'}});
 vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 vars.isFore = struct('name', 'isFore', 'levels', [0 1], 'levelNames', {{'hind', 'fore'}});
@@ -45,6 +50,16 @@ data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data = cat(2,data{:});
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', [exp '_opto_data.mat']), 'data'); disp('all done!')
+
+%% add powerCondition (binned light power)
+
+for i = 1:length(data.data)
+    for j = 1:length(data.data(i).sessions)
+        sesPowers = [data.data(i).sessions(j).trials.optoPower];
+        powerCondition = num2cell(knnsearch(powers', sesPowers'));
+        [data.data(i).sessions(j).trials.powerCondition] = deal(powerCondition{:});
+    end
+end
 
 
 %% propensity score matching
@@ -90,12 +105,10 @@ end
 
 %% BARS
 
-
 % initializations
-close all
 rows = 4;
 cols = 3;
-figure('name', 'motorCortex', 'color', 'white', 'menubar', 'none', 'position', [1984 393 1019 591], 'Renderer', 'painters')
+figure('name', exp, 'color', 'white', 'menubar', 'none', 'position', [1984 393 1019 591], 'Renderer', 'painters')
 figConditionals = [conditionals.none];
 
 % success
@@ -103,7 +116,7 @@ subplot(rows, cols, 1);
 conditions = [vars.condition];
 dv = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,2,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 1], 'ytick', 0:.5:1, ...
     'compareToFirstOnly', true})
 
@@ -112,7 +125,7 @@ subplot(rows, cols, 2);
 conditions = [vars.condition];
 dv = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velocity (m/s)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [0 .6]...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,2,1), 'ylim', [0 .6]...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % angle
@@ -120,7 +133,7 @@ barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'velocity 
 % conditions = [vars.condition];
 % dv = getDvMatrix(data, 'angleAtWiskContactContra', conditions, varsToAvg, figConditionals);
 % barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', ['body angle contra (' char(176) ')'], ...
-%     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [-15 15], ...
+%     'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,2,1), 'ylim', [-15 15], ...
 %     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % tail height
@@ -128,7 +141,7 @@ subplot(rows, cols, 4);
 conditions = [vars.condition];
 dv = getDvMatrix(data, 'tailHgtAtWiskContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'tail height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), 'ylim', [], ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,2,1), 'ylim', [], ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % pre obs height
@@ -136,7 +149,7 @@ subplot(rows, cols, 5);
 conditions = [vars.isFore; vars.condition];
 dv = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'pre paw height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % max obs height
@@ -144,7 +157,7 @@ subplot(rows, cols, 6);
 conditions = [vars.isFore; vars.condition];
 dv = getDvMatrix(data, 'stepOverMaxHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'max paw height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % control step height
@@ -152,7 +165,7 @@ subplot(rows, cols, 7);
 conditions = [vars.isFore; vars.condition];
 dv = getDvMatrix(data, 'controlStepHgt', conditions, varsToAvg, figConditionals) * 1000;
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'control step height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % height shaping (correlations)
@@ -161,19 +174,19 @@ conditions = [vars.condition];
 dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, conditions, {'mouse'}, {'session'}, ...
     [conditionals.isFore; conditionals.isLeading; figConditionals], 'corr');
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'paw shaping (correlation)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,8,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,8,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 
 % compute decision determinism and threshold
-flat = flattenData(data, {'mouse', 'modPawPredictedDistanceToObs', 'conditionNew', 'isBigStep', 'isOptoOn'});
+flat = flattenData(data, {'mouse', 'modPawPredictedDistanceToObs', 'conditionNew', 'isBigStep', 'isOptoOn', 'powerCondition'});
 mice = unique({flat.mouse});
 lightConditions = [false, true];
 [accuracies, thresholds, f1s] = deal(nan(length(conditionNames), length(mice)));
 
 for m = 1:length(conditions.levels)
     for j = 1:length(mice)
-        bins = [flat.isOptoOn]==conditions.levels(m) & ...
+        bins = [flat.powerCondition]==conditions.levels(m) & ...
                 strcmp({flat.mouse}, mice{j});
         glm = fitglm([flat(bins).modPawPredictedDistanceToObs]', [flat(bins).isBigStep]', 'Distribution', 'binomial');
         coeffs = glm.Coefficients.Estimate;
@@ -192,14 +205,14 @@ end
 % !!! how to apply fig conditionals to flattened data?
 subplot(rows, cols, 9);
 barPlotRick(f1s, {'conditionNames', {conditionNames}, 'ylabel', 'f1 score', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,2,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [.5 1]})
 
 % decision threshold
 % !!! how to apply fig conditionals to flattened data?
 subplot(rows, cols, 10);
 barPlotRick(thresholds*1000, {'conditionNames', {conditionNames}, 'ylabel', 'big step threshold (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,2,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,2,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % ventral touches
@@ -207,7 +220,7 @@ subplot(rows, cols, 11);
 conditions = [vars.isFore; vars.condition];
 dv = getDvMatrix(data, 'isVentralContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'ventral touch probability', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 % dorsal touches
@@ -215,13 +228,70 @@ subplot(rows, cols, 3);
 conditions = [vars.isFore; vars.condition];
 dv = getDvMatrix(data, 'isDorsalContact', conditions, varsToAvg, figConditionals);
 barPlotRick(dv, {'conditionNames', {conditions.levelNames}, 'ylabel', 'dorsal touch probability', ...
-    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colors,4,1), ...
+    'showViolins', false, 'lineThickness', 2, 'addBars', true, 'conditionColors', repmat(colorsPowers,4,1), ...
     'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false})
 
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'figures', 'opto', 'bars');
+file = fullfile(getenv('OBSDATADIR'), 'figures', 'opto', [exp '_speed']);
 saveas(gcf, [file fileSuffix], 'svg');
+
+
+%% SPEED VS. POSITION
+
+% settings
+yLims = [0 1];
+obsOnColor = [0 0 0];
+obsOnAlpha = .05;
+
+% initializations
+flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
+    'velVsPosition', 'velVsPositionX', 'isWheelBreak', 'wiskContactPosition', 'isOptoOn', 'optoOnPositions', 'optoPower', 'powerCondition'});
+figure('name', exp, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off'); hold on
+
+% add light on, obs on, and obs at nose markers
+optoOnPos = nanmedian([flat.optoOnPositions]);
+x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
+rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
+    'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
+line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
+line([optoOnPos optoOnPos], yLims, 'linewidth', 2, 'color', colors(2,:))
+    
+% plot
+plotDvPsth(flat, 'velVsPosition', 'powerCondition', ...
+    {'showLegend', false, 'errorFcn', @(x) nanstd(x), 'conditionColors', colorsPowers, ...
+    'plotMouseAvgs', false})
+
+% pimp fig
+set(gca, 'YLim', yLims);
+xlabel('position relaive to nose (m)')
+ylabel('velocity (m/s)')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'figures', 'opto', [exp '_speed']);
+saveas(gcf, [file fileSuffix], 'svg');
+
+% INDIVIDUAL MICE PLOTS
+mice = unique({flat.mouse});
+figure('name', exp, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 350 200*length(mice) 150], 'inverthardcopy', 'off'); hold on
+
+for i = 1:length(mice)
+    subplot(1,length(mice),i)
+    flatSub = flat(strcmp({flat.mouse}, mice{i}));
+    
+    plotDvPsth(flatSub, 'velVsPosition', 'powerCondition', ...
+        {'showLegend', false, 'errorFcn', @(x) nanstd(x), 'conditionColors', colorsPowers, ...
+        'plotMouseAvgs', false})
+    set(gca, 'ylim', yLims)
+    
+    optoOnPos = nanmedian([flatSub.optoOnPositions]);
+    x = [nanmean([flatSub.obsOnPositions]) nanmean([flatSub.obsOffPositions])];
+    rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
+        'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
+    line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
+    line([optoOnPos optoOnPos], yLims, 'linewidth', 2, 'color', colors(2,:))
+    title(mice{i})
+end
 
 
 %% KINEMATICS
@@ -235,7 +305,7 @@ yLims = [0 .016];
 colNames = {'contra', 'ipsi'};
 rowNames = {'muscimol', 'lesion'};
 conditions = {[1,2], [1,2], [3,4,5], [3,4,5]};
-if matchPropensities; conditions = {[1,2], [1,2], [3,4], [3,4]};; end
+if matchPropensities; conditions = {[1,2], [1,2], [3,4], [3,4]}; end
 isContraFirst = [true false true false];
 
 flat = flattenData(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...
