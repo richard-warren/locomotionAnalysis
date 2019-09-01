@@ -4,6 +4,7 @@ function dataOut = flattenData(data, varsToGet, varsGotten)
 % deal with bins of continuous variables?
 
 if ~exist('varsGotten', 'var'); varsGotten = struct(); end
+if ischar(varsToGet); varsToGet={varsToGet}; end  % allows user to pass a single variable as a string, rather multiple variables using a cell array of strings
 
 
 % determine which fields are structures

@@ -23,47 +23,30 @@ figure; histogram(interRewardIntervals)
 
 
 %% check obstacle tracking...
-% use as criterion number of samples where vel deviation is above some
-% threshold
 
 % settings
-session = '190401_004';
-velTime = .01;
-obsOnBuffer = .2;
-velTolerance = .02;
+session = '190814_002';  % .8 acceleration
+% session = '190820_001';  % .6 acceleration
+% session = '190822_002';  % .6 acceleration
+% session = '190823_002';  % .6 acceleration
+% session = '190821_000';  % .4 acceleration
+% session = '190827_002';  % .8 acceleration // 1.8 current
 
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsTracking')
 
-% initializations
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'obsOnTimes', 'obsOffTimes', 'wheelPositions', 'wheelTimes', 'obsPositions', 'obsTimes', 'targetFs')
-wheelVel = getVelocity(wheelPositions, velTime, targetFs);
-obsVel = getVelocity(obsPositions, velTime, targetFs);
-
-% get trial data
-data = struct();
-rowInd = 1;
-for i = 1:length(obsOnTimes)
-    
-    wheelBins = wheelTimes>(obsOnTimes(i)+obsOnBuffer) & wheelTimes<obsOffTimes(i);
-    obsBins = obsTimes>obsOnTimes(i) & obsTimes<obsOffTimes(i);
-    wheelVelTrial = wheelVel(wheelBins);
-    obsVelTrial = obsVel(obsBins);
-    times = wheelTimes(wheelBins);
-    
-    if ~isequal(times, obsTimes(obsBins))
-        obsVelTrial = interp1(obsTimes(obsBins), obsVelTrial, times);
-    end
-    
-    data(rowInd).wheelVel = wheelVelTrial;
-    data(rowInd).obsVel = obsVelTrial;
-    data(rowInd).times = times;
-    data(rowInd).percentBadTracking = nanmean(abs(wheelVelTrial-obsVelTrial) > velTolerance);
-    rowInd = rowInd + 1;
+figure;
+thresholds = linspace(0,1,100);
+percentBadTracking = nan(1,length(thresholds));
+for i = 1:length(thresholds)
+    percentBadTracking(i) = nanmean([obsTracking.percentBadTracking]>thresholds(i));
 end
 
-close all; figure; hold on;
-plot([data.wheelVel]);
-plot([data.obsVel])
+figure; plot(thresholds, percentBadTracking);
+xlabel('percent threshold')
+ylabel('percent trials with good tracking')
+
+fprintf('%s: %.2f of trials with poor obstalce tracking...\n', session, nanmean([obsTracking.percentBadTracking]>.15))
+
 
 %% compute percentage bad tracking for all past sessions!
 
@@ -83,14 +66,38 @@ flat = flattenData(data, {'obsHgt', 'numTouchFrames', 'paw', 'isPawSuccess', 'mo
 anyTouches = num2cell([flat.numTouchFrames]>0);
 [flat.anyTouches] = deal(anyTouches{:});
 
-%%
-
 close all; figure;
 logPlotRick([flat.obsHgt]*1000, [flat.anyTouches], ...
     {'colors', 'hsv', 'conditions', [flat.paw], 'xlabel', 'obstacle height', 'ylabel', 'contact rate', 'plotMice', false, ...
      'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'conditionNames', {'LH', 'LF', 'RF', 'RH'}, ...
      'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'mouseNames', {flat.mouse}})
+ 
+%% light spot diam vs fiber size and distance
 
+distances = [2 4 6 8 10 12 16 20];
+diams = [0.27 0.4 0.64 1.1 1.2 1.63 2.18 2.7];
+
+distances = [4 6 8 10 12 16 20];
+diamsOnSkull = [1.54 2.23 2.92 3.57 4.5 5.82 7.38];
+
+figure; plot(diamsOnSkull, distances)
+xlabel('diam')
+ylabel('distance')
+
+fit = polyfit(diamsOnSkull, distances, 1);
+
+fitX = 0:.01:10;
+fitY = polyval(fit, fitX);
+
+hold on; plot(fitX, fitY);
+
+polyval(fit, .4)
+
+
+%% fraction of trials on which light terminates prematurely
+
+flat = flattenData(data, {'obsOffTimes', 'earlyOptoTermination', 'session', 'optoPower'});
+% flat = flat([flat.optoPower]>.9)
 
 
 

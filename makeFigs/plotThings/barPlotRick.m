@@ -10,7 +10,7 @@ function barPlotRick(data, opts)
 % dv = 'vel';
 % data = rand([cellfun(@length, conditionNames), mouseNum]);
 % data(:,:,2,:) = data(:,:,2,:) * .5;
-% data(:,2,:,:) = data(:,2,:,:) * .75;
+% data(:,2,:,:) = data(:,2,:,:) * .75;  
 
 % settings
 s.showScatter = true;
@@ -30,6 +30,7 @@ s.ytick = [];
 s.addBars = false; % if true, add real bars, instead of just horizontal line at mean
 s.barAlpha = .2; % transparency of bars
 s.summaryFunction = @nanmean; % user can change this to nanmedian, for example
+s.numVariables = [];
 
 s.groupSeparation = 1;
 s.circSize = 40;
@@ -42,10 +43,12 @@ s.pThresh = .05;
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 % initializations
-numVariables = length(size(data))-1;
-varLevelNum = size(data); varLevelNum = varLevelNum(1:end-1); % number of levels for each variable
+figColor = get(gcf, 'color');
+if isempty(s.numVariables); s.numVariables = length(size(data))-1; end
+varLevelNum = size(data); varLevelNum = varLevelNum(1:s.numVariables); % number of levels for each variable
 totalConditions = prod(varLevelNum);
 dataDims = size(data);
+if s.numVariables==length(dataDims); dataDims = [dataDims 1]; end  % add singleton dimension if there is only one sample per condition
 
 if ischar(s.conditionColors) % set bar colors if color is specified as a string
     s.conditionColors = eval([s.conditionColors '(totalConditions)']);
@@ -61,8 +64,8 @@ if ischar(s.scatColors) % set bar colors if color is specified as a string
     end
 end
 
-conditionsMat = nan(numVariables, totalConditions);
-labelVertSize = .15*numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
+conditionsMat = nan(s.numVariables, totalConditions);
+labelVertSize = .15*s.numVariables; % size of space below figure to give to to axis labels, expressed as fraction of y range
 statsVertSpacing = .02; % vertical spacing of stat comparison lines, expressed as fraction of y range
 xJitters = linspace(-.5*s.lineWidth, .5*s.lineWidth, dataDims(end));
 xJitters = xJitters(randperm(length(xJitters)));
@@ -71,7 +74,7 @@ hold on
 
 % create matrix where each column is an interection of conditions
 xPositions = 1:totalConditions;
-for i = 1:numVariables
+for i = 1:s.numVariables
     repeats = prod(varLevelNum(i+1:end));
     copies = totalConditions / (repeats*varLevelNum(i));
     conditionsMat(i,:) = repmat(repelem(1:varLevelNum(i), repeats), 1, copies);
@@ -87,8 +90,10 @@ if s.isWithinSubs && dataDims(end)<40
         % get data in all conditions
         smpData = nan(1,totalConditions);
         for j = 1:totalConditions
+            try
             inds = num2cell([conditionsMat(:,j); i]);
             smpData(j) = squeeze(data(inds{:}));
+            catch; keyboard; end
         end
         
         % draw lines connecting data only across levels of last condition
@@ -151,6 +156,26 @@ else
     yTicks = get(gca, 'ytick');
 end
 
+yMin = yLims(1)-labelVertSize*range(yLims);  % this is where new bottom of figure will be after adding room below for labels
+
+% add bars
+if s.addBars
+    for i = 1:totalConditions
+        
+        xs = [-.5 .5]*s.lineWidth + xPositions(i);
+        ys = [0, s.summaryFunction(allData{i})];
+
+        plot([xs(1) xs(1) xs(2) xs(2)], [ys(1) ys(2) ys(2) ys(1)], ...
+            'LineWidth', s.lineThickness, 'Color', s.conditionColors(i,:));
+        
+        if s.barAlpha>0
+            pshape= polyshape([xs(1) xs(1) xs(2) xs(2) xs(1)], [ys(1) ys(2) ys(2) ys(1) ys(1)]);
+            pshape = plot(pshape);
+            set(pshape, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha])
+        end
+    end
+end
+
 
 
 % add pairwise stats
@@ -180,7 +205,7 @@ if s.showStats
         for j = 1:size(dimPairs,1)
             
             [inds1, inds2] = deal(cat(2,num2cell([inds dimPairs(j,1)]), {1:size(data,length(dataDims))}));
-            inds2{numVariables} = dimPairs(j,2);
+            inds2{s.numVariables} = dimPairs(j,2);
             
             if s.isWithinSubs
                 [~,p] = ttest(data(inds1{:}), data(inds2{:}));
@@ -195,21 +220,16 @@ if s.showStats
 end
 
 
-% add bars
-if s.addBars
-    for i = 1:totalConditions
-        x = [-.5 .5]*s.lineWidth + xPositions(i);
-        y = [yLims(1), s.summaryFunction(allData{i})];
-        plot([x(1) x(1) x(2) x(2)], [y(1) y(2) y(2) y(1)], ...
-            'LineWidth', s.lineThickness, 'Color', s.conditionColors(i,:));
-        
-        if s.barAlpha>0
-            if ~isnan(s.summaryFunction(allData{i}))
-                rectangle('Position', [xPositions(i)-.5*s.lineWidth, yLims(1), s.lineWidth, s.summaryFunction(allData{i})-yLims(1)], ...
-                    'LineWidth', s.lineThickness, 'EdgeColor', 'none', 'FaceColor', [s.conditionColors(i,:) s.barAlpha]);
-            end
-        end
-    end
+
+
+% cover space above and below yLims with boxes to occlude bars outside of limits
+xs = [0 xPositions(end)+1];
+ys = {[yLims(1)-range(yLims), yLims(1)], ... % bottom box
+      [yLims(2), yLims(2)+range(yLims)]};    % top box
+for i = ys
+%     keyboard
+    rectangle('Position', [xs(1) i{1}(1) range(xs) range(i{1})], ...
+        'FaceColor', figColor, 'EdgeColor', 'none');
 end
 
 
@@ -227,14 +247,14 @@ for i = 1:length(s.conditionNames)
             inds = find(conditionsMat(i,:)==k & bins');
             xPos = mean(xPositions(inds));
             yPos = yLims(1)-labelVertSize*range(yLims) + ((labelVertSize*range(yLims))/length(dataDims)*i);
-            if i==numVariables; rotation = 25; else; rotation = 0; end
+            if i==s.numVariables; rotation = 25; else; rotation = 0; end
             if ~isempty(s.conditionNames)
                 condText = text(xPos, yPos, s.conditionNames{i}(k), 'rotation', rotation, ...
                     'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle');
             end
             
             % add lines on the side of condition name
-            if i<numVariables
+            if i<s.numVariables
                 if ~isempty(s.conditionNames)
                     textPos = get(condText, 'Extent');
                     line([xPositions(inds(1)) textPos(1)], [yPos yPos], 'color', [.5 .5 .5]) % left side of text
@@ -249,7 +269,6 @@ end
 
 
 % add room above figure for stat lines
-figColor = get(gcf, 'color');
 if s.showStats
     line([0 0], [yLims(2), yMax], 'color', figColor, 'linewidth', 3) % cover top of y axis with white line
     yLims = [yLims(1), yMax];
@@ -257,11 +276,8 @@ end
 
 
 % add room below figure for labels
-if true
-    yMin = yLims(1)-labelVertSize*range(yLims);
-    line([0 0], [yMin, yLims(1)], 'color', figColor, 'linewidth', 3) % cover bottom of y axis with white line
-    yLims = [yMin, yLims(2)];
-end
+line([0 0], [yMin, yLims(1)], 'color', figColor, 'linewidth', 3) % cover bottom of y axis with white line
+yLims = [yMin, yLims(2)];
 
 set(gca, 'YLim', yLims, 'YTick', yTicks, ...
     'XLim', [0 xPositions(end)+1], 'XColor', 'none', ...
@@ -270,7 +286,7 @@ set(gca, 'YLim', yLims, 'YTick', yTicks, ...
 
 % add legend
 if ~isempty(s.smpNames)
-    for i = 1:length(s.smpNames); scatters(i) = scatter(nan,nan,50,scatColors(i,:),'o','filled'); end % create dummy scatters
+    for i = 1:length(s.smpNames); scatters(i) = scatter(nan,nan,50,s.scatColors(i,:),'o','filled'); end % create dummy scatters
     legend(scatters, s.smpNames, 'Location', 'northeastoutside', 'box', 'off')
 end
 

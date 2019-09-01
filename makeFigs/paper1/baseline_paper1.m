@@ -38,8 +38,8 @@ rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
 line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
     
 % plot
-plotDvPsth(flat, 'velVsPosition', [-.5 .2], [], [], ...
-    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], 'errorFcn', @(x) nanstd(x)})
+plotDvPsth(flat, 'velVsPosition', [], ...
+    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], 'errorFcn', @(x) nanstd(x), 'xlim', [-.5 .2]})
 
 % pimp fig
 set(gca, 'YLim', yLims);
