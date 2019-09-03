@@ -25,12 +25,13 @@ figure; histogram(interRewardIntervals)
 %% check obstacle tracking...
 
 % settings
-session = '190814_002';  % .8 acceleration
+% session = '190814_002';  % .8 acceleration
 % session = '190820_001';  % .6 acceleration
 % session = '190822_002';  % .6 acceleration
 % session = '190823_002';  % .6 acceleration
 % session = '190821_000';  % .4 acceleration
 % session = '190827_002';  % .8 acceleration // 1.8 current
+session = '190901_000';  % with friction applied to wheel
 
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsTracking')
 

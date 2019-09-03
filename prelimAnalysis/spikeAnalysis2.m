@@ -612,15 +612,20 @@ function spikeAnalysis2(session, varsToOverWrite)
         obsTopY = locationsTable.obs_top_1;
         obsTopScores = locationsTable.obs_top_2;
         
+        wheelTopPix = varStruct.wheelCenter(2) - varStruct.wheelRadius;
+        validBins = ~isnan(varStruct.obsPixPositions)' & ...
+                    obsTopScores>.99 & ...
+                    obsTopY<wheelTopPix;  % obstacle can't be below the top of the wheel
+        
         obsHeightsVid = nan(1,length(varStruct.obsOnTimes));
         for i = 1:length(varStruct.obsOnTimes)
             trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
                         varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
-                        ~isnan(varStruct.obsPixPositions)' & ...
-                        obsTopScores>.99;
+                        validBins;
             medianObsY = median(obsTopY(trialBins));
-            obsHeightPix = varStruct.wheelCenter(2) - varStruct.wheelRadius - medianObsY;
-            obsHeightsVid(i) = (obsHeightPix / abs(varStruct.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
+            obsHeightPix = wheelTopPix - medianObsY;
+            obsHeight = (obsHeightPix / abs(varStruct.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
+            obsHeightsVid(i) = obsHeight;
         end
         
         % save
