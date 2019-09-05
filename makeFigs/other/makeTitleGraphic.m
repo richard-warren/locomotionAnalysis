@@ -3,7 +3,7 @@
 % settings
 session = '180715_004';
 overlayNum = 5;
-imNum = 7;
+imNum = 10;
 colormap = 'hsv';
 colorBump = .25;
 

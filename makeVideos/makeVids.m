@@ -32,9 +32,9 @@ makeMatrixVid2(fullfile(getenv('OBSDATADIR'), 'editedVid', session), session, tr
 
 %% make video showing how we can monitor wisk and paw contacts for talks
 
-session = '190327_003';
+session = '180711_000';
 obsPosRange = [-.05 .1];
-playbackSpeed = .1;
+playbackSpeed = .15;
 trials = [1 6 11 20 31 35 41 46 51 56];
 
 

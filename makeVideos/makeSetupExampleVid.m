@@ -56,7 +56,7 @@ for i = 1:length(trials)
             opacity = transparencyGradient(pixPos);
             frame = insertShape(frame, 'FilledCircle', ...
                 [pixPos obsHeight+obsRadius obsRadius], ...
-                'opacity', opacity);
+                'opacity', opacity, 'color', 'white');
         end
         
         

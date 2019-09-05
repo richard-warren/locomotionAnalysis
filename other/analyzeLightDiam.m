@@ -6,8 +6,8 @@
 % light spot diam similarly so i can compare to guo paper...
 
 % settings
-% clear all; close all
 imgFile = 'Y:\obstacleData\other\lightDiamPics\2mm tests\attempt2\4.bmp';
+% imgFile = 'Y:\obstacleData\other\lightDiamPics\1mm tests\4.bmp';
 pixPerMm = 318;
 
 % read image

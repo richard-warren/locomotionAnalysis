@@ -5,8 +5,8 @@
 
 %% select dataset
 
-clear all
-exp = 'mtc2mm';
+clear all;
+exp = 'sen2mm';
 
 switch exp
     
@@ -17,8 +17,9 @@ switch exp
         
     % sen with light 2mm above skull
     case 'sen2mm'
-        sessions = {'190823_000', '190823_001', '190823_002', ...
-            '190828_000', '190828_001', '190828_002'};
+%         sessions = {'190823_000', '190823_001', '190823_002', ...
+%             '190828_000', '190828_001', '190828_002'};
+        sessions = {'190828_000', '190828_001', '190828_002'};
         
     % olf with light 2mm above skull
     case 'olf2mm'
@@ -226,8 +227,8 @@ figure('name', exp, 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 60
 % add light on, obs on, and obs at nose markers
 optoOnPos = nanmedian([flat.optoOnPositions]);
 x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
-rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
-    'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
+patch([x(1) x(1) x(2) x(2)], [yLims(1) yLims(2) yLims(2) yLims(1)], ...
+    [obsOnColor], 'FaceAlpha', obsOnAlpha, 'EdgeColor', 'none')
 line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
 line([optoOnPos optoOnPos], yLims, 'linewidth', 2, 'color', colors(2,:))
     
@@ -275,7 +276,6 @@ end
 
 % settings
 xLims = [3 10];
-yLims = [3 20];
 isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
 
 isLeading = [true false true false]; % sequence of conditions for plots
@@ -295,13 +295,14 @@ b = [[flat.isLeading]; [flat.isFore]]';
 [~, stepTypeConditions] = ismember(b, a, 'rows');
 
 optoCondition = [flat.isOptoOn]+1;
+% optoCondition = [flat.powerCondition];
 obsHgts = [flat.obsHgt]*1000;
 pawHgts = [flat.preObsHgt]*1000;
 % pawHgts = [flat.stepOverMaxHgt]*1000;
 
 
 % OBS HGT PAW HGT MOVING AVG
-figure('Color', 'white', 'Position', [2000 94 786 706], 'MenuBar', 'none');
+figure('name', exp, 'Color', 'white', 'Position', [2000 94 786 706], 'MenuBar', 'none');
 
 for i = 1:4
     
@@ -345,7 +346,7 @@ kinDataCtl = permute(cat(3, flat.controlStepKinInterp), [3,1,2]);
 kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1); % change the x starting x position of ctl steps to match steps over
 
 
-figure('position', [2000 200 400 800], 'color', 'white', 'menubar', 'none'); hold on;
+figure('name', exp, 'position', [2000 200 400 800], 'color', 'white', 'menubar', 'none'); hold on;
 for i = 1:4
     subplot(5,1,i)
     bins = [flat.powerCondition]==i;

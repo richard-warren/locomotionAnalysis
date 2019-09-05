@@ -18,9 +18,9 @@ contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 an
 includeWiskCam = true;
 includeWebCam = false;
 showPawTouches = true;
-showTrialInfo = true;
+showTrialInfo = false;
 showWiskTouches = true;
-showObsOn = true;
+showObsOn = false;
 
 
 % initializations

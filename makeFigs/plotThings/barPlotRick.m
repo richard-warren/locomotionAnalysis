@@ -141,13 +141,29 @@ for i = 1:totalConditions
 end
 
 
-% get or set y limit information
-if ~isempty(s.ylim)
-    set(gca, 'YLim', s.ylim);
-    yLims = s.ylim;
-else
-    yLims = get(gca, 'ylim');
+% SET Y LIMITS
+if isempty(s.ylim)
+    s.ylim = get(gca, 'YLim');
+    
+    if s.addBars  % bar plot will always start at zero // otherwise, use the automatically determined y limits
+        
+        % collect all data included in plot to determine range
+        summaries = cellfun(s.summaryFunction, allData)';
+        errors = cellfun(@nanstd, allData)';
+        ys = summaries;  % ys contains all data to be included in range, which depends on elements are to be included in plot
+        if s.showScatter; ys = [ys; data(:)]; end
+        if s.showErrorBars; ys = [ys; summaries+errors; summaries-errors]; end
+        
+        if min(ys)>0  % if all data are positive, lower y limit is 0
+            s.ylim(1) = 0;
+        elseif max(ys)<0  % if all data are negative, upper y limit is zero
+            s.ylim(2) = 0;
+        end
+    end
 end
+set(gca, 'YLim', s.ylim);
+
+line([0 xPositions(end)+s.lineWidth/2], [0 0], 'color', get(gca, 'YColor'))  % add line at y=0 zero
 
 if ~isempty(s.ytick)
     set(gca, 'YTick', s.ytick);
@@ -156,7 +172,7 @@ else
     yTicks = get(gca, 'ytick');
 end
 
-yMin = yLims(1)-labelVertSize*range(yLims);  % this is where new bottom of figure will be after adding room below for labels
+yMin = s.ylim(1)-labelVertSize*range(s.ylim);  % this is where new bottom of figure will be after adding room below for labels
 
 % add bars
 if s.addBars
@@ -198,8 +214,8 @@ if s.showStats
         end
         
         % vertical position of each line, expressed as fraction of y range
-        yMax = yLims(2) + statsVertSpacing*range(yLims)*size(dimPairs,1);
-        yPosits = linspace(yLims(2), yMax, size(dimPairs,1)); 
+        yMax = s.ylim(2) + statsVertSpacing*range(s.ylim)*size(dimPairs,1);
+        yPosits = linspace(s.ylim(2), yMax, size(dimPairs,1)); 
         inds = conditionsMat(1:end-1, find(condInds==i,1,'first'))'; % matrix inds for conditions higher up in the hierarchy
         
         for j = 1:size(dimPairs,1)
@@ -222,10 +238,10 @@ end
 
 
 
-% cover space above and below yLims with boxes to occlude bars outside of limits
+% cover space above and below s.ylim with boxes to occlude bars outside of limits
 xs = [0 xPositions(end)+1];
-ys = {[yLims(1)-range(yLims), yLims(1)], ... % bottom box
-      [yLims(2), yLims(2)+range(yLims)]};    % top box
+ys = {[s.ylim(1)-range(s.ylim), s.ylim(1)], ... % bottom box
+      [s.ylim(2), s.ylim(2)+range(s.ylim)]};    % top box
 for i = ys
 %     keyboard
     rectangle('Position', [xs(1) i{1}(1) range(xs) range(i{1})], ...
@@ -246,7 +262,7 @@ for i = 1:length(s.conditionNames)
         for k = 1:varLevelNum(i)
             inds = find(conditionsMat(i,:)==k & bins');
             xPos = mean(xPositions(inds));
-            yPos = yLims(1)-labelVertSize*range(yLims) + ((labelVertSize*range(yLims))/length(dataDims)*i);
+            yPos = s.ylim(1)-labelVertSize*range(s.ylim) + ((labelVertSize*range(s.ylim))/length(dataDims)*i);
             if i==s.numVariables; rotation = 25; else; rotation = 0; end
             if ~isempty(s.conditionNames)
                 condText = text(xPos, yPos, s.conditionNames{i}(k), 'rotation', rotation, ...
@@ -270,16 +286,16 @@ end
 
 % add room above figure for stat lines
 if s.showStats
-    line([0 0], [yLims(2), yMax], 'color', figColor, 'linewidth', 3) % cover top of y axis with white line
-    yLims = [yLims(1), yMax];
+    line([0 0], [s.ylim(2), yMax], 'color', figColor, 'linewidth', 3) % cover top of y axis with white line
+    s.ylim = [s.ylim(1), yMax];
 end
 
 
 % add room below figure for labels
-line([0 0], [yMin, yLims(1)], 'color', figColor, 'linewidth', 3) % cover bottom of y axis with white line
-yLims = [yMin, yLims(2)];
+line([0 0], [yMin, s.ylim(1)], 'color', figColor, 'linewidth', 3) % cover bottom of y axis with white line
+s.ylim = [yMin, s.ylim(2)];
 
-set(gca, 'YLim', yLims, 'YTick', yTicks, ...
+set(gca, 'YLim', s.ylim, 'YTick', yTicks, ...
     'XLim', [0 xPositions(end)+1], 'XColor', 'none', ...
     'Color', figColor)
 
@@ -295,7 +311,7 @@ end
 if ~isempty(s.ylabel)
     lab = ylabel(s.ylabel);
     labPos = get(lab, 'position');
-    labPos(2) = mean(yLims);
+    labPos(2) = mean(s.ylim);
     set(lab, 'position', labPos);
 end
 
