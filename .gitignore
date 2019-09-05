@@ -1,2 +1,5 @@
 # temporary matlab files
 *.asv
+
+# videos
+*.mp4

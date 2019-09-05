@@ -24,6 +24,7 @@ s.errorAlpha = .2; % transparency of error bars
 s.isBotView = false; % if true, then plots are assumed to plot kinematics from the bottom view (xy)
 s.trialsToOverlay = []; % if not empty, plot individual trials for each condition
 s.yLimZero = true; % makes min of y axis zero so traces don't dip beneathe 'floor' on plots
+s.lineColor = 'black';
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -35,7 +36,7 @@ if ~isempty(s.mouseNames); mice = unique(s.mouseNames); end
 
 
 % add line at top of wheel
-if ~s.isBotView; line([-.2 .2], [0 0], 'color', 'black'); end
+if ~s.isBotView; line([-.2 .2], [0 0], 'color', s.lineColor); end
 
 % plot kinematics for each condition
 for i = 1:max(conditions)

@@ -56,7 +56,7 @@ saveas(gcf, file, 'svg');
 %% KINEMATICS
 
 % settings
-colNames = {'hind paw', 'fore paw'};
+colNames = {'hind', 'fore'};
 rowNames = {'trailing', 'leading'};
 conditionSequence = [4 2 3 1]; % mapping between plot index and condition sequence, which is specified above
 
@@ -320,7 +320,7 @@ figure('position', [2000 200 1600 700], 'color', 'white', 'menubar', 'none');
 
 % initializations
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
-vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore paw', 'hind paw'}});
+vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
 figVars = [vars.isFore; vars.isLeading];
 
 conditionals.lightOn = struct('name', 'isLightOn', 'condition', @(x) x==1);

@@ -24,6 +24,9 @@ s.xlim = [];
 s.rowVar = []; % plot levels of this var as different subplot rows
 s.plotConditions = {}; % levels of plotVar to show (otherwise determined as all unique elements in plotVar)
 s.lineWidth = 3;
+s.mouseAlpha = .4;
+s.errorEdges = .4;
+s.showErrorBars = true;
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -64,17 +67,19 @@ for i = 1:length(rowConditions)
     if length(rowConditions)>1; subplot(length(rowConditions),1,i); end
     
     for j = 1:length(s.plotConditions)
-        if length(mice)>1
+        if s.showErrorBars
             shadedErrorBar(xGrid, squeeze(mouseAvgs(j,i,:,:)), {@nanmean, s.errorFcn}, ...
                 'lineprops', {'linewidth', s.lineWidth, 'color', s.conditionColors(j,:)}, 'patchSaturation', s.errorAlpha); hold on;
         else
-            plot(xGrid, squeeze(mouseAvgs(j,i,:,:)), 'linewidth', s.lineWidth, 'color', s.conditionColors(j,:)); hold on;
+%             keyboard
+            conditionAvgs = squeeze(mouseAvgs(j,i,:,:));
+            plot(xGrid, nanmean(conditionAvgs,1), 'linewidth', s.lineWidth, 'color', s.conditionColors(j,:)); hold on;
         end
         
         if s.plotMouseAvgs
             for k = 1:length(mice)
                 plot(xGrid, squeeze(mouseAvgs(j,i,k,:)), ...
-                    'LineWidth', 1, 'Color', [s.mouseColors(k,:) .4]); hold on
+                    'LineWidth', 1, 'Color', [s.mouseColors(k,:) s.mouseAlpha]); hold on
             end
         end
     end

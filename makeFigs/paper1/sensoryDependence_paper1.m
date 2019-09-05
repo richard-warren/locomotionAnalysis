@@ -1,5 +1,5 @@
 % load experiment data
-fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('baseline data loaded!')
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!')
 
 % global settings
 colorWisk = [51 204 255]/255; %[255 204 51];
@@ -213,8 +213,8 @@ saveas(gcf, file, 'svg');
 
 % HEIGHT SHAPING BARS
 [corrs, slopes] = deal(nan(4,length(mice))); % isFore(10) X isLeading(10) X mouse
-foreSequence = [true false];
-leadingSequence = [true false];
+% foreSequence = [true false];
+% leadingSequence = [true false];
 
 for i = 1:4
     for k = 1:length(mice)

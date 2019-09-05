@@ -1,6 +1,6 @@
 function figPos = getfigpos()
 
 figPos = get(gcf, 'Position');
-figPosText = sprintf('[%i %i %i %i]', figPos);
+figPosText = sprintf('[%.2f %.2f %.2f %.2f]', figPos);
 clipboard('copy', figPosText)
 disp(figPosText)

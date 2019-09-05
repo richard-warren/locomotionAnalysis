@@ -51,7 +51,7 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
-           'isVentralContact', 'isDorsalContact', 'numTouchFrames'};
+           'isVentralContact', 'isDorsalContact', 'numTouchFrames', 'stepType'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -713,6 +713,13 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             
         case 'numTouchFrames'  % number of frames in which paw is in contact with obstacles
             var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:),1));
+            
+        case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: traiing hind
+            stepTypeSequence = [true false true false; true true false false]';  % leading fore, trailing fore, leading hind, traiing hind
+            isLeadingIsLagging = [[g.expData.sessions(session).trials(trial).paws.isLeading]', ...
+                         [g.expData.sessions(session).trials(trial).paws.isFore]'];  % 4x2 matrix where each row is a paw, and each colum is [isLeading, isFore]
+            [~, var] = ismember(isLeadingIsLagging, stepTypeSequence, 'rows');
+            var = num2cell(var);
     end
 end
 
