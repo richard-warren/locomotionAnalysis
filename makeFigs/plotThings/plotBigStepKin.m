@@ -26,6 +26,7 @@ s.histoHgt = .5; % expressed as fraction of kinematic plots
 s.contactInds = []; % inds for each trial at which wisk contacts obs
 s.showSmpNum = false; % if true, shows number of big and small steps per bin
 s.ctlDistances = []; % if provided, uses this as control distro instead of the final x position of the control kinematics for each step
+s.verticalBuffer = .05;  % space to added between rows of plot, expressed as fraction of total height
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -44,7 +45,8 @@ kinCtl(:,1,:) = kinCtl(:,1,:) - kinCtl(:,1,1) + kin(:,1,1); % shift ctrl locatio
 for h = 1:numRows
 
     % get subplot bins
-    subplot(numRows, 1, h); hold on
+    axes('position', [0 1-h*(1/numRows)+s.verticalBuffer 1 1/numRows-s.verticalBuffer])
+    hold on
 
     % get subplot bins for different conditions
     ctlBins = rowInds==h;

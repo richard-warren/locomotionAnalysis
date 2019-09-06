@@ -9,6 +9,7 @@ s.xLims = [];
 s.yLims = [];
 s.percentileLims = [5 95]; % exclude x values outside these percentile limits
 s.binNum = 100;
+s.colormap = 'hot';
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -27,7 +28,7 @@ heatmap =  ksdensity([x(:), y(:)], [meshX(:), meshY(:)]);
 heatmap = reshape(heatmap, length(xBins), length(yBins));
 heatmap = heatmap ./ repmat(max(heatmap, [], 1), length(yBins), 1); % set max of each column to 1
 
-colormap hot
+colormap(s.colormap)
 imagesc(xBins, yBins, heatmap)
 set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
 

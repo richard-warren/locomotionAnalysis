@@ -1,5 +1,7 @@
 %% COMPUTE PREDICTORS
 
+% !!! should i restrict to light off trials???
+
 % global settings
 referenceModPaw = 2;
 velSmps = 10; % how many samples to compute velocity over
@@ -199,9 +201,6 @@ line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'baseline_decision_heatmaps');
 saveas(gcf, file, 'svg');
-
-
-
 
 
 

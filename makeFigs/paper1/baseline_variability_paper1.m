@@ -135,7 +135,7 @@ for i = 1:trialsToOverlay
     imgsBot(:,:,i) = rgb2gray(read(vidBot, knnsearch(frameTimeStamps, frameTimes(i))));
 end
 
-%%
+%
 overlayTop = overlayImgs(imgsTop, {'colors', 'jet', 'contrastLims', [.3 .75], 'cutoff', 100, 'projection', 'mean'});
 overlayBot = overlayImgs(imgsBot, {'colors', 'jet', 'contrastLims', [.3 .5], 'cutoff', 100, 'projection', 'mean'});
 overlay = cat(1,overlayTop, overlayBot);
