@@ -67,9 +67,6 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
-% keep copy of data prior to applying restrictions below
-flatAll = flat;
-
 
 
 %% BUILD MODELS
@@ -79,15 +76,16 @@ iterations = 20;
 normalizeData = true;
 barColors = [0 .24 .49; .6 .75 .23; .2 .2 .2];
 
+% prepare training data
+[X, y, predictorNames, isCategorical] = ...
+    prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
+predDistBin = ismember(predictorNames, 'modPawPredictedDistanceToObs'); % this var will ONLY be included in the GLM, not the neural net
+    
+    
 accuracies = nan(3,iterations);
-
 for i = 1:iterations
     
-    predDistBin = ismember(predictorNames, 'modPawPredictedDistanceToObs'); % this var will ONLY be included in the GLM, not the neural net
-    
     % NEURAL NET
-    [X, y, predictorNames, isCategorical] = ...
-        prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
     net = patternnet(100);
     net.divideParam.trainRatio = .7;
     net.divideParam.valRatio = .15;
@@ -101,13 +99,14 @@ for i = 1:iterations
     accuracies(3,i) = mean(round(outputs(tr.testInd))==y(tr.testInd(shuffleInds))'); % NN shuffled
     
     % GLM
-    glm = fitglm(X([tr.trainInd tr.valInd], predDistBin), y([tr.trainInd tr.valInd]), ...
-        'Distribution', 'binomial', 'CategoricalVars', isCategorical(predDistBin));
-    accuracies(2,i) = mean(round(predict(glm, X(tr.testInd,colBins)))==y(tr.testInd));
+    glmPredictorBins = true(1,size(X,2));  % bins of predictors to include in GLM (columns of X)
+    glm = fitglm(X([tr.trainInd tr.valInd],glmPredictorBins), y([tr.trainInd tr.valInd]), ...
+        'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
+    accuracies(2,i) = mean(round(predict(glm, X(tr.testInd,glmPredictorBins)))==y(tr.testInd));
     
 end
 
-%%
+%
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
 barPlotRick(accuracies, {'conditionNames', {{'NN', 'GLM', 'shuffled'}}, ...
     'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
@@ -140,7 +139,6 @@ saveas(gcf, file, 'svg');
 %% BINNED KINEMATICS AND HEATMAP
 
 % settings
-netNum = 1;
 binNum = 5;
 pctileBins = true;
 
@@ -149,11 +147,14 @@ pctileBins = true;
 kin = permute(cat(3,flat.modPawKinInterp{:}), [3,1,2]);
 kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
 [X, y, predictorNames, isCategorical] = ...
-        prepareDecisionModelData(flat, predictors{netNum}, outcome, useAllPaws(netNum), referenceModPaw, normalizeData, ...
-        {'balanceClasses', false, 'removeNans', false});
+        prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, ...
+        {'balanceClasses', false, 'removeNans', false});  % must recom 
+
+% prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
+
 
 % choose binning variable
-binVar = nnets{netNum}(X'); % neural network output
+binVar = net(X(:,~predDistBin)'); % neural network output
 % binVar = -flat.x_paw2; % position of mod paw at moment of contact
 % binVar = flat.velAtWiskContact; % vel
 % binVar = flat.modStepStart_paw2; % starting position of mod paw
@@ -170,8 +171,6 @@ end
 condition = discretize(binVar, binEdges);
 
 
-
-close all;
 figure('color', 'white', 'menubar', 'none', 'position', [2000 100 750 100*binNum], 'InvertHardcopy', 'off');
 plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
     {'colors', stepTypeColors, 'xLims', [-.09 .04], 'addHistos', false, 'lineWid', 3, ...
@@ -200,42 +199,6 @@ line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'baseline_decision_heatmaps');
 saveas(gcf, file, 'svg');
-
-%% SANDBOX
-
-
-
-% LASSO
-[glmLasso, lassoFit] = lassoglm(xNorm([tr.trainInd tr.valInd],:), y([tr.trainInd tr.valInd]), ...
-    'binomial', 'PredictorNames', predictors); % !!! categofical vars not explicitly defined???
-% fprintf('GLM_lasso train: %.2f, test: %.3f\n', mean(round(predict(glmLasso, xNorm(tr.trainInd,:)))==y(tr.trainInd)), ...
-%     mean(round(predict(glmLasso, xNorm(tr.testInd,:)))==y(tr.testInd)))
-
-zeroInds = nan(1, length(predictors));
-for i = 1:size(glmLasso,1); zeroInds(i) = find(abs(glmLasso(i,:))>0,1,'last'); end
-[~, sortInds] = sort(zeroInds, 'descend');
-predictorsSorted = predictors(sortInds)
-
-% lassoPlot(glmLasso, lassoFit, 'PlotType', 'Lambda', 'PredictorNames', predictors); legend(predictors)
-
-% !!! check accuracy with different numbers of predictors here...
-
-
-
-
-% STEPWISE REGRESSION
-
-glmStepwise = stepwiseglm(xNorm([tr.trainInd tr.valInd],:), y([tr.trainInd tr.valInd]), 'constant', ...
-    'Upper', 'linear', 'Distribution', 'binomial', 'VarNames', [predictors outcome], 'PEnter', .001, 'CategoricalVars', isCategorical);
-fprintf('GLM_stepwise train: %.2f, test: %.3f\n', mean(round(predict(glmStepwise, xNorm(tr.trainInd,:)))==y(tr.trainInd)), ...
-    mean(round(predict(glmStepwise, xNorm(tr.testInd,:)))==y(tr.testInd)))
-
-
-
-
-
-
-
 
 
 

@@ -7,6 +7,7 @@ axisColor = [.95 .95 .95];
 pawColors = hsv(4);
 mouseColors = 'jet';
 ctlStepColor = [1 1 1]*.9;
+smallBigStepColors = [0.850 0.325 0.098; 0 0.447 0.741]; % first entry is small step, second is big step;
 
 %% INITIALIZATIONS
 
@@ -15,7 +16,8 @@ fprintf('loading data... ');
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data');
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
     'velVsPosition', 'velVsPositionX', 'isWheelBreak', 'wiskContactPosition', 'obsHgt', 'isPawSuccess', ...
-    'isLeading', 'isFore', 'stepOverKinInterp', 'paw', 'controlStepKinInterp', 'preObsHgt', 'stepType'});
+    'isLeading', 'isFore', 'stepOverKinInterp', 'paw', 'controlStepKinInterp', 'preObsHgt', 'stepType', ...
+    'isBigStep'});
 disp('data loaded!')
 
 % conditions and conditionals
@@ -27,6 +29,42 @@ conditionals.lightOn = struct('name', 'isLightOn', 'condition', @(x) x==1);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
 conditionals.none = struct('name', '', 'condition', @(x) x); % no conditionals
+
+
+
+% build decision making model
+iterations = 20;
+normalizeData = true;
+barColors = [0 .24 .49; .6 .75 .23; .2 .2 .2];
+
+accuracies = nan(3,iterations);
+
+for i = 1:iterations
+    
+    predDistBin = ismember(predictorNames, 'modPawPredictedDistanceToObs'); % this var will ONLY be included in the GLM, not the neural net
+    
+    % NEURAL NET
+    [X, y, predictorNames, isCategorical] = ...
+        prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
+    net = patternnet(100);
+    net.divideParam.trainRatio = .7;
+    net.divideParam.valRatio = .15;
+    net.divideParam.testRatio = .15;
+    [net, tr] = train(net, X(:,~predDistBin)', y');
+    outputs = net(X(:,~predDistBin)');
+    accuracies(1,i) = mean(round(outputs(tr.testInd))==y(tr.testInd)');
+    
+    % NN SHUFFLED
+    shuffleInds = randperm(length(tr.testInd));
+    accuracies(3,i) = mean(round(outputs(tr.testInd))==y(tr.testInd(shuffleInds))'); % NN shuffled
+    
+    % GLM
+    glm = fitglm(X([tr.trainInd tr.valInd], predDistBin), y([tr.trainInd tr.valInd]), ...
+        'Distribution', 'binomial', 'CategoricalVars', isCategorical(predDistBin));
+    accuracies(2,i) = mean(round(predict(glm, X(tr.testInd,colBins)))==y(tr.testInd));
+end
+
+disp('all done!')
 
 
 %% SPEED VS POSITION
@@ -194,4 +232,72 @@ logPlotRick([flat.obsHgt]*1000, [flat.preObsHgt]*1000, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'lineWidth', 2})
 set(gca, 'color', 'black', 'xcolor', axisColor, 'YColor', axisColor)
 print -clipboard -dmeta
+
+%% DECISION MAKING MODEL BARS
+
+figure('units', 'inches', 'position', [13.22 3.65 3.19 3.45], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+barPlotRick(accuracies, {'conditionNames', {{'NN', 'GLM', 'shuffled'}}, ...
+    'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
+    'ylim', [0 1], 'ytick', [0 .5 1], 'ylabel', 'accuracy', 'conditionColors', barColors})
+set(gca, 'Position', [0.15 0.2 0.75 0.79])
+print -clipboard -dmeta
+
+%% DECISION MAKING KINEMATICS
+
+% settings
+netNum = 1;
+binNum = 5;
+pctileBins = true;
+
+% initializations
+kin = permute(cat(3,flat.modPawKinInterp{:}), [3,1,2]);
+kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
+[X, y, predictorNames, isCategorical] = ...
+        prepareDecisionModelData(flat, predictors{netNum}, outcome, useAllPaws(netNum), referenceModPaw, normalizeData, ...
+        {'balanceClasses', false, 'removeNans', false});
+
+% choose binning variable
+binVar = nnets{netNum}(X'); % neural network output
+% binVar = -flat.x_paw2; % position of mod paw at moment of contact
+% binVar = flat.velAtWiskContact; % vel
+% binVar = flat.modStepStart_paw2; % starting position of mod paw
+% binVar = flat.modPawPredictedDistanceToObs;
+
+% perctentile bins    
+if pctileBins
+    binEdges = prctile(binVar, linspace(0, 100, binNum+1));
+% evenly spaced bins
+else
+    binEdges = linspace(min(binVar), max(binVar), binNum+1);
+end
+condition = discretize(binVar, binEdges);
+
+figure('units', 'inches', 'position', [13.22 3.65 3.19 3.45], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
+    {'colors', stepTypeColors, 'xLims', [-.09 .04], 'addHistos', false, 'lineWid', 3, ...
+    'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false})
+print -clipboard -dmeta
+
+
+%% HEATMAP
+
+% settings
+xLims = [-.03 .015];
+yLims = [-.03 .03];
+
+figure('units', 'inches', 'position', [13.22 3.65 3.19 3.45], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+heatmapRick(flat.modPawPredictedDistanceToObs, flat.modPawDistanceToObs, ...
+    {'xLims', xLims, 'yLims', yLims, ...
+    'xlabel', 'predicted distance to obstalce (m)', 'ylabel', 'distance to obstalce (m)'})
+set(gca, 'DataAspectRatio', [1 1 1])
+line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
+print -clipboard -dmeta
+
+
+
+
+
+
+
+
 
