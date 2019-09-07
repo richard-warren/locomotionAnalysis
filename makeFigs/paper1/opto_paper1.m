@@ -6,7 +6,7 @@
 %% select dataset
 
 clear all;
-exp = 'sen2mm';
+exp = 'olf2mm';
 
 switch exp
     
@@ -17,9 +17,8 @@ switch exp
         
     % sen with light 2mm above skull
     case 'sen2mm'
-%         sessions = {'190823_000', '190823_001', '190823_002', ...
-%             '190828_000', '190828_001', '190828_002'};
-        sessions = {'190828_000', '190828_001', '190828_002'};
+        sessions = {'190823_000', '190823_001', '190823_002', ...
+            '190828_000', '190828_001', '190828_002'};
         
     % olf with light 2mm above skull
     case 'olf2mm'
@@ -60,15 +59,13 @@ conditionals.none = struct('name', '', 'condition', @(x) x);  % what does this d
 conditionals.isFast = struct('name', 'velAtWiskContact', 'condition', @(x) x>.3);
      
 %% load experiment data
-fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', ['opto_' exp '.mat']), 'data'); disp([exp ' opto data loaded!'])
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', ['opto_' exp '_data.mat']), 'data'); disp([exp ' opto data loaded!'])
 
 %% compute experiment data
 addToLoadedData = true;
 if exist('data', 'var') && addToLoadedData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', ['opto_' exp '.mat']), 'data'); disp('data saved')
 
-%% add powerCondition (binned light power)
-
+% add powerCondition (binned light power)
 for i = 1:length(data.data)
     for j = 1:length(data.data(i).sessions)
         sesPowers = [data.data(i).sessions(j).trials.optoPower];
@@ -77,6 +74,7 @@ for i = 1:length(data.data)
     end
 end
 
+save(fullfile(getenv('OBSDATADIR'), 'matlabData', ['opto_' exp '_data.mat']), 'data'); disp('data saved')
 
 %% ----------
 % PLOT THINGS

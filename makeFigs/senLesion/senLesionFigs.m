@@ -34,8 +34,8 @@ conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) x<=maxEa
 conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<=8);
 conditionals.isObsHigh = struct('name', 'obsHgt', 'condition', @(x) x>minObsHgt);
 
-figConditionals = [conditionals.isObsHigh];
-% figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
+% figConditionals = [conditionals.isObsHigh];
+figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
 %% compute kinData for all sessions (only need to do once)
@@ -77,13 +77,14 @@ colVar = 4;
 figure('name', 'senLesion', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1800 900])
 plotInd = 0;
 
-% success
-plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+%% success
+% plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
+figure
 conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg, figConditionals);
-barPlotRick(dvMatrix, {conditions.levelNames}, 'success rate', true)
+barFancy(dvMatrix, 'levelNames', {conditions.levelNames}, 'ylabel', 'success rate')
 
-% velocity
+%% velocity
 plotInd = plotInd+1; subplot(rowVar, colVar, plotInd);
 conditions = [vars.condition];
 dvMatrix = getDvMatrix(data, 'trialVel', conditions, varsToAvg, figConditionals);

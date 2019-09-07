@@ -216,7 +216,7 @@ print -clipboard -dmeta
 figure('units', 'inches', 'position', [13.22 3.65 3.19 3.45], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 
 figVars = [vars.isFore; vars.isLeading];
-dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, figVars, {'mouse'}, {'session'}, [conditionals.isLe], 'corr');
+dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, figVars, {'mouse'}, {'session'}, [conditionals.isLeading; conditionals.isFore], 'corr');
 barFancy(dv, 'axisColor', axisColor, 'levelNames', {figVars.levelNames}, 'ylabel', 'paw-obstacle correlation', ...
     'colors', pawColors, 'scatterAlpha', .8, 'barAlpha', .4, 'labelSizePerFactor', .15, 'lineThickness', 2, 'barWidth', .75)
 set(gca, 'position', [.15 .11 .77 .81])

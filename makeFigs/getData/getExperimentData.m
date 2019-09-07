@@ -210,7 +210,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'mW'
             var = getTableColumn('mW', g);
             
-        case 'conditionNum'
+        case 'conditionNum'  % ??? what is this exactly?
             sessionInfoSub = g.sessionInfo(strcmp(g.sessionInfo.mouse, g.expData(g.mouse).mouse),:);
             var = num2cell(nan(1,height(sessionInfoSub)));
             conditions = unique(sessionInfoSub.condition);
@@ -222,7 +222,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = var(logical(sessionInfoSub.include));
             
             
-        case 'sessionNum'
+        case 'sessionNum'  % ??? what is this exactly?
             allMouseSessions = g.sessionInfo.session(strcmp(g.sessionInfo.mouse, g.mice{g.mouse})); % all sessions, including those where .include==false
             [~, inds] = intersect(allMouseSessions, g.sessions, 'stable');
             var = num2cell(inds);

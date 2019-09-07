@@ -38,7 +38,15 @@ if ~exist('plotVar', 'var') || isempty(plotVar); [data.plotVar] = temp{:}; plotV
 
 % initializations
 if isempty(s.plotConditions)
-    if isa(data(1).(plotVar), 'char'); s.plotConditions = unique({data.(plotVar)}); else; s.plotConditions = num2cell(unique([data.(plotVar)])); end
+    if isa(data(1).(plotVar), 'char')
+        s.plotConditions = unique({data.(plotVar)});
+    else
+        s.plotConditions = num2cell(unique([data.(plotVar)]));
+    end
+end
+
+if ~iscell(s.plotConditions)
+    s.plotConditions = num2cell(unique([data.(plotVar)]));
 end
 
 if isa(data(1).(rowVar), 'char'); rowConditions = unique({data.(rowVar)}); else; rowConditions = num2cell(unique([data.(rowVar)])); end

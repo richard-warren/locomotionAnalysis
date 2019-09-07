@@ -82,13 +82,13 @@ yLims = [0 .016];
 % initializations
 obsHgtDiscretized = num2cell(discretize([flat.obsHgt], linspace(3.4, 10, obsHgtBins+1)/1000));
 [flat.obsHgtDiscretized] = obsHgtDiscretized{:};
-flat = flat(~isnan([flat.obsHgtDiscretized]) & ...
-            ~[flat.isWheelBreak] & ...
-            [flat.isLeading] & ...
-            [flat.isFore]);
-[~, conditions] = ismember({flat.sensoryCondition}, vars.sensoryCondition.levels);
-kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
-kinDataCtl = permute(cat(3, flat.controlStepKinInterp), [3,1,2]);
+flat_sub = flat_sub(~isnan([flat_sub.obsHgtDiscretized]) & ...
+            ~[flat_sub.isWheelBreak] & ...
+            [flat_sub.isLeading] & ...
+            [flat_sub.isFore]);
+[~, conditions] = ismember({flat_sub.sensoryCondition}, vars.sensoryCondition.levels);
+kinData = permute(cat(3, flat_sub.preObsKin), [3,1,2]);
+kinDataCtl = permute(cat(3, flat_sub.controlStepKinInterp), [3,1,2]);
 kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1); % change the x starting x position of ctl steps to match steps over
 
 
@@ -98,8 +98,8 @@ for i = 1:4
     subplot(4,1,i); hold on
     bins = conditions==i;
     plotColor = repmat(colorsTemp(i,:), obsHgtBins, 1) .* linspace(fading,1,obsHgtBins)'; % create color matrix fading from colors(i,:) -> colors(i,:)*fading
-    plotKinematics(kinData(bins,[1,3],:), [flat(bins).obsHgt], [flat(bins).obsHgtDiscretized], ...
-        {'colors', plotColor, 'obsAlpha', 1, 'lineAlpha', .8, 'mouseNames', {flat(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
+    plotKinematics(kinData(bins,[1,3],:), [flat_sub(bins).obsHgt], flat_subflat(bins).obsHgtDiscretized], ...
+        {'colors', plotColor, 'obsAlpha', 1, 'lineAlpha', .8, 'mouseNames', {flat_sub(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     set(gca, 'XLim', xLims, 'YLim', yLims, 'color', 'black', ...
         'position', [0 1-i*.24 1 .22], 'units', 'normalized')
 end
