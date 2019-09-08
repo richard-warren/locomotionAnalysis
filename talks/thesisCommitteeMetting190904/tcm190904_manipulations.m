@@ -1,26 +1,28 @@
-%% GLOBAL SETTINGS
+%% INITIALIZATIONS
+
+% load global settings
+clear all; tcm190910_config;
 
 
 % settings
-tcm190910_config;  % load global settings
 dataset = 'opto_mtc2mm';
 maxEarlySessions = 3;  % only include this many days post lesion in lesions figs
 
 % motor cortex muscimol
 if strcmp(dataset, 'mtc_muscimol')
-    colors = [axisColor; manipColor];
+    colors = manipColors;
     vars.condition = struct('name', 'condition', 'levels', {{'saline', 'muscimol'}}, 'levelNames', {{'saline', 'muscimol'}});
     figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
     
 % motor cortex lesion
 elseif strcmp(dataset, 'mtc_lesion')
-    colors = [axisColor; manipColor];
+    colors = manipColors;
     vars.condition = struct('name', 'condition', 'levels', {{'pre', 'post'}}, 'levelNames', {{'pre', 'post'}});
 	figConditionals = struct('name', 'conditionNum', 'condition', @(x) x<=maxEarlySessions);
 
 % barrel cortex lesion
 elseif strcmp(dataset, 'senLesion')
-    colors = [axisColor; manipColor; manipColor*.7];
+    colors = manipColors;
     vars.condition = struct('name', 'condition', ...
         'levels', {{'pre', 'postBi', 'noWisk'}}, ...
         'levelNames', {{'pre', 'post', sprintf('no whiskers')}});
@@ -28,14 +30,11 @@ elseif strcmp(dataset, 'senLesion')
 
 % opto (settings the same for all brain regions)
 elseif contains(dataset, 'opto')
-    colors = [axisColor; winter(3)];
+    colors = optoColors;
     vars.condition = struct('name', 'powerCondition', 'levels', [1 2 3 4], 'levelNames', {{'0', '1.4', '4.5', '15mW'}});
     figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 end
 
-
-
-%% INITIALIZATIONS
 
 % load data
 fprintf('loading data... '); 
@@ -53,28 +52,27 @@ conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 figPadding = (length(vars.condition.levels)-2) * .25;
 
 %% SUCCESS
-% close all
-figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding 2.90], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+
+figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, figConditionals);
-barFancy(dv, 'axisColor', axisColor, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, ...
-    'colors', colors, 'scatterAlpha', .8, 'barAlpha', .4, 'labelSizePerFactor', .1, 'lineThickness', 2, 'YLim', [0 1])
-set(gca, 'position', [.2 .11 .78 .82], 'FontName', 'Calibri')
+barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, 'YLim', [0 1], barProperties{:})
+set(gca, 'position', [.2 .11 .78 .82])
 print -clipboard -dmeta
 
 %% SPEED VS POSITION
 
 close all
-yLims = [.1 .7];
-figure('units', 'inches', 'position', [21.18 3.21 6.28 3.20], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false); hold on
+yLims = [.2 .7];
+figure('units', 'inches', 'position', [21.18 3.21 6.28 figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false); hold on
 
 % add obstacle rectangle and lines
 x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 line([0 0], yLims, 'linewidth', 2, 'color', axisColor)
 line([x(1) x(1)], yLims, 'linewidth', 2, 'color', axisColor)
 text(x(1), yLims(2), '\itobstacle on', 'color', axisColor, ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'FontSize', fontSize, 'FontName', font)
 text(0, yLims(2), '\itobstacle reached', 'color', axisColor, ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'FontSize', fontSize, 'FontName', font)
 
 if ~contains(dataset, 'opto')  % plots for non-opto experiments
     plotDvPsth(flat, 'velVsPosition', vars.condition.name, ...
@@ -97,51 +95,46 @@ set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
 set(gca, 'YLim', yLims);
 xlabel('distance (m)')
 ylabel('velocity (m/s)')
-set(gca, 'XColor', axisColor, 'YColor', axisColor, 'Color', 'black')
-
-
-
+set(gca, 'XColor', axisColor, 'YColor', axisColor, 'Color', 'black', 'FontSize', fontSize, 'FontName', font)
 print -clipboard -dmeta
 
 %% PAW HEIGHT
 
-close all
-figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding 2.90], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 dv = getDvMatrix(data, 'preObsHgt', vars.condition, {'mouse'}, [figConditionals; conditionals.isFore])*1000;
-barFancy(dv, 'axisColor', axisColor, 'ylabel', 'paw height (mm)', 'levelNames', {vars.condition.levelNames}, ...
-    'colors', colors, 'scatterAlpha', .8, 'barAlpha', .4, 'labelSizePerFactor', .1, 'lineThickness', 2)
+barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:})
 set(gca, 'position', [.2 .11 .78 .82])
 print -clipboard -dmeta
 
 %% PAW SHAPING
 
-close all
-figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding 2.90], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.condition, {'mouse'}, {'session'}, ...
     [figConditionals; conditionals.isFore; conditionals.isLeading], 'corr');
-barFancy(dv, 'axisColor', axisColor, 'levelNames', {vars.condition.levelNames}, 'ylabel', 'paw-obstacle correlation', ...
-    'colors', colors, 'scatterAlpha', .8, 'barAlpha', .4, 'labelSizePerFactor', .15, 'lineThickness', 2)
-set(gca, 'position', [.15 .11 .77 .81])
+barFancy(dv, 'levelNames', {vars.condition.levelNames}, 'ylabel', 'paw-obstacle correlation', 'colors', colors, barProperties{:})
+set(gca, 'position', [.2 .11 .78 .82])
 print -clipboard -dmeta
 
 
 %% SHAPING MOVING AVGS
 
 close all;
+flat_sub = flat(~isnan([flat.obsHgt]) & ...
+                [flat.isLeading] & ...
+                [flat.isFore]);
 if ~contains(dataset, 'opto')
-    [~, conditions] = ismember({flat.(vars.condition.name)}, vars.condition.levels);  % convert condition name into condition number
-    colorsTemp = colors;
+    [~, conditions] = ismember({flat_sub.(vars.condition.name)}, vars.condition.levels);  % convert condition name into condition number
 else
-    conditions = [flat.isOptoOn]+1;
-    colorsTemp = [colors(1,:); mean(colors(2:end,:),1)];
+    conditions = [flat_sub.isOptoOn]+1;
 end
+colorsTemp = manipColors;
 figure('units', 'inches', 'position', [20.95 1.88 3.80 2.79], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 plot([0 100], [0 100], 'Color', axisColor*.5, 'LineWidth', 3) % add unity line
-logPlotRick([flat.obsHgt]*1000, [flat.preObsHgt]*1000, ...
+logPlotRick([flat_sub.obsHgt]*1000, [flat_sub.preObsHgt]*1000, ...
     {'colors', colorsTemp, 'conditions', conditions, 'xlabel', 'obstacle height', 'ylabel', 'paw height (mm)',  ...
-    'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
+    'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat_sub.mouse}, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'lineWidth', 2})
-set(gca, 'color', 'black', 'xcolor', axisColor, 'YColor', axisColor)
+set(gca, 'color', 'black', 'xcolor', axisColor, 'YColor', axisColor, 'FontSize', fontSize, 'FontName', font)
 print -clipboard -dmeta
 
 %% KINEMATICS
@@ -162,12 +155,10 @@ flat_sub = flat(~isnan([flat.obsHgtDiscretized]) & ...
             [flat.isFore]);
 if ~contains(dataset, 'opto')
     [~, conditions] = ismember({flat_sub.(vars.condition.name)}, vars.condition.levels);  % convert condition name into condition number
-    colorsTemp = colors;
 else
     conditions = [flat_sub.isOptoOn]+1;
-%     conditions = [flat_sub.powerCondition];
-    colorsTemp = [colors(1,:); mean(colors(2:end,:),1)];
 end
+colorsTemp = manipColors;
 figure('units', 'inches', 'position', [10.67 3.16 4.51 1.44*max(conditions)], ...
     'color', 'black', 'menubar', 'none', 'inverthardcopy', false); hold on
 kinData = permute(cat(3, flat_sub.preObsKin), [3,1,2]);
@@ -181,7 +172,7 @@ for i = 1:rows
     bins = conditions==i;
     plotColor = repmat(colorsTemp(i,:), obsHgtBins, 1) .* linspace(fading,1,obsHgtBins)'; % create color matrix fading from colors(i,:) -> colors(i,:)*fading
     plotKinematics(kinData(bins,[1,3],:), [flat_sub(bins).obsHgt], [flat_sub(bins).obsHgtDiscretized], ...
-        {'colors', plotColor, 'obsAlpha', 1, 'lineAlpha', .8, 'mouseNames', {flat_sub(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
+        {'colors', plotColor, 'obsAlpha', 1, 'mouseNames', {flat_sub(bins).mouse}}) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
     set(gca, 'XLim', xLims, 'YLim', yLims, 'color', 'black')
 end
 print -clipboard -dmeta

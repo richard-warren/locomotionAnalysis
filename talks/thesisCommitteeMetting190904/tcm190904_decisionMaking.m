@@ -67,7 +67,6 @@ for i = 1:length(sessions)
     validBins = ~(sessionBins & ismember(flat.trial, find(~[kinData.isTrialAnalyzed]))); % all trial not in ssession OR in session but analyzed
     flat = flat(validBins,:);
 end
-disp('all done!')
 
 
 
@@ -105,8 +104,10 @@ for i = 1:iterations
     glm = fitglm(X([tr.trainInd tr.valInd],glmPredictorBins), y([tr.trainInd tr.valInd]), ...
         'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
     accuracies(2,i) = mean(round(predict(glm, X(tr.testInd,glmPredictorBins)))==y(tr.testInd));
-    
 end
+
+flat = table2struct(flat);
+disp('all done!')
 
 
 %% MODEL ACCURACY BARS
@@ -127,12 +128,8 @@ histoFillAlpha = .2;
 histoHgt = .3;
 
 % initializations
-close all
 figure('units', 'inches', 'position', [22.76 1.51 7.82 2.31], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
-flat_sub = flattenData(data, {'mouse', 'session', 'trial', ...
-    'modPawKinInterp', 'preModPawKinInterp', 'obsHgt', 'isLightOn', 'modPawOnlySwing', 'isBigStep'});
-flat_sub = flat_sub(~[flat.isLightOn]);
-flat_sub = flat_sub([flat_sub.modPawOnlySwing]);
+flat_sub = flat;
 [~,~,mouseIds] = unique({flat_sub.mouse});
 kinData = permute(cat(3, flat_sub.modPawKinInterp), [3,1,2]);
 kinDataCtl = permute(cat(3, flat_sub.preModPawKinInterp), [3,1,2]);
@@ -171,15 +168,15 @@ print -clipboard -dmeta
 %% BINNED KINEMATICS
 
 % settings
-close all
 binNum = 5;
 pctileBins = true;
 
 % initializations
-kin = permute(cat(3,flat.modPawKinInterp{:}), [3,1,2]);
-kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
+flat_sub = struct2table(flat);
+kin = permute(cat(3,flat_sub.modPawKinInterp{:}), [3,1,2]);
+kinCtl = permute(cat(3,flat_sub.preModPawKinInterp{:}), [3,1,2]);
 [X, y, predictorNames, isCategorical] = ...
-        prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, ...
+        prepareDecisionModelData(flat_sub, 'all', 'isBigStep', true, referenceModPaw, normalizeData, ...
         {'balanceClasses', false, 'removeNans', false});  % must recom 
 
     % choose binning variable
@@ -195,9 +192,9 @@ end
 condition = discretize(binVar, binEdges);
 
 figure('units', 'inches', 'position', [22.76 1.51 7.82 4.64], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
-plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
+plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat_sub.obsHgt, condition, flat_sub.isBigStep, ...
     {'colors', stepTypeColors, 'xLims', xLims, 'addHistos', false, 'lineWid', 3, 'controlColor', axisColor, ...
-    'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false, 'obsColor', axisColor})
+    'contactInds', flat_sub.contactInd, 'histoHgt', .5, 'showSmpNum', false, 'obsColor', axisColor})
 print -clipboard -dmeta
 
 
