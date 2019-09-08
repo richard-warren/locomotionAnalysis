@@ -1,11 +1,7 @@
-%% GLOBAL SETTINGS
-
-stepTypeColors = [0.850 0.325 0.098; 0 0.447 0.741]; % first entry is small step, second is big step
-axisColor = [.95 .95 .95];
-modelColors = [.5 1 0; .8 .8 .8];
-% !!! should i restrict to light off trials?
-
 %% INITIALIZATIONS
+
+% load global settings
+clear all; tcm190910_config;
 
 % settings
 referenceModPaw = 2;
@@ -115,24 +111,10 @@ end
 
 %% MODEL ACCURACY BARS
 
-figure('units', 'inches', 'position', [31.27 2.36 2.35 3.41], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
-barFancy(accuracies([1 3],:), 'axisColor', axisColor, 'levelNames', {{'ANN', 'shuffled'}}, 'ylabel', 'accuracy', ...
-    'colors', modelColors, 'scatterAlpha', .6, 'barAlpha', .8, 'labelSizePerFactor', .1, 'lineThickness', 2, ...
-    'YTick', [0 .5 1], 'YLim', [0 1], 'ylabelPosX', -.4, 'barWidth', .8)
-set(gca, 'position', [.15 .1 .77 .81]);
-print -clipboard -dmeta
-
-
-%% PREDICTOR SCATTERS
-
-figure('units', 'inches', 'position', [24.85 2.49 4.44 3.82], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
-scatterHistoRick([flat.x_paw2]*1000, [flat.obsHgt]*1000, ...
-    {'groupId', [flat.isBigStep]+1, 'colors', stepTypeColors, ...
-    'xlabel', 'paw position (mm)', 'ylabel', 'obstalce height (mm)', ...
-    'showCrossHairs', false, 'scatSize', 4, 'scatAlpha', .4, ...
-    'xLims', [-70 -15], 'yLims', [3 11], 'groupHistoLineWidth', 3, ...
-    'groupHistoAlpha', .8, 'histoAlpha', 0});
-set(gca, 'color', 'black', 'xcolor', axisColor, 'ycolor', axisColor)
+figure('units', 'inches', 'position', [31.27 2.36 2.8 figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+barFancy(accuracies([1 3],:), 'levelNames', {{'ANN', 'shuffled'}}, 'ylabel', 'accuracy', 'colors', modelColors, ...
+    'YTick', [0 .5 1], 'YLim', [0 1], barProperties{:})
+set(gca, 'position', [.2 .1 .77 .81]);
 print -clipboard -dmeta
 
 
@@ -161,9 +143,9 @@ condition = ~[flat_sub.isBigStep] + 1;
 axes('position', [0 histoHgt 1 1-histoHgt]); hold on;
 
 plotKinematics(kinData(:,[1 3],:), [flat_sub.obsHgt], condition, ...
-    {'colors', stepTypeColors, 'trialsToOverlay', trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'lineColor', 'none'})
+    {'colors', stepTypeColors, 'trialsToOverlay', trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'lineColor', axisColor})
 plotKinematics(kinDataCtl(:,[1 3],:), [flat_sub.obsHgt], ones(1,length(flat_sub)), ...
-    {'colors', axisColor, 'lineWidth', 5, 'yLimZero', false, 'lineColor', axisColor})
+    {'colors', axisColor, 'lineWidth', 5, 'yLimZero', false, 'lineColor', 'none'})
 set(gca, 'color', 'black', 'xlim', xLims)
 
 % plot pdfs
@@ -177,11 +159,11 @@ kdLong = ksdensity(kinData(condition==1,1,end), xGrid) * longShortRatio;
 kdShort = ksdensity(kinData(condition==2,1,end), xGrid) * (1-longShortRatio);
 
 fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], axisColor, 'FaceAlpha', histoFillAlpha, 'EdgeColor', 'none')
-plot(xGrid, kdCtl, 'Color', axisColor, 'LineWidth', 4)
+plot(xGrid, kdCtl, 'Color', axisColor, 'LineWidth', 2)
 fill([xGrid xGrid(1)], [kdLong kdLong(1)], stepTypeColors(1,:), 'FaceAlpha', histoFillAlpha, 'EdgeColor', 'none')
-plot(xGrid, kdLong, 'Color', stepTypeColors(1,:), 'LineWidth', 4)
+plot(xGrid, kdLong, 'Color', stepTypeColors(1,:), 'LineWidth', 2)
 fill([xGrid xGrid(1)], [kdShort kdShort(1)], stepTypeColors(2,:), 'FaceAlpha', histoFillAlpha, 'EdgeColor', 'none')
-plot(xGrid, kdShort, 'Color', stepTypeColors(2,:), 'LineWidth', 4)
+plot(xGrid, kdShort, 'Color', stepTypeColors(2,:), 'LineWidth', 2)
 
 set(gca, 'XLim', xLims, 'YDir', 'reverse', 'Visible', 'off', 'color', 'black')
 print -clipboard -dmeta
@@ -231,7 +213,7 @@ heatmapRick(flat.modPawPredictedDistanceToObs*1000, flat.modPawDistanceToObs*100
     {'xLims', xLims, 'yLims', yLims, 'xlabel', 'predicted distance (mm)', 'ylabel', 'distance (mm)', 'colormap', 'hot'})
 set(gca, 'DataAspectRatio', [1 1 1])
 line(xLims, xLims, 'color', axisColor, 'lineWidth', 3)
-set(gca, 'color', 'black', 'xcolor', axisColor, 'ycolor', axisColor)
+set(gca, 'color', 'black', 'xcolor', axisColor, 'ycolor', axisColor, 'FontSize', fontSize, 'FontName', font)
 print -clipboard -dmeta
 
 %% NEURAL NET DIAGRAM
@@ -249,7 +231,7 @@ lineAlpha = .4;
 x = linspace(.1, .9, length(layers));
 
 close all
-figure('units', 'inches', 'position', [7.82 3.84 3.22 3.46], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+figure('units', 'inches', 'position', [7.82 3.84 3.22 figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 hold on
 
 % get centers of all nodes

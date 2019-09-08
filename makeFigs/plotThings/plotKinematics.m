@@ -33,8 +33,6 @@ if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end;
 if ischar(s.colors); s.colors = eval([s.colors '(max(conditions))']); end % set colorspace if color is specified as a string
 if ~isempty(s.mouseNames); mice = unique(s.mouseNames); end
 
-
-
 % add line at top of wheel
 if ~s.isBotView; line([-.2 .2], [0 0], 'color', s.lineColor); end
 

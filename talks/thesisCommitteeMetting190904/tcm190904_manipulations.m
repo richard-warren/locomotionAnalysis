@@ -2,9 +2,8 @@
 
 
 % settings
+tcm190910_config;  % load global settings
 dataset = 'opto_mtc2mm';
-axisColor = [.95 .95 .95];
-manipColor = [.5 1 0];
 maxEarlySessions = 3;  % only include this many days post lesion in lesions figs
 
 % motor cortex muscimol
@@ -54,12 +53,12 @@ conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 figPadding = (length(vars.condition.levels)-2) * .25;
 
 %% SUCCESS
-close all
+% close all
 figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding 2.90], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
 dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, figConditionals);
 barFancy(dv, 'axisColor', axisColor, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, ...
     'colors', colors, 'scatterAlpha', .8, 'barAlpha', .4, 'labelSizePerFactor', .1, 'lineThickness', 2, 'YLim', [0 1])
-set(gca, 'position', [.2 .11 .78 .82])
+set(gca, 'position', [.2 .11 .78 .82], 'FontName', 'Calibri')
 print -clipboard -dmeta
 
 %% SPEED VS POSITION
