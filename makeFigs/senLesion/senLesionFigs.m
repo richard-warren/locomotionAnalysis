@@ -34,7 +34,7 @@ conditionals.isEarly = struct('name', 'conditionNum', 'condition', @(x) x<=maxEa
 conditionals.isLate = struct('name', 'conditionNum', 'condition', @(x) x>=5 & x<=8);
 conditionals.isObsHigh = struct('name', 'obsHgt', 'condition', @(x) x>minObsHgt);
 
-figConditionals = [conditionals.isObsHigh];
+% figConditionals = [conditionals.isObsHigh];
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
@@ -58,7 +58,7 @@ disp('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLe
 %% compute experiment from scratch, in parallel
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
-data = cat(2,data{:});
+data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
 
 %% ----------

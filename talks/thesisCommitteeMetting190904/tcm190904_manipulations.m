@@ -5,7 +5,8 @@ clear all; tcm190910_config;
 
 
 % settings
-dataset = 'mtc_lesion';
+dataset = 'mtc_muscimol';
+poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 maxEarlySessions = 3;  % only include this many days post lesion in lesions figs
 
 % motor cortex muscimol
@@ -24,11 +25,18 @@ elseif strcmp(dataset, 'mtc_lesion')
 
 % barrel cortex lesion
 elseif strcmp(dataset, 'senLesion')
-%     colors = [manipColors; manipColors(2,:)*.5];
-    colors = winter(4);
-    vars.condition = struct('name', 'condition', ...
-        'levels', {{'pre', 'postContra', 'postBi', 'noWisk'}}, ...
-        'levelNames', {{'pre', 'post contra', 'post bi', sprintf('no whiskers')}});
+    
+    if poolSenLesionConditions
+        colors = [manipColors; manipColors(2,:)*.5];
+        vars.condition = struct('name', 'condition', ...
+            'levels', {{'pre', 'postBi', 'noWisk'}}, ...
+            'levelNames', {{'pre', 'post', 'no whiskers'}});
+    else
+        colors = [axisColor; axisColor; winter(4)];
+        vars.condition = struct('name', 'condition', ...
+            'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, ...
+            'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});
+    end
     figConditionals = struct('name', 'conditionNum', 'condition', @(x) x<=maxEarlySessions);
     extraVars = {'condition'};  % vars to extract using flattenData that are specific to this experiment
 
@@ -40,25 +48,42 @@ elseif contains(dataset, 'opto')
     extraVars = {'powerCondition', 'optoOnPositions', 'isOptoOn'};  % vars to extract using flattenData that are specific to this experiment
 end
 
-
 % load data
-fprintf(['loading ' dataset ' data... ']); 
+fprintf(['loading ' dataset ' data... ']);
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data');
+
+% pool postContra and postBi for senLesion experiments
+if strcmp(dataset, 'senLesion') && poolSenLesionConditions
+    fprintf('pooling postContra and postBi conditions... ');
+    for i = 1:length(data.data)  % loop across mice
+        for j = 1:length(data.data(i).sessions)
+            if strcmp(data.data(i).sessions(j).condition, 'postContra')
+                data.data(i).sessions(j).condition = 'postBi';
+            end
+        end
+    end
+end
+
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
     'velVsPosition', 'velVsPositionX', 'isWheelBreak', 'obsHgt', 'isPawSuccess', ...
     'isLeading', 'isFore', 'stepOverKinInterp', 'paw', 'controlStepKinInterp', 'preObsHgt', 'stepType', ...
     'isBigStep', 'preObsKin', 'conditionNum', extraVars{:}});
 
-if contains(dataset, {'lesion', 'Lesion'}); flat = flat([flat.conditionNum]<=maxEarlySessions); disp('restricting flat to early sessions...'); end
+if contains(dataset, {'lesion', 'Lesion'})
+    fprintf('restricting flat to early sessions... ');
+    flat = flat([flat.conditionNum]<=maxEarlySessions);
+end
 disp([dataset ' data loaded!'])
 
 % define variables and conditionals to be used in bar plots
 conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 figPadding = (length(vars.condition.levels)-2) * .25;
+conditionals.isObsHigh = struct('name', 'obsHgt', 'condition', @(x) x>.008);
+conditionals.isObsLow = struct('name', 'obsHgt', 'condition', @(x) x<.005);
+
 
 %% MAKE FIGURE WITH SUCCESS, PAW HEIGHT, SHAPING, AND VEL
-
 
 % SUCCESS
 if contains(dataset, 'opto')
@@ -73,7 +98,7 @@ figure('name', dataset, 'units', 'inches', 'position', [21.18 3.21 figWidth 7.5]
     'color', 'black', 'menubar', 'none', 'inverthardcopy', false); hold on
 subplot(2,cols,1)
 % figure('units', 'inches', 'position', [6.98 5.07 2.44+figPadding figHgt], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
-dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, figConditionals);
+dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, [figConditionals]);
 barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
     'YLim', [0 1], 'YTick', [0 .5 1], 'barWidth', .8)
 % set(gca, 'position', [.2 .11 .78 .82])
@@ -124,7 +149,9 @@ else  % plots for opto experiments
     % add light on, obs on, and obs at nose markers
     optoOnPos = nanmedian([flat.optoOnPositions]);
     x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
-    line([optoOnPos optoOnPos], yLims, 'linewidth', 2, 'color', axisColor)
+    line([optoOnPos optoOnPos], yLims, 'linewidth', 4, 'color', mean(colors(2:end,:),1))
+    text(optoOnPos, yLims(2), '\itlaser on', 'color', axisColor, ...
+        'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'FontSize', fontSize, 'FontName', font, 'color', mean(colors(2:end,:),1))
 
     plotDvPsth(flat, 'velVsPosition', vars.condition.name, ...
         {'showLegend', false, 'conditionColors', colors, 'xlim', [-.9 .2], 'showErrorBars', false, ... 
@@ -216,9 +243,16 @@ print -clipboard -dmeta
 %% SESSIONS OVER TIME
 
 close all
-sessionsToShow = -2:8;
 
 if strcmp(dataset, 'mtc_lesion')
+    sessionsToShow = -2:8;
+    postCondition = {'post'};
+elseif strcmp(dataset, 'senLesion')
+    sessionsToShow = -3:6;
+    postCondition = {'postBi', 'postContra'};
+end
+
+if strcmp(dataset, 'mtc_lesion') || (strcmp(dataset, 'senLesion') && poolSenLesionConditions)
     
     axProps = {'color', 'black', 'xcolor', axisColor', 'ycolor', axisColor, 'FontName', font, 'FontSize', fontSize};
     
@@ -227,9 +261,18 @@ if strcmp(dataset, 'mtc_lesion')
     vars.sessionsPostLesion = struct('name', 'sessionsPostLesion', 'levels', sessionsToShow);
 
     for i = 1:length(data.data) % compute session number relative to first lesion session
-        firstLesSession = find(strcmp({data.data(i).sessions.condition}, 'post'), 1, 'first');
+        sessionNums = [data.data(i).sessions.sessionNum];
+        firstLesSession = sessionNums(find(ismember({data.data(i).sessions.condition}, postCondition), 1, 'first'));
         sessionsPostLesion = num2cell([data.data(i).sessions.sessionNum] - firstLesSession);
         [data.data(i).sessions.sessionsPostLesion] = sessionsPostLesion{:};
+        
+        if strcmp(dataset, 'senLesion')  % make sure preTrim not included in pre, and postTrim not included in post
+            for j = 1:length(data.data(i).sessions)
+                if ismember(data.data(i).sessions(j).condition, {'preTrim', 'noWisk'})
+                    data.data(i).sessions(j).sessionsPostLesion = nan;
+                end
+            end
+        end
     end
 
 
@@ -238,21 +281,99 @@ if strcmp(dataset, 'mtc_lesion')
     dv = getDvMatrix(data, 'isTrialSuccess', vars.sessionsPostLesion, {'mouse'});
     sesPlotRick(dv', {'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'success rate', ...
         'meanColor', axisColor, 'colors', mouseColors, 'alpha', .6});
-    ln = line(-[.5 .5], get(gca, 'ylim'), 'color', 'red', 'linewidth', 2); uistack(ln, 'bottom')
-    set(gca, axProps{:})
+    set(gca, axProps{:}, 'ylim', [0 1])
+    ln = line(-[.5 .5], get(gca, 'ylim'), 'color', manipColors(2,:), 'linewidth', 2); uistack(ln, 'bottom')
 
     % velocity
     subplot(2,1,2);
     dv = getDvMatrix(data, 'velAtWiskContact', vars.sessionsPostLesion, {'mouse'});
     sesPlotRick(dv', {'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'velocity (m/s)', 'xlabel', 'days post lesion', ...
         'meanColor', axisColor, 'colors', mouseColors, 'alpha', .6});
-    ln = line(-[.5 .5], get(gca, 'ylim'), 'color', 'red', 'linewidth', 2); uistack(ln, 'bottom')
+    ln = line(-[.5 .5], get(gca, 'ylim'), 'color', manipColors(2,:), 'linewidth', 2); uistack(ln, 'bottom')
     set(gca, axProps{:})
     
     print -clipboard -dmeta
 end
 
 
+
+%% PROPENSITY SCORE MATCHING
+
+
+% settings
+varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
+manipPercent = 25; % take manipPercent percent of best matched manip trials
+manipConditions = {'post', 'muscimol'};  % the names of the conditions corresponding to the manipulation
+
+
+% propensity score matching
+mice = {data.data.mouse};
+flat_sub = struct2table(flattenData(data, [{'mouse', 'session', 'trial', 'condition', 'isLightOn', 'conditionNum'} varsToMatch]));
+varBins = ismember(flat_sub.Properties.VariableNames, varsToMatch);
+metaBins = ismember(flat_sub.Properties.VariableNames, {'mouse', 'session', 'trial'});  % metadata associated with each trial
+
+% find matched trials
+matchedTrials = cell2table(cell(0,3), 'VariableNames', {'mouse', 'session', 'trial'});
+for mouse = mice
+    
+    bins = strcmp(flat_sub.mouse, mouse{1}) & ...
+           ismember(flat_sub.condition, vars.condition.levels) & ...
+           [flat_sub.conditionNum]<=maxEarlySessions;
+    flat_sub_sub = flat_sub(bins,:);
+    
+    
+	X = table2array(flat_sub_sub(:, varBins));
+    y = ismember(flat_sub_sub.condition, manipConditions); % is trial in the manip condition
+    matchedPairs = propensityMatching(X, y, ...
+        {'percentileThresh', manipPercent, 'predictorNames', varsToMatch, 'verbose', false});
+    matchedTrials = [matchedTrials; flat_sub_sub(matchedPairs(:), metaBins)];
+    
+end
+
+% get rid of non-matched trials!
+data_matched = data;
+
+for i = 1:length(data_matched.data)
+    for j = 1:length(data_matched.data(i).sessions)
+        bins = strcmp(matchedTrials.mouse, data_matched.data(i).mouse) & ...
+               strcmp(matchedTrials.session, data_matched.data(i).sessions(j).session);
+        sesTrials = matchedTrials.trial(bins);
+        data_matched.data(i).sessions(j).trials = data_matched.data(i).sessions(j).trials(sesTrials);
+    end
+
+    % remove unused sessions
+    isSessionUsed = ismember({data_matched.data(i).sessions.session}, unique(matchedTrials.session));
+    data_matched.data(i).sessions = data_matched.data(i).sessions(isSessionUsed);
+end
+
+% plot!
+figure('name', dataset, 'units', 'inches', 'position', [2 2 12 6], 'color', 'black', 'menubar', 'none', 'inverthardcopy', false)
+
+datasets = {data; data_matched};
+plotInd = 1;
+for i = 1:length(datasets)
+    subplot(2,5,1+(i-1)*5)
+    dv = getDvMatrix(datasets{i}, 'isTrialSuccess', vars.condition, {'mouse'}, figConditionals);
+    barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+        'barWidth', .75, 'YLim', [0 1], 'YTick', [0 .5 1], 'ylabelPosX', -.7);
+
+    subplot(2,5,3+(i-1)*5)
+    dv = getDvMatrix(datasets{i}, 'velAtWiskContact', vars.condition, {'mouse'}, figConditionals);
+    barFancy(dv, 'ylabel', 'velocity', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+        'barWidth', .75, 'YLim', [0 .6], 'YTick', [0 .3 .6], 'ylabelPosX', -.7);
+
+    subplot(2,5,4+(i-1)*5)
+    dv = getDvMatrix(datasets{i}, 'angleAtWiskContactContra', vars.condition, {'mouse'}, figConditionals);
+    barFancy(dv, 'ylabel', 'body angle', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+        'barWidth', .75, 'YLim', [-12 12], 'YTick', [-12 0 12], 'ylabelPosX', -.7);
+
+    subplot(2,5,5+(i-1)*5)
+    dv = getDvMatrix(datasets{i}, 'tailHgtAtWiskContact', vars.condition, {'mouse'}, figConditionals) * 1000;
+    barFancy(dv, 'ylabel', 'tail height (mm)', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+        'barWidth', .75, 'YLim', [0 20], 'YTick', 0:10:20, 'ylabelPosX', -.7); 
+end
+
+print -clipboard -dmeta
 
 
 

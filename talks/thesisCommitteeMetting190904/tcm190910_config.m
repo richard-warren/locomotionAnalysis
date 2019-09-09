@@ -16,5 +16,6 @@ pawColors = colorme(4, 'offset', .65, 'showSamples', false);
 sensoryColors = [colorme(3, 'offset', .70, 'showSamples', false); axisColor*.5];
 stepTypeColors = colorme(2, 'offset', .9, 'showSamples', false);
 modelColors = [.5 1 0; axisColor];
-manipColors = [axisColor; colorme(1, 'offset', .50, 'showSamples', false)];
+% manipColors = [axisColor; colorme(1, 'offset', .50, 'showSamples', false)];
+manipColors = [axisColor; colorme(1, 'offset', .9, 'showSamples', false)];
 optoColors = [axisColor; winter(3)];

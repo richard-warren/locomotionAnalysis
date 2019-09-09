@@ -75,6 +75,14 @@ for i = 1:length(rowConditions)
     if length(rowConditions)>1; subplot(length(rowConditions),1,i); end
     
     for j = 1:length(s.plotConditions)
+        
+        if s.plotMouseAvgs
+            for k = 1:length(mice)
+                plot(xGrid, squeeze(mouseAvgs(j,i,k,:)), ...
+                    'LineWidth', 1, 'Color', [s.mouseColors(k,:) s.mouseAlpha]); hold on
+            end
+        end
+        
         if s.showErrorBars
             shadedErrorBar(xGrid, squeeze(mouseAvgs(j,i,:,:)), {@nanmean, s.errorFcn}, ...
                 'lineprops', {'linewidth', s.lineWidth, 'color', s.conditionColors(j,:)}, 'patchSaturation', s.errorAlpha); hold on;
@@ -82,13 +90,6 @@ for i = 1:length(rowConditions)
 %             keyboard
             conditionAvgs = squeeze(mouseAvgs(j,i,:,:));
             plot(xGrid, nanmean(conditionAvgs,1), 'linewidth', s.lineWidth, 'color', s.conditionColors(j,:)); hold on;
-        end
-        
-        if s.plotMouseAvgs
-            for k = 1:length(mice)
-                plot(xGrid, squeeze(mouseAvgs(j,i,k,:)), ...
-                    'LineWidth', 1, 'Color', [s.mouseColors(k,:) s.mouseAlpha]); hold on
-            end
         end
     end
     

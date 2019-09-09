@@ -51,7 +51,7 @@ clear data
 disp('data loaded!')
 
 % put together in one giant data structure
-for i = 1:length(dataMus.data)
+for i = 1:length(data.data)
     
     data(i,1).mouse = dataMus.data(i).mouse;
     data(i,1).sessions = [dataMus.data(i).sessions; dataLes.data(i).sessions];
