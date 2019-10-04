@@ -37,8 +37,42 @@ while true
                     exist([sessionsDir newSessions{1} '\runBot.mp4'], 'file'))
                 dlcAnalysisSuccessful = false;
                 currentTime = clock;
-                fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
-                tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
+                
+                % check if video has new or old cropping
+                rootDir = fullfile(getenv('OBSDATADIR'), 'sessions', newSessions{1});
+                vidTop = VideoReader(rootDir, 'runTop.mp4');
+                vidBot = VideoReader(rootDir, 'runBot.mp4'));
+                dims = [vidTop.Height, vidTop.Width, vidBot.Height, vidBot.Width];
+                clear vidTop vidBot
+                
+                % if using original dimensions
+                if isequal(dims, [168 396 238 396])
+                    fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
+                    tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
+                    
+                % if using new dimensions
+                elseif isequal(dims, [214 448 238 448])
+                    
+                    fprintf('%s: cropping videos to match old video dimensions...', newSessions{1});
+                    
+                    % copy and rename original dimension files
+                    copyfile(fullfile(rootDir, 'runBot.mp4'), fullfile(rootDir, 'runBot_originalDimensions.mp4'))
+                    copyfile(fullfile(rootDir, 'runTop.mp4'), fullfile(rootDir, 'runTop_originalDimensions.mp4'))
+                    
+                    % crop so dimensions match old dimensions
+                    system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(rootDir, 'runTop.mp4') ...
+                        ' -filter:v "crop=396:168:68:52" -vb 10M -vcodec mpeg4 ' fullfile(rootDir, 'runTop.mp4')]);
+                    system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(rootDir, 'runBot.mp4') ...
+                        ' -filter:v "crop=396:238:68:0" -vb 10M -vcodec mpeg4 ' fullfile(rootDir, 'runBot.mp4')]);
+                    
+                    fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
+                    tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
+                    
+                % if dimensions not recognized
+                else
+                    fprintf('%s: WARNING! Unexpected frame dimensions!\n', newSessions{1})
+                end
+                
                 fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
                 dlcAnalysisSuccessful = true;
             else
