@@ -11,7 +11,7 @@ dlcPath = [getenv('GITDIR') 'DeepLabCutBatch'];
 
 % initializations
 load([schedulerDir 'analyzedSessions.mat'], 'analyzedSessions');
-    
+
 
 % start scheduling
 fprintf('waiting for new files to analyze...')
@@ -21,7 +21,7 @@ while true
     sessions = dir(sessionsDir);
     sessions = {sessions([false false sessions(3:end).isdir]).name};
     newSessions = sessions(~ismember(sessions, analyzedSessions));
-    validSessionNameBins = cellfun(@(x) length(x)==10 && any(strfind(x,'_')), newSessions); % this is hacky, but checks that the length of the file name is 10 and thhat it also contains an underscore, which conforms to naming concentions for sessions
+    validSessionNameBins = cellfun(@(x) length(x)==10 && any(strfind(x,'_')), newSessions); % this is hacky, but checks that the length of the file name is 10 and that it also contains an underscore, which conforms to naming concentions for sessions
     newSessions = newSessions(validSessionNameBins);
     
     if ~isempty(newSessions)

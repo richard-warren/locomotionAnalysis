@@ -91,9 +91,9 @@ for mouse = 1:length(g.mice)
         
         % check if session already exists in oldData
         if exist('oldData', 'var')
-            mouseBin = strcmp({oldData.mouse}, g.mice{mouse});
+            mouseBin = strcmp({oldData.data.mouse}, g.mice{mouse});
             if any(mouseBin)
-                sesBin = strcmp({oldData(mouseBin).sessions.session}, g.sessions{session});
+                sesBin = strcmp({oldData.data(mouseBin).sessions.session}, g.sessions{session});
             else
                 sesBin = false;
             end
@@ -104,7 +104,7 @@ for mouse = 1:length(g.mice)
         % if session exists in old data, copy it over
         if any(sesBin)
             fprintf('%s: copying trials from previous data...\n', g.sessions{session})
-            g.expData(mouse).sessions(session).trials = oldData(mouseBin).sessions(sesBin).trials;
+            g.expData(mouse).sessions(session).trials = oldData.data(mouseBin).sessions(sesBin).trials;
         
         % otherwise, compute de novo
         else

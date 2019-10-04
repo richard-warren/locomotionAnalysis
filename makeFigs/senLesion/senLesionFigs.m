@@ -9,6 +9,7 @@ minObsHgt = .008;
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
+sessionInfo = sessionInfo(113:end,:); % !!! this temporary hack that includes only the new senLesion mice
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows, not included sessions, and those without correct brain region
 mice = unique(sessionInfo.mouse);
 
@@ -38,32 +39,31 @@ conditionals.isObsHigh = struct('name', 'obsHgt', 'condition', @(x) x>minObsHgt)
 figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
 
 
-%% compute kinData for all sessions (only need to do once)
-overwriteKindata = false;
-sessions = unique(sessionInfo(logical([sessionInfo.include]),:).session);
-parfor i = 1:length(sessions)
-    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'file') || overwriteKindata
-        getKinematicData5(sessions{i});
-    end
-end
-
 %% load experiment data
 disp('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data'); disp('senLesion data loaded!')
 
-%% compute new data and append to loaded data
-loadOldData = true;
-if exist('data', 'var') && loadOldData; data = getExperimentData(sessionInfo, 'all', data); else; data = getExperimentData(sessionInfo, 'all'); end
+%% add new data to loaded data
+data = getExperimentData(sessionInfo, 'all', data);
 disp('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data', '-v7.3'); disp('data saved');
 
 %% compute experiment from scratch, in parallel
-data = cell(1,length(mice));
+data = cell(1,length(mice));    
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data');
+disp('saving data...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'senLesion_data.mat'), 'data', '-v7.3'); disp('data saved');
 
 %% ----------
 % PLOT THINGS
 %  ----------
+
+%% sessions over time
+
+% success, vel, body angle, baseline step height, 
+dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
+flat = flattenData(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
+plotAcrossSessions2(flat, dvs);
+savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_sessionsOverTime.fig'))
+
 
 %% bar plots
 
@@ -200,14 +200,6 @@ figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [200
 logPlotRick([flat.modPawPredictedDistanceToObs], [flat.isBigStep], ...
     {'predicted distance to obstacle (m)', 'big step probability'}, conditions, vars.condition.levelNames)
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_bigStepProbability.fig'))
-
-%% sessions over time
-
-% success, vel, body angle, baseline step height, 
-dvs = {'isTrialSuccess', 'trialVel', 'trialAngleContra', 'isContraFirst', 'isBigStep', 'tailHgt'};
-flat = getNestedStructFields(data, cat(2, {'mouse', 'session', 'trial', 'condition', 'sessionNum', 'conditionNum'}, dvs));
-plotAcrossSessions2(flat, dvs);
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_sessionsOverTime.fig'))
 
 
 %% speed vs. position / time plots
@@ -392,7 +384,7 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'senLesion', 'senLesion_kinema
 %% render experiment vids
 
 trialsPerSession = 15;
-flat = getNestedStructFields(data, {'mouse', 'session', 'condition', 'trial', 'velAtWiskContact'});
+flat = flattenData(data, {'mouse', 'session', 'condition', 'trial', 'velAtWiskContact'});
 overWriteVids = false;
 
 for i = 1:length(mice)

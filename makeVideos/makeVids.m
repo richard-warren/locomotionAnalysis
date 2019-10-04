@@ -243,7 +243,8 @@ makeUnitVid(session, unit_id, fileName, timeEpochs)
 %% make video of all wheel break trials for a session
 
 % sessions = selectSessions;
-sessions = {'190405_000'};
+sessions = {'191002_000', '191002_001', '191002_002'};
+
 for i = 1:length(sessions)
     wheelBreakTrials = find(getIsWheelBreak(sessions{i}))';
     makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', 'wheelBreakOnlyVids', [sessions{i} 'WheelBreaks']), ...
@@ -371,7 +372,9 @@ writetable(trackingData(frameInds, noObsColBins), ...
 disp('all done!')
 
 
+%% show only wisk contact frames with low obstacles...
 
+session = '190925_000';
 
 
 
