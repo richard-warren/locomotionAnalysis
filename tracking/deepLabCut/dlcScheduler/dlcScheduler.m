@@ -1,4 +1,4 @@
-% todo: make sure it doesnt get caught trying to reanalyze problematic
+s% todo: make sure it doesnt get caught trying to reanalyze problematic
 % sessions // have separate memory for whether dlc and spike analyses are
 % done
 
@@ -40,8 +40,8 @@ while true
                 
                 % check if video has new or old cropping
                 rootDir = fullfile(getenv('OBSDATADIR'), 'sessions', newSessions{1});
-                vidTop = VideoReader(rootDir, 'runTop.mp4');
-                vidBot = VideoReader(rootDir, 'runBot.mp4'));
+                vidTop = VideoReader(fullfile(rootDir, 'runTop.mp4'));
+                vidBot = VideoReader(fullfile(rootDir, 'runBot.mp4'));
                 dims = [vidTop.Height, vidTop.Width, vidBot.Height, vidBot.Width];
                 clear vidTop vidBot
                 

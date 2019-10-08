@@ -360,7 +360,6 @@ function spikeAnalysis2(session, varsToOverWrite)
 
         if exist([sessionDir 'run.csv'], 'file')
 
-            fprintf('%s: getting frame time stamps\n', session)
             load([sessionDir '\run.mat'], 'exposure')
 
             % get camera metadata and spike timestamps
@@ -368,7 +367,18 @@ function spikeAnalysis2(session, varsToOverWrite)
             frameCounts = camMetadata(:,2);
             timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
 
-            try; frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session); catch; keyboard; end
+            % newer sessions have TTL gap only at the end of the session,
+            % and older sessions have gaps after each reward // this checks
+            % if there are more than a few TTL gaps // if so, it runs the
+            % old synchronization scripts // if not, it assumes this is a
+            % newer session and runs the new synchronization scripts
+            if sum(diff(exposure.times)>.45)>5
+                fprintf('%s: getting frame time stamps (looking for post reward TTL gaps)\n', session)
+                frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session);
+            else
+                fprintf('%s: getting frame time stamps (looking for end of session TTL gaps)\n', session)
+                frameTimeStamps = getFrameTimes4(exposure.times, timeStampsFlir, frameCounts, session);
+            end
 
             % !!! the following should fix sessions where spike is stopped
             % before the camera is stopped // not sure it will worked if
@@ -406,7 +416,19 @@ function spikeAnalysis2(session, varsToOverWrite)
             frameCountsWisk = camMetadataWisk(:,1);
             timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
 
-            frameTimeStampsWisk = getFrameTimes2(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+            % newer sessions have TTL gap only at the end of the session,
+            % and older sessions have gaps after each reward // this checks
+            % if there are more than a few TTL gaps // if so, it runs the
+            % old synchronization scripts // if not, it assumes this is a
+            % newer session and runs the new synchronization scripts
+            if sum(diff(exposure.times)>.45)>5
+                fprintf('%s: getting frame time stamps (looking for post reward TTL gaps)\n', session)
+                frameTimeStampsWisk = getFrameTimes2(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+            else
+                fprintf('%s: getting frame time stamps (looking for end of session TTL gaps)\n', session)
+                frameTimeStampsWisk = getFrameTimes4(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+            end
+            
 
             if length(exposure.times) < length(frameCountsWisk)
                 disp('  there are more frames than exposure TTLs...')
@@ -656,8 +678,8 @@ function spikeAnalysis2(session, varsToOverWrite)
 
         % run neural network classifier
         if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier) || isempty(readtable([sessionDir 'pawAnalyzed.csv']))
-            fprintf('%s: running paw contact neural network\n', session)
-            save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct') % first save the file so analyzeVideo.py can access it
+            fprintf('%s: running paw contact neural network\n', session);
+            save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct');  % first save the file so analyzeVideo.py can access it
             [~, ~] = system([pythonPath ' tracking\pawContact\expandanalyze.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         
@@ -744,6 +766,22 @@ function spikeAnalysis2(session, varsToOverWrite)
             exist([sessionDir 'runWisk.mp4'], 'file')
         
         fprintf('%s: getting whisker contacts\n', session)
+        
+        % check if using new, larger cropping, and crop to old dimensions if so
+        vidWisk = VideoReader(fullfile(sessionDir, 'runWisk.mp4'));
+        dims = [vidWisk.Height, vidWisk.Width];
+        clear vidWisk
+        
+        if isequal(dims, [380, 336])
+            fprintf('%s: cropping whisker camera to match old video dimensions...\n', session);
+                    
+            % copy and rename original dimension files
+            copyfile(fullfile(sessionDir, 'runWisk.mp4'), fullfile(sessionDir, 'runWisk_originalDimensions.mp4'))
+
+            % crop so dimensions match old dimensions
+            system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(sessionDir, 'runWisk_originalDimensions.mp4') ...
+                ' -filter:v "crop=336:280:0:100" -vb 10M -vcodec mpeg4 ' fullfile(sessionDir, 'runWisk.mp4')]);
+        end
         
         % settings
         rerunWiskNetwork = true;
