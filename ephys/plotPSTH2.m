@@ -13,7 +13,7 @@
 
 % settings
 s.normalize = false;  % whether to z score data
-s.yLimsNormalized = [-2.5 2.5]; % plot mean +- yLimsNormalized*std
+s.yLimsNormalized = [-4 4]; % plot mean +- yLimsNormalized*std
 s.xLims = [-.1 .5]; % limits for x axis
 s.plotTrials = 0; % if >0, plot individual trial firing rates in the background
 s.xGridLength = 100; % number of points per trial for epoch interpolation
@@ -25,6 +25,7 @@ s.errorFcn = @(x) nanstd(x); % function for error bars // set to false if you do
 s.colors = 'hsv'; % color scheme // can be specified either as a string, or as an nX3 color map, where n is number of conditions
 s.trialAlpha = .1;  % transparency of individual trial lines
 s.errorAlpha = .1;  % transparency of error bar shading
+s.plotLegend = true;
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -145,8 +146,10 @@ if numConditions>1 || s.showSampleSize
         if s.showSampleSize; s.conditionNames{i} = sprintf('%s (%i)', s.conditionNames{i}, sampleSizes(i)); end
     end 
     
-    for i = 1:numConditions; lines(i) = plot([nan nan], 'color', s.colors(i,:), 'LineWidth', 2); end % create dummy lines
-    legend(lines, s.conditionNames, 'Box', 'off', 'Location', 'Best');
+    if s.plotLegend
+        for i = 1:numConditions; lines(i) = plot([nan nan], 'color', s.colors(i,:), 'LineWidth', 2); end % create dummy lines
+        legend(lines, s.conditionNames, 'Box', 'off', 'Location', 'Best');
+    end
 end
 pause(.001)
 

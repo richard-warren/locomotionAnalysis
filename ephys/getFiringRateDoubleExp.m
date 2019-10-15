@@ -1,7 +1,8 @@
-function spikeRate = getFiringRateDoubleExp(spkTimes, fs, rise, fall, timeLims)
+function [spikeRate, times] = getFiringRateDoubleExp(spkTimes, fs, rise, fall, timeLims)
     
     % create kernel
     kernel = arrayfun(@(x) exp(-x/(fall*fs))-exp(-x/(rise*fs)), 0:1*fs);
+    kernel = [zeros(size(kernel)) kernel];
     kernel = kernel/sum(kernel);
     
     if exist('timeLims', 'var')

@@ -6,8 +6,11 @@ function formatEphysData(session)
 
 % settings
 spkRateFs = 1000;     % sampling frequency of instantaneous firing rate
-spkRateKernSig = .02; % kernel used to determine instantaneous firing rate
-% obsOnChannel = 0;
+kernelRise = .005;  % rise and fall for double exponential kernel
+kernelFall = .02;
+kernelSig = .02;  % if a gaussian kernel is used
+kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
+
 
 % initializations
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
@@ -52,7 +55,6 @@ openEphysToSpikeMapping = polyfit(openEphysObsOnTimes(validOpenEBins), obsOnTime
 predictedObsOnTimes = polyval(openEphysToSpikeMapping, openEphysObsOnTimes(validOpenEBins));
 if max(abs(predictedObsOnTimes - obsOnTimes)) > .001
     fprintf('OMG THERE WAS A PROBLEM MAPPING FROM OPEN EPHYS TO SPIKE TIMES!!! LOL\n');
-    keyboard
 end
 
 
@@ -80,11 +82,20 @@ end
 minTime = min(cellfun(@(x) x(1), spkTimes)); % latest spike across all neurons
 maxTime = max(cellfun(@(x) x(end), spkTimes)); % latest spike across all neurons
 
-[~, timeStamps] = getFiringRate(spkTimes{1}, spkRateFs, spkRateKernSig, [minTime maxTime]);
+if strcmp(kernel, 'doubleExp')
+    [~, timeStamps] = getFiringRateDoubleExp(spkTimes{1}, spkRateFs, kernelRise, kernelFall, [minTime maxTime]);
+elseif strcmp(kernel, 'gauss')
+    [~, timeStamps] = getFiringRateGaussian(spkTimes{1}, spkRateFs, kernelSig, [minTime maxTime]);
+end
 spkRates = nan(length(spkTimes), length(timeStamps));
 
 for i = 1:length(spkTimes)
-    spkRates(i,:) = getFiringRate(spkTimes{i}, spkRateFs, spkRateKernSig, [minTime maxTime]);
+    
+    if strcmp(kernel, 'doubleExp')
+        spkRates(i,:) = getFiringRateDoubleExp(spkTimes{i}, spkRateFs, kernelRise, kernelFall, [minTime maxTime]);
+    elseif strcmp(kernel, 'gauss')
+        spkRates(i,:) = getFiringRateGaussian(spkTimes{i}, spkRateFs, kernelSig, [minTime maxTime]);
+    end
     
     % get min and max time for cell
     cellMinTime = polyval(openEphysToSpikeMapping, cellData.timeStart(i)*60);
@@ -100,10 +111,12 @@ for i = 1:length(spkTimes)
     spkTimes{i} = spkTimes{i}(spkTimes{i}>cellMinTime & spkTimes{i}<cellMaxTime);
     
 end
-ave(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping')
+
+
+save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
+     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping')
 disp('all done!')
-s
+
 
 
 
