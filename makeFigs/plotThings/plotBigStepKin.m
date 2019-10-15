@@ -63,8 +63,8 @@ for h = 1:numRows
     plot(x, z, 'color', s.controlColor, 'linewidth', s.lineWid);
     
     % plot modified steps
-    allBins = {twoStepBins, oneStepBins};
-    ratios = [1-oneTwoRatio oneTwoRatio ];
+    allBins = {oneStepBins, twoStepBins};
+    ratios = [oneTwoRatio 1-oneTwoRatio];
 
     for i = 1:2
         if any(allBins{i})

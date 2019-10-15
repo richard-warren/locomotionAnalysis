@@ -14,7 +14,8 @@ barProperties = {'axisColor', axisColor, 'scatterAlpha', .8, 'barAlpha', .4, 'la
 % colors, by experiment
 pawColors = colorme(4, 'offset', .65, 'showSamples', false);
 sensoryColors = [colorme(3, 'offset', .70, 'showSamples', false); axisColor*.5];
-stepTypeColors = colorme(2, 'offset', .9, 'showSamples', false);
+% stepTypeColors = colorme(2, 'offset', .9, 'showSamples', false);
+stepTypeColors = [64 255 64; 64 255 255] / 255;
 modelColors = [.5 1 0; axisColor];
 % manipColors = [axisColor; colorme(1, 'offset', .50, 'showSamples', false)];
 manipColors = [axisColor; colorme(1, 'offset', .9, 'showSamples', false)];
