@@ -51,6 +51,7 @@ for i = 1:length(sessions)
         
     catch
         fprintf('%s: unable to analyze session!\n', sessions{i});
+        keyboard
     end
 end
 data = cat(2,data{:}); % concatenate together data from all sessions 

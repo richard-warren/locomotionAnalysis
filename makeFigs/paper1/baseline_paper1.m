@@ -324,9 +324,11 @@ vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 
 figVars = [vars.isFore; vars.isLeading];
 
 conditionals.lightOn = struct('name', 'isLightOn', 'condition', @(x) x==1);
+conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
 conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
 conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
-figConditionals = [conditionals.lightOn];
+% figConditionals = [conditionals.lightOn];
+figConditionals = [conditionals.lightOff];
 
 
 % max height of paws

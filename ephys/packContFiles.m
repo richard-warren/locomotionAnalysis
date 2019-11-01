@@ -3,7 +3,7 @@ function packContFiles(sessions)
 % wrapper function that calls python pack_2 script
 
 % settings
-pythonPath = 'C:\Users\rick\Anaconda3\python.exe';
+pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
 highPassFreq = 0; % 0 to skip highpass
 referencing = 'med';
 
@@ -22,12 +22,14 @@ for i = 1:length(sessions)
     fs = info.header.sampleRate;
     
     % get channel mapping
-    warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-    ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-    warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-    mapFile = ephysInfo.map{strcmp(sessions{i}, ephysInfo.session)};
-    load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), 'connected')
+%     warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+%     ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'EhysInfo_QZ');
+%     warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+%     mapFile = ephysInfo.map{strcmp(sessions{i}, ephysInfo.session)};
+%     load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), 'connected')
+    connected = true(64,1);  % !!! temp
     connected = [num2str(connected)]'; % string containing binary vector
+
 
     % run pack_2
     fprintf('%s: running pack_2...\n', sessions{i})

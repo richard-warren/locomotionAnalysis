@@ -49,6 +49,7 @@ while true
                 if isequal(dims, [168 396 238 396])
                     fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
                     tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
+%                     tic; system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
                     
                 % if using new dimensions
                 elseif isequal(dims, [214 448 238 448])

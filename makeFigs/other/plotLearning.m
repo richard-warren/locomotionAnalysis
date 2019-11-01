@@ -3,11 +3,11 @@ function data = plotLearning(mice)
 % and after adding wheel break
 
 % settings
-touchThresh = 1;
+touchThresh = 2;
 subplotNames = {'success rate', 'velocity (m/s)'};
 noBreakExpName = 'obsNoBrBar';
 breakExpName = 'obsBrBar';
-noBrSessions = 2; % uses the most recent noBrSessions 
+noBrSessions = 10; % uses the most recent noBrSessions 
 brSessions = 10; % uses the first (oldest) brSessions
 mouseScatSize = 50;
 
