@@ -772,16 +772,16 @@ function spikeAnalysis2(session, varsToOverWrite)
         dims = [vidWisk.Height, vidWisk.Width];
         clear vidWisk
         
-        if isequal(dims, [380, 336])
-            fprintf('%s: cropping whisker camera to match old video dimensions...\n', session);
-                    
-            % copy and rename original dimension files
-            copyfile(fullfile(sessionDir, 'runWisk.mp4'), fullfile(sessionDir, 'runWisk_originalDimensions.mp4'))
-
-            % crop so dimensions match old dimensions
-            system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(sessionDir, 'runWisk_originalDimensions.mp4') ...
-                ' -filter:v "crop=336:280:0:100" -vb 10M -vcodec mpeg4 ' fullfile(sessionDir, 'runWisk.mp4')]);
-        end
+%         if isequal(dims, [380, 336])
+%             fprintf('%s: cropping whisker camera to match old video dimensions...\n', session);
+%                     
+%             % copy and rename original dimension files
+%             copyfile(fullfile(sessionDir, 'runWisk.mp4'), fullfile(sessionDir, 'runWisk_originalDimensions.mp4'))
+% 
+%             % crop so dimensions match old dimensions
+%             system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(sessionDir, 'runWisk_originalDimensions.mp4') ...
+%                 ' -filter:v "crop=336:280:0:100" -vb 10M -vcodec mpeg4 ' fullfile(sessionDir, 'runWisk.mp4')]);
+%         end
         
         % settings
         rerunWiskNetwork = true;
@@ -791,7 +791,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-            [~, ~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         

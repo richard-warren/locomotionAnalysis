@@ -9,7 +9,7 @@ minObsHgt = .008;
 
 % load session metadata
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
-sessionInfo = sessionInfo(113:end,:); % !!! this temporary hack that includes only the new senLesion mice
+sessionInfo = sessionInfo(179:end,:); % !!! this temporary hack that includes only the new senLesion mice
 sessionInfo = sessionInfo(~cellfun(@isempty, sessionInfo.session),:); % remove empty rows, not included sessions, and those without correct brain region
 mice = unique(sessionInfo.mouse);
 

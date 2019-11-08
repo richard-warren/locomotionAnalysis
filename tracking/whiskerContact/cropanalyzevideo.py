@@ -37,7 +37,7 @@ modelName = "largecroptrim.25-0.77"
 cropModelName = "cropWhiskers"
 probDistribution = [0.5, 0.707, 0.867, 0.966, 1.0, 1.0, 0.966, 0.867, 0.707, 0.5]
 timesteps = 10
-input_size = (280,336)
+# input_size = (280,336)
 color_mode = "grayscale"
 numFeatures = 5408
 bs = 64
@@ -62,12 +62,25 @@ def meanAbsError(y_true, y_pred):
     preds = K.argmax(y_pred, axis=-1)
     return K.mean(K.abs(preds - groundTruth), axis=-1)
 
-cropModel = keras.models.load_model(os.path.join("models", cropModelName+".h5"), custom_objects={'meanDistance': meanDistance})
+# load video
+frames = {}
+softmaxs = {}
+clip = VideoFileClip(os.path.join(baseDir, session, "runWisk.mp4"))
+input_size = (clip.size[1], clip.size[0])
+print("Duration of video (s):", clip.duration,", FPS:", clip.fps,", Dimensions (h,w):", input_size)
 
+# load crop model and reformat input shape to match video
+cropModel = keras.models.load_model(os.path.join("models", cropModelName+".h5"), custom_objects={'meanDistance': meanDistance})
+newInput = Input(cropModel, batch_shape=(None, input_size[0], input_size[1], 1))
+newOutput = cropModel(newInput)
+cropModel = Model(newInput, newOutput)
+print('crop model input shape:', cropModel.input_shape)
+
+# load whisker contact model
 model = keras.models.load_model(os.path.join("models", modelName+".h5"), custom_objects={"meanError": meanError, "meanSquared": meanSquared, "meanAbsError": meanAbsError})
 
+# assemble end to end model
 print("Assembling end-to-end model")
-
 convNet = model.layers[1].layer
 v = cropModel.output
 v = Maxima2D()(v)
@@ -87,11 +100,6 @@ linear_model = Model(inputs=interm_input, outputs=x)
 logging.basicConfig(level=logging.INFO)
 
 print("Loading session metadata")
-
-frames = {}
-softmaxs = {}
-clip = VideoFileClip(os.path.join(baseDir, session, "runWisk.mp4"))
-print("Duration of video (s): ",clip.duration,", FPS: ",clip.fps,", Dimensions: ",clip.size)
 
 trackedFeatures = np.loadtxt(os.path.join(baseDir, session, "trackedFeaturesRaw.csv"), delimiter=",",skiprows=1)
 mat = scipy.io.loadmat(os.path.join(baseDir, session, "runAnalyzed.mat"))
@@ -172,7 +180,7 @@ answers = [{"framenum":-1, "confidence": 0}]*len(mat['obsOnTimes'])
 
 print("Analyzing")
 for idx, framenum, endframe in tqdm(trialFrames):
-    try:
+    # try:
         #logging.info("Obstacle on")
         #logging.info(str(framenum))
         if framenum == -1 or endframe == -1:
@@ -288,8 +296,8 @@ for idx, framenum, endframe in tqdm(trialFrames):
             predictedFrame=-1
         if predictedFrame != -1:
             answers[idx] = {"framenum": predictedFrame, "confidence": frameProbs[predictedFrame]}
-    except:
-        print("exception in trial, skipping")
+    # except:
+    #     print("exception in trial, skipping")
 
 print("Writing data")
 
