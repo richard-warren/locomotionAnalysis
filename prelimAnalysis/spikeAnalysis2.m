@@ -589,8 +589,8 @@ function spikeAnalysis2(session, varsToOverWrite)
         
         fprintf('%s: getting wheel center and radius\n', session)
         
-        vidTop = VideoReader([sessionDir 'runTop.mp4']);
-        wheelPoints = getWheelPoints(vidTop);
+        vid = VideoReader(fullfile(sessionDir, 'run.mp4'));
+        wheelPoints = getWheelPoints(vid);
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
         
         % save
@@ -791,7 +791,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-            system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            [~, ~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         

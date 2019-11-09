@@ -8,7 +8,6 @@ function wheelPoints = getWheelPoints(vid)
 % then for three xLocations find the topmost white pixel in the x colums and return wheelPoints
 
 
-
 % settings
 xLocations = [.1 .5 .9]; % x locations of circRoiPoints, expressed as fraction of vid width
 frameNum = 100;
@@ -41,10 +40,11 @@ minProjection = uint8(min(frames, [], 3));
 
 % threshold image and keep only connected regions that interest the bottom row of image
 threshed = minProjection > thresh;
+[~, botRow] = min(diff(sum(threshed,2)));  % this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
+threshed = threshed(1:botRow, :);  % restrict to top camera view
 regionInfo = bwlabel(threshed);
 botRowGroups = unique(regionInfo(end,:)); botRowGroups = botRowGroups(botRowGroups>0);
 wheelOutline = ismember(regionInfo, botRowGroups);
-
 
 % for each x value, find the top of the circle, which is the first white point in the wheelOutline (from the top to bot of column)
 for i = 1:3

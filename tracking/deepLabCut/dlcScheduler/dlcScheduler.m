@@ -33,47 +33,28 @@ while true
         
         % DeepLabCut analysis
         try
-            if (exist([sessionsDir newSessions{1} '\runTop.mp4'], 'file') && ...
-                    exist([sessionsDir newSessions{1} '\runBot.mp4'], 'file'))
+            rootDir = fullfile(getenv('OBSDATADIR'), 'sessions', newSessions{1});
+            
+            if (exist(fullfile(rootDir, 'run.mp4'), 'file') || exist(fullfile(rootDir, 'runTop.mp4'), 'file'))  % check if video was recorded for this session
+                
                 dlcAnalysisSuccessful = false;
                 currentTime = clock;
+                if ~exist(fullfile(rootDir, 'run.mp4')); concatTopBotVids(newSessions{1}); end  % old sessions were recorded with separate top and bot views, which need to be concatenated
                 
-                % check if video has new or old cropping
-                rootDir = fullfile(getenv('OBSDATADIR'), 'sessions', newSessions{1});
-                vidTop = VideoReader(fullfile(rootDir, 'runTop.mp4'));
-                vidBot = VideoReader(fullfile(rootDir, 'runBot.mp4'));
-                dims = [vidTop.Height, vidTop.Width, vidBot.Height, vidBot.Width];
-                clear vidTop vidBot
+                % if using new dimensions crop to old dimensions
+                vid = VideoReader(fullfile(rootDir, 'run.mp4'));
+                dims = [vid.Height, vid.Width];
+                clear vid
                 
-                % if using original dimensions
-                if isequal(dims, [168 396 238 396])
-                    fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
-                    tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
-%                     tic; system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
-                    
-                % if using new dimensions
-                elseif isequal(dims, [214 448 238 448])
-                    
+                if ~isequal(dims, [406 396])    
                     fprintf('%s: cropping videos to match old video dimensions...\n', newSessions{1});
-                    
-                    % copy and rename original dimension files
-                    copyfile(fullfile(rootDir, 'runTop.mp4'), fullfile(rootDir, 'runTop_originalDimensions.mp4'))
-                    copyfile(fullfile(rootDir, 'runBot.mp4'), fullfile(rootDir, 'runBot_originalDimensions.mp4'))
-                    
-                    % crop so dimensions match old dimensions
-                    system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(rootDir, 'runTop_originalDimensions.mp4') ...
-                        ' -filter:v "crop=396:168:44:52" -vb 6M -vcodec mpeg4 ' fullfile(rootDir, 'runTop.mp4')]);
-                    system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(rootDir, 'runBot_originalDimensions.mp4') ...
-                        ' -filter:v "crop=396:238:44:0" -vb 6M -vcodec mpeg4 ' fullfile(rootDir, 'runBot.mp4')]);
-                    
-                    fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
-                    tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
-                    
-                % if dimensions not recognized
-                else
-                    fprintf('%s: WARNING! Unexpected frame dimensions!\n', newSessions{1})
+                    copyfile(fullfile(rootDir, 'run.mp4'), fullfile(rootDir, 'run_originalDimensions.mp4'))  % copy and rename original dimension files
+                    system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(rootDir, 'run_originalDimensions.mp4') ...
+                        ' -filter:v "crop=396:406:44:52" -vb 10M -vcodec mpeg4 ' fullfile(rootDir, 'run.mp4')]);
                 end
                 
+                fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
+                    tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
                 fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
                 dlcAnalysisSuccessful = true;
             else
@@ -88,11 +69,10 @@ while true
         try 
             spikeAnalysis2(newSessions{1});
             showWiskContactFrames(newSessions{1});
-            checkObsLight(sessions{1});
+%             checkObsLight(sessions{1});
         catch
             fprintf('%s: problem with spike analysis!\n', newSessions{1})
         end
-        
         
         % save that session has been analyzed
         if dlcAnalysisSuccessful

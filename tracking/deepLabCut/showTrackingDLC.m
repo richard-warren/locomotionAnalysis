@@ -32,9 +32,10 @@ if addingFrames
     framesAdded = 0;
 end
 
-% get videos
-vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
+% load video
+vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4');
+if ~exist(vidName, 'file'); concatTopBotVids(session); end  % old sessions were recorded with separate top and bot views, which need to be concatenated
+vid = VideoReader(vidName);
 
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
@@ -53,14 +54,14 @@ end
 
 % set up figure
 if addingFrames; figureName = [session ', frames added: 0']; else; figureName = session; end
-hgt = (vidBot.Height+vidTop.Height);
-fig = figure('name', figureName, 'units', 'pixels', 'position', [600 100 vidBot.Width*vidSizeScaling hgt*vidSizeScaling],...
+hgt = vid.Height;
+fig = figure('name', figureName, 'units', 'pixels', 'position', [600 100 vid.Width*vidSizeScaling hgt*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
-imPreview = image(zeros(hgt, vidBot.Width), 'CDataMapping', 'scaled'); hold on;
+imPreview = image(zeros(hgt, vid.Width), 'CDataMapping', 'scaled'); hold on;
 imAxis = gca;
 set(imAxis, 'visible', 'off', 'units', 'pixels',...
-    'position', [0 0 vidBot.Width*vidSizeScaling hgt*vidSizeScaling]);
+    'position', [0 0 vid.Width*vidSizeScaling hgt*vidSizeScaling]);
 
 % draw circle at wheel location
 viscircles(wheelCenter', wheelRadius, 'color', 'blue');
@@ -208,9 +209,7 @@ function updateFrame(frameStep)
     
     
     % get frame and sub-frames
-    frameBot = rgb2gray(read(vidBot, frameInds(frameInd)));
-    frameTop = rgb2gray(read(vidTop, frameInds(frameInd)));
-    frame = cat(1, frameTop, frameBot);
+    frame = rgb2gray(read(vid, frameInds(frameInd)));
     
 	% add frame number
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
