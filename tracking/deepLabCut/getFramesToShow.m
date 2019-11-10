@@ -11,7 +11,7 @@ obsPosRange = [-.05 .1]; % show frames where obs is obsPosRange meters in front 
 % initializations
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'rewardTimes', 'wheelPositions', 'wheelTimes', 'obsOnTimes', 'obsOffTimes', ...
-    'obsPixPositions', 'obsTimes', 'obsPositions')
+    'obsPixPositions', 'obsTimes', 'obsPositions', 'nosePos')
 if ~exist('onlyShowFramesNearObs', 'var'); onlyShowFramesNearObs=false; end
 
 
@@ -19,7 +19,7 @@ if ~exist('onlyShowFramesNearObs', 'var'); onlyShowFramesNearObs=false; end
 if onlyShowFramesNearObs
     
     % initialize obsPositions
-    if exist('obsPixPositions', 'var')
+    if ~exist('obsPixPositions', 'var')
         obsPositions = fixObsPositionsHacky(obsPositions);
     else
         obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));

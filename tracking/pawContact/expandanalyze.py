@@ -53,7 +53,7 @@ data = ImageClassifierData.from_paths("./tempgarbage", bs=1, tfms=tfms)
 learn = ConvLearner.pretrained(arch, data)
 learn.load(modelName)
 
-clip = VideoFileClip(os.path.join(baseDir, session, 'runTop.mp4'))
+clip = VideoFileClip(os.path.join(baseDir, session, 'run.mp4'))
 print("Duration of video (s): ",clip.duration,", FPS: ",clip.fps,", Dimensions: ",clip.size)
 
 trackedFeatures = np.loadtxt(os.path.join(baseDir, session, 'trackedFeaturesRaw.csv'), delimiter=",",skiprows=1)
@@ -73,7 +73,7 @@ with open(os.path.join(baseDir, session, 'pawAnalyzed.csv'), 'w') as csvfile:
     for framenum, pos in enumerate(tqdm(mat['obsPixPositions'][0])):
         features = trackedFeatures[framenum]
         pawX = [features[1 + i * 3] for i in range(4) if features[3 + i * 3] > 0.9]
-        obsPos = list(map(int,[features[22],features[23]]))
+        obsPos = list(map(int,[features[22],features[23]]))  # todo: should not assume the obstacle position is at 22, 23
         obsConf = features[24]
         image = clip.get_frame(framenum * (1 / clip.fps))
         if obsConf != 1:

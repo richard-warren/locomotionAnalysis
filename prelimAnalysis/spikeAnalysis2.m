@@ -680,11 +680,11 @@ function spikeAnalysis2(session, varsToOverWrite)
         if ~exist([sessionDir 'pawAnalyzed.csv'], 'file') || (exist([sessionDir 'pawAnalyzed.csv'], 'file') && rerunClassifier) || isempty(readtable([sessionDir 'pawAnalyzed.csv']))
             fprintf('%s: running paw contact neural network\n', session);
             save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct');  % first save the file so analyzeVideo.py can access it
-            [~, ~] = system([pythonPath ' tracking\pawContact\expandanalyze.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            [~,~] = system([pythonPath ' tracking\pawContact\expandanalyze.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         
         % get touch class for each frame
-        pawAnalyzed = readtable([sessionDir 'pawAnalyzed.csv']);
+        pawAnalyzed = readtable(fullfile(sessionDir, 'pawAnalyzed.csv'));
         touchClassNames = pawAnalyzed.Properties.VariableNames(2:end); % first column is frame number
         allScores = table2array(pawAnalyzed(:,2:end));
         [touchConfidences, classInds] = max(allScores, [], 2);
@@ -784,14 +784,14 @@ function spikeAnalysis2(session, varsToOverWrite)
 %         end
         
         % settings
-        rerunWiskNetwork = true;
+        rerunWiskNetwork = false;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
         if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-            [~, ~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         

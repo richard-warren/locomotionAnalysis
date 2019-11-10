@@ -47,7 +47,7 @@ while true
                 clear vid
                 
                 if ~isequal(dims, [406 396])    
-                    fprintf('%s: cropping videos to match old video dimensions...\n', newSessions{1});
+                    fprintf('%s: cropping run.mp4 to match old video dimensions...\n', newSessions{1});
                     copyfile(fullfile(rootDir, 'run.mp4'), fullfile(rootDir, 'run_originalDimensions.mp4'))  % copy and rename original dimension files
                     system(['ffmpeg -y -loglevel panic -r 250 -i ' fullfile(rootDir, 'run_originalDimensions.mp4') ...
                         ' -filter:v "crop=396:406:44:52" -vb 10M -vcodec mpeg4 ' fullfile(rootDir, 'run.mp4')]);
