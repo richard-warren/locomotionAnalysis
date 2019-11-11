@@ -214,31 +214,36 @@ for j = 1:length(obsOnTimes)
 
                 for m = 1:stepNum
 
-                    % locations
-                    stepBins = allIds{stepType}(:,k)==m;
-                    startInd = find(stepBins, 1, 'first');
-                    endInd = find(stepBins, 1, 'last');
-                    if endInd-startInd>=swingMaxSmps; endInd = startInd+swingMaxSmps-1; end % make sure swing is not too long
+                    try
+                        % locations
+                        stepBins = allIds{stepType}(:,k)==m;
+                        startInd = find(stepBins, 1, 'first');
+                        endInd = find(stepBins, 1, 'last');
+                        if endInd-startInd>=swingMaxSmps; endInd = startInd+swingMaxSmps-1; end % make sure swing is not too long
 
 
-                    stepEndInd = endInd-startInd+1;
-                    stepX = nan(1,swingMaxSmps); stepY = nan(1,swingMaxSmps); stepZ = nan(1,swingMaxSmps);
-                    stepX(1:stepEndInd) = trialLocations(startInd:endInd,1,k); stepX(stepEndInd:end) = stepX(stepEndInd); % the latter statement ensures the kinematics don't bleed into the subsequent step (the step is 'frozen' at the moment swing ends)
-                    stepY(1:stepEndInd) = trialLocations(startInd:endInd,2,k); stepY(stepEndInd:end) = stepY(stepEndInd);
-                    stepZ(1:stepEndInd) = trialLocations(startInd:endInd,3,k); stepZ(stepEndInd:end) = stepZ(stepEndInd);
-                    pawLocations(m,:,:) = cat(1,stepX,stepY,stepZ);
+                        stepEndInd = endInd-startInd+1;
+                        stepX = nan(1,swingMaxSmps); stepY = nan(1,swingMaxSmps); stepZ = nan(1,swingMaxSmps);
+                        stepX(1:stepEndInd) = trialLocations(startInd:endInd,1,k); stepX(stepEndInd:end) = stepX(stepEndInd); % the latter statement ensures the kinematics don't bleed into the subsequent step (the step is 'frozen' at the moment swing ends)
+                        stepY(1:stepEndInd) = trialLocations(startInd:endInd,2,k); stepY(stepEndInd:end) = stepY(stepEndInd);
+                        stepZ(1:stepEndInd) = trialLocations(startInd:endInd,3,k); stepZ(stepEndInd:end) = stepZ(stepEndInd);
+                        pawLocations(m,:,:) = cat(1,stepX,stepY,stepZ);
 
-                    % locations interp
-                    xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
-                    yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
-                    zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
-                    pawLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
+                        % locations interp
+                        xInterp = interp1(1:sum(stepBins), trialLocations(stepBins,1,k), linspace(1,sum(stepBins),interpSmps));
+                        yInterp = interp1(1:sum(stepBins), trialLocations(stepBins,2,k), linspace(1,sum(stepBins),interpSmps));
+                        zInterp = interp1(1:sum(stepBins), trialLocations(stepBins,3,k), linspace(1,sum(stepBins),interpSmps));
+                        pawLocationsInterp(m,:,:) = cat(1,xInterp,yInterp,zInterp);
 
-                    % things to do only for modified locations
-                    if stepType==3 && m==1 % get ind of obs hit in interpolated coordinates only for first mod steps
-                        pawObsPosInd(k) = contactInd - find(stepBins,1,'first') + 1;
-                        pawObsPosIndInterp(k) = interp1(linspace(1,sum(stepBins), interpSmps), ...
-                            1:interpSmps, pawObsPosInd(k), 'nearest');
+                        % things to do only for modified locations
+                        if stepType==3 && m==1 % get ind of obs hit in interpolated coordinates only for first mod steps
+                            pawObsPosInd(k) = contactInd - find(stepBins,1,'first') + 1;
+                            pawObsPosIndInterp(k) = interp1(linspace(1,sum(stepBins), interpSmps), ...
+                                1:interpSmps, pawObsPosInd(k), 'nearest');
+                        end
+                    catch
+                        isTrialAnalyzed(j) = false;
+                        fprintf('WARNING! Unable to analyze trial %i!\n', j);
                     end
                 end
 

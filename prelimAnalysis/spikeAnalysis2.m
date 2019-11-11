@@ -668,7 +668,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         fprintf('%s: getting paw contacts\n', session)
         
         % settings
-        rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
+        rerunClassifier = true; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
 %         confidenceThreshForeDorsal = .9; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
@@ -767,11 +767,11 @@ function spikeAnalysis2(session, varsToOverWrite)
         
         fprintf('%s: getting whisker contacts\n', session)
         
-        % check if using new, larger cropping, and crop to old dimensions if so
-        vidWisk = VideoReader(fullfile(sessionDir, 'runWisk.mp4'));
-        dims = [vidWisk.Height, vidWisk.Width];
-        clear vidWisk
-        
+%         % check if using new, larger cropping, and crop to old dimensions if so
+%         vidWisk = VideoReader(fullfile(sessionDir, 'runWisk.mp4'));
+%         dims = [vidWisk.Height, vidWisk.Width];
+%         clear vidWisk
+%         
 %         if isequal(dims, [380, 336])
 %             fprintf('%s: cropping whisker camera to match old video dimensions...\n', session);
 %                     
@@ -784,14 +784,14 @@ function spikeAnalysis2(session, varsToOverWrite)
 %         end
         
         % settings
-        rerunWiskNetwork = false;
+        rerunWiskNetwork = true;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
         if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-            [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         

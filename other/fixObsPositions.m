@@ -10,6 +10,7 @@ epochTimes = [obsOnTimes; obsTimes(end)];
 for i = 1:length(obsOnTimes)
     
     % get trial pixPositions and pixTimes
+    obsPixPositions = obsPixPositions(:)';  % enforce horizontal orientation
     trialFrameBins = (frameTimeStamps>=obsOnTimes(i)) & (frameTimeStamps<=obsOffTimes(i)) & ~isnan(obsPixPositions)';
     pixPositions = obsPixPositions(trialFrameBins);
     pixTimes = frameTimeStamps(trialFrameBins);
