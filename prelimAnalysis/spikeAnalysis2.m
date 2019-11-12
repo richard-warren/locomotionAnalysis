@@ -270,7 +270,7 @@ function spikeAnalysis2(session, varsToOverWrite)
             rowInd = rowInd + 1; 
         end
         
-        if anyPoorTrackingTrials(fprintf('\n')); end
+        if anyPoorTrackingTrials; fprintf('\n'); end
         
         if plotTracking; plotObsTracking(session, obsTracking); end
         
@@ -791,7 +791,7 @@ function spikeAnalysis2(session, varsToOverWrite)
         if ~exist([sessionDir 'whiskerAnalyzed.csv'], 'file') || (exist([sessionDir 'whiskerAnalyzed.csv'], 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save([sessionDir 'runAnalyzed.mat'], '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
-            system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable([sessionDir 'whiskerAnalyzed.csv']);
         

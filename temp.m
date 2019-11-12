@@ -32,7 +32,15 @@ for i = 1:length(sessions)
     showWiskHeights(sessions{i});
 end
 
+%% concat views for sessions
 
+sessions = {'191101_000', '191101_001', '191101_002', '191101_003'};
+
+for i = 1:length(sessions)
+    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mp4'), 'file')
+        concatTopBotVids(sessions{i});
+    end
+end
 
 
 
