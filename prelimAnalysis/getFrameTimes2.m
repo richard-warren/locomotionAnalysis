@@ -15,26 +15,26 @@ function frameTimes = getFrameTimes2(ttlTimes, frameTimesRaw, frameCounts, sessi
 %          the break in ttls ocurring at reward times should be .5 seconds
 
 % initializations
-ttlTrialStartInds = [1; find(diff(ttlTimes)>.48 & diff(ttlTimes)<.52)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
-frameTrialStartInds = [1; find(diff(frameTimesRaw)>.48 & diff(frameTimesRaw)<.52)+1; length(frameTimesRaw)];   % inds of frames at which trials start, plus extra ones at end and beginning
+ttlTrialStartInds = [1; find(diff(ttlTimes)>.48 & diff(ttlTimes)<.52)+1; length(ttlTimes)];  % inds of ttls at which trials start, plus extra ones at end and beginning
+camTrialStartInds = [1; find(diff(frameTimesRaw)>.48 & diff(frameTimesRaw)<.52)+1; length(frameTimesRaw)];  % inds of frames at which trials start, plus extra ones at end and beginning
 
 frameCountDiffs = [0; diff(frameCounts)];
-missedFrameInds = find(frameCountDiffs>1); % !!! is plus 1 correct?
+missedFrameInds = find(frameCountDiffs>1);
 frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed...
 
 
 % ensure the correct number of trials were detected
-if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
+if length(camTrialStartInds) ~= length(ttlTrialStartInds)
     
-    ttlTrialLengths = diff(ttlTimes(ttlTrialStartInds));
-    camTrialLengths = diff(frameTrialStartInds)/250;
+    ttlTrialLengths = diff(ttlTimes(ttlTrialStartInds));  % time between ttl breaks
+    camTrialLengths = diff(camTrialStartInds)/250;  % time between ttl breaks
     
     % if there are more cam trials than ttl trials, remove some of the former
-    if length(frameTrialStartInds)>length(ttlTrialStartInds)
+    if length(camTrialStartInds)>length(ttlTrialStartInds)
         for i = 2:length(ttlTrialLengths) % start at second trial because first trial often has many missing frames...
             if abs(ttlTrialLengths(i) - camTrialLengths(i)) > 1
                 camTrialLengths = camTrialLengths([1:i-1 i+1:end]); % remove element i from camTrialLengths
-                frameTrialStartInds = frameTrialStartInds([1:i-1 i+1:end]);
+                camTrialStartInds = camTrialStartInds([1:i-1 i+1:end]);
             end
         end
         
@@ -50,7 +50,7 @@ if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
     fprintf('  %s: same number of rewards not detected! WTF!!! attempted to fix with a hack!!!\n', session)
     
     
-    if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
+    if length(camTrialStartInds) ~= length(ttlTrialStartInds)
         fprintf('  %s: same number of rewards still not detected! WTF!!!\n', session)
         %     figure; plot(diff(frameTimesRaw)) % plotting this may reveal that many adjacent frames were lost, causing the code to think based on the gap in frames that a reward was reached, when in fact it was not 
         return
@@ -58,15 +58,15 @@ if length(frameTrialStartInds) ~= length(ttlTrialStartInds)
 end
 
 
-
+% here is the heart of the algorithm
 for i = 1:(length(ttlTrialStartInds)-1)
 
-    % count vidTtls in trial and frames in trial (the latter determined from camera metadata)
-    ttlsInTrial =   ttlTrialStartInds(i+1) - ttlTrialStartInds(i);
-    framesInTrial = frameTrialStartInds(i+1) - frameTrialStartInds(i);
+    % count vidTtls in trial and frames in trial (the latter determined from camera metadata) // if the two don't match, there are missing frames
+    ttlsInTrial = ttlTrialStartInds(i+1) - ttlTrialStartInds(i);
+    framesInTrial = camTrialStartInds(i+1) - camTrialStartInds(i);
 
     % find indices of the missing frames in the trial
-    trialMissedFrameInds = missedFrameInds(missedFrameInds>=frameTrialStartInds(i) & missedFrameInds<frameTrialStartInds(i+1));
+    trialMissedFrameInds = missedFrameInds(missedFrameInds>=camTrialStartInds(i) & missedFrameInds<camTrialStartInds(i+1));
 
     % count the number of detected missed frames
     missedInTrial = sum(frameCountDiffs(trialMissedFrameInds) - 1);
@@ -87,7 +87,7 @@ for i = 1:(length(ttlTrialStartInds)-1)
         for j = 1:length(trialMissedFrameInds)
             
             numMissed = frameCountDiffs(trialMissedFrameInds(j))-1;
-            startInd = ttlTrialStartInds(i) + (trialMissedFrameInds(j) - frameTrialStartInds(i)) + indexShift;
+            startInd = ttlTrialStartInds(i) + (trialMissedFrameInds(j) - camTrialStartInds(i)) + indexShift;
             frameTimes(startInd : startInd+numMissed-1) = nan;
             indexShift = indexShift + numMissed;
         end
