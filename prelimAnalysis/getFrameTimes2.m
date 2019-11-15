@@ -1,7 +1,9 @@
 function frameTimes = getFrameTimes2(ttlTimes, frameTimesRaw, frameCounts, session)
 
-% finds the fimes at which camera frames wre acquired with respect to Spike clock
+% finds the fimes at which camera frames were acquired with respect to Spike clock
 % does this by finding breaks in camera exposures, which correspond to reward times, and matching camera metadata to exposure TLLs within every reward epoch
+% newer sessions have only one gap in TTLs, which is between the final two
+% frames // to analyze those sessions, use getFrameTimes4
 %
 % input    ttlTimes:        timestamps for times of camera exposure (vidTtl) recorded in Spike, which has temporal gaps in between trials
 %          frameTimesRaw:   timestamps from camera metadata (s)
@@ -10,7 +12,7 @@ function frameTimes = getFrameTimes2(ttlTimes, frameTimesRaw, frameCounts, sessi
 % output   frameTimeStamps: timestamps for every frame collected in video
 %
 % NOTE:    this code breaks if there are many adjacent missed frames - it will think this is a reward break in the camera when it is not really...
-%          the break in ttls ocurring at reward times should be .5 seconds. gaps greater than .4 will be considered reward times
+%          the break in ttls ocurring at reward times should be .5 seconds
 
 % initializations
 ttlTrialStartInds = [1; find(diff(ttlTimes)>.48 & diff(ttlTimes)<.52)+1; length(ttlTimes)];                 % inds of ttls at which trials start, plus extra ones at end and beginning
