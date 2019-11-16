@@ -17,7 +17,6 @@ function [positions, times] = rotaryDecoder(aTimes, aStates, bTimes, bStates, en
 %              times:            times of all position values
 
 
-
 % convert inputs to row vectors
 aTimes = aTimes(:)';
 bTimes = bTimes(:)';
@@ -30,24 +29,34 @@ states = [aStates bStates];
 [times, sortInds] = sort(times);
 states = states(sortInds);
 
-% create identities vector, where each element represents whether encoder A (1) or B (2) has changed state
-% this is the most economical representation of the encoder data, because the states can be inferred at all times if you know the starting state of both channels and the times at which those channels change
+% create 2xn logical matrix, where every column is the state of encoder A at state transitions
+allStates = nan(2, length(states));
+
+% this matrix encodes whether a column corresponds to a transition of A (1) or B (2)
 identities = [ones(1, length(aTimes)) ones(1, length(bTimes))*2];
 identities = identities(sortInds);
 
-deltas = nan(size(times)); % records whether encoder moves backwards (-1), forwards (1), or stays stationary (0)
+% update the changed channel at all state transitions
+allStates(1, identities==1) = states(identities==1);
+allStates(2, identities==2) = states(identities==2);
+
+% remaining nan values correspond to unchanged channels, so they should
+% take the values from the previous state
+allStates = fillmissing(allStates, 'previous', 2);
+
+% fill in the final nan in the first column as the opposite of it's subsequent state
+nanBins = isnan(allStates(:,1));
+allStates(nanBins, 1) = ~allStates(nanBins, 2);
+
+% create transitions matrix, where each column as [prevStateA; prevStateB; currentStateA; currentStateB]
+transitions = cat(1, allStates(:,1:end-1), allStates(:,2:end));
+
+% convert columbs to decimal indices and index into lookUp, which converts
+% state transitions into deltas
+inds = bi2de(transitions')+1;
 lookUp = [0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0];
-
-prevState = [~aStates(1) ~bStates(1)]; % the initial state of encoders A and B
-
-for i = 1:round(length(identities))
-    currentState = prevState;
-    currentState(identities(i)) = states(i);  % update the state for the channel that has changed
-    lookupInd = [prevState currentState];
-    deltas(i) = lookUp(bin2dec(num2str(lookupInd))+1);
-    prevState = currentState;
-end
-
+deltas = lookUp(inds);
+times = times(2:end);
 
 % convert to real-world units (m)
 mmPerTic = (2*wheelRad*pi) / encoderSteps;
@@ -67,9 +76,6 @@ end
 
 % interpolate
 [positions, times] = interpData(times, positions, targetFs);
-
-
-
 
 
 

@@ -74,7 +74,32 @@ for i = 1:length(sessions)
     end
 end
 
-%% 
+%% test new rotary decoder
+
+% plot old and new versions of decoded data
+
+sessions = getAllExperimentSessions;
+targetFs = 1000; % frequency that positional data will be resampled to
+whEncoderSteps = 2880; % 720cpr * 4
+wheelRad = 95.25; % mm
+obEncoderSteps = 1000; % 250cpr * 4
+obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
+
+%%
+
+for i = 1:length(sessions)
+    try 
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), 'obsPositions', 'obsTimes'); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mat'), 'obEncodA', 'obEncodB');
+        [posNew, timesNew] = rotaryDecoder(...
+            obEncodA.times, obEncodA.level, obEncodB.times, obEncodB.level, obEncoderSteps, obsRad, targetFs, sessions{i});
+        
+        close all; figure('Position', [1921.00 1.00 1920.00 1003.00]); hold on
+        plot(obsTimes, obsPositions, 'lineWidth', 2); hold on
+        plot(timesNew, posNew, 'lineWidth', 1); hold on      
+    end
+end
+
 
 
 
