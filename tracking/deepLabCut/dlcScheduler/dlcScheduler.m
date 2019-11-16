@@ -67,7 +67,7 @@ while true
         
         % spike analysis
         try 
-            spikeAnalysis2(newSessions{1});
+            analyzeSession(newSessions{1});
             showWiskContactFrames(newSessions{1});
 %             checkObsLight(sessions{1});
         catch

@@ -1,4 +1,4 @@
-% test getFrameTimes2
+%% test getFrameTimes with fake data
 
 while true
 
@@ -56,4 +56,31 @@ while true
 end
 
 
-%%
+%%  test timeStampDecoderFLIR
+
+% plots times decoded with this function to ensure they are all going in a straight line
+
+sessions = getAllExperimentSessions;
+times = cell(1, length(sessions));
+close all; figure('Position', [2027.00 434.00 560.00 420.00]); hold on
+
+for i = 1:length(sessions)
+    disp(i/length(sessions))
+    try
+        camMetadata = dlmread(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+        times{i} = timeStampDecoderFLIR(camMetadata(:,3));
+        plot(times{i});
+        pause(.01)
+    end
+end
+
+%% 
+
+
+
+
+
+
+
+
+

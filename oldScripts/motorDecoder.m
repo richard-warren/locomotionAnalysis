@@ -7,6 +7,8 @@ function [positions, times] = motorDecoder(directions, directionTimes, stepTimes
     %           targetFs:        sampling frequency with which data are interpolated (see interpData)
     %
     % output    positions:       position of motor (m) at all stepTimes
+    
+    % note: the signals necessary to run this function are no longer being recorded as of 190523_000
 
     
     % stepper motor characteristics

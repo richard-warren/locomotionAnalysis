@@ -12,11 +12,10 @@ function [dataInterp, timesInterp] = interpData(times, data, targetFs)
     %          dataInterp:  linearly interpolated data
     
 
-    % interpolate data
+    tic
     dt = (1/targetFs);
     timesInterp = 0 : dt : (max(times) + dt); % create evenly spaced time vector starting at 0 // note: important to start the grid at 0 s.t. interpolating different datasets at same fs will result in timeStamps at the same points (ie not offset based on time of first event)
-    timesInterp = timesInterp(find(timesInterp>min(times))-1:end);
-
+    timesInterp = timesInterp(timesInterp>min(times));
     dataInterp = interp1(times, data, timesInterp, 'linear', 'extrap');
-    
+    toc
 end

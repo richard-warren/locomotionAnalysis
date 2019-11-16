@@ -1,7 +1,11 @@
 function frameTimes = getFrameTimes(ttlTimes, camTimes, camCounts, session)
 
-% this is an attempt to make a getFrameTimes that works for both old and
-% new sessions
+% find the times of cameras frames with respect to spike clock. ttls
+% trigger frames acquisition and are recorded in spike. given the times of
+% these ttls, as well as the times of each frames wrt the cameras clock, as
+% well as the frame counts, find times of each frame wrt to camera. does
+% this by finding gaps in ttls, which serve as a reference point in both
+% time systems, and aligning to this reference point
 %
 % input    ttlTimes:      timestamps for times of camera exposure (vidTtl) recorded in Spike, which has temporal gaps in between trials
 %          camTimes:      timestamps from camera metadata (s)
@@ -16,6 +20,9 @@ ttlGap = [.495 .505];  % the last frame is collected after a gap // look for a g
 % find ttlGaps in spike ttls camera metadata
 ttlGaps = find(diff(ttlTimes)>ttlGap(1) & diff(ttlTimes)<ttlGap(2));
 camGaps = find(diff(camTimes)>ttlGap(1) & diff(camTimes)<ttlGap(2));
+
+% !!! should perhaps ensure i am finding matching gaps (ie find the gap with
+% the closest subsequent interval...)
 
 % using the first ttlGap as a reference, shift camCounts such that the
 % camCount corresponding to the first gap has same index as spike ttl

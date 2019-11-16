@@ -1,6 +1,6 @@
 function plotObsTracking(session, obsTracking)
 
-% spikeAnalysis2 generates obsTracking data struct that stores movement of
+% analyzeSession generates obsTracking data struct that stores movement of
 % wheel and obs for each trial // this function plots these on top of one
 % another to visualize how well the movement of the obstalces tracks that
 % of the wheel // if obsTracking is not provided, attempts to load
