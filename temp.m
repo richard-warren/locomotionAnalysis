@@ -1,48 +1,39 @@
+%% recompute frameTimes using new script
 
+sessions = selectSessions;
 
-load(fullfile(getenv('OBSDATADIR'), 'sessions', prev{i}, 'runAnalyzed.mat'), 'obsHeightsVid');
+%%
 
+for i = 1:length(sessions)
 
-prev = {'190919_000', '190919_001', '190919_002'};
-new = {'190921_001', '190921_002', '190921_003'};
-
-prevHgts = cell(1,3);
-newHgts = cell(1,3);
-
-for i = 1:3
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', prev{i}, 'runAnalyzed.mat'), 'obsHeightsVid');
-    prevHgts{i} = obsHeightsVid;
     
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', new{i}, 'runAnalyzed.mat'), 'obsHeightsVid');
-    newHgts{i} = obsHeightsVid;
-end
 
-prevHgts = cat(2, prevHgts{:});
-newHgts = cat(2, newHgts{:});
+    
+    file = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.csv');
+    if exist(file, 'file')    
+        
+        s1 = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
+        'frameTimeStamps', 'frameTimeStampsWisk', 'exposure');
+        s2 = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mat'), ...
+            'exposure');
 
-%% check head height across days
-
-
-% sessions = {'191106_001', '191107_001', '191108_001', '191109_001'};  % sen13
-% sessions = {'191106_002', '191107_002', '191108_002', '191109_002'};  % sen14
-% sessions = {'191106_003', '191107_003', '191108_003', '191109_000'};  % sen15
-sessions = {'191107_004', '191108_000', '191109_003'};  % sen16
-
-for i = 1:length(sessions)
-    showWiskHeights(sessions{i});
-end
-
-%% concat views for sessions
-
-sessions = {'191101_000', '191101_001', '191101_002', '191101_003'};
-
-for i = 1:length(sessions)
-    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mp4'), 'file')
-        concatTopBotVids(sessions{i});
+        camMetadata = dlmread(file); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+        frameCounts = camMetadata(:,2);
+        timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
+        
+        % recompute frameTimeStamps
+        frameTimeStamps = getFrameTimes(s2.exposure.times, timeStampsFlir, frameCounts, sessions{i});
+        bins = ~isnan(s1.frameTimeStamps);  % only compare these bins
+        sum(frameTimeStamps(bins)~=s1.frameTimeStamps(bins));
+        
+        close all; figure('position', [2402.00 276.00 560.00 420.00]);
+        plot(s1.frameTimeStamps, 'lineWidth', 2); hold on; plot(frameTimeStamps)
+        differInds = find(s1.frameTimeStamps~=frameTimeStamps & bins);
+        scatter(differInds, s1.frameTimeStamps(differInds))
+        fprintf('differing frames: %i\n', sum(frameTimeStamps(bins)~=s1.frameTimeStamps(bins)))
+        keyboard
+        
     end
+    
+    
 end
-
-
-
-
-

@@ -18,8 +18,8 @@ function frameTimes = getFrameTimes2(ttlTimes, frameTimesRaw, frameCounts, sessi
 ttlTrialStartInds = [1; find(diff(ttlTimes)>.48 & diff(ttlTimes)<.52)+1; length(ttlTimes)];  % inds of ttls at which trials start, plus extra ones at end and beginning
 camTrialStartInds = [1; find(diff(frameTimesRaw)>.48 & diff(frameTimesRaw)<.52)+1; length(frameTimesRaw)];  % inds of frames at which trials start, plus extra ones at end and beginning
 
-frameCountDiffs = [0; diff(frameCounts)];
-missedFrameInds = find(frameCountDiffs>1);
+frameCountDiffs = [1; diff(frameCounts)];
+missedFrameInds = find(frameCountDiffs>1);  % !!! should this be plus 1?
 frameTimes = ttlTimes; % frameTimes will be changed as missed frames are removed...
 
 
@@ -82,13 +82,13 @@ for i = 1:(length(ttlTrialStartInds)-1)
 
     % otherwise set all missing frame timestamps to nan (these values will subsequently be removed)
     else
-        indexShift = 1;
+        indexShift = 0;  % modified
         
         for j = 1:length(trialMissedFrameInds)
             
             numMissed = frameCountDiffs(trialMissedFrameInds(j))-1;
             startInd = ttlTrialStartInds(i) + (trialMissedFrameInds(j) - camTrialStartInds(i)) + indexShift;
-            frameTimes(startInd : startInd+numMissed-1) = nan;
+            frameTimes(startInd : startInd+numMissed-1) = nan;  % original
             indexShift = indexShift + numMissed;
         end
     end

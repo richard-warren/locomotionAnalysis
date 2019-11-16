@@ -367,18 +367,8 @@ function spikeAnalysis2(session, varsToOverWrite)
             frameCounts = camMetadata(:,2);
             timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
 
-            % newer sessions have TTL gap only at the end of the session,
-            % and older sessions have gaps after each reward // this checks
-            % if there are more than a few TTL gaps // if so, it runs the
-            % old synchronization scripts // if not, it assumes this is a
-            % newer session and runs the new synchronization scripts
-            if sum(diff(exposure.times)>.45)>5
-                fprintf('%s: getting frame time stamps (looking for post reward TTL gaps)\n', session)
-                frameTimeStamps = getFrameTimes2(exposure.times, timeStampsFlir, frameCounts, session);
-            else
-                fprintf('%s: getting frame time stamps (looking for end of session TTL gaps)\n', session)
-                frameTimeStamps = getFrameTimes4(exposure.times, timeStampsFlir, frameCounts, session);
-            end
+            fprintf('%s: getting frame time stamps (looking for post reward TTL gaps)\n', session)
+            frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
 
             % !!! the following should fix sessions where spike is stopped
             % before the camera is stopped // not sure it will worked if
