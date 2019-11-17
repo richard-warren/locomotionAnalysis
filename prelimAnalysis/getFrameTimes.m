@@ -21,18 +21,49 @@ ttlGap = [.495 .505];  % the last frame is collected after a gap // look for a g
 ttlGaps = find(diff(ttlTimes)>ttlGap(1) & diff(ttlTimes)<ttlGap(2));
 camGaps = find(diff(camTimes)>ttlGap(1) & diff(camTimes)<ttlGap(2));
 
-% !!! should perhaps ensure i am finding matching gaps (ie find the gap with
-% the closest subsequent interval...)
+% find the interval between ttlGaps that is the closest in duration for camera and ttls
+% this ensures we are aligning to the same ttl gap
+if length(ttlGaps)==length(camGaps)  % if same number of ttl gaps, just use the first one
+    ttlGap = 1;
+    camGap = 1;
+else  % otherwise try to find the best match
+    ttlGapDurations = diff(ttlTimes(ttlGaps));
+    camGapDurations = diff(camTimes(camGaps));
+    [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
+    [~, minInd] = min(diffs);
+    ttlGap = minInd;
+    camGap = inds(minInd);
+    fprintf('  %s: WARNING! different number of ttl gaps detected in camera and spike!\n', session, length(beginningNans));
+end
 
 % using the first ttlGap as a reference, shift camCounts such that the
 % camCount corresponding to the first gap has same index as spike ttl
 % corresponding to the first gap
-camCountsShifted = camCounts - camCounts(camGaps(1)) + ttlGaps(1); 
+camCountsShifted = camCounts - camCounts(camGaps(camGap)) + ttlGaps(ttlGap);
+
+% if camera was started before spike, account for missing ttls at beginning
+if any(camCountsShifted<1)
+    beginningNans = nan(sum(camCountsShifted<1), 1);
+    camCountsShifted = camCountsShifted(camCountsShifted>0);
+    fprintf('  %s: WARNING! %i camera frame(s) detected before spike recording turned on!\n', session, length(beginningNans));
+end
+
+% if camera was stopped after spike, account for extra ttls at endeginning
+if any(camCountsShifted>length(ttlTimes))
+    endNans = nan(sum(camCountsShifted>length(ttlTimes)), 1);
+    camCountsShifted = camCountsShifted(camCountsShifted<=length(ttlTimes));
+    fprintf('  %s: WARNING! %i camera frame(s) detected after last spike ttl!\n', session, length(endNans));
+end
+
 frameTimes = ttlTimes(camCountsShifted);
+if exist('beginningNans', 'var'); frameTimes = [beginningNans; frameTimes]; end
+if exist('endNans', 'var'); frameTimes = [frameTimes; endNans]; end
 
 % display number of missed frames
 missedFrames = length(ttlTimes)-length(camTimes);
-fprintf('  %s: %i missed frames, %i at the very beginning, %i elsewhere\n', ...
+if exist('beginningNans', 'var'); missedFrames = missedFrames + length(beginningNans); end
+if exist('endNans', 'var'); missedFrames = missedFrames + length(endNans); end
+fprintf('  %s: %i missed frame(s), %i at the very beginning, %i elsewhere\n', ...
     session, missedFrames, camCountsShifted(1)-1, missedFrames - (camCountsShifted(1)-1));
 
 

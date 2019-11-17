@@ -298,19 +298,19 @@ function analyzeSession(session, varsToOverWrite)
             fprintf('%s: getting frame time stamps\n', session)
             frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
 
-            % !!! the following should fix sessions where spike is stopped
-            % before the camera is stopped // not sure it will worked if
-            % camera is started before spike is started
-            if length(exposure.times) < length(frameCounts)
-                disp('  there are more frames than exposure TTLs...')
-                if mean(isnan(frameTimeStamps))<.05 % if most of the frame times were successfully determined
-                    frameTimeStamps(end+1:length(frameCounts)) = nan; % fill in missing timeStamps for all frames at the end of the session (presumably) with unreconstructable times
-                    disp('  reconstructed frameTimes assuming missing TTLs were at the end of the session (this will happen when spike is stopped before the camera)...')
-                else
-                    frameTimeStamps = [];
-                    disp('  saving frameTimeStamps as an emtpy vector...')
-                end
-            end
+%             % !!! the following should fix sessions where spike is stopped
+%             % before the camera is stopped // not sure it will worked if
+%             % camera is started before spike is started
+%             if length(exposure.times) < length(frameCounts)
+%                 disp('  there are more frames than exposure TTLs...')
+%                 if mean(isnan(frameTimeStamps))<.05 % if most of the frame times were successfully determined
+%                     frameTimeStamps(end+1:length(frameCounts)) = nan; % fill in missing timeStamps for all frames at the end of the session (presumably) with unreconstructable times
+%                     disp('  reconstructed frameTimes assuming missing TTLs were at the end of the session (this will happen when spike is stopped before the camera)...')
+%                 else
+%                     frameTimeStamps = [];
+%                     disp('  saving frameTimeStamps as an emtpy vector...')
+%                 end
+%             end
             
             % save values
             varStruct.frameTimeStamps = frameTimeStamps;
@@ -336,16 +336,16 @@ function analyzeSession(session, varsToOverWrite)
             fprintf('%s: getting wisk frame time stamps\n', session)
             frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
 
-            if length(exposure.times) < length(frameCountsWisk)
-                disp('  there are more frames than exposure TTLs...')
-                if mean(isnan(frameTimeStampsWisk))<.05 % if most of the frame times were successfully determined
-                    frameTimeStampsWisk(end+1:length(frameCountsWisk)) = nan; % fill in missing timeStamps for all frames at the end of the session (presumably) with unreconstructable times
-                    disp('  reconstructed frameTimes assuming missing TTLs were at the end of the session (this will happen when spike is stopped before the camera)...')
-                else
-                    frameTimeStampsWisk = [];
-                    disp('  saving frameTimeStamps as an emtpy vector...')
-                end
-            end
+%             if length(exposure.times) < length(frameCountsWisk)
+%                 disp('  there are more frames than exposure TTLs...')
+%                 if mean(isnan(frameTimeStampsWisk))<.05 % if most of the frame times were successfully determined
+%                     frameTimeStampsWisk(end+1:length(frameCountsWisk)) = nan; % fill in missing timeStamps for all frames at the end of the session (presumably) with unreconstructable times
+%                     disp('  reconstructed frameTimes assuming missing TTLs were at the end of the session (this will happen when spike is stopped before the camera)...')
+%                 else
+%                     frameTimeStampsWisk = [];
+%                     disp('  saving frameTimeStamps as an emtpy vector...')
+%                 end
+%             end
             
             % save values
             varStruct.frameTimeStampsWisk = frameTimeStampsWisk;
@@ -495,7 +495,9 @@ function analyzeSession(session, varsToOverWrite)
         
         fprintf('%s: getting wheel center and radius\n', session)
         
-        vid = VideoReader(fullfile(sessionDir, 'run.mp4'));
+        vidName = fullfile(sessionDir, 'run.mp4');
+        if ~exist(vidName, 'file'); concatTopBotVids(session); end  % old sessions were recorded with separate top and bot views, which need to be concatenated
+        vid = VideoReader(vidName);
         wheelPoints = getWheelPoints(vid);
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
         
@@ -574,7 +576,7 @@ function analyzeSession(session, varsToOverWrite)
         fprintf('%s: getting paw contacts\n', session)
         
         % settings
-        rerunClassifier = true; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
+        rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
 %         confidenceThreshForeDorsal = .9; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
@@ -674,7 +676,7 @@ function analyzeSession(session, varsToOverWrite)
         fprintf('%s: getting whisker contacts\n', session)
         
         % settings
-        rerunWiskNetwork = true;
+        rerunWiskNetwork = false;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier

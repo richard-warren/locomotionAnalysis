@@ -56,6 +56,44 @@ while true
 end
 
 
+%% recompute time stamps
+
+sessions = getAllExperimentSessions;
+
+% !!! pick up with fixes for session 180807_000 (121)
+for i = 84:length(sessions)
+    
+    fprintf('\n\n________________session #%i (%s)________________\n', i, experiments{i})
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
+        'frameTimeStamps', 'frameTimeStampsWisk')
+    frameTimeStamps_old = frameTimeStamps;
+    frameTimeStampsWisk_old = frameTimeStampsWisk;
+    analyzeSession(sessions{i}, {'frameTimeStamps', 'frameTimeStampsWisk'})
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
+        'frameTimeStamps', 'frameTimeStampsWisk')
+    
+    
+    differInds = find(frameTimeStamps ~= frameTimeStamps_old & ~isnan(frameTimeStamps_old));
+    differIndsWisk = find(frameTimeStampsWisk ~= frameTimeStampsWisk_old & ~isnan(frameTimeStampsWisk_old));
+    
+    if ~isempty(differInds) || ~isempty(differIndsWisk)
+        figure('Position', [1950.00 28.00 577.00 945.00], 'color', 'white', 'name', sessions{i});
+    
+        subplot(2,1,1); hold on
+        plot(frameTimeStamps_old, 'linewidth', 2)
+        plot(frameTimeStamps);
+
+        scatter(differInds , frameTimeStamps(differInds))
+
+        subplot(2,1,2); hold on
+        plot(frameTimeStampsWisk_old, 'linewidth', 2)
+        plot(frameTimeStampsWisk);
+        scatter(differIndsWisk , frameTimeStampsWisk(differIndsWisk))
+        pause(.1)
+    end    
+end
+
+
 %%  test timeStampDecoderFLIR
 
 % plots times decoded with this function to ensure they are all going in a straight line
@@ -85,7 +123,6 @@ wheelRad = 95.25; % mm
 obEncoderSteps = 1000; % 250cpr * 4
 obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
 
-%%
 
 for i = 1:length(sessions)
     try 

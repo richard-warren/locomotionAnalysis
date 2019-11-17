@@ -1,4 +1,4 @@
-function showTrackingDLC(session, trainingDataPath)
+function showTracking(session, trainingDataPath)
 
 % to do: show confidence and gobal class in bottom left // think about how
 % i should handle confidence thresholds...

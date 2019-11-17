@@ -45,8 +45,9 @@ allStates(2, identities==2) = states(identities==2);
 allStates = fillmissing(allStates, 'previous', 2);
 
 % fill in the final nan in the first column as the opposite of it's subsequent state
-nanBins = isnan(allStates(:,1));
-allStates(nanBins, 1) = ~allStates(nanBins, 2);
+nanRow = find(isnan(allStates(:,1)));
+firstReal = find(~isnan(allStates(nanRow,:)),1,'first');
+allStates(nanRow, 1:firstReal-1) = ~allStates(nanRow, firstReal);
 
 % create transitions matrix, where each column as [prevStateA; prevStateB; currentStateA; currentStateB]
 transitions = cat(1, allStates(:,1:end-1), allStates(:,2:end));

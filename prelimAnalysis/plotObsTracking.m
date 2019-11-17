@@ -29,9 +29,11 @@ for i = 1:plotRows
 
     trialStartInds = cumsum(cellfun(@length, {obsTracking(rowInds).times}));
     trialStartInds = [1 trialStartInds(1:end-1)];
-    scatter(trialStartInds, wheelVelRow(trialStartInds), 20, 'filled', 'black')
-    set(gca, 'xlim', [0, length(wheelVelRow)], 'ylim', [0 1], 'box', 'off', 'xtick', [], 'TickDir', 'out')
-    text(trialStartInds, zeros(1, length(trialStartInds)), sprintfc('%d', rowInds))
+    try  % the following breaks on session 180722_005
+        scatter(trialStartInds, wheelVelRow(trialStartInds), 20, 'filled', 'black')
+        set(gca, 'xlim', [0, length(wheelVelRow)], 'ylim', [0 1], 'box', 'off', 'xtick', [], 'TickDir', 'out')
+        text(trialStartInds, zeros(1, length(trialStartInds)), sprintfc('%d', rowInds))
+    end
 end
 
 legend({'wheel', 'obstacle'})

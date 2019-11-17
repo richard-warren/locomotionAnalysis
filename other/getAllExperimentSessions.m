@@ -1,18 +1,27 @@
-function sessions = getAllExperimentSessions()
+function [sessions, experiments] = getAllExperimentSessions()
 
 % returns a cell array containing all sessions listed in the
 % experimentMetaData spreadsheet. use this to get a list of all sessions if
-% some variable needs to be recomputed for every session, for example
+% some variable needs to be recomputed for every session, for example. also
+% retruns experiments, which lists the names of the sheet from which the
+% session was drawn
 
 % settings
 spreadsheet = fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx');
 sheets = {'baselineNotes', 'lesionNotes', 'senLesionNotes', 'muscimolNotes', 'sensoryDependenceNotes', 'whiskerTrimNotes'};  % which sheets to analyze
 
 sessions = cell(1,length(sheets));
+experiments = cell(1,length(sheets));
+
 for i = 1:length(sheets)
     sheet = readtable(spreadsheet, 'Sheet', sheets{i});
-    sessions{i} = sheet.session(~cellfun(@isempty, sheet.session));
+    bins = ~cellfun(@isempty, sheet.session);
+    sessions{i} = sheet.session(bins);
+    experiments{i} = repelem(sheets(i), sum(bins))';
 end
 
-sessions = unique(cat(1, sessions{:}));
+% keyboard
+[sessions, inds] = unique(cat(1, sessions{:}));
+experiments = cat(1, experiments{:});
+experiments = {experiments{inds}};
 fprintf('found %i sessions\n', length(sessions));
