@@ -17,6 +17,7 @@ function frameTimes = getFrameTimes(ttlTimes, camTimes, camCounts, session)
 % settings
 ttlGap = [.495 .505];  % the last frame is collected after a gap // look for a gap that is within these limits // this shojld match the setting in the Arduino script servoControl
 
+
 % find ttlGaps in spike ttls camera metadata
 ttlGaps = find(diff(ttlTimes)>ttlGap(1) & diff(ttlTimes)<ttlGap(2));
 camGaps = find(diff(camTimes)>ttlGap(1) & diff(camTimes)<ttlGap(2));
@@ -26,14 +27,14 @@ camGaps = find(diff(camTimes)>ttlGap(1) & diff(camTimes)<ttlGap(2));
 if length(ttlGaps)==length(camGaps)  % if same number of ttl gaps, just use the first one
     ttlGap = 1;
     camGap = 1;
-else  % otherwise try to find the best match
+else  % otherwise try to find the best match (not that the following approach will fail for evenly spaced ttl gaps)
     ttlGapDurations = diff(ttlTimes(ttlGaps));
     camGapDurations = diff(camTimes(camGaps));
     [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
     [~, minInd] = min(diffs);
-    ttlGap = minInd;
-    camGap = inds(minInd);
-    fprintf('  %s: WARNING! different number of ttl gaps detected in camera and spike!\n', session, length(beginningNans));
+    ttlGap = inds(minInd);
+    camGap = minInd;
+    fprintf('  %s: WARNING! different number of ttl gaps detected in camera and spike!\n', session);
 end
 
 % using the first ttlGap as a reference, shift camCounts such that the

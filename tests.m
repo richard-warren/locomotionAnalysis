@@ -58,10 +58,10 @@ end
 
 %% recompute time stamps
 
-sessions = getAllExperimentSessions;
+% [sessions, experiments] = getAllExperimentSessions;
+sessions = {'180807_000', '181219_000', '190226_000', '190303_000', '190308_000', '190320_001', '190326_003'};
 
-% !!! pick up with fixes for session 180807_000 (121)
-for i = 84:length(sessions)
+for i = 1:length(sessions)
     
     fprintf('\n\n________________session #%i (%s)________________\n', i, experiments{i})
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
