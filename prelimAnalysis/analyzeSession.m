@@ -282,7 +282,7 @@ function analyzeSession(session, varargin)
     
     
     % get wisk frame timeStamps
-    if analyzeVar({'frameTimeStampsWisk'}) && exist(fullfile(sessionDir, 'wisk.csv'), 'file')
+    if analyzeVar('frameTimeStampsWisk') && exist(fullfile(sessionDir, 'wisk.csv'), 'file')
             
         fprintf('%s: getting wisk frame time stamps\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'exposure')
@@ -300,42 +300,38 @@ function analyzeSession(session, varargin)
 
     keyboard
     % get webCam timeStamps if webCam data exist
-    if analyzeVar({'webCamTimeStamps'}, computedVars, s.overwriteVars)
+    if analyzeVar('webCamTimeStamps') && ...
+            exist(fullfile(sessionDir, 'webCam.csv'), 'file') &&...
+            exist(fullfile(sessionDir, 'run.csv'), 'file') &&...
+            any(strcmp(fieldnames(data), 'frameTimeStamps'))
 
-        if exist(fullfile(sessionDir, 'webCam.csv'), 'file') &&...
-           exist(fullfile(sessionDir, 'run.csv'), 'file') &&...
-           any(strcmp(fieldnames(data), 'frameTimeStamps'))
+        fprintf('%s: getting webcam time stamps\n', session)
 
-            fprintf('%s: getting webcam time stamps\n', session)
+        % load data
+        camMetadataRun = dlmread(fullfile(sessionDir, 'run.csv'));
+        camSysClock = camMetadataRun(:,1) / 1000;
+        camSpikeClock = data.frameTimeStamps;
+        webCamSysClock = dlmread(fullfile(sessionDir, 'webCam.csv')) / 1000; % convert from ms to s
 
-            % load data
-            camMetadataRun = dlmread(fullfile(sessionDir, 'run.csv'));
-            camSysClock = camMetadataRun(:,1) / 1000;
-            camSpikeClock = data.frameTimeStamps;
-            webCamSysClock = dlmread(fullfile(sessionDir, 'webCam.csv')) / 1000; % convert from ms to s
+        % remove discontinuities
+        webCamTimeSteps = cumsum([0; diff(webCamSysClock)<0]);
+        webCamSysClock = webCamSysClock + webCamTimeSteps;
+        webCamSysClock = webCamSysClock - webCamSysClock(1); % set first time to zero
 
-            % remove discontinuities
-            webCamTimeSteps = cumsum([0; diff(webCamSysClock)<0]);
-            webCamSysClock = webCamSysClock + webCamTimeSteps;
-            webCamSysClock = webCamSysClock - webCamSysClock(1); % set first time to zero
+        camTimeSteps = cumsum([0; diff(camSysClock)<0]);
+        camSysClock = camSysClock + camTimeSteps;
+        camSysClock = camSysClock - camSysClock(1); % set first time to zero
 
-            camTimeSteps = cumsum([0; diff(camSysClock)<0]);
-            camSysClock = camSysClock + camTimeSteps;
-            camSysClock = camSysClock - camSysClock(1); % set first time to zero
+        % determine spike clock times from system clock times
+        validInds = ~isnan(camSpikeClock);
+        try
+            sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
+            webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
 
-            % determine spike clock times from system clock times
-            validInds = ~isnan(camSpikeClock);
-            try
-                sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
-                webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
-
-                % save
-                data.webCamTimeStamps = webCamSpikeClock;
-                anythingAnalyzed = true;
-            catch
-                keyboard
-                fprintf('%s: PROBLEM GETTING WEBCAM TIMESTAMPS\n', session)
-            end
+            saveVars('webCamTimeStamps',webCamTimeStamps)
+        catch
+            keyboard
+            fprintf('%s: PROBLEM GETTING WEBCAM TIMESTAMPS\n', session)
         end
     end
     
