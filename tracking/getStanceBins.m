@@ -1,4 +1,4 @@
-function stanceBins = getStanceBins(frameTimeStamps, locationsTopPaws, wheelPositions, wheelTimes, wheelCenter, wheelRadius, vidFs, mToPixFactor)
+function stanceBins = getStanceBins(frameTimeStamps, locationsTopPaws, wheelPositions, wheelTimes, wheelCenter, wheelRadius, vidFs, pixelsPerMm)
 
 
 
@@ -17,7 +17,7 @@ for i = 1:4
 end
 
 % get wheel velocity IN PIXELS
-wheelVel = getVelocity(wheelPositions * mToPixFactor, velTime, 1/(median(diff(wheelTimes))));
+wheelVel = getVelocity(wheelPositions * pixelsPerMm*1000, velTime, 1/(median(diff(wheelTimes))));
 wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps)';
 
 

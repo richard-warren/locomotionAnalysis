@@ -1,4 +1,4 @@
-function [locations, features, featurePairInds, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps)
+function [locations, features, featurePairInds, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps)
 
 
 % settings

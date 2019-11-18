@@ -138,6 +138,22 @@ for i = 1:length(sessions)
     end
 end
 
+%% recompute prelimAnalysis
+
+[sessions, experiments] = getAllExperimentSessions;
+problemSessions = {};
+
+
+for i = 1:length(sessions)
+    fprintf('\n\n________________session #%i (%s)________________\n', i, experiments{i})
+    try 
+        analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false)
+    catch
+        fprintf('WARNING: %s failed to analyze...');
+        problemSessions{end+1} = sessions{i};
+    end
+end
+
 
 
 

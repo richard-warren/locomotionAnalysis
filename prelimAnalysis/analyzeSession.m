@@ -7,7 +7,7 @@ function analyzeSession(session, varargin)
 
     % settings
     s.targetFs = 1000; % frequency that positional data will be resampled to
-    s.overwriteVars = {};
+    s.overwriteVars = '';
     s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
     
     s.rerunRunNetwork = false;
@@ -172,7 +172,7 @@ function analyzeSession(session, varargin)
             obsTracking(rowInd).percentBadTracking = nanmean(abs(wheelVelTrial-obsVelTrial) > velTolerance);
             if obsTracking(rowInd).percentBadTracking > warningThresh
                 if ~anyPoorTrackingTrials
-                    fprintf('%s: WARNING! poor obstacle tracking in trial(s): %i', session, i);
+                    fprintf('  %s: WARNING! poor obstacle tracking in trial(s): %i', session, i);
                     anyPoorTrackingTrials = true;
                 else
                     fprintf(' %i', i);
@@ -344,8 +344,8 @@ function analyzeSession(session, varargin)
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
-    if analyzeVar('obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPositionsFixed', ...
-            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping') && ...
+    if analyzeVar('obsPixPositions', 'obsPixPositionsUninterped', 'obsToObsPixPosMappings', ...
+            'wheelToObsPixPosMappings', 'pixelsPerMm', 'obsPositionsFixed') && ...
             exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
             ~isempty(data.obsOnTimes)
    
@@ -422,10 +422,7 @@ function analyzeSession(session, varargin)
         
         fprintf('%s: getting wheel center and radius\n', session)
         
-        vidName = fullfile(sessionDir, 'run.mp4');
-        if ~exist(vidName, 'file'); concatTopBotVids(session); end  % old sessions were recorded with separate top and bot views, which need to be concatenated
-        vid = VideoReader(vidName);
-        wheelPoints = getWheelPoints(vid);
+        wheelPoints = getWheelPoints(session);
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
         
         saveVars('wheelCenter', wheelCenter, 'wheelRadius', wheelRadius);
@@ -480,29 +477,31 @@ function analyzeSession(session, varargin)
     
     
     
-    keyboard
     % neural network classifier to determine whether paw is touching obs
-    if (analyzeVar('touches', 'touchesPerPaw', 'touchConfidences', 'touchClassNames') ...
-            || ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))) && ...
-        exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
-        isfield(data, 'obsPixPositions') && ...
-        ~isempty(data.obsOnTimes)
+    if (analyzeVar('touches', 'touchesPerPaw', 'touchConfidences', 'touchClassNames') || ...
+            ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || ...
+            isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))) && ...
+            exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
+            ~isempty(data.obsOnTimes)
         
         fprintf('%s: getting paw contacts\n', session)
         
         % settings
-        rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
-        confidenceThreshForeDorsal = .6; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
-        proximityThresh = 20; % how close does a paw have to be to the obstacle to be assigned to it for a touch
-        classesToAssignToPaw = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'}; % other touch types will be ignored
+        confidenceThreshForeDorsal = .6;  % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
+        proximityThresh = 20;  % how close does a paw have to be to the obstacle to be assigned to it for a touch
+        classesToAssignToPaw = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};  % other touch types will be ignored
 
         % run neural network classifier
-        if ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || (exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') && rerunClassifier) || isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))
+        if ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || ...
+                s.rerunPawContactNetwork || ...
+                isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))
+            
             fprintf('%s: running paw contact neural network\n', session);
             save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data');  % first save the file so analyzeVideo.py can access it
-            [~,~] = system([pythonPath ' tracking\pawContact\expandanalyze.py ' getenv('OBSDATADIR') 'sessions ' session]);
+            [~,~] = system([pythonPath ' ' fullfile('tracking', 'pawContact', 'expandanalyze.py') ...
+                            ' ' fullfile(getenv('OBSDATADIR'), 'sessions') ' ' session]);
         end
         
         % get touch class for each frame
@@ -517,7 +516,7 @@ function analyzeSession(session, varargin)
         classInds(touchConfidences<confidenceThresh & classInds~=foreDorsalInd) = noTouchInd;
         classInds(touchConfidences<confidenceThreshForeDorsal & classInds==foreDorsalInd) = noTouchInd;
         
-        touches = ones(1,length(data.frameTimeStamps))*noTouchInd;
+        touches = ones(size(data.frameTimeStamps)) * noTouchInd;
         touches(pawAnalyzed.framenum) = classInds; % not all frames are analyzed // only those whethere paws are close to obstacle
         
         
@@ -525,7 +524,7 @@ function analyzeSession(session, varargin)
         
         % get xz positions for paws
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        [locations, features] = fixTrackingDLC(locationsTable, data.frameTimeStamps);
+        [locations, features] = fixTracking(locationsTable, data.frameTimeStamps);
         pawXZ = nan(size(locations,1), 2, 4);
         for i = 1:4
             pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
@@ -533,7 +532,7 @@ function analyzeSession(session, varargin)
             pawXZ(:,1,i) = locations(:,1,pawXBin);
             pawXZ(:,2,i) = locations(:,2,pawZBins);
         end
-
+        
         % get obs height in pixels for each trial
         % (replace missing values with median of tracked values for each trial)
         obsBin = ismember(features, 'obs_top');
@@ -555,9 +554,9 @@ function analyzeSession(session, varargin)
         % determine which paws are touching obs
         classesToAssignToPawInds = find(ismember(touchClassNames, classesToAssignToPaw));
         touchesToAssignToPaws = touches .* ismember(touches, classesToAssignToPawInds);
-        touchesPerPaw = repmat(touchesToAssignToPaws',1,4) .* double(pawDistances<proximityThresh);
+        touchesPerPaw = repmat(touchesToAssignToPaws,1,4) .* double(pawDistances<proximityThresh);
         
-        % only only fore paw classes for forepaws and hind paw classes for hind paws
+        % only fore paw classes for forepaws and hind paw classes for hind paws
         foreClassInds = find(contains(touchClassNames, 'fore'));
         hindClassInds = find(contains(touchClassNames, 'hind'));
         touchesPerPaw(:,[2,3]) = touchesPerPaw(:,[2,3]) .* double(ismember(touchesPerPaw(:,[2,3]), foreClassInds));
@@ -568,33 +567,28 @@ function analyzeSession(session, varargin)
         touchConfidences = ones(1,length(data.frameTimeStamps));
         touchConfidences(pawAnalyzed.framenum) = temp;
         
-        
-        % save
-        if isfield(data, 'obsPixPositionsContinuous'); data = rmfield(data, 'obsPixPositionsContinuous'); end % this is a hack to remove an old variable that took up too much space in the .mat file
-        data.touches = touches;
-        data.touchesPerPaw = touchesPerPaw;
-        data.touchClassNames = touchClassNames;
-        data.touchConfidences = touchConfidences;
-        anythingAnalyzed = true;
+        saveVars('touches', touches, ...  % categorical vector of the types of touches in each frame, with categories listed in touchClassNames (noTouchInd for no touch)
+                 'touchesPerPaw', touchesPerPaw, ...  % categorical matrix encoding the type of touch for each paw at every frame (zeros for no touch)
+                 'touchClassNames', touchClassNames, ...  % names of touch classes
+                 'touchConfidences', touchConfidences)  % condifence in touch classification
     end
     
     
     
     
     % run whisker contact network
-    if analyzeVar({'wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes'}, computedVars, s.overwriteVars) && ...
+    if analyzeVar('wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes') && ...
             ~isempty(data.obsOnTimes) && ...
-            ~isempty(data.obsPositions)
-            exist(fullfile(sessionDir, 'runWisk.mp4'), 'file')
+            exist(fullfile(sessionDir, 'runWisk.mp4'), 'file') && ...
+            exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
         
         fprintf('%s: getting whisker contacts\n', session)
         
         % settings
-        rerunWiskNetwork = false;
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
-        if ~exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') || (exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') && rerunWiskNetwork)
+        if ~exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') ||  s.rerunWiskContactNetwork
             fprintf('%s: running wisk contact network\n', session)
             if anythingAnalyzed; save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data'); end % first save the file so analyzeVideo.py can access it
             [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
@@ -617,12 +611,10 @@ function analyzeSession(session, varargin)
             end
         end
         
-        % save
-        data.wiskContactFrames = wiskContactData.framenum;
-        data.wiskContactFramesConfidences = wiskContactData.confidence;
-        data.wiskContactTimes = contactTimes;
-        data.wiskContactPositions = contactPositions;
-        anythingAnalyzed = true;
+        saveVars('wiskContactFrames', wiskContactData.framenum, ...
+                 'wiskContactFramesConfidences', wiskContactData.confidence, ...
+                 'wiskContactTimes', contactTimes, ...
+                 'wiskContactPositions', contactPositions);
     end
     
     
@@ -632,6 +624,8 @@ function analyzeSession(session, varargin)
     if anythingAnalyzed
         save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data')
         fprintf('%s: data analyzed and saved\n', session)
+    else
+        fprintf('%s: no new variables computed\n', session)
     end
     
     

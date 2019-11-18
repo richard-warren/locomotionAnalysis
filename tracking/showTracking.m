@@ -39,16 +39,16 @@ vid = VideoReader(vidName);
 
 % get locations data and convert to 3d matrix
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'mToPixMapping', ...
+    'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'pixelsPerMm', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes');
 locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
-[locations, features, ~, isInterped, scores] = fixTrackingDLC(locationsTable, frameTimeStamps);
+[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps);
 locations = locations / scaling; % bring back to original resolution
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 if showStance
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, ...
-        wheelTimes, wheelCenter, wheelRadius, vidFs, mToPixMapping(1));
+        wheelTimes, wheelCenter, wheelRadius, vidFs, pixelsPerMm);
 end
 
 

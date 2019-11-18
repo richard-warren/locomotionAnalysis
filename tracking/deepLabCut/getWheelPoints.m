@@ -1,4 +1,4 @@
-function wheelPoints = getWheelPoints(vid)
+function wheelPoints = getWheelPoints(session)
 
 % given a top view of the mouse running, returns three points along the top of the wheel
 % does this by collecting a bunch of random frames from the vid, then taking the minimum projection across frames
@@ -16,21 +16,23 @@ threshFactor = .5; % threshFactor times average pixel vale
 
 
 % initializations
+try
+    vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
+catch
+    vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
+end
 wheelPoints = nan(3,2); % each row is x,y measured from top left of image
 wheelPoints(:,1) = round(xLocations * vid.Width)';
 numberOfFrames = floor(vid.Duration*vid.FrameRate);
 
-
 % get stack of random frames
 if minFrame>=numberOfFrames; minFrame = 0; end % a hack that allows me to analyze really short test sessions
 frameInds = sort(randperm(numberOfFrames-minFrame, frameNum) + minFrame);
-
 frames = nan(vid.Height, vid.Width, frameNum);
 for i = 1:length(frameInds)
     frames(:,:,i) = rgb2gray(read(vid, frameInds(i)));
 end
 thresh = mean(frames(:))*threshFactor;
-
 
 % get minimum project across all frames (this effectively removes the legs from above the wheel)
 minProjection = uint8(min(frames, [], 3));
@@ -38,7 +40,9 @@ minProjection = uint8(min(frames, [], 3));
 
 % threshold image and keep only connected regions that interest the bottom row of image
 threshed = minProjection > thresh;
-[~, botRow] = min(diff(sum(threshed,2)));  % this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
+threshed(end,:) = 0;  % this is a hack that allows the function to work with only the top view, or with top and bottom views concatenated
+% [~, botRow] = min(diff(sum(threshed,2)));  % !!! switch to this line if switched completely away from unconcatenated vids // this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
+botRow = find(diff(sum(threshed,2))<-60, 1, 'first');  % this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
 threshed = threshed(1:botRow, :);  % restrict to top camera view
 regionInfo = bwlabel(threshed);
 botRowGroups = unique(regionInfo(end,:)); botRowGroups = botRowGroups(botRowGroups>0);
