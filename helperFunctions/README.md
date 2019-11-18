@@ -1,0 +1,1 @@
+`helpFunctions` contains a bunch of random helper scripts, only some of which I wrote.
