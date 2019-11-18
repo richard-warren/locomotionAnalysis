@@ -1,4 +1,4 @@
-function [kinData, stanceBins, models] = getKinematicData5(session, obsPos)
+function [kinData, stanceBins, models] = getKinematicData(session, obsPos)
 
 
 % TO DO: deal with unexpected occurences

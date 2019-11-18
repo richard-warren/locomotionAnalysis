@@ -1,14 +1,8 @@
 function analyzeSession(session, varargin)
 
-    % performs preliminary analyses for a session
+    % performs preliminary analyses on a session
     %
-    % for each session, loads existing runAnalyzed.mat
-    % if a computed variable is not already stored in runAnalyzed.mat AND the files necessary to compute it exist, it computes the variable
-    % if a variable name is included in cell array varsToOverWrite, it re-computes the variable even if it already exists, so long as
-    % the necessary files exist in the directory to compute it
-    %
-    % input:     sessions          session to analyze
-    %            varsToOverwrite   cell array of of variables that should be re-computed
+    % todo: document
 
 
     % settings
@@ -25,7 +19,8 @@ function analyzeSession(session, varargin)
     s.whEncoderSteps = 2880; % 720cpr * 4
     s.wheelRad = 95.25; % mm
     s.obEncoderSteps = 1000; % 250cpr * 4
-    s.obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
+    s.obsPulleyRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
+    s.obsDiameter = 3.175; % (mm)
 
     % initializations
     if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
@@ -78,7 +73,7 @@ function analyzeSession(session, varargin)
         if ~isempty(obEncodA.times) && ~isempty(obEncodB.times)
             [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
                                                      obEncodB.times, obEncodB.level,...
-                                                     s.obEncoderSteps, s.obsRad, s.targetFs, session);
+                                                     s.obEncoderSteps, s.obsPulleyRad, s.targetFs, session);
         else
             obsPositions = [];
             obsTimes = [];
@@ -298,7 +293,6 @@ function analyzeSession(session, varargin)
 
 
 
-    keyboard
     % get webCam timeStamps if webCam data exist
     if analyzeVar('webCamTimeStamps') && ...
             exist(fullfile(sessionDir, 'webCam.csv'), 'file') &&...
@@ -307,61 +301,53 @@ function analyzeSession(session, varargin)
 
         fprintf('%s: getting webcam time stamps\n', session)
 
-        % load data
+        % get main camera frame times wrt computer clock
         camMetadataRun = dlmread(fullfile(sessionDir, 'run.csv'));
         camSysClock = camMetadataRun(:,1) / 1000;
-        camSpikeClock = data.frameTimeStamps;
-        webCamSysClock = dlmread(fullfile(sessionDir, 'webCam.csv')) / 1000; % convert from ms to s
-
-        % remove discontinuities
-        webCamTimeSteps = cumsum([0; diff(webCamSysClock)<0]);
-        webCamSysClock = webCamSysClock + webCamTimeSteps;
-        webCamSysClock = webCamSysClock - webCamSysClock(1); % set first time to zero
-
         camTimeSteps = cumsum([0; diff(camSysClock)<0]);
-        camSysClock = camSysClock + camTimeSteps;
+        camSysClock = camSysClock + camTimeSteps;  % remove discontinuities
         camSysClock = camSysClock - camSysClock(1); % set first time to zero
+        
+        % get web camera frame times wrt computer clock
+        webCamSysClock = dlmread(fullfile(sessionDir, 'webCam.csv')) / 1000; % convert from ms to s
+        webCamTimeSteps = cumsum([0; diff(webCamSysClock)<0]);
+        webCamSysClock = webCamSysClock + webCamTimeSteps;  % remove discontinuities
+        webCamSysClock = webCamSysClock - webCamSysClock(1);  % set first time to zero
+        
+        % get main camera frame times wrt to spike clock
+        camSpikeClock = data.frameTimeStamps;
+        
+        % determine web camera frame times with respect to spike clock
+        bins = ~isnan(camSpikeClock);
+        mapping = polyfit(camSysClock(bins), camSpikeClock(bins), 1);
+        webCamTimeStamps = polyval(mapping, webCamSysClock);
 
-        % determine spike clock times from system clock times
-        validInds = ~isnan(camSpikeClock);
-        try
-            sysToSpike = polyfit(camSysClock(validInds), camSpikeClock(validInds), 1);
-            webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
-
-            saveVars('webCamTimeStamps',webCamTimeStamps)
-        catch
-            keyboard
-            fprintf('%s: PROBLEM GETTING WEBCAM TIMESTAMPS\n', session)
-        end
+        saveVars('webCamTimeStamps', webCamTimeStamps)
     end
     
     
     
     
     % get nose position
-    if analyzeVar({'nosePos'}, computedVars, s.overwriteVars) && ...
-       exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
+    if analyzeVar('nosePos') && exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
 
         fprintf('%s: getting nose position\n', session)
 
-        % load data
         locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); % get raw tracking data
         noseBotX = median(locationsTable.nose_bot);
         noseBotY = median(locationsTable.nose_bot_1);
 
-        % save
-        data.nosePos = [noseBotX noseBotY];
-        anythingAnalyzed = true;
+        saveVars('nosePos', [noseBotX noseBotY])
     end
+    
     
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
     if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPositionsFixed', ...
-            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, computedVars, s.overwriteVars) && ...
-       exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
-       ~isempty(data.obsOnTimes) && ...
-       ~isempty(data.obsPositions)
+            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}) && ...
+            exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
+            ~isempty(data.obsOnTimes)
    
         fprintf('%s: tracking obstacles in bottom view\n', session)
         
@@ -380,21 +366,25 @@ function analyzeSession(session, varargin)
                     obsLowScores>0.99;
         obsPixPositions = mean([obsHighX, obsLowX], 2);
         obsPixPositions(~validInds) = nan;
-        obsPixPositionsUninterped = obsPixPositions; % these are the obsPixPositions wihtout any interpolation (only where the obs is in the frame and successfully tracked)
-        obsPositionsInterp = interp1(data.obsTimes, data.obsPositions, data.frameTimeStamps); % get position of obstacle for all frames
-        wheelPositionsInterp = interp1(data.wheelTimes, data.wheelPositions, data.frameTimeStamps); % get position of wheel for all frames
         
-        % determine mappings between obs pix positions (x) and both wheel
-        % positions and obs positions (both from independent rotary encoders)
-        obsPosToObsPixPosMappings = nan(length(data.obsOnTimes), 2); % mapping between obs pix positions and obsPos from rotary encoder
-        obsPosToWheelPosMappings = nan(length(data.obsOnTimes), 2); % mapping between obs pix positions and wheel pos from wheel rotary encoder
+        % store version of obsPixPositions without interpolations=
+        obsPixPositionsUninterped = obsPixPositions; % these are the obsPixPositions wihtout any interpolation (only where the obs is in the frame and successfully tracked)
+        
+        % get positions of obstacle and wheel at the time of each frame
+        obsPositionsInterp = interp1(data.obsTimes, data.obsPositions, data.frameTimeStamps); 
+        wheelPositionsInterp = interp1(data.wheelTimes, data.wheelPositions, data.frameTimeStamps);
+        
+        % determine mappings from wheel and obs positions to obsPixPositions
+        obsToObsPixPosMappings = nan(length(data.obsOnTimes), 2); % mapping between obs positions (rotary encoder) and obs pix positions (video tracking)
+        wheelToObsPixPosMappings = nan(length(data.obsOnTimes), 2); % mapping between wheel positions (rotary encoder) and obs pix positions (video tracking)
         for i = 1:length(data.obsOnTimes)
-            getMappingBins = data.frameTimeStamps>data.obsOnTimes(i) & ...
-                             data.frameTimeStamps<=data.obsOffTimes(i) & ...
-                             ~isnan(obsPixPositions);
-            if any(getMappingBins)
-                obsPosToObsPixPosMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
-                obsPosToWheelPosMappings(i,:) = polyfit(wheelPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
+            bins = data.frameTimeStamps>data.obsOnTimes(i) & ...
+                   data.frameTimeStamps<=data.obsOffTimes(i) & ...
+                   ~isnan(obsPixPositions);
+            
+            if any(bins)
+                obsToObsPixPosMappings(i,:) = polyfit(obsPositionsInterp(bins), obsPixPositions(bins), 1);
+                wheelToObsPixPosMappings(i,:) = polyfit(wheelPositionsInterp(bins), obsPixPositions(bins), 1);
             end          
         end
         
@@ -403,31 +393,28 @@ function analyzeSession(session, varargin)
         for i = 1:(length(epochTimes)-1)
             epochBins = data.frameTimeStamps>epochTimes(i) & ...
                         data.frameTimeStamps<=epochTimes(i+1);
-            interpBins =  epochBins & isnan(obsPixPositions); % bins that should be interpolated over
+            interpBins = epochBins & isnan(obsPixPositions); % bins that should be interpolated over
             if any(epochBins)
-                obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*obsPosToObsPixPosMappings(i,1) + obsPosToObsPixPosMappings(i,2);
+                obsPixPositions(interpBins) = polyval(obsToObsPixPosMappings(i,:), obsPositionsInterp(interpBins));
             end
         end
         
         % get obsPixPositionsFixed
-         obsPositionsFixed = fixObsPositions(data.obsPositions, data.obsTimes, obsPixPositions, ...
+        obsPositionsFixed = fixObsPositions(data.obsPositions, data.obsTimes, obsPixPositions, ...
             data.frameTimeStamps, data.obsOnTimes, data.obsOffTimes, data.nosePos(1));
-        
 
-        % save
-        data.obsPixPositions = obsPixPositions';
-        data.obsPixPositionsUninterped = obsPixPositionsUninterped;
-        data.obsPosToObsPixPosMappings = obsPosToObsPixPosMappings;
-        data.obsPosToWheelPosMappings = obsPosToWheelPosMappings;
-        data.mToPixMapping = nanmedian(obsPosToObsPixPosMappings,1);
-        data.obsPositionsFixed = obsPositionsFixed;
-        
-        anythingAnalyzed = true;
+        saveVars('obsPixPositions', obsPixPositions', ...
+                 'obsPixPositionsUninterped', obsPixPositionsUninterped, ...
+                 'obsToObsPixPosMappings', obsToObsPixPosMappings, ...
+                 'wheelToObsPixPosMappings', wheelToObsPixPosMappings, ...
+                 'mToPixMapping', nanmedian(obsToObsPixPosMappings,1), ...
+                 'obsPositionsFixed', obsPositionsFixed);
     end
     
     
     
     
+    keyboard
     % get wheel points
     if analyzeVar({'wheelCenter', 'wheelRadius'}, computedVars, s.overwriteVars) && ...
        exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
@@ -472,9 +459,6 @@ function analyzeSession(session, varargin)
        any(strcmp(fieldnames(data), 'obsPixPositions'))
         
         fprintf('%s: getting obstacle heights\n', session)
-        
-        % settings
-        obsDiameter = 3.175; % (mm)
         
         % load tracking data if not already open
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
@@ -680,6 +664,8 @@ function analyzeSession(session, varargin)
         end
     end
 
+
+    % adds variables to 'data' struct
     function saveVars(varargin)
         % varargin: name-value pairs where the name is the name of the field to be added to 'data', and value is the value to be assigned to that field
         
@@ -687,5 +673,3 @@ function analyzeSession(session, varargin)
         anythingAnalyzed = true;
     end
 end
-
-

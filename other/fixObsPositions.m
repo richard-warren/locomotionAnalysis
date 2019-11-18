@@ -25,8 +25,6 @@ for i = 1:length(obsOnTimes)
         obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
         
         % get trial obsPos and subtract obsAtNosePos
-%         trialObsPosBins = (obsTimes>=obsOnTimes(i)) & (obsTimes<=obsOffTimes(i));
-%         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
         trialObsPosBins = (obsTimes>=epochTimes(i)) & (obsTimes<epochTimes(i+1));
         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
     end

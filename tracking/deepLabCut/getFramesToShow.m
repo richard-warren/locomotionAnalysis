@@ -10,26 +10,19 @@ obsPosRange = [-.05 .1]; % show frames where obs is obsPosRange meters in front 
 
 % initializations
 load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-    'frameTimeStamps', 'rewardTimes', 'wheelPositions', 'wheelTimes', 'obsOnTimes', 'obsOffTimes', ...
-    'obsPixPositions', 'obsTimes', 'obsPositions', 'nosePos')
+    'frameTimeStamps', 'rewardTimes', 'wheelPositions', 'wheelTimes', ...
+    'obsOnTimes', 'obsOffTimes', 'obsTimes', 'obsPositionsFixed')
 if ~exist('onlyShowFramesNearObs', 'var'); onlyShowFramesNearObs=false; end
 
 
 % get frames when mouse is near obs
 if onlyShowFramesNearObs
     
-    % initialize obsPositions
-    if ~exist('obsPixPositions', 'var')
-        obsPositions = fixObsPositionsHacky(obsPositions);
-    else
-        obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
-    end
-    
     frameInds = cell(1,length(obsOnTimes));
     for i = 1:length(obsOnTimes)
         % find trial indices
-        startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
-        endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
+        startInd = find(obsTimes>obsOnTimes(i)  & obsPositionsFixed>=obsPosRange(1), 1, 'first');
+        endInd   = find(obsTimes<obsOffTimes(i) & obsPositionsFixed<=obsPosRange(2), 1, 'last');
         frameInds{i} = find(frameTimeStamps>obsTimes(startInd) & frameTimeStamps<obsTimes(endInd));
     end
     frameInds = cat(1,frameInds{:});
