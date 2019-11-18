@@ -24,17 +24,24 @@ camGaps = find(diff(camTimes)>ttlGap(1) & diff(camTimes)<ttlGap(2));
 
 % find the interval between ttlGaps that is the closest in duration for camera and ttls
 % this ensures we are aligning to the same ttl gap
-if length(ttlGaps)==length(camGaps)  % if same number of ttl gaps, just use the first one
+if length(ttlGaps)==1 && length(camGaps)==1  % if same number of ttl gaps, just use the first one
     ttlGap = 1;
     camGap = 1;
-else  % otherwise try to find the best match (not that the following approach will fail for evenly spaced ttl gaps)
+else
     ttlGapDurations = diff(ttlTimes(ttlGaps));
     camGapDurations = diff(camTimes(camGaps));
-    [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
-    [~, minInd] = min(diffs);
-    ttlGap = inds(minInd);
-    camGap = minInd;
-    fprintf('  %s: WARNING! different number of ttl gaps detected in camera and spike!\n', session);
+    
+    if length(ttlGaps)==length(camGaps)  % if same number of gaps, used the most similar gaps (to avoid using a gap where a frame may be lost at the beginning or the end)
+        [~, minInd] = min(abs(ttlGapDurations-camGapDurations));
+        ttlGap = minInd;
+        camGap = minInd;
+    else  % otherwise try to find the best match (note that the following approach will fail for evenly spaced ttl gaps or if two gaps happen to be of similar duration) // would be smarter to loop across all entries, only keeping those with closely match durations
+        fprintf('  %s: WARNING! different number of ttl gaps detected in camera and spike!\n', session);
+        [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
+        [~, minInd] = min(diffs);
+        ttlGap = inds(minInd);
+        camGap = minInd;
+    end
 end
 
 % using the first ttlGap as a reference, shift camCounts such that the

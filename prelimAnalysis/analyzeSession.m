@@ -1,4 +1,4 @@
-function analyzeSession(session, varsToOverWrite)
+function analyzeSession(session, varargin)
 
     % performs preliminary analyses for a session
     %
@@ -12,39 +12,46 @@ function analyzeSession(session, varsToOverWrite)
 
 
     % settings
-    targetFs = 1000; % frequency that positional data will be resampled to
+    s.targetFs = 1000; % frequency that positional data will be resampled to
+    s.overwriteVars = {};
+    s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
+    
+    s.rerunRunNetwork = false;
+    s.rerunFaceNetwork = false;
+    s.rerunWiskContactNetwork = false;
+    s.rerunPawContactNetwork = false;
 
     % rig characteristics
-    whEncoderSteps = 2880; % 720cpr * 4
-    wheelRad = 95.25; % mm
-    obEncoderSteps = 1000; % 250cpr * 4
-    obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
+    s.whEncoderSteps = 2880; % 720cpr * 4
+    s.wheelRad = 95.25; % mm
+    s.obEncoderSteps = 1000; % 250cpr * 4
+    s.obsRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform
 
-    % if no variables to overwrite are specified, set to default
-    if ~exist('varsToOverWrite', 'var'); varsToOverWrite = {' '}; end
-    
+    % initializations
+    if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
+    if ischar(s.overwriteVars); s.overwriteVars = {s.overwriteVars}; end  % make sure overwriteVars is in cell format
     anythingAnalyzed = false; % results are only saved if something was found that wasn't already analyzed
 
     % load or initialize data structure
     sessionDir = fullfile(getenv('OBSDATADIR'), 'sessions', session);
-    if exist(fullfile(sessionDir, 'runAnalyzed.mat'), 'file')
-        varStruct = load(fullfile(sessionDir, 'runAnalyzed.mat'));
+    if exist(fullfile(sessionDir, 'runAnalyzed.mat'), 'file') && ~isequal(s.overwriteVars, {'all'})
+        data = load(fullfile(sessionDir, 'runAnalyzed.mat'));
     else
-        varStruct = struct();
+        data = struct();
     end
-    varNames = fieldnames(varStruct);
+    computedVars = fieldnames(data);
 
 
     
     
     % analyze reward times
-    if analyzeVar({'rewardTimes'}, varNames, varsToOverWrite)
+    if analyzeVar('rewardTimes')
         
         fprintf('%s: getting reward times\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'reward')
         
         % settings
-        minRewardInteveral = 1;
+        minRewardInteveral = 1;  % remove rewards detected within minRewardInterval of eachother
         
         % find reward times
         if isfield(reward, 'values')  % if recorded as analog input (sessions prior to 191523)
@@ -57,53 +64,43 @@ function analyzeSession(session, varsToOverWrite)
         % remove reward times occuring within minRewardInteveral seconds of eachother
         rewardTimes = rewardTimes(logical([1; diff(rewardTimes)>minRewardInteveral]));
 
-        % save values
-        varStruct.rewardTimes = rewardTimes;
-        anythingAnalyzed = true;
+        saveVars('rewardTimes', rewardTimes);
     end
 
 
     
 
     % decode obstacle position (based on obstacle track rotary encoder)
-    if analyzeVar({'obsPositions', 'obsTimes'}, varNames, varsToOverWrite)
-
+    if analyzeVar({'obsPositions', 'obsTimes'})
         load(fullfile(sessionDir, 'run.mat'), 'obEncodA', 'obEncodB')
-
-        if exist('obEncodA', 'var') && ~isempty(obEncodA.times) && ~isempty(obEncodB.times)
-            fprintf('%s: decoding obstacle position\n', session)
+        fprintf('%s: decoding obstacle position\n', session)
+        
+        if ~isempty(obEncodA.times) && ~isempty(obEncodB.times)
             [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
                                                      obEncodB.times, obEncodB.level,...
-                                                     obEncoderSteps, obsRad, targetFs, session);
+                                                     s.obEncoderSteps, s.obsRad, s.targetFs, session);
         else
             obsPositions = [];
             obsTimes = [];
         end
-
-        % save values
-        varStruct.obsPositions = obsPositions;
-        varStruct.obsTimes = obsTimes;
-        varStruct.targetFs = targetFs;
-        anythingAnalyzed = true;
+        
+        saveVars('obsPositions', obsPositions, 'obsTimes', obsTimes, 'targetFs', s.targetFs);
     end
 
 
 
 
     % decode wheel position
-    if analyzeVar({'wheelPositions', 'wheelTimes'}, varNames, varsToOverWrite)
+    if analyzeVar({'wheelPositions', 'wheelTimes'})
 
         fprintf('%s: decoding wheel position\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'whEncodA', 'whEncodB')
 
         [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
                                                      whEncodB.times, whEncodB.level,...
-                                                     whEncoderSteps, wheelRad, targetFs, session);
-        % save values
-        varStruct.wheelPositions = wheelPositions;
-        varStruct.wheelTimes = wheelTimes;
-        varStruct.targetFs = targetFs;
-        anythingAnalyzed = true;
+                                                     s.whEncoderSteps, s.wheelRad, s.targetFs, session);
+        
+         saveVars('wheelPositions', wheelPositions, 'wheelTimes', wheelTimes, 'targetFs', s.targetFs);
     end
 
 
@@ -111,7 +108,7 @@ function analyzeSession(session, varsToOverWrite)
 
     % get obstacle on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
-    if analyzeVar({'obsOnTimes', 'obsOffTimes'}, varNames, varsToOverWrite)
+    if analyzeVar({'obsOnTimes', 'obsOffTimes'})
 
         fprintf('%s: getting obstacle on and off times\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'obsOn')
@@ -135,49 +132,43 @@ function analyzeSession(session, varsToOverWrite)
         obsOnTimes = obsOnTimes(validBins);
         obsOffTimes = obsOffTimes(validBins);
         
-
-        % save values
-        varStruct.obsOnTimes = obsOnTimes;
-        varStruct.obsOffTimes = obsOffTimes; 
-        anythingAnalyzed = true;
+        saveVars('obsOnTimes', obsOnTimes, 'obsOffTimes', obsOffTimes)
     end
     
-
-
-
+    
+    
+    
     % check that obstacle tracked wheel position well
-    if analyzeVar({'obsTracking'}, varNames, varsToOverWrite) && ...
-            ~isempty(varStruct.obsPositions)
+    if analyzeVar('obsTracking') && ~isempty(data.obsOnTimes)
         
         fprintf('%s: checking obstacle tracking of wheel velocity\n', session)
         
         % settings
         velTime = .01;  % (s) compute velocity over this time window
-        obsOnBuffer = .25;  % (.25 s) don't consider obstacle tracking within obsOnBuffer of obstacle first turning on, because this is the time period where the speed is still ramping up
+        obsOnBuffer = .25;  % (s) don't consider obstacle tracking within obsOnBuffer of obstacle first turning on, because this is the time period where the speed is still ramping up
         velTolerance = .02;  % (m/s) tracking is considered good when obstacle velocity is within velTolerance of wheel velocity
-        plotTracking = true;
         warningThresh = .1;  % if warningThresh of trial has poor obstacle tracking, a warning message is thrown
 
         % initializations
-        wheelVel = getVelocity(varStruct.wheelPositions, velTime, targetFs);
-        obsVel = getVelocity(varStruct.obsPositions, velTime, targetFs);
+        wheelVel = getVelocity(data.wheelPositions, velTime, s.targetFs);
+        obsVel = getVelocity(data.obsPositions, velTime, s.targetFs);
 
         % get trial data
         obsTracking = struct();
         rowInd = 1;
         anyPoorTrackingTrials = false;  % keeps tracking of whether any poorly tracked trials have been detected
-        for i = 1:length(varStruct.obsOnTimes)
+        for i = 1:length(data.obsOnTimes)
 
-            wheelBins = varStruct.wheelTimes>(varStruct.obsOnTimes(i)+obsOnBuffer) & ...
-                        varStruct.wheelTimes<varStruct.obsOffTimes(i);
-            obsBins = varStruct.obsTimes>varStruct.obsOnTimes(i) & ...
-                      varStruct.obsTimes<varStruct.obsOffTimes(i);
+            wheelBins = data.wheelTimes > (data.obsOnTimes(i)+obsOnBuffer) & ...
+                        data.wheelTimes < data.obsOffTimes(i);
+            obsBins = data.obsTimes > (data.obsOnTimes(i)+obsOnBuffer) & ...
+                      data.obsTimes < data.obsOffTimes(i);
+            
             wheelVelTrial = wheelVel(wheelBins);
             obsVelTrial = obsVel(obsBins);
-            times = varStruct.wheelTimes(wheelBins);
-
-            if ~isequal(times, varStruct.obsTimes(obsBins))
-                obsVelTrial = interp1(varStruct.obsTimes(obsBins), obsVelTrial, times);
+            times = data.wheelTimes(wheelBins);
+            if ~isequal(times, data.obsTimes(obsBins))
+                obsVelTrial = interp1(data.obsTimes(obsBins), obsVelTrial, times);
             end
 
             obsTracking(rowInd).wheelVel = wheelVelTrial;
@@ -194,29 +185,24 @@ function analyzeSession(session, varsToOverWrite)
             end
             rowInd = rowInd + 1; 
         end
-        
         if anyPoorTrackingTrials; fprintf('\n'); end
+        if s.plotObsTracking; plotObsTracking(session, obsTracking); end
         
-        if plotTracking; plotObsTracking(session, obsTracking); end
-        
-        % save values
-        varStruct.obsTracking = obsTracking;
-        anythingAnalyzed = true;
+        saveVars('obsTracking', obsTracking)
     end
     
 
 
-
+    
     % get obstacle light on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
-    if analyzeVar({'obsLightOnTimes', 'obsLightOffTimes'}, varNames, varsToOverWrite)
+    if analyzeVar({'obsLightOnTimes', 'obsLightOffTimes'})
 
         fprintf('%s: getting obstacle light on and off times\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'obsLight')
 
         % settings
         minObsLightInterval = .1;
-        
         obsLightOnTimes = [];
         obsLightOffTimes = [];
         
@@ -249,101 +235,83 @@ function analyzeSession(session, varsToOverWrite)
             end
         end
 
-        % save values
-        varStruct.obsLightOnTimes = obsLightOnTimes;
-        varStruct.obsLightOffTimes = obsLightOffTimes; 
-        anythingAnalyzed = true;
+        saveVars('obsLightOnTimes', obsLightOnTimes, 'obsLightOffTimes', obsLightOffTimes)
     end
     
     
     
     
     % determine whether light was on or off for every trial
-    if analyzeVar({'isLightOn'}, varNames, varsToOverWrite)
+    if analyzeVar({'isLightOn'})
         
-        if isfield(varStruct, 'obsLightOnTimes') && isfield(varStruct, 'obsOnTimes')
+        if isfield(data, 'obsLightOnTimes')
             
             fprintf('%s: determing whether each trial is light on or light off\n', session)
-            isLightOn = false(size(varStruct.obsOnTimes));
+            isLightOn = false(size(data.obsOnTimes));
 
-            if ~isempty(varStruct.obsLightOnTimes) 
-                for i = 1:length(varStruct.obsOnTimes)
-                    isLightOn(i) = min(abs(varStruct.obsOnTimes(i) - varStruct.obsLightOnTimes)) < 1; % did the light turn on near when the obstacle turned on
+            if ~isempty(data.obsLightOnTimes) 
+                for i = 1:length(data.obsOnTimes)
+                    isLightOn(i) = min(abs(data.obsOnTimes(i) - data.obsLightOnTimes)) < 1; % did the light turn on near when the obstacle turned on
                 end
             end
         else
             isLightOn = [];
         end
 
-        % save values
-        varStruct.isLightOn = isLightOn;
-        anythingAnalyzed = true;
+        saveVars('isLightOn', isLightOn)
     end
 
 
 
 
     % get frame timeStamps
-    if analyzeVar({'frameTimeStamps'}, varNames, varsToOverWrite)
+    if analyzeVar('frameTimeStamps') && exist(fullfile(sessionDir, 'run.csv'), 'file')
 
-        if exist(fullfile(sessionDir, 'run.csv'), 'file')
+        fprintf('%s: getting frame time stamps\n', session)
+        load(fullfile(sessionDir, 'run.mat'), 'exposure')
 
-            load(fullfile(sessionDir, 'run.mat'), 'exposure')
+        camMetadata = dlmread(fullfile(sessionDir, 'run.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+        frameCounts = camMetadata(:,2);
+        timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
+        frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
 
-            % get camera metadata and spike timestamps
-            camMetadata = dlmread(fullfile(sessionDir, 'run.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
-            frameCounts = camMetadata(:,2);
-            timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
-
-            fprintf('%s: getting frame time stamps\n', session)
-            frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
-            
-            % save values
-            varStruct.frameTimeStamps = frameTimeStamps;
-            anythingAnalyzed = true;
-        end
+        saveVars('frameTimeStamps', frameTimeStamps)
     end
     
     
     
     
     % get wisk frame timeStamps
-    if analyzeVar({'frameTimeStampsWisk'}, varNames, varsToOverWrite)
-
-        if exist(fullfile(sessionDir, 'wisk.csv'), 'file')
+    if analyzeVar({'frameTimeStampsWisk'}) && exist(fullfile(sessionDir, 'wisk.csv'), 'file')
             
-            load(fullfile(sessionDir, 'run.mat'), 'exposure')
+        fprintf('%s: getting wisk frame time stamps\n', session)
+        load(fullfile(sessionDir, 'run.mat'), 'exposure')
 
-            % get camera metadata and spike timestamps
-            camMetadataWisk = dlmread(fullfile(sessionDir, 'wisk.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
-            frameCountsWisk = camMetadataWisk(:,1);
-            timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
+        camMetadataWisk = dlmread(fullfile(sessionDir, 'wisk.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+        frameCountsWisk = camMetadataWisk(:,1);
+        timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
+        frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
 
-            fprintf('%s: getting wisk frame time stamps\n', session)
-            frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
-            
-            % save values
-            varStruct.frameTimeStampsWisk = frameTimeStampsWisk;
-            anythingAnalyzed = true;
-        end
+        saveVars('frameTimeStampsWisk', frameTimeStampsWisk)
     end
 
 
 
 
+    keyboard
     % get webCam timeStamps if webCam data exist
-    if analyzeVar({'webCamTimeStamps'}, varNames, varsToOverWrite)
+    if analyzeVar({'webCamTimeStamps'}, computedVars, s.overwriteVars)
 
         if exist(fullfile(sessionDir, 'webCam.csv'), 'file') &&...
            exist(fullfile(sessionDir, 'run.csv'), 'file') &&...
-           any(strcmp(fieldnames(varStruct), 'frameTimeStamps'))
+           any(strcmp(fieldnames(data), 'frameTimeStamps'))
 
             fprintf('%s: getting webcam time stamps\n', session)
 
             % load data
             camMetadataRun = dlmread(fullfile(sessionDir, 'run.csv'));
             camSysClock = camMetadataRun(:,1) / 1000;
-            camSpikeClock = varStruct.frameTimeStamps;
+            camSpikeClock = data.frameTimeStamps;
             webCamSysClock = dlmread(fullfile(sessionDir, 'webCam.csv')) / 1000; % convert from ms to s
 
             % remove discontinuities
@@ -362,7 +330,7 @@ function analyzeSession(session, varsToOverWrite)
                 webCamSpikeClock = webCamSysClock * sysToSpike(1) + sysToSpike(2);
 
                 % save
-                varStruct.webCamTimeStamps = webCamSpikeClock;
+                data.webCamTimeStamps = webCamSpikeClock;
                 anythingAnalyzed = true;
             catch
                 keyboard
@@ -375,7 +343,7 @@ function analyzeSession(session, varsToOverWrite)
     
     
     % get nose position
-    if analyzeVar({'nosePos'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'nosePos'}, computedVars, s.overwriteVars) && ...
        exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
 
         fprintf('%s: getting nose position\n', session)
@@ -386,7 +354,7 @@ function analyzeSession(session, varsToOverWrite)
         noseBotY = median(locationsTable.nose_bot_1);
 
         % save
-        varStruct.nosePos = [noseBotX noseBotY];
+        data.nosePos = [noseBotX noseBotY];
         anythingAnalyzed = true;
     end
     
@@ -394,10 +362,10 @@ function analyzeSession(session, varsToOverWrite)
     
     % get mToPixMapping and obstacle pixel positions in bottom view
     if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPositionsFixed', ...
-            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, varNames, varsToOverWrite) && ...
+            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}, computedVars, s.overwriteVars) && ...
        exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
-       ~isempty(varStruct.obsOnTimes) && ...
-       ~isempty(varStruct.obsPositions)
+       ~isempty(data.obsOnTimes) && ...
+       ~isempty(data.obsPositions)
    
         fprintf('%s: tracking obstacles in bottom view\n', session)
         
@@ -417,16 +385,16 @@ function analyzeSession(session, varsToOverWrite)
         obsPixPositions = mean([obsHighX, obsLowX], 2);
         obsPixPositions(~validInds) = nan;
         obsPixPositionsUninterped = obsPixPositions; % these are the obsPixPositions wihtout any interpolation (only where the obs is in the frame and successfully tracked)
-        obsPositionsInterp = interp1(varStruct.obsTimes, varStruct.obsPositions, varStruct.frameTimeStamps); % get position of obstacle for all frames
-        wheelPositionsInterp = interp1(varStruct.wheelTimes, varStruct.wheelPositions, varStruct.frameTimeStamps); % get position of wheel for all frames
+        obsPositionsInterp = interp1(data.obsTimes, data.obsPositions, data.frameTimeStamps); % get position of obstacle for all frames
+        wheelPositionsInterp = interp1(data.wheelTimes, data.wheelPositions, data.frameTimeStamps); % get position of wheel for all frames
         
         % determine mappings between obs pix positions (x) and both wheel
         % positions and obs positions (both from independent rotary encoders)
-        obsPosToObsPixPosMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and obsPos from rotary encoder
-        obsPosToWheelPosMappings = nan(length(varStruct.obsOnTimes), 2); % mapping between obs pix positions and wheel pos from wheel rotary encoder
-        for i = 1:length(varStruct.obsOnTimes)
-            getMappingBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
-                             varStruct.frameTimeStamps<=varStruct.obsOffTimes(i) & ...
+        obsPosToObsPixPosMappings = nan(length(data.obsOnTimes), 2); % mapping between obs pix positions and obsPos from rotary encoder
+        obsPosToWheelPosMappings = nan(length(data.obsOnTimes), 2); % mapping between obs pix positions and wheel pos from wheel rotary encoder
+        for i = 1:length(data.obsOnTimes)
+            getMappingBins = data.frameTimeStamps>data.obsOnTimes(i) & ...
+                             data.frameTimeStamps<=data.obsOffTimes(i) & ...
                              ~isnan(obsPixPositions);
             if any(getMappingBins)
                 obsPosToObsPixPosMappings(i,:) = polyfit(obsPositionsInterp(getMappingBins), obsPixPositions(getMappingBins), 1);
@@ -435,10 +403,10 @@ function analyzeSession(session, varsToOverWrite)
         end
         
         % use obs position from rotary encoder to infer pix positions when obs is out of frame
-        epochTimes = [varStruct.obsOnTimes; varStruct.frameTimeStamps(end)];
+        epochTimes = [data.obsOnTimes; data.frameTimeStamps(end)];
         for i = 1:(length(epochTimes)-1)
-            epochBins = varStruct.frameTimeStamps>epochTimes(i) & ...
-                        varStruct.frameTimeStamps<=epochTimes(i+1);
+            epochBins = data.frameTimeStamps>epochTimes(i) & ...
+                        data.frameTimeStamps<=epochTimes(i+1);
             interpBins =  epochBins & isnan(obsPixPositions); % bins that should be interpolated over
             if any(epochBins)
                 obsPixPositions(interpBins) = obsPositionsInterp(interpBins)*obsPosToObsPixPosMappings(i,1) + obsPosToObsPixPosMappings(i,2);
@@ -446,17 +414,17 @@ function analyzeSession(session, varsToOverWrite)
         end
         
         % get obsPixPositionsFixed
-         obsPositionsFixed = fixObsPositions(varStruct.obsPositions, varStruct.obsTimes, obsPixPositions, ...
-            varStruct.frameTimeStamps, varStruct.obsOnTimes, varStruct.obsOffTimes, varStruct.nosePos(1));
+         obsPositionsFixed = fixObsPositions(data.obsPositions, data.obsTimes, obsPixPositions, ...
+            data.frameTimeStamps, data.obsOnTimes, data.obsOffTimes, data.nosePos(1));
         
 
         % save
-        varStruct.obsPixPositions = obsPixPositions';
-        varStruct.obsPixPositionsUninterped = obsPixPositionsUninterped;
-        varStruct.obsPosToObsPixPosMappings = obsPosToObsPixPosMappings;
-        varStruct.obsPosToWheelPosMappings = obsPosToWheelPosMappings;
-        varStruct.mToPixMapping = nanmedian(obsPosToObsPixPosMappings,1);
-        varStruct.obsPositionsFixed = obsPositionsFixed;
+        data.obsPixPositions = obsPixPositions';
+        data.obsPixPositionsUninterped = obsPixPositionsUninterped;
+        data.obsPosToObsPixPosMappings = obsPosToObsPixPosMappings;
+        data.obsPosToWheelPosMappings = obsPosToWheelPosMappings;
+        data.mToPixMapping = nanmedian(obsPosToObsPixPosMappings,1);
+        data.obsPositionsFixed = obsPositionsFixed;
         
         anythingAnalyzed = true;
     end
@@ -465,7 +433,7 @@ function analyzeSession(session, varsToOverWrite)
     
     
     % get wheel points
-    if analyzeVar({'wheelCenter', 'wheelRadius'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'wheelCenter', 'wheelRadius'}, computedVars, s.overwriteVars) && ...
        exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
         
         fprintf('%s: getting wheel center and radius\n', session)
@@ -477,8 +445,8 @@ function analyzeSession(session, varsToOverWrite)
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
         
         % save
-        varStruct.wheelCenter = wheelCenter;
-        varStruct.wheelRadius = wheelRadius;
+        data.wheelCenter = wheelCenter;
+        data.wheelRadius = wheelRadius;
         anythingAnalyzed = true;
     end
     
@@ -486,17 +454,17 @@ function analyzeSession(session, varsToOverWrite)
             
     
     % get body angle
-    if analyzeVar({'bodyAngles'}, varNames, varsToOverWrite) && ...
+    if analyzeVar({'bodyAngles'}, computedVars, s.overwriteVars) && ...
        exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
         
         fprintf('%s: getting body angle\n', session)
         
         % load tracking data if not already open
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        bodyAngles = getSessionBodyAngles(locationsTable, varStruct.nosePos);
+        bodyAngles = getSessionBodyAngles(locationsTable, data.nosePos);
         
         % save
-        varStruct.bodyAngles = bodyAngles;
+        data.bodyAngles = bodyAngles;
         anythingAnalyzed = true;
     end
     
@@ -504,8 +472,8 @@ function analyzeSession(session, varsToOverWrite)
     
     
     % get height of obs for each trial
-    if analyzeVar({'obsHeightsVid'}, varNames, varsToOverWrite) && ...
-       any(strcmp(fieldnames(varStruct), 'obsPixPositions'))
+    if analyzeVar({'obsHeightsVid'}, computedVars, s.overwriteVars) && ...
+       any(strcmp(fieldnames(data), 'obsPixPositions'))
         
         fprintf('%s: getting obstacle heights\n', session)
         
@@ -517,24 +485,24 @@ function analyzeSession(session, varsToOverWrite)
         obsTopY = locationsTable.obs_top_1;
         obsTopScores = locationsTable.obs_top_2;
         
-        wheelTopPix = varStruct.wheelCenter(2) - varStruct.wheelRadius;
-        validBins = ~isnan(varStruct.obsPixPositions)' & ...
+        wheelTopPix = data.wheelCenter(2) - data.wheelRadius;
+        validBins = ~isnan(data.obsPixPositions)' & ...
                     obsTopScores>.99 & ...
                     obsTopY<wheelTopPix;  % obstacle can't be below the top of the wheel
         
-        obsHeightsVid = nan(1,length(varStruct.obsOnTimes));
-        for i = 1:length(varStruct.obsOnTimes)
-            trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
-                        varStruct.frameTimeStamps<varStruct.obsOffTimes(i) & ...
+        obsHeightsVid = nan(1,length(data.obsOnTimes));
+        for i = 1:length(data.obsOnTimes)
+            trialBins = data.frameTimeStamps>data.obsOnTimes(i) & ...
+                        data.frameTimeStamps<data.obsOffTimes(i) & ...
                         validBins;
             medianObsY = median(obsTopY(trialBins));
             obsHeightPix = wheelTopPix - medianObsY;
-            obsHeight = (obsHeightPix / abs(varStruct.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
+            obsHeight = (obsHeightPix / abs(data.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
             obsHeightsVid(i) = obsHeight;
         end
         
         % save
-        varStruct.obsHeightsVid = obsHeightsVid;
+        data.obsHeightsVid = obsHeightsVid;
         anythingAnalyzed = true;
     end
     
@@ -542,11 +510,11 @@ function analyzeSession(session, varsToOverWrite)
     
     
     % neural network classifier to determine whether paw is touching obs
-    if (analyzeVar({'touches', 'touchesPerPaw', 'touchConfidences', 'touchClassNames'}, varNames, varsToOverWrite) ...
+    if (analyzeVar({'touches', 'touchesPerPaw', 'touchConfidences', 'touchClassNames'}, computedVars, s.overwriteVars) ...
             || ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))) && ...
         exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
-        isfield(varStruct, 'obsPixPositions') && ...
-        ~isempty(varStruct.obsOnTimes)
+        isfield(data, 'obsPixPositions') && ...
+        ~isempty(data.obsOnTimes)
         
         fprintf('%s: getting paw contacts\n', session)
         
@@ -562,7 +530,7 @@ function analyzeSession(session, varsToOverWrite)
         % run neural network classifier
         if ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || (exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') && rerunClassifier) || isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))
             fprintf('%s: running paw contact neural network\n', session);
-            save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'varStruct');  % first save the file so analyzeVideo.py can access it
+            save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data');  % first save the file so analyzeVideo.py can access it
             [~,~] = system([pythonPath ' tracking\pawContact\expandanalyze.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         
@@ -578,7 +546,7 @@ function analyzeSession(session, varsToOverWrite)
         classInds(touchConfidences<confidenceThresh & classInds~=foreDorsalInd) = noTouchInd;
         classInds(touchConfidences<confidenceThreshForeDorsal & classInds==foreDorsalInd) = noTouchInd;
         
-        touches = ones(1,length(varStruct.frameTimeStamps))*noTouchInd;
+        touches = ones(1,length(data.frameTimeStamps))*noTouchInd;
         touches(pawAnalyzed.framenum) = classInds; % not all frames are analyzed // only those whethere paws are close to obstacle
         
         
@@ -586,7 +554,7 @@ function analyzeSession(session, varsToOverWrite)
         
         % get xz positions for paws
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        [locations, features] = fixTrackingDLC(locationsTable, varStruct.frameTimeStamps);
+        [locations, features] = fixTrackingDLC(locationsTable, data.frameTimeStamps);
         pawXZ = nan(size(locations,1), 2, 4);
         for i = 1:4
             pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
@@ -599,9 +567,9 @@ function analyzeSession(session, varsToOverWrite)
         % (replace missing values with median of tracked values for each trial)
         obsBin = ismember(features, 'obs_top');
         obsHeights = nan(size(locations,1),1);
-        for i = 1:length(varStruct.obsOnTimes)
-            trialBins = varStruct.frameTimeStamps>varStruct.obsOnTimes(i) & ...
-                        varStruct.frameTimeStamps<varStruct.obsOffTimes(i);
+        for i = 1:length(data.obsOnTimes)
+            trialBins = data.frameTimeStamps>data.obsOnTimes(i) & ...
+                        data.frameTimeStamps<data.obsOffTimes(i);
             medianHgt = nanmedian(locations(trialBins,2,obsBin));
             obsHeights(trialBins) = locations(trialBins,2,obsBin);
             obsHeights(trialBins & isnan(locations(:,2,obsBin))) = medianHgt;
@@ -609,7 +577,7 @@ function analyzeSession(session, varsToOverWrite)
         obsHeights = medfilt1(obsHeights,5);
 
         % get xz distance of paws to obs at all times
-        dx = squeeze(pawXZ(:,1,:)) - repmat(varStruct.obsPixPositions',1,4);
+        dx = squeeze(pawXZ(:,1,:)) - repmat(data.obsPixPositions',1,4);
         dz = squeeze(pawXZ(:,2,:)) - repmat(obsHeights,1,4);
         pawDistances = sqrt(dx.^2 + dz.^2);
 
@@ -626,16 +594,16 @@ function analyzeSession(session, varsToOverWrite)
         
         % touchConfidences are only for analyzed frames // asign confidence of 1 to unanalyzed frames
         temp = touchConfidences;
-        touchConfidences = ones(1,length(varStruct.frameTimeStamps));
+        touchConfidences = ones(1,length(data.frameTimeStamps));
         touchConfidences(pawAnalyzed.framenum) = temp;
         
         
         % save
-        if isfield(varStruct, 'obsPixPositionsContinuous'); varStruct = rmfield(varStruct, 'obsPixPositionsContinuous'); end % this is a hack to remove an old variable that took up too much space in the .mat file
-        varStruct.touches = touches;
-        varStruct.touchesPerPaw = touchesPerPaw;
-        varStruct.touchClassNames = touchClassNames;
-        varStruct.touchConfidences = touchConfidences;
+        if isfield(data, 'obsPixPositionsContinuous'); data = rmfield(data, 'obsPixPositionsContinuous'); end % this is a hack to remove an old variable that took up too much space in the .mat file
+        data.touches = touches;
+        data.touchesPerPaw = touchesPerPaw;
+        data.touchClassNames = touchClassNames;
+        data.touchConfidences = touchConfidences;
         anythingAnalyzed = true;
     end
     
@@ -643,9 +611,9 @@ function analyzeSession(session, varsToOverWrite)
     
     
     % run whisker contact network
-    if analyzeVar({'wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes'}, varNames, varsToOverWrite) && ...
-            ~isempty(varStruct.obsOnTimes) && ...
-            ~isempty(varStruct.obsPositions)
+    if analyzeVar({'wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes'}, computedVars, s.overwriteVars) && ...
+            ~isempty(data.obsOnTimes) && ...
+            ~isempty(data.obsPositions)
             exist(fullfile(sessionDir, 'runWisk.mp4'), 'file')
         
         fprintf('%s: getting whisker contacts\n', session)
@@ -657,21 +625,21 @@ function analyzeSession(session, varsToOverWrite)
         % run neural network classifier
         if ~exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') || (exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') && rerunWiskNetwork)
             fprintf('%s: running wisk contact network\n', session)
-            if anythingAnalyzed; save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'varStruct'); end % first save the file so analyzeVideo.py can access it
+            if anythingAnalyzed; save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data'); end % first save the file so analyzeVideo.py can access it
             [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
         wiskContactData = readtable(fullfile(sessionDir, 'whiskerAnalyzed.csv'));
         
         % extract contact positions and times
-        contactTimes = nan(1,length(varStruct.obsOnTimes));
-        contactPositions = nan(1,length(varStruct.obsOnTimes));
+        contactTimes = nan(1,length(data.obsOnTimes));
+        contactPositions = nan(1,length(data.obsOnTimes));
         
-        for i = 1:length(varStruct.obsOnTimes)
+        for i = 1:length(data.obsOnTimes)
             if wiskContactData.framenum(i)>0
-                time = varStruct.frameTimeStampsWisk(wiskContactData.framenum(i));
-                if time>varStruct.obsOnTimes(i) && time<varStruct.obsOffTimes(i)
+                time = data.frameTimeStampsWisk(wiskContactData.framenum(i));
+                if time>data.obsOnTimes(i) && time<data.obsOffTimes(i)
                     contactTimes(i) = time;
-                    contactPositions(i) = interp1(varStruct.obsTimes, varStruct.obsPositionsFixed, contactTimes(i));
+                    contactPositions(i) = interp1(data.obsTimes, data.obsPositionsFixed, contactTimes(i));
                 else
                     fprintf('%s: WARNING - wisk contact detected when obstacle not on!\n', session)
                 end
@@ -679,10 +647,10 @@ function analyzeSession(session, varsToOverWrite)
         end
         
         % save
-        varStruct.wiskContactFrames = wiskContactData.framenum;
-        varStruct.wiskContactFramesConfidences = wiskContactData.confidence;
-        varStruct.wiskContactTimes = contactTimes;
-        varStruct.wiskContactPositions = contactPositions;
+        data.wiskContactFrames = wiskContactData.framenum;
+        data.wiskContactFramesConfidences = wiskContactData.confidence;
+        data.wiskContactTimes = contactTimes;
+        data.wiskContactPositions = contactPositions;
         anythingAnalyzed = true;
     end
     
@@ -691,7 +659,7 @@ function analyzeSession(session, varsToOverWrite)
     
     % save results
     if anythingAnalyzed
-        save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'varStruct')
+        save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data')
         fprintf('%s: data analyzed and saved\n', session)
     end
     
@@ -702,12 +670,25 @@ function analyzeSession(session, varsToOverWrite)
     % FUNCTIONS
     % ---------
     
-    function analyze = analyzeVar(vars, varNames, varsToOverWrite)
-        if ~strcmp(varsToOverWrite, 'all')
-            analyze = any(~ismember(vars, varNames)) || any(ismember(varsToOverWrite, vars));
+    % determines whether to analyze a variable based on whether it has
+    % already been analyzed or if overwrite is requested
+    function analyze = analyzeVar(vars)
+        % vars: checks if any vars should be analyzed
+        % computedVars: vars already computed
+        % overwriteVars: vars that should be recomputed
+        
+        if ~strcmp(s.overwriteVars, 'all')
+            analyze = any(~ismember(vars, computedVars)) || any(ismember(s.overwriteVars, vars));
         else
             analyze = true;
         end
+    end
+
+    function saveVars(varargin)
+        % varargin: name-value pairs where the name is the name of the field to be added to 'data', and value is the value to be assigned to that field
+        
+        for v = 1:2:length(varargin); data.(varargin{v}) = varargin{v+1}; end
+        anythingAnalyzed = true;
     end
 end
 
