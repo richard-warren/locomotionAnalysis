@@ -1,0 +1,1 @@
+`ephys` contains scripts to analyze neural recordings in mice from silicon probes.

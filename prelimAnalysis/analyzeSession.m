@@ -66,7 +66,7 @@ function analyzeSession(session, varargin)
     
 
     % decode obstacle position (based on obstacle track rotary encoder)
-    if analyzeVar({'obsPositions', 'obsTimes'})
+    if analyzeVar('obsPositions', 'obsTimes')
         load(fullfile(sessionDir, 'run.mat'), 'obEncodA', 'obEncodB')
         fprintf('%s: decoding obstacle position\n', session)
         
@@ -86,7 +86,7 @@ function analyzeSession(session, varargin)
 
 
     % decode wheel position
-    if analyzeVar({'wheelPositions', 'wheelTimes'})
+    if analyzeVar('wheelPositions', 'wheelTimes')
 
         fprintf('%s: decoding wheel position\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'whEncodA', 'whEncodB')
@@ -103,7 +103,7 @@ function analyzeSession(session, varargin)
 
     % get obstacle on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
-    if analyzeVar({'obsOnTimes', 'obsOffTimes'})
+    if analyzeVar('obsOnTimes', 'obsOffTimes')
 
         fprintf('%s: getting obstacle on and off times\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'obsOn')
@@ -191,7 +191,7 @@ function analyzeSession(session, varargin)
     
     % get obstacle light on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
-    if analyzeVar({'obsLightOnTimes', 'obsLightOffTimes'})
+    if analyzeVar('obsLightOnTimes', 'obsLightOffTimes')
 
         fprintf('%s: getting obstacle light on and off times\n', session)
         load(fullfile(sessionDir, 'run.mat'), 'obsLight')
@@ -237,7 +237,7 @@ function analyzeSession(session, varargin)
     
     
     % determine whether light was on or off for every trial
-    if analyzeVar({'isLightOn'})
+    if analyzeVar('isLightOn')
         
         if isfield(data, 'obsLightOnTimes')
             
@@ -344,8 +344,8 @@ function analyzeSession(session, varargin)
     
     
     % get mToPixMapping and obstacle pixel positions in bottom view
-    if analyzeVar({'obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPositionsFixed', ...
-            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping'}) && ...
+    if analyzeVar('obsPixPositions', 'obsPosToObsPixPosMappings', 'obsPositionsFixed', ...
+            'obsPosToWheelPosMappings', 'obsPixPositionsUninterped', 'mToPixMapping') && ...
             exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
             ~isempty(data.obsOnTimes)
    
@@ -399,25 +399,26 @@ function analyzeSession(session, varargin)
             end
         end
         
-        % get obsPixPositionsFixed
+        % compute obsPositionsFixed, which is realigned st 0 corresponds to the position at which obsetacle is beneath the nose
         obsPositionsFixed = fixObsPositions(data.obsPositions, data.obsTimes, obsPixPositions, ...
             data.frameTimeStamps, data.obsOnTimes, data.obsOffTimes, data.nosePos(1));
+        
+        % compute pixel per mm ratio
+        pixelsPerMm = abs(nanmedian(obsToObsPixPosMappings(:,1))/1000);
 
-        saveVars('obsPixPositions', obsPixPositions', ...
-                 'obsPixPositionsUninterped', obsPixPositionsUninterped, ...
-                 'obsToObsPixPosMappings', obsToObsPixPosMappings, ...
-                 'wheelToObsPixPosMappings', wheelToObsPixPosMappings, ...
-                 'mToPixMapping', nanmedian(obsToObsPixPosMappings,1), ...
+        saveVars('obsPixPositions', obsPixPositions', ...  % positions of obstacle along track in pixel coordinates // positions when out of frame are inferred based on obstacle rotary encoder and linear mapping between pixel and encoder coordinate systems
+                 'obsPixPositionsUninterped', obsPixPositionsUninterped, ...  % positions of obstacle in pixel coordinates only when it is in the camera view and accurately tracked
+                 'obsToObsPixPosMappings', obsToObsPixPosMappings, ...  % linear mapping from obstacle position (meters) to obstacle position (pixels)
+                 'wheelToObsPixPosMappings', wheelToObsPixPosMappings, ...  % linear mapping from wheel position (meters) to obstacle position (pixels)
+                 'pixelsPerMm', pixelsPerMm, ...
                  'obsPositionsFixed', obsPositionsFixed);
     end
     
     
     
     
-    keyboard
     % get wheel points
-    if analyzeVar({'wheelCenter', 'wheelRadius'}, computedVars, s.overwriteVars) && ...
-       exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
+    if analyzeVar('wheelCenter', 'wheelRadius') && exist(fullfile(sessionDir, 'run.csv'), 'file')
         
         fprintf('%s: getting wheel center and radius\n', session)
         
@@ -427,36 +428,28 @@ function analyzeSession(session, varargin)
         wheelPoints = getWheelPoints(vid);
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
         
-        % save
-        data.wheelCenter = wheelCenter;
-        data.wheelRadius = wheelRadius;
-        anythingAnalyzed = true;
+        saveVars('wheelCenter', wheelCenter, 'wheelRadius', wheelRadius);
     end
     
     
-            
+    
     
     % get body angle
-    if analyzeVar({'bodyAngles'}, computedVars, s.overwriteVars) && ...
-       exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
+    if analyzeVar('bodyAngles') && exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
         
         fprintf('%s: getting body angle\n', session)
         
-        % load tracking data if not already open
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
         bodyAngles = getSessionBodyAngles(locationsTable, data.nosePos);
         
-        % save
-        data.bodyAngles = bodyAngles;
-        anythingAnalyzed = true;
+        saveVars('bodyAngles', bodyAngles)
     end
     
     
     
     
     % get height of obs for each trial
-    if analyzeVar({'obsHeightsVid'}, computedVars, s.overwriteVars) && ...
-       any(strcmp(fieldnames(data), 'obsPixPositions'))
+    if analyzeVar('obsHeights') && ~isempty(data.obsOnTimes)
         
         fprintf('%s: getting obstacle heights\n', session)
         
@@ -466,31 +459,30 @@ function analyzeSession(session, varargin)
         obsTopScores = locationsTable.obs_top_2;
         
         wheelTopPix = data.wheelCenter(2) - data.wheelRadius;
-        validBins = ~isnan(data.obsPixPositions)' & ...
-                    obsTopScores>.99 & ...
-                    obsTopY<wheelTopPix;  % obstacle can't be below the top of the wheel
+        bins = ~isnan(data.obsPixPositions)' & ...
+                      obsTopScores>.99 & ...
+                      obsTopY<wheelTopPix;  % obstacle can't be below the top of the wheel
         
-        obsHeightsVid = nan(1,length(data.obsOnTimes));
+        obsHeights = nan(1,length(data.obsOnTimes));
         for i = 1:length(data.obsOnTimes)
             trialBins = data.frameTimeStamps>data.obsOnTimes(i) & ...
                         data.frameTimeStamps<data.obsOffTimes(i) & ...
-                        validBins;
+                        bins;
             medianObsY = median(obsTopY(trialBins));
             obsHeightPix = wheelTopPix - medianObsY;
-            obsHeight = (obsHeightPix / abs(data.mToPixMapping(1)))*1000 + (obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
-            obsHeightsVid(i) = obsHeight;
+            obsHeight = obsHeightPix/data.pixelsPerMm + (s.obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
+            obsHeights(i) = obsHeight;
         end
         
-        % save
-        data.obsHeightsVid = obsHeightsVid;
-        anythingAnalyzed = true;
+        saveVars('obsHeights', obsHeights)
     end
     
     
     
     
+    keyboard
     % neural network classifier to determine whether paw is touching obs
-    if (analyzeVar({'touches', 'touchesPerPaw', 'touchConfidences', 'touchClassNames'}, computedVars, s.overwriteVars) ...
+    if (analyzeVar('touches', 'touchesPerPaw', 'touchConfidences', 'touchClassNames') ...
             || ~exist(fullfile(sessionDir, 'pawAnalyzed.csv'), 'file') || isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))) && ...
         exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
         isfield(data, 'obsPixPositions') && ...
@@ -502,7 +494,6 @@ function analyzeSession(session, varargin)
         rerunClassifier = false; % if true, redoes the neural network classifier even when it has already been run // if false only runs the post-processing
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
-%         confidenceThreshForeDorsal = .9; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
         confidenceThreshForeDorsal = .6; % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
         proximityThresh = 20; % how close does a paw have to be to the obstacle to be assigned to it for a touch
         classesToAssignToPaw = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'}; % other touch types will be ignored
@@ -652,13 +643,11 @@ function analyzeSession(session, varargin)
     
     % determines whether to analyze a variable based on whether it has
     % already been analyzed or if overwrite is requested
-    function analyze = analyzeVar(vars)
-        % vars: checks if any vars should be analyzed
-        % computedVars: vars already computed
-        % overwriteVars: vars that should be recomputed
+    function analyze = analyzeVar(varargin)
+        % varargin: vars that will be checked for whether they should be computed
         
         if ~strcmp(s.overwriteVars, 'all')
-            analyze = any(~ismember(vars, computedVars)) || any(ismember(s.overwriteVars, vars));
+            analyze = any(~ismember(varargin, computedVars)) || any(ismember(s.overwriteVars, varargin));
         else
             analyze = true;
         end

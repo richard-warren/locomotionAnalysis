@@ -1,7 +1,10 @@
 function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, noseX)
 
-% !!! what did this function do again??? i think it reformats obs positions
-% so zero is where obs is under nose
+% obsPositionsFixed shifts obsPositions on a trial by trial basis such that
+% 0 corresponds to the point at which the obstacle is beneath the nose of
+% the mouse. in theory this could be does by simply adding a constant, but
+% the rotary encoder measurements are subject (theoretically) to drift over
+% time, so it is safer to do this trial by trial
 
 
 obsPositionsFixed = nan(size(obsPositions));
@@ -16,12 +19,12 @@ for i = 1:length(obsOnTimes)
     pixTimes = frameTimeStamps(trialFrameBins);
     
     % get obsPos at moment obs reaches nose
-    if ~isempty(pixPositions) && length(unique(pixPositions))>1 % !!! sometimes pixPositions were all zero for reasons unknown
+    if ~isempty(pixPositions)
         
         % remove duplicate positional values
         [pixPositions, uniqueInds] = unique(pixPositions, 'stable');
         pixTimes = pixTimes(uniqueInds);
-        noseTime = interp1(pixPositions, pixTimes, noseX);
+        noseTime = interp1(pixPositions, pixTimes, noseX);  % time at which obstacle is underneath the nose
         obsAtNosePos = interp1(obsTimes, obsPositions, noseTime);
         
         % get trial obsPos and subtract obsAtNosePos
@@ -31,5 +34,5 @@ for i = 1:length(obsOnTimes)
 end
 
 % replace first obsPositions with first fixed obsPosition
-firstRealInd = find(~isnan(obsPositionsFixed),1,'first');
+firstRealInd = find(~isnan(obsPositionsFixed), 1, 'first');
 obsPositionsFixed(1:firstRealInd-1) = obsPositionsFixed(firstRealInd);

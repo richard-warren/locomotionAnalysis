@@ -9,23 +9,21 @@ function wheelPoints = getWheelPoints(vid)
 
 
 % settings
-xLocations = [.1 .5 .9]; % x locations of circRoiPoints, expressed as fraction of vid width
-frameNum = 100;
-minFrame = 250*5*60; % five minutes in
+xLocations = [.1 .5 .9];  % x locations of circRoiPoints, expressed as fraction of vid width
+frameNum = 100;  % number of frames to sample
+minFrame = 250*5*60;  % start looking for frames this many seconds in (use to avoid periods before the mouse is put on the wheel)
 threshFactor = .5; % threshFactor times average pixel vale
-
 
 
 % initializations
 wheelPoints = nan(3,2); % each row is x,y measured from top left of image
 wheelPoints(:,1) = round(xLocations * vid.Width)';
-
+numberOfFrames = floor(vid.Duration*vid.FrameRate);
 
 
 % get stack of random frames
-if minFrame>=vid.NumberOfFrames; minFrame = 0; end % a hack that allows me to analyze really short test sessions
-frameInds = randperm(vid.NumberOfFrames-minFrame, frameNum) + minFrame;
-frameInds = sort(frameInds);
+if minFrame>=numberOfFrames; minFrame = 0; end % a hack that allows me to analyze really short test sessions
+frameInds = sort(randperm(numberOfFrames-minFrame, frameNum) + minFrame);
 
 frames = nan(vid.Height, vid.Width, frameNum);
 for i = 1:length(frameInds)
@@ -33,9 +31,9 @@ for i = 1:length(frameInds)
 end
 thresh = mean(frames(:))*threshFactor;
 
+
 % get minimum project across all frames (this effectively removes the legs from above the wheel)
 minProjection = uint8(min(frames, [], 3));
-
 
 
 % threshold image and keep only connected regions that interest the bottom row of image
@@ -45,6 +43,7 @@ threshed = threshed(1:botRow, :);  % restrict to top camera view
 regionInfo = bwlabel(threshed);
 botRowGroups = unique(regionInfo(end,:)); botRowGroups = botRowGroups(botRowGroups>0);
 wheelOutline = ismember(regionInfo, botRowGroups);
+
 
 % for each x value, find the top of the circle, which is the first white point in the wheelOutline (from the top to bot of column)
 for i = 1:3
