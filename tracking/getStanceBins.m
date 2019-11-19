@@ -1,12 +1,13 @@
-function stanceBins = getStanceBins(frameTimeStamps, locationsTopPaws, wheelPositions, wheelTimes, wheelCenter, wheelRadius, vidFs, pixelsPerMm)
+function stanceBins = getStanceBins(...
+    frameTimeStamps, locationsTopPaws, wheelPositions, wheelTimes, wheelCenter, wheelRadius, vidFs, pixelsPerM)
 
 
 
 % settings
 stanceVelDif = 1000;   % if paws paw is within this many pix/sec of wheel velocity (actually obs vel for now) then it is considered to be in stance IF length of this period exceeds stanceMin
-stanceSwingMin = .02;       % (s) min time for either stance or swing
+stanceSwingMin = .02;  % (s) min time for either stance or swing
 velTime = .02;         % amount of time to compute velocity over
-stanceMaxHgt = 12;
+stanceMaxHgt = 12;     % (pixels) max vertical distance from wheel for paw to be considered potentially touching wheel
 
 
 
@@ -16,19 +17,16 @@ for i = 1:4
     xVel(:,i) = getVelocity(locationsTopPaws(:,1,i), velTime, vidFs);
 end
 
+
 % get wheel velocity IN PIXELS
-wheelVel = getVelocity(wheelPositions * pixelsPerMm*1000, velTime, 1/(median(diff(wheelTimes))));
-wheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps)';
-
-
-
-
+wheelPosInterp = interp1(wheelTimes, -wheelPositions, frameTimeStamps);  % negative wheelPositions because wheel is rotating towards the left of the screen
+wheelVel = getVelocity(wheelPosInterp*pixelsPerM, velTime, vidFs);
 
 
 % determine when paw is close to wheel
 xLocations = squeeze(locationsTopPaws(:,1,:));
 yMaxes = wheelCenter(2) - round(sqrt(wheelRadius^2 - (xLocations-wheelCenter(1)).^2));
-isCloseToWheel = squeeze(locationsTopPaws(:,2,:)) > (yMaxes-stanceMaxHgt); % remember that y values are flipped upside down
+isCloseToWheel = squeeze(locationsTopPaws(:,2,:)) > (yMaxes-stanceMaxHgt);  % remember that y values are flipped upside down
 % pawHeights = squeeze(yMaxes - locationsTopPaws(:,2,:));
 % figure; histogram(pawHeights(stanceBinsUncorrected)); hold on; histogram(pawHeights(~stanceBinsUncorrected));
 
@@ -40,7 +38,7 @@ stanceBins = false(size(locationsTopPaws,1),4);
 
 
 for i = 1:4
-    % get epoches where wheel vel and paw x vel are similar to one another
+    % get epochs where wheel vel and paw x vel are similar to one another
     potentialStanceBins = (abs(wheelVel - xVel(:,i)') < stanceVelDif) & isCloseToWheel(:,i)';
 
     stanceBins(potentialStanceBins,i) = true;
@@ -57,10 +55,6 @@ for i = 1:4
         end
     end
 end
-
-
-    
-
 
 
 

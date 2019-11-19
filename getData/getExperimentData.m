@@ -113,7 +113,7 @@ for mouse = 1:length(g.mice)
                 g.sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'kinData');
             else
                 try
-                    getKinematicData5(g.sessions{session});
+                    getKinematicData(g.sessions{session});
                 catch
                     fprintf('%s: problem with getKinematicData!', g.sessions{session});
                 end
@@ -125,7 +125,7 @@ for mouse = 1:length(g.mice)
             warning('off', 'MATLAB:load:variableNotFound');
             g.sesSpikeData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'run.mat'), 'breaks', 'stimulus');
             g.wheelVel = getVelocity(g.sesData.wheelPositions, g.speedTime, 1000);
-            g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeightsVid/1000, g);
+            g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/1000, g);
 
             % get size of kin data entries
             try
@@ -168,7 +168,6 @@ for mouse = 1:length(g.mice)
     end
 end
 expData = g.expData;
-% disp('all done getting experiment data! woo hoo!!!')
 
 
 % save experiment metadata
@@ -292,7 +291,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             end
             
         case 'obsHgt'
-            var = num2cell(g.sesData.obsHeightsVid/1000); % convert back to meters
+            var = num2cell(g.sesData.obsHeights/1000); % convert back to meters
         
         case 'isTrialSuccess'
             var = cell(1,length(g.sesKinData));

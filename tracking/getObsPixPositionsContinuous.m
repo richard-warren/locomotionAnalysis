@@ -1,5 +1,5 @@
 function obsPixPositionsContinuous = getObsPixPositionsContinuous(...
-    obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes)
+    wheelToObsPixPosMappings, wheelTimes, wheelPositions, frameTimeStamps, obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes)
 
 
 % use wheel position from rotary encoder to infer 'unraveled' obs
@@ -19,6 +19,6 @@ for i = 1:length(obsOnTimes)
                       frameTimeStamps<obsOffTimes(i) & ...
                       ~isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
     if any(~dontInterpBins)
-        obsPixPositionsContinuous(i,~dontInterpBins) = wheelPositionsInterp(~dontInterpBins)*obsPosToWheelPosMappings(i,1) + obsPosToWheelPosMappings(i,2);
+        obsPixPositionsContinuous(i,~dontInterpBins) = polyval(wheelToObsPixPosMappings(i,:), wheelPositionsInterp(~dontInterpBins));
     end
 end

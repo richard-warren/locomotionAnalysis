@@ -1,8 +1,14 @@
 function analyzeSession(session, varargin)
 
-    % performs preliminary analyses on a session
+    % performs preliminary analyses on a session, including turning raw
+    % data in run.mat into useful data in runAnalyzed.mat // also has
+    % wrappers that execute neural network algorithms // variable names are
+    % listed as arguments to the analyzeVar() function in the code blocks
+    % below // to recompute a variable, pass 'overwriteVars' as follows:
     %
-    % todo: document
+    % analyzeSession('191118_001', 'overwriteVars', 'reawrdTimes')
+    % analyzeSession('191118_001', 'overwriteVars', {'rewardTimes, isLightOn'}) % for multiple variables
+    
 
 
     % settings
@@ -345,7 +351,7 @@ function analyzeSession(session, varargin)
     
     % get mToPixMapping and obstacle pixel positions in bottom view
     if analyzeVar('obsPixPositions', 'obsPixPositionsUninterped', 'obsToObsPixPosMappings', ...
-            'wheelToObsPixPosMappings', 'pixelsPerMm', 'obsPositionsFixed') && ...
+            'wheelToObsPixPosMappings', 'pixelsPerM', 'obsPositionsFixed') && ...
             exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
             ~isempty(data.obsOnTimes)
    
@@ -404,13 +410,13 @@ function analyzeSession(session, varargin)
             data.frameTimeStamps, data.obsOnTimes, data.obsOffTimes, data.nosePos(1));
         
         % compute pixel per mm ratio
-        pixelsPerMm = abs(nanmedian(obsToObsPixPosMappings(:,1))/1000);
+        pixelsPerM = abs(nanmedian(obsToObsPixPosMappings(:,1)));
 
         saveVars('obsPixPositions', obsPixPositions', ...  % positions of obstacle along track in pixel coordinates // positions when out of frame are inferred based on obstacle rotary encoder and linear mapping between pixel and encoder coordinate systems
                  'obsPixPositionsUninterped', obsPixPositionsUninterped, ...  % positions of obstacle in pixel coordinates only when it is in the camera view and accurately tracked
                  'obsToObsPixPosMappings', obsToObsPixPosMappings, ...  % linear mapping from obstacle position (meters) to obstacle position (pixels)
                  'wheelToObsPixPosMappings', wheelToObsPixPosMappings, ...  % linear mapping from wheel position (meters) to obstacle position (pixels)
-                 'pixelsPerMm', pixelsPerMm, ...
+                 'pixelsPerM', pixelsPerM, ...
                  'obsPositionsFixed', obsPositionsFixed);
     end
     

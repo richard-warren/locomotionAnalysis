@@ -20,10 +20,10 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'))
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 kinData(length(obsOnTimes)) = struct();
 
-[locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
+[locations, features] = fixTracking(locationsTable, frameTimeStamps);
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
-stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixMapping(1));
+stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, pixelsPerM);
 if timeOperations; fprintf('loading session data and fixing tracking: %i seconds\n', round(toc)); end
 
 
@@ -50,14 +50,13 @@ if timeOperations; fprintf('getting wisk contact pos/times: %i seconds\n', round
 % get step identities and wheel velocity
 if timeOperations; tic; end
 obsPixPositionsContinuous = getObsPixPositionsContinuous(...
-    obsPosToWheelPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
+    wheelToObsPixPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
     obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes);
 [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = getStepIdentities(...
     stanceBins, locations(:,:,botPawInds), wiskContactTimes, frameTimeStamps, ...
     obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps);
 wheelVel = getVelocity(wheelPositions, speedTime, targetFs);
 if timeOperations; fprintf('getting step identities: %i seconds\n', round(toc)); end
-
 
 
 % put together xyz for paws
@@ -88,8 +87,8 @@ for j = 1:length(obsOnTimes)
     locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
     prevInd = finalInd+1;
 end
-locationsPaws = locationsPaws / abs(mToPixMapping(1)); % convert to meters
-locationsTail = locationsTail / abs(mToPixMapping(1)); % convert to meters
+locationsPaws = locationsPaws / pixelsPerM; % convert to meters
+locationsTail = locationsTail / pixelsPerM; % convert to meters
 if timeOperations; fprintf('getting xyz coords: %i seconds\n', round(toc)); end
 
 
