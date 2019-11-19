@@ -1,16 +1,20 @@
-function [kinData, stanceBins, models] = getKinematicData(session, obsPos)
+function [kinData, stanceBins, models] = getKinematicData(session)
 
 
-% TO DO: deal with unexpected occurences
+% after analyzeSession computes low level information for each session,
+% getKinematicData is used to extract more processed kinematic information,
+% e.g. parsing each trial into interpolated kinematics for steps over the
+% obstacle, steps preceding these steps, and steps when the obstacle is not
+% engaged
+
 
 % settings
-speedTime = .05; % compute velocity over this interval
-interpSmps = 100; % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
-swingMaxSmps = 50; % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
-noObsSteps = 3;
-controlSteps = 2; % needs to be at least 2
-contactPosLimits = [-.02 .02]; % whisker cant only contact obs this far in front of and behind nose
-timeOperations = false;
+speedTime = .05;    % compute velocity over this interval
+interpSmps = 100;   % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
+swingMaxSmps = 50;  % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
+noObsSteps = 3;     % how many steps per trial per paw to take before the obstacle becomes engaged
+controlSteps = 2;   % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
+timeOperations = false;  % whether to report time it takes to compute differnt parts of this script
 
 
 % load session data
@@ -19,31 +23,11 @@ if timeOperations; tic; end
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'))
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 kinData(length(obsOnTimes)) = struct();
-
 [locations, features] = fixTracking(locationsTable, frameTimeStamps);
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, pixelsPerM);
 if timeOperations; fprintf('loading session data and fixing tracking: %i seconds\n', round(toc)); end
-
-
-
-% determine whisker contact positions and times (only if obsPos provided, which means whiskers were trimmed for the sessions // otherwise, they are inherited from runAnalyzed)
-if timeOperations; tic; end
-if exist('obsPos', 'var')
-    wiskContactPositions = ones(size(obsOnTimes))*obsPos;
-    wiskContactTimes = nan(size(obsOnTimes));
-    
-    for j = 1:length(obsOnTimes)
-        indStart = find(obsPositionsFixed>=wiskContactPositions(j) & obsTimes>obsOnTimes(j) & obsTimes<obsOffTimes(j), 1, 'first');
-        if ~isempty(indStart)
-            wiskContactTimes(j) = interp1(obsPositionsFixed(indStart-1:indStart), obsTimes(indStart-1:indStart), wiskContactPositions(j));
-            wiskContactTimes(j) = frameTimeStamps(knnsearch(frameTimeStamps, wiskContactTimes(j))); % force time to be in frameTimeStamps
-        end
-    end
-end
-wiskContactPositions(wiskContactPositions<contactPosLimits(1) | wiskContactPositions>contactPosLimits(2)) = nan; % remove invalid positions
-if timeOperations; fprintf('getting wisk contact pos/times: %i seconds\n', round(toc)); end
 
 
 
