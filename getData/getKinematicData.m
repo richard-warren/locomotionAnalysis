@@ -9,12 +9,13 @@ function [kinData, stanceBins, models] = getKinematicData(session)
 
 
 % settings
-speedTime = .05;    % compute velocity over this interval
-interpSmps = 100;   % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
-swingMaxSmps = 50;  % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
-noObsSteps = 3;     % how many steps per trial per paw to take before the obstacle becomes engaged
-controlSteps = 2;   % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
+speedTime = .05;         % compute velocity over this interval
+interpSmps = 100;        % strides are stretched to have same number of samples // interpSmps sets the number of samples per interpolated stride
+swingMaxSmps = 50;       % when averaging swing locations without interpolating don't take more than swingMaxSmps for each swing
+noObsSteps = 3;          % how many steps per trial per paw to take before the obstacle becomes engaged
+controlSteps = 2;        % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
 timeOperations = false;  % whether to report time it takes to compute differnt parts of this script
+showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
 
 
 % load session data
@@ -43,6 +44,7 @@ wheelVel = getVelocity(wheelPositions, speedTime, targetFs);
 if timeOperations; fprintf('getting step identities: %i seconds\n', round(toc)); end
 
 
+keyboard
 % put together xyz for paws
 if timeOperations; tic; end
 locationsPaws = nan(size(locations,1), 3, 4);
@@ -312,20 +314,20 @@ try
     save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models', '-v7.3')
 
 
-    % uncomment the following to show fits for step length for each paw
-%     figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
-%     colors = hsv(4);
-%     for i = 1:4
-%         scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
-%         xLims = get(gca, 'XLim');
-%         coefs = models{i}.Coefficients.Estimate;
-%         plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
-%     end
-%     xlabel('velocity (m/s)')
-%     ylabel('step length')
-%     for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
-%     legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
-
+    if showStepLengthFits
+        figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white', 'menubar', 'none')
+        colors = hsv(4);
+        for i = 1:4
+            scatter(controlVels(:,i), controlLengths(:,i), 20, colors(i,:), 'filled', 'markerfacealpha', .4); hold on;
+            xLims = get(gca, 'XLim');
+            coefs = models{i}.Coefficients.Estimate;
+            plot(xLims, xLims*coefs(2)+coefs(1), 'Color', colors(i,:), 'LineWidth', 2);
+        end
+        xlabel('velocity (m/s)')
+        ylabel('step length')
+        for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
+        legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
+    end
 catch
     fprintf('%s: failed to make swing length model!\n', session)
     save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), ...

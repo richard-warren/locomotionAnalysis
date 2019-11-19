@@ -473,7 +473,7 @@ function analyzeSession(session, varargin)
                         bins;
             medianObsY = median(obsTopY(trialBins));
             obsHeightPix = wheelTopPix - medianObsY;
-            obsHeight = obsHeightPix/data.pixelsPerMm + (s.obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
+            obsHeight = obsHeightPix / (data.pixelsPerM/1000) + (s.obsDiameter/2); % second term accounts for the fact that center of obs is tracked, but height is the topmost part of the obstacle
             obsHeights(i) = obsHeight;
         end
         
