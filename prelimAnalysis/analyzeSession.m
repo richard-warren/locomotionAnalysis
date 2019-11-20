@@ -12,6 +12,7 @@ function analyzeSession(session, varargin)
 
 
     % settings
+    s.verbose = true;
     s.targetFs = 1000; % frequency that positional data will be resampled to
     s.overwriteVars = '';
     s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
@@ -48,7 +49,7 @@ function analyzeSession(session, varargin)
     % analyze reward times
     if analyzeVar('rewardTimes')
         
-        fprintf('%s: getting reward times\n', session)
+        if s.verbose; fprintf('%s: getting reward times\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'reward')
         
         % settings
@@ -74,7 +75,7 @@ function analyzeSession(session, varargin)
     % decode obstacle position (based on obstacle track rotary encoder)
     if analyzeVar('obsPositions', 'obsTimes')
         load(fullfile(sessionDir, 'run.mat'), 'obEncodA', 'obEncodB')
-        fprintf('%s: decoding obstacle position\n', session)
+        if s.verbose; fprintf('%s: decoding obstacle position\n', session); end
         
         if ~isempty(obEncodA.times) && ~isempty(obEncodB.times)
             [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
@@ -94,7 +95,7 @@ function analyzeSession(session, varargin)
     % decode wheel position
     if analyzeVar('wheelPositions', 'wheelTimes')
 
-        fprintf('%s: decoding wheel position\n', session)
+        if s.verbose; fprintf('%s: decoding wheel position\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'whEncodA', 'whEncodB')
 
         [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
@@ -111,7 +112,7 @@ function analyzeSession(session, varargin)
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
     if analyzeVar('obsOnTimes', 'obsOffTimes')
 
-        fprintf('%s: getting obstacle on and off times\n', session)
+        if s.verbose; fprintf('%s: getting obstacle on and off times\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'obsOn')
 
         if exist('obsOn', 'var')
@@ -142,7 +143,7 @@ function analyzeSession(session, varargin)
     % check that obstacle tracked wheel position well
     if analyzeVar('obsTracking') && ~isempty(data.obsOnTimes)
         
-        fprintf('%s: checking obstacle tracking of wheel velocity\n', session)
+        if s.verbose; fprintf('%s: checking obstacle tracking of wheel velocity\n', session); end
         
         % settings
         velTime = .01;  % (s) compute velocity over this time window
@@ -199,7 +200,7 @@ function analyzeSession(session, varargin)
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
     if analyzeVar('obsLightOnTimes', 'obsLightOffTimes')
 
-        fprintf('%s: getting obstacle light on and off times\n', session)
+        if s.verbose; fprintf('%s: getting obstacle light on and off times\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'obsLight')
 
         % settings
@@ -247,7 +248,7 @@ function analyzeSession(session, varargin)
         
         if isfield(data, 'obsLightOnTimes')
             
-            fprintf('%s: determing whether each trial is light on or light off\n', session)
+            if s.verbose; fprintf('%s: determing whether each trial is light on or light off\n', session); end
             isLightOn = false(size(data.obsOnTimes));
 
             if ~isempty(data.obsLightOnTimes) 
@@ -268,7 +269,7 @@ function analyzeSession(session, varargin)
     % get frame timeStamps
     if analyzeVar('frameTimeStamps') && exist(fullfile(sessionDir, 'run.csv'), 'file')
 
-        fprintf('%s: getting frame time stamps\n', session)
+        if s.verbose; fprintf('%s: getting frame time stamps\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'exposure')
 
         camMetadata = dlmread(fullfile(sessionDir, 'run.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
@@ -285,7 +286,7 @@ function analyzeSession(session, varargin)
     % get wisk frame timeStamps
     if analyzeVar('frameTimeStampsWisk') && exist(fullfile(sessionDir, 'wisk.csv'), 'file')
             
-        fprintf('%s: getting wisk frame time stamps\n', session)
+        if s.verbose; fprintf('%s: getting wisk frame time stamps\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'exposure')
 
         camMetadataWisk = dlmread(fullfile(sessionDir, 'wisk.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
@@ -305,7 +306,7 @@ function analyzeSession(session, varargin)
             exist(fullfile(sessionDir, 'run.csv'), 'file') &&...
             any(strcmp(fieldnames(data), 'frameTimeStamps'))
 
-        fprintf('%s: getting webcam time stamps\n', session)
+        if s.verbose; fprintf('%s: getting webcam time stamps\n', session); end
 
         % get main camera frame times wrt computer clock
         camMetadataRun = dlmread(fullfile(sessionDir, 'run.csv'));
@@ -337,7 +338,7 @@ function analyzeSession(session, varargin)
     % get nose position
     if analyzeVar('nosePos') && exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
 
-        fprintf('%s: getting nose position\n', session)
+        if s.verbose; fprintf('%s: getting nose position\n', session); end
 
         locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); % get raw tracking data
         noseBotX = median(locationsTable.nose_bot);
@@ -355,7 +356,7 @@ function analyzeSession(session, varargin)
             exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
             ~isempty(data.obsOnTimes)
    
-        fprintf('%s: tracking obstacles in bottom view\n', session)
+        if s.verbose; fprintf('%s: tracking obstacles in bottom view\n', session); end
         
         % load tracking data if not already open
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
@@ -426,7 +427,7 @@ function analyzeSession(session, varargin)
     % get wheel points
     if analyzeVar('wheelCenter', 'wheelRadius') && exist(fullfile(sessionDir, 'run.csv'), 'file')
         
-        fprintf('%s: getting wheel center and radius\n', session)
+        if s.verbose; fprintf('%s: getting wheel center and radius\n', session); end
         
         wheelPoints = getWheelPoints(session);
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
@@ -440,7 +441,7 @@ function analyzeSession(session, varargin)
     % get body angle
     if analyzeVar('bodyAngles') && exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
         
-        fprintf('%s: getting body angle\n', session)
+        if s.verbose; fprintf('%s: getting body angle\n', session); end
         
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
         bodyAngles = getSessionBodyAngles(locationsTable, data.nosePos);
@@ -454,7 +455,7 @@ function analyzeSession(session, varargin)
     % get height of obs for each trial
     if analyzeVar('obsHeights') && ~isempty(data.obsOnTimes)
         
-        fprintf('%s: getting obstacle heights\n', session)
+        if s.verbose; fprintf('%s: getting obstacle heights\n', session); end
         
         % load tracking data if not already open
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
@@ -490,7 +491,7 @@ function analyzeSession(session, varargin)
             exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') && ...
             ~isempty(data.obsOnTimes)
         
-        fprintf('%s: getting paw contacts\n', session)
+        if s.verbose; fprintf('%s: getting paw contacts\n', session); end
         
         % settings
         pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
@@ -504,7 +505,7 @@ function analyzeSession(session, varargin)
                 s.rerunPawContactNetwork || ...
                 isempty(readtable(fullfile(sessionDir, 'pawAnalyzed.csv')))
             
-            fprintf('%s: running paw contact neural network\n', session);
+            fprintf('  %s: running paw contact neural network\n', session);
             save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data');  % first save the file so analyzeVideo.py can access it
             [~,~] = system([pythonPath ' ' fullfile('tracking', 'pawContact', 'expandanalyze.py') ...
                             ' ' fullfile(getenv('OBSDATADIR'), 'sessions') ' ' session]);
@@ -588,14 +589,14 @@ function analyzeSession(session, varargin)
             exist(fullfile(sessionDir, 'runWisk.mp4'), 'file') && ...
             exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
         
-        fprintf('%s: getting whisker contacts\n', session)
+        if s.verbose; fprintf('%s: getting whisker contacts\n', session); end
         
         % settings
         pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
         if ~exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') ||  s.rerunWiskContactNetwork
-            fprintf('%s: running wisk contact network\n', session)
+            fprintf('  %s: running wisk contact network\n', session)
             if anythingAnalyzed; save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data'); end % first save the file so analyzeVideo.py can access it
             [~,~] = system([pythonPath ' tracking\whiskerContact\cropanalyzevideo.py ' getenv('OBSDATADIR') 'sessions ' session]);
         end
@@ -618,7 +619,6 @@ function analyzeSession(session, varargin)
         end
         
         % todo: check for invalid contact positions here?
-        
         saveVars('wiskContactFrames', wiskContactData.framenum, ...
                  'wiskContactFramesConfidences', wiskContactData.confidence, ...
                  'wiskContactTimes', contactTimes, ...

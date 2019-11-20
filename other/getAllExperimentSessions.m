@@ -1,4 +1,4 @@
-function [sessions, experiments] = getAllExperimentSessions()
+function [sessions, experiments] = getAllExperimentSessions(sheets)
 
 % returns a cell array containing all sessions listed in the
 % experimentMetaData spreadsheet. use this to get a list of all sessions if
@@ -8,7 +8,11 @@ function [sessions, experiments] = getAllExperimentSessions()
 
 % settings
 spreadsheet = fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx');
-sheets = {'baselineNotes', 'lesionNotes', 'senLesionNotes', 'muscimolNotes', 'sensoryDependenceNotes', 'whiskerTrimNotes'};  % which sheets to analyze
+if ~exist('sheets', 'var')
+    sheets = {'baselineNotes', 'lesionNotes', 'senLesionNotes', 'muscimolNotes', 'sensoryDependenceNotes', 'whiskerTrimNotes'};  % which sheets to analyze
+elseif ischar(sheets)
+    sheets = {sheets};
+end
 
 sessions = cell(1,length(sheets));
 experiments = cell(1,length(sheets));
