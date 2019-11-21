@@ -2,39 +2,40 @@ function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = 
     getStepIdentities(stanceBins, locationsBotPaws, contactTimes, frameTimeStamps, ...
     obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps)
 
-% given the bins in which paws are in stance and time of wisk contact with obs, determines frames corresponding to control and modified swings
-% modified swings are those occuring during or after obs contact with wisk, including but not after swing that actually gets over obs
-% control swings are those before mod swings, for now two swings before mod swings for each paw
+% returns three identities for control, modified, and noObs steps //
+% modified steps are those occuring during or after whisker contact up
+% until the step over the obs // control and the 'controlSteps' steps
+% before modified steps // noObs steps are the 'noObsSteps' steps occuring
+% before the obstacle turns on // the output matrices are of size
+% (numberOfFrames X 4), with all NaNs except for inds whether the paw is
+% swinging for the given step type, in which case 1s indicated the first
+% swing, 2s for the second swing, etc...
 
 
 % settings
-plotExample = false;
+plotExample = true;
 
 
 % give each swing a number across all trials, in ascending order
 swingBins = ~stanceBins;
-% swingDeltas = [zeros(1,4); double(diff(swingBins,1,1)==1) - double(diff(swingBins,1,1)==-1)]; % matrix where 1 indcates swing start and -1 indicates stannce stance (not swing end, but stance stance, which is the next ind over)
-swingDeltas = double([zeros(1,4); diff(swingBins,1,1)]); % matrix where 1 indcates swing start and -1 indicates stannce stance (not swing end, but stance stance, which is the next ind over)
-swingDeltas = swingDeltas .* [zeros(1,4); cumsum(diff(swingBins,1,1)==1, 1)]; % matrix with n at swing start and -n at start of next stance, where n indicates the swing number
-allSwingIdentities = cumsum(swingDeltas); % matrix where inds corresponding to swing n have value n, and zeros elsewhere
+swingDeltas = double([zeros(1,4); diff(swingBins,1,1)]);  % matrix where 1 indcates swing start and -1 indicates stance start
+swingDeltas = swingDeltas .* [zeros(1,4); cumsum(diff(swingBins,1,1)==1, 1)];  % matrix with n at swing start and -n at start of next stance, where n indicates the swing number
+allSwingIdentities = cumsum(swingDeltas);  % matrix where inds corresponding to swing n have value n, and zeros elsewhere
 allSwingIdentities(allSwingIdentities==0) = nan;
 
 
-
-% get trial swing identities and define control and modified steps
-
+% get step identities
 controlStepIdentities = nan(size(allSwingIdentities));
 modifiedStepIdentities = nan(size(allSwingIdentities));
 noObsStepIdentities = nan(size(allSwingIdentities));
+keyboard
 
 for i = 1:length(obsOnTimes)
     for j = 1:4
         try
-            % .01 find id of swing that crosses obs
-            overObsInd = find(frameTimeStamps>obsOnTimes(i) & ... 
-                              frameTimeStamps<obsOffTimes(i) & ...
-                              locationsBotPaws(:,1,j)<obsPixPositions', 1, 'last') + 1; % finding last frame that is less than obsPos, rather than first frame that is greater than obsPos, prevents me from getting steps that go under the obs (because these have to return behind obsPos and then get over it again)
-            swingOverObsIdentity = allSwingIdentities(overObsInd, j);
+            % .01 find id for swing that crosses obs
+            overObsInd = find(locationsBotPaws(:,1,j)<obsPixPositionsContinuous(i,:)', 1, 'last') + 1; % finding last frame that is less than obsPos, rather than first frame that is greater than obsPos, prevents me from getting steps that go under the obs (because these have to return behind obsPos and then get over it again)
+            swingOverObsIdentity = allSwingIdentities(overObsInd, j);  % step number 'swingOverObsIdentity' is the first to get over the obstacle
             
             % .06 find id of first swing during or after obs contact with wisk
             firstModifiedInd = find(~isnan(allSwingIdentities(:,j)) & frameTimeStamps>=contactTimes(i), 1, 'first');
@@ -58,9 +59,8 @@ for i = 1:length(obsOnTimes)
             controlStepIdentities(controlBins, j) = allSwingIdentities(controlBins,j)-(firstModifiedIdentity-controlSteps)+1;
             noObsStepIdentities(obsOffBins, j) = allSwingIdentities(obsOffBins,j)-(firstObsOnIdentitiy-noObsSteps)+1;
         catch
-%             fprintf('  problem with trial %i\n', i)
+            fprintf('  problem with trial %i\n', i)
         end
-        
     end
 end
 
