@@ -15,7 +15,7 @@ swingMaxSmps = 50;       % when averaging swing locations without interpolating 
 noObsSteps = 3;          % how many steps per trial per paw to take before the obstacle becomes engaged
 controlSteps = 2;        % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
 timeOperations = false;  % whether to report time it takes to compute differnt parts of this script
-showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
+showStepLengthFits = true;  % whether to show linear first for step lengths for each paw
 
 
 % load session data
@@ -141,7 +141,7 @@ for j = 1:length(obsOnTimes)
             for k = 1:4
                 stepNum = max(allIds{stepType}(:,k));
                 for m = 1:stepNum
-                    stepBins = trialNoObsStepIds(:,k)==m;
+                    stepBins = allIds{stepType}(:,k)==m;
                     if any(stepBins)
                         allLengths{stepType}(m,k) = range(trialLocations(stepBins,1,k));
                         allDurations{stepType}(m,k) = range(trialTimes(stepBins));
@@ -291,6 +291,7 @@ try
         ylabel('step length')
         for i = 1:4; lines(i) = plot([nan nan], 'color', colors(i,:), 'LineWidth', 2); end % create dummy lines
         legend(lines, {'LH', 'LF', 'RF', 'RH'}, 'Location', 'best', 'box', 'off');
+        pause(.001)
     end
 catch
     fprintf('%s: failed to make swing length model!\n', session)

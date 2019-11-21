@@ -66,7 +66,7 @@ positions = cumsum(deltas) * (mmPerTic / 1000);
 % report whether events are recorded out of order
 faultyEventCount = sum(diff(aTimes)<=0) + sum(diff(bTimes)<=0) + length(intersect(aTimes, bTimes));
 if faultyEventCount>0
-    fprintf('  %s: WARNING: detected %i events simultaneously or out of order!\n', session, faultyEventCount)
+    fprintf('%s: WARNING! Detected %i events simultaneously or out of order!\n', session, faultyEventCount)
     
     % remove duplicate times (necessary for interpolation)
     [times, uniqueInds] = unique(times);

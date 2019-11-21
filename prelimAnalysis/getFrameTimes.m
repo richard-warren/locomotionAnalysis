@@ -36,7 +36,7 @@ else
         ttlGap = minInd;
         camGap = minInd;
     else  % otherwise try to find the best match (note that the following approach will fail for evenly spaced ttl gaps or if two gaps happen to be of similar duration) // would be smarter to loop across all entries, only keeping those with closely match durations
-        fprintf('  %s: WARNING! different number of ttl gaps detected in camera and spike!\n', session);
+        fprintf('%s: WARNING! different number of ttl gaps detected in camera and spike!\n', session);
         [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
         [~, minInd] = min(diffs);
         ttlGap = inds(minInd);
@@ -53,14 +53,14 @@ camCountsShifted = camCounts - camCounts(camGaps(camGap)) + ttlGaps(ttlGap);
 if any(camCountsShifted<1)
     beginningNans = nan(sum(camCountsShifted<1), 1);
     camCountsShifted = camCountsShifted(camCountsShifted>0);
-    fprintf('  %s: WARNING! %i camera frame(s) detected before spike recording turned on!\n', session, length(beginningNans));
+    fprintf('%s: WARNING! %i camera frame(s) detected before spike recording turned on!\n', session, length(beginningNans));
 end
 
 % if camera was stopped after spike, account for extra ttls at endeginning
 if any(camCountsShifted>length(ttlTimes))
     endNans = nan(sum(camCountsShifted>length(ttlTimes)), 1);
     camCountsShifted = camCountsShifted(camCountsShifted<=length(ttlTimes));
-    fprintf('  %s: WARNING! %i camera frame(s) detected after last spike ttl!\n', session, length(endNans));
+    fprintf('%s: WARNING! %i camera frame(s) detected after last spike ttl!\n', session, length(endNans));
 end
 
 frameTimes = ttlTimes(camCountsShifted);
@@ -71,7 +71,7 @@ if exist('endNans', 'var'); frameTimes = [frameTimes; endNans]; end
 missedFrames = length(ttlTimes)-length(camTimes);
 if exist('beginningNans', 'var'); missedFrames = missedFrames + length(beginningNans); end
 if exist('endNans', 'var'); missedFrames = missedFrames + length(endNans); end
-fprintf('  %s: %i missed frame(s), %i at the very beginning, %i elsewhere\n', ...
+fprintf('%s: %i missed frame(s), %i at the very beginning, %i elsewhere\n', ...
     session, missedFrames, camCountsShifted(1)-1, missedFrames - (camCountsShifted(1)-1));
 
 

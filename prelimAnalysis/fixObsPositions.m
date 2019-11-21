@@ -19,8 +19,7 @@ for i = 1:length(obsOnTimes)
     pixTimes = frameTimeStamps(trialFrameBins);
     
     % get obsPos at moment obs reaches nose
-    if ~isempty(pixPositions)
-        
+    try 
         % remove duplicate positional values
         [pixPositions, uniqueInds] = unique(pixPositions, 'stable');
         pixTimes = pixTimes(uniqueInds);
@@ -30,6 +29,8 @@ for i = 1:length(obsOnTimes)
         % get trial obsPos and subtract obsAtNosePos
         trialObsPosBins = (obsTimes>=epochTimes(i)) & (obsTimes<epochTimes(i+1));
         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
+    catch
+        fprintf('WARNING! Could not fix obstacle positions for trial %i\n', i)
     end
 end
 

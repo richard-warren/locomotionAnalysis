@@ -4,7 +4,7 @@ function showTracking(session, trainingDataPath)
 % i should handle confidence thresholds...
 
 % settings
-onlyShowFramesNearObs = true;
+onlyShowFramesNearObs = false;
 vidFs = 250;
 vidDelay = .02;
 showDlcScores = false;

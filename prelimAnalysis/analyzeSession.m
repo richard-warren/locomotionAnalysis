@@ -179,7 +179,7 @@ function analyzeSession(session, varargin)
             obsTracking(rowInd).percentBadTracking = nanmean(abs(wheelVelTrial-obsVelTrial) > velTolerance);
             if obsTracking(rowInd).percentBadTracking > warningThresh
                 if ~anyPoorTrackingTrials
-                    fprintf('  %s: WARNING! poor obstacle tracking in trial(s): %i', session, i);
+                    fprintf('%s: WARNING! poor obstacle tracking in trial(s): %i', session, i);
                     anyPoorTrackingTrials = true;
                 else
                     fprintf(' %i', i);

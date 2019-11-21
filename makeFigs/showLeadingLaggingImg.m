@@ -36,7 +36,7 @@ fade = repmat(linspace(0,1,edgeFading), vid.Height, 1);
 % get kinematics in original pixel coordinates (kinData kinematics have
 % been transformed st they cannot be directly overlaid on frames)
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
+[locations, features] = fixTracking(locationsTable, frameTimeStamps);
 clear locationsTable
 
 % choose trial(s)

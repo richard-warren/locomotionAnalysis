@@ -141,18 +141,17 @@ end
 %% recompute prelimAnalysis
 
 [sessions, experiments] = getAllExperimentSessions('baselineNotes');
-problemSessions = {};
-
+% problemSessions = {};
 
 for i = 1:length(sessions)
-    fprintf('\n\n________________session #%i (%s, %s)________________\n', i, sessions{i}, experiments{i})
-    try 
-        analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
+%     fprintf('\n\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
+%     try 
+%         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
         getKinematicData(sessions{i});
-    catch
-        fprintf('WARNING: %s failed to analyze...\n');
-        problemSessions{end+1} = sessions{i};
-    end
+%     catch
+%         fprintf('WARNING: %s failed to analyze...\n');
+%         problemSessions{end+1} = sessions{i};
+%     end
 end
 
 

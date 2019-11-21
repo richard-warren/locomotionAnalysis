@@ -1,13 +1,23 @@
+%% compute experiment data from scratch
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
+mice = unique(sessionInfo.mouse);
+
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data{1}.data = cellfun(@(x) x.data, data); data = data{1};
+fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
+
 %% load experiment data
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
-% global settings
+%% global settings
 colors = hsv(4);  % last term is control step color
 ctlColor = [.5 .5 .5];
 isLeading = [true false true false]; % sequence of conditions for plots
 isFore = [true true false false];
 conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
-
 
 %% ----------
 % PLOT THINGS
