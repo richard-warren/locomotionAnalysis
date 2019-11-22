@@ -4,7 +4,7 @@ function showTracking(session, trainingDataPath)
 % i should handle confidence thresholds...
 
 % settings
-onlyShowFramesNearObs = false;
+onlyShowFramesNearObs = true;
 vidFs = 250;
 vidDelay = .02;
 showDlcScores = false;
@@ -42,7 +42,7 @@ load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'pixelsPerM', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes');
 locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
-[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps);
+[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
 locations = locations / scaling; % bring back to original resolution
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
