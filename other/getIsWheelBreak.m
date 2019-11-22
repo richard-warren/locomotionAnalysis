@@ -8,6 +8,6 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'ob
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), 'breaks')
 
 isWheelBreak = true(size(obsOnTimes));
-for i = 1:length(isWheelBreak)
+for i = 1:length(obsOnTimes)
     isWheelBreak(i) = any(breaks.times>obsOnTimes(i) & breaks.times<obsOffTimes(i));
 end

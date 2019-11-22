@@ -10,6 +10,7 @@ function obsPixPositionsContinuous = getObsPixPositionsContinuous(...
 % 'unheadfix' the mouse later, by subtracting these obsPositions
 % from the x values of the paw on a trial by trial basis
 
+
 wheelPositionsInterp = interp1(wheelTimes, wheelPositions, frameTimeStamps); % get position of wheel for all frames
 obsPixPositionsContinuous = repmat(obsPixPositions, length(obsOnTimes), 1);
 
@@ -17,7 +18,7 @@ for i = 1:length(obsOnTimes)
     % interp all values expect those where obs is tracked within the trial
     dontInterpBins =  frameTimeStamps>obsOnTimes(i) & ...
                       frameTimeStamps<obsOffTimes(i) & ...
-                      ~isnan(obsPixPositionsUninterped); % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
+                      ~isnan(obsPixPositionsUninterped);  % use obsPixPositions except when it is nan or it it out of frame // otherwise figure it out based on wheel encoder
     if any(~dontInterpBins)
         obsPixPositionsContinuous(i,~dontInterpBins) = polyval(wheelToObsPixPosMappings(i,:), wheelPositionsInterp(~dontInterpBins));
     end

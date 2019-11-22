@@ -29,7 +29,7 @@ allSwingIdentities(allSwingIdentities==0) = nan;
 controlStepIdentities = nan(size(allSwingIdentities));
 modifiedStepIdentities = nan(size(allSwingIdentities));
 noObsStepIdentities = nan(size(allSwingIdentities));
-trialStartInds = knnsearch(frameTimeStamps, [0; obsOffTimes(1:end-1)]);  % deafult trial start ind is previous obsOffTime, but will be adjusted to the ind of the first noObs step
+trialStartInds = knnsearch(frameTimeStamps, [0; obsOffTimes(1:end-1)]);  % default trial start ind is previous obsOffTime, but will be adjusted to the ind of the first noObs step
 
 for i = 1:length(obsOnTimes)
     
@@ -68,7 +68,6 @@ for i = 1:length(obsOnTimes)
             modifiedStepIdentities(inds(modifiedBins), j) = swingIdsTrial(modifiedBins,j)-firstModifiedIdentity+1;
             controlStepIdentities(inds(controlBins), j) = swingIdsTrial(controlBins,j)-(firstModifiedIdentity-controlSteps)+1;
             noObsStepIdentities(inds(obsOffBins), j) = swingIdsTrial(obsOffBins,j)-(firstObsOnIdentitiy-noObsSteps)+1;
-            startInd = inds(find(obsOffBins, 1, 'first'));
         end
         trialStartInds(i) = find(any(noObsStepIdentities,2) & frameTimeStamps>minTime, 1, 'first');
     catch
@@ -89,7 +88,7 @@ if plotExample
     xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositionsContinuous(trial,:)';
     colors = hsv(4);
 
-    figure;
+    figure('color', 'white', 'position', [1944.00 65.00 1335.00 838.00]);
 
     % plot x positions
     for i = 1:length(paws)
@@ -121,11 +120,17 @@ if plotExample
     end
     
     % add lines for obs position and obsContactTime
-    line(get(gca,'xlim'), [0 0])
+    xLims = get(gca, 'xlim');
+    line(xLims, [0 0])
     line([contactTimes(trial) contactTimes(trial)], get(gca,'ylim'))
+    text(contactTimes(trial), min(get(gca, 'ylim')), 'WHISKER CONTACT', 'VerticalAlignment', 'bottom')
     line([obsOnTimes(trial) obsOnTimes(trial)], get(gca,'ylim'))
+    text(obsOnTimes(trial), min(get(gca, 'ylim')), 'OBSTACLE ON', 'VerticalAlignment', 'bottom')
 
-    pimpFig; pause(.001)
+    set(gca, 'box', 'off', 'TickDir', 'out', 'xlim', xLims)
+    ylabel('time (s)')
+    ylabel('position relative to obstacle (m)')
+    pause(.001)
 end
 
 

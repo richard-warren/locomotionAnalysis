@@ -140,11 +140,11 @@ end
 
 %% recompute prelimAnalysis
 
-% [sessions, experiments] = getAllExperimentSessions('baselineNotes');
 [sessions, experiments] = getAllExperimentSessions('baselineNotes');
+% [sessions, experiments] = getAllExperimentSessions();
 problemSessions = {};
 
-for i = 1:length(sessions)
+for i = 29:length(sessions)
     fprintf('\n\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
     try 
 %         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
