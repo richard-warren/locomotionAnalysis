@@ -15,7 +15,7 @@ swingMaxSmps = 50;       % when averaging swing locations without interpolating 
 noObsSteps = 3;          % how many steps per trial per paw to take before the obstacle becomes engaged
 controlSteps = 2;        % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
 timeOperations = false;  % whether to report time it takes to compute differnt parts of this script
-showStepLengthFits = true;  % whether to show linear first for step lengths for each paw
+showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
 
 
 % load session data
@@ -35,9 +35,9 @@ if timeOperations; tic; end
 obsPixPositionsContinuous = getObsPixPositionsContinuous(...
     wheelToObsPixPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
     obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes);
-[controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = getStepIdentities(...
+[controlStepIdentities, modifiedStepIdentities, noObsStepIdentities, trialStartInds] = getStepIdentities(...
     stanceBins, locations(:,:,botPawInds), wiskContactTimes, frameTimeStamps, ...
-    obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps);
+    obsOnTimes, obsOffTimes, obsPixPositionsContinuous, controlSteps, noObsSteps);
 wheelVel = getVelocity(wheelPositions, speedTime, targetFs);
 if timeOperations; fprintf('getting step identities: %i seconds\n', round(toc)); end
 
@@ -81,13 +81,9 @@ if timeOperations; tic; end
 isTrialAnalyzed = false(1,length(kinData)); % keeps track of whereh kinematic data could be analyzed for each trial
 for j = 1:length(obsOnTimes)
         
-    % first pull out trial specific data because 'find' function works much quicker on the smaller data slices
-
-    % get trial inds
-    if j==1; lastTrialEndTime=0; else; lastTrialEndTime = obsOffTimes(j-1); end
-    startInd = find(frameTimeStamps>lastTrialEndTime & any(noObsStepIdentities==1,2), 1, 'first'); % start at first obs off step after previous trial
+    % first get trial specific data because 'find' function works much quicker on the smaller data slices
     endInd = find(all(isnan(modifiedStepIdentities),2) & frameTimeStamps>obsOffTimes(j), 1, 'first'); % end when all mod steps in trial are over
-    trialInds = startInd:endInd;
+    trialInds = trialStartInds(j):endInd;
 
     % get trial data
     trialTimes = frameTimeStamps(trialInds);
@@ -108,64 +104,64 @@ for j = 1:length(obsOnTimes)
     
     % ANALYZE KINEMATIC DATA
     if isTrialAnalyzed(j)
-        
-        % determine whether left and right forepaws are in swing at obsPos moment
-        contactInd = find(trialTimes==wiskContactTimes(j)); % ind within trial at which contact occurs
-        isSwinging = ~isnan(trialModStepIds);
-        isLeftSwingAtContact = isSwinging(contactInd,2);
-        isRightSwingAtContact = isSwinging(contactInd,3);
+        try
+            % determine whether left and right forepaws are in swing at obsPos moment
+            contactInd = find(trialTimes==wiskContactTimes(j)); % ind within trial at which contact occurs
+            isSwinging = ~isnan(trialModStepIds);
+            isLeftSwingAtContact = isSwinging(contactInd,2);
+            isRightSwingAtContact = isSwinging(contactInd,3);
+            
 
-        % determine sequence with which paws cross obstacle
-        lastModStepInds = nan(4,1);
-        for k = 1:4; lastModStepInds(k) = find(isSwinging(:,k),1,'last'); end
-        [~, pawOverSequence] = sort(lastModStepInds);
+            % determine sequence with which paws cross obstacle
+            lastModStepInds = nan(4,1);
+            for k = 1:4; lastModStepInds(k) = find(isSwinging(:,k),1,'last'); end
+            [~, pawOverSequence] = sort(lastModStepInds);
+            
 
-        % determine 'first modified paw' (forepaws only)
-        %
-        % if one in swing and one in stance at contact, first mod step is 
-        % one in swing // otherwise first mod paw is first paw to land on
-        % the other side
-        if xor(isLeftSwingAtContact, isRightSwingAtContact)
-            if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
-        else
-            firstModPaw = pawOverSequence(1);
-        end
-        
-        
-        % get mod, control, and noObs step(s) length, duration, wheel velocity
-        maxModSteps = max(trialModStepIds(:));
-        allIds = {trialControlStepIds, trialNoObsStepIds, trialModStepIds};
-        [allLengths, allDurations, allVels] = deal({nan(controlSteps,4), nan(noObsSteps,4), nan(maxModSteps,4)});
-        
-        for stepType = 1:3
-            for k = 1:4
-                stepNum = max(allIds{stepType}(:,k));
-                for m = 1:stepNum
-                    stepBins = allIds{stepType}(:,k)==m;
-                    if any(stepBins)
-                        allLengths{stepType}(m,k) = range(trialLocations(stepBins,1,k));
-                        allDurations{stepType}(m,k) = range(trialTimes(stepBins));
-                        allVels{stepType}(m,k) = trialWheelVel(find(stepBins,1,'first'));
+            % determine 'first modified paw' (forepaws only)
+            %
+            % if one in swing and one in stance at contact, first mod step is 
+            % one in swing // otherwise first mod paw is first paw to land on
+            % the other side
+            if xor(isLeftSwingAtContact, isRightSwingAtContact)
+                if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
+            else
+                firstModPaw = pawOverSequence(1);
+            end
+            
+
+            % get mod, control, and noObs step(s) length, duration, wheel velocity
+            maxModSteps = max(trialModStepIds(:));
+            allIds = {trialControlStepIds, trialNoObsStepIds, trialModStepIds};
+            [allLengths, allDurations, allVels] = deal({nan(controlSteps,4), nan(noObsSteps,4), nan(maxModSteps,4)});
+
+            for stepType = 1:3
+                for k = 1:4
+                    stepNum = max(allIds{stepType}(:,k));
+                    for m = 1:stepNum
+                        stepBins = allIds{stepType}(:,k)==m;
+                        if any(stepBins)
+                            allLengths{stepType}(m,k) = range(trialLocations(stepBins,1,k));
+                            allDurations{stepType}(m,k) = range(trialTimes(stepBins));
+                            allVels{stepType}(m,k) = trialWheelVel(find(stepBins,1,'first'));
+                        end
                     end
                 end
             end
-        end
-        
-        
-        % get noObs, control, and mod paw locations (interpolated and non-interpolated)
-        [pawObsPosInd, pawObsPosIndInterp] = deal(nan(1,4));
-        [allLocations, allLocationsInterp] = deal({cell(1,4), cell(1,4), cell(1,4)});  % three cell arrays containing data for control, noObs, and modLocations, respectively
 
-        for stepType = 1:3
-            for k = 1:4
 
-                stepNum = max(allIds{stepType}(:,k));
-                pawLocations = nan(stepNum, 3, swingMaxSmps);
-                pawLocationsInterp = nan(stepNum, 3, interpSmps);
+            % get noObs, control, and mod paw locations (interpolated and non-interpolated)
+            [pawObsPosInd, pawObsPosIndInterp] = deal(nan(1,4));
+            [allLocations, allLocationsInterp] = deal({cell(1,4), cell(1,4), cell(1,4)});  % three cell arrays containing data for control, noObs, and modLocations, respectively
 
-                for m = 1:stepNum
+            for stepType = 1:3
+                for k = 1:4
 
-                    try
+                    stepNum = max(allIds{stepType}(:,k));
+                    pawLocations = nan(stepNum, 3, swingMaxSmps);
+                    pawLocationsInterp = nan(stepNum, 3, interpSmps);
+
+                    for m = 1:stepNum
                         % find inds for stepType, paw, and stepNum
                         stepBins = allIds{stepType}(:,k)==m;
                         startInd = find(stepBins, 1, 'first');
@@ -192,57 +188,57 @@ for j = 1:length(obsOnTimes)
                             pawObsPosIndInterp(k) = round(interp1(linspace(1,sum(stepBins),interpSmps), ...
                                 1:interpSmps, pawObsPosInd(k), 'nearest'));
                         end
-                    catch
-                        isTrialAnalyzed(j) = false;
-                        fprintf('WARNING! Unable to analyze trial %i!\n', j);
-                        kinData(j).trialInds = find(frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j)); % still useful to compute trialInds even when kinematics can't be analyzed...
                     end
+
+                    allLocations{stepType}{k} = pawLocations;
+                    allLocationsInterp{stepType}{k} = pawLocationsInterp;
                 end
-
-                allLocations{stepType}{k} = pawLocations;
-                allLocationsInterp{stepType}{k} = pawLocationsInterp;
             end
+
+
+            % save trial kinematics
+            kinData(j).trialInds = trialInds;  % inds for frames included in trial
+            kinData(j).locations = trialLocations;  % paw kinematics for trial (frame X xyz X pawNum)
+            kinData(j).locationsTail = trialLocationsTail;  % tail kinematics for trial (frame X xyz X tailPosition)
+            kinData(j).wiskContactPositions = wiskContactPositions(j);  % position relative to nose at which whiskers touch obstacle
+            kinData(j).wiskContactTimes = wiskContactTimes(j);  % time at which whiskers touch obstacle
+            kinData(j).contactInd = contactInd;  % frame index within trial at which whiskers contact obstacle
+
+            % kinematics
+            kinData(j).controlLocations = allLocations{1};
+            kinData(j).noObsLocations = allLocations{2};
+            kinData(j).modifiedLocations = allLocations{3};
+            kinData(j).controlLocationsInterp = allLocationsInterp{1};
+            kinData(j).noObsLocationsInterp = allLocationsInterp{2};
+            kinData(j).modifiedLocationsInterp = allLocationsInterp{3};
+            kinData(j).controlStepIdentities = trialControlStepIds;
+            kinData(j).noObsStepIdentities = trialNoObsStepIds;
+            kinData(j).modifiedStepIdentities = trialModStepIds;
+            kinData(j).stanceBins = stanceBins(trialInds,:);
+            kinData(j).pawObsPosInd = pawObsPosInd;  % ind in first mod paws at which obs contacts wisks for locations for each paw
+            kinData(j).pawObsPosIndInterp = pawObsPosIndInterp;  % ind in first mod paws at which obs contacts wisks for interp locations for each paw
+
+            % which paws did what
+            kinData(j).isLeftSwingAtContact = isLeftSwingAtContact;
+            kinData(j).isRightSwingAtContact = isRightSwingAtContact;
+            kinData(j).pawOverSequence = pawOverSequence;
+            kinData(j).firstModPaw = firstModPaw;
+
+            % swing characteristics
+            kinData(j).controlSwingLengths = allLengths{1};
+            kinData(j).noObsSwingLengths = allLengths{2};
+            kinData(j).modifiedSwingLengths = allLengths{3};
+            kinData(j).controlSwingDurations = allDurations{1};
+            kinData(j).noObsSwingDurations = allDurations{2};
+            kinData(j).modifiedSwingDurations = allDurations{3};
+            kinData(j).controlWheelVels = allVels{1};
+            kinData(j).noObsWheelVels = allVels{2};
+            kinData(j).modifiedWheelVels = allVels{3};
+        catch
+            isTrialAnalyzed(j) = false;
+            fprintf('WARNING! Unable to analyze trial %i!\n', j);
+            kinData(j).trialInds = find(frameTimeStamps>obsOnTimes(j) & frameTimeStamps<obsOffTimes(j)); % still useful to compute trialInds even when kinematics can't be analyzed...
         end
-
-
-        % save trial kinematics
-        kinData(j).trialInds = trialInds;  % inds for frames included in trial
-        kinData(j).locations = trialLocations;  % paw kinematics for trial (frame X xyz X pawNum)
-        kinData(j).locationsTail = trialLocationsTail;  % tail kinematics for trial (frame X xyz X tailPosition)
-        kinData(j).wiskContactPositions = wiskContactPositions(j);  % position relative to nose at which whiskers touch obstacle
-        kinData(j).wiskContactTimes = wiskContactTimes(j);  % time at which whiskers touch obstacle
-        kinData(j).contactInd = contactInd;  % frame index within trial at which whiskers contact obstacle
-        
-        % kinematics
-        kinData(j).controlLocations = allLocations{1};
-        kinData(j).noObsLocations = allLocations{2};
-        kinData(j).modifiedLocations = allLocations{3};
-        kinData(j).controlLocationsInterp = allLocationsInterp{1};
-        kinData(j).noObsLocationsInterp = allLocationsInterp{2};
-        kinData(j).modifiedLocationsInterp = allLocationsInterp{3};
-        kinData(j).controlStepIdentities = trialControlStepIds;
-        kinData(j).noObsStepIdentities = trialNoObsStepIds;
-        kinData(j).modifiedStepIdentities = trialModStepIds;
-        kinData(j).stanceBins = stanceBins(trialInds,:);
-        kinData(j).pawObsPosInd = pawObsPosInd;  % ind in first mod paws at which obs contacts wisks for locations for each paw
-        kinData(j).pawObsPosIndInterp = pawObsPosIndInterp;  % ind in first mod paws at which obs contacts wisks for interp locations for each paw
-
-        % which paws did what
-        kinData(j).isLeftSwingAtContact = isLeftSwingAtContact;
-        kinData(j).isRightSwingAtContact = isRightSwingAtContact;
-        kinData(j).pawOverSequence = pawOverSequence;
-        kinData(j).firstModPaw = firstModPaw;
-
-        % swing characteristics
-        kinData(j).controlSwingLengths = allLengths{1};
-        kinData(j).noObsSwingLengths = allLengths{2};
-        kinData(j).modifiedSwingLengths = allLengths{3};
-        kinData(j).controlSwingDurations = allDurations{1};
-        kinData(j).noObsSwingDurations = allDurations{2};
-        kinData(j).modifiedSwingDurations = allDurations{3};
-        kinData(j).controlWheelVels = allVels{1};
-        kinData(j).noObsWheelVels = allVels{2};
-        kinData(j).modifiedWheelVels = allVels{3};
     end
     
     kinData(j).isTrialAnalyzed = isTrialAnalyzed(j);
@@ -298,10 +294,6 @@ catch
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models', '-v7.3')
-
-
-
-
 
 
 

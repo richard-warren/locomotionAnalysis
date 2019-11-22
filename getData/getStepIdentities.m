@@ -1,6 +1,6 @@
-function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
+function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities, trialStartInds] = ...
     getStepIdentities(stanceBins, locationsBotPaws, contactTimes, frameTimeStamps, ...
-    obsOnTimes, obsOffTimes, obsPixPositions, obsPixPositionsContinuous, controlSteps, noObsSteps)
+    obsOnTimes, obsOffTimes, obsPixPositionsContinuous, controlSteps, noObsSteps)
 
 % returns three identities for control, modified, and noObs steps //
 % modified steps are those occuring during or after whisker contact up
@@ -9,7 +9,8 @@ function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = 
 % before the obstacle turns on // the output matrices are of size
 % (numberOfFrames X 4), with all NaNs except for inds whether the paw is
 % swinging for the given step type, in which case 1s indicated the first
-% swing, 2s for the second swing, etc...
+% swing, 2s for the second swing, etc... // trialStartsInds records the
+% index of the first step (noObsStep) for each trial
 
 
 % settings
@@ -28,41 +29,54 @@ allSwingIdentities(allSwingIdentities==0) = nan;
 controlStepIdentities = nan(size(allSwingIdentities));
 modifiedStepIdentities = nan(size(allSwingIdentities));
 noObsStepIdentities = nan(size(allSwingIdentities));
-keyboard
+trialStartInds = knnsearch(frameTimeStamps, [0; obsOffTimes(1:end-1)]);  % deafult trial start ind is previous obsOffTime, but will be adjusted to the ind of the first noObs step
 
 for i = 1:length(obsOnTimes)
-    for j = 1:4
-        try
-            % .01 find id for swing that crosses obs
-            overObsInd = find(locationsBotPaws(:,1,j)<obsPixPositionsContinuous(i,:)', 1, 'last') + 1; % finding last frame that is less than obsPos, rather than first frame that is greater than obsPos, prevents me from getting steps that go under the obs (because these have to return behind obsPos and then get over it again)
-            swingOverObsIdentity = allSwingIdentities(overObsInd, j);  % step number 'swingOverObsIdentity' is the first to get over the obstacle
+    
+    % extract trial data to make indexing operations faster
+    if i==1; minTime=0; else; minTime=obsOffTimes(i-1); end
+    if i==length(obsOnTimes); maxTime=frameTimeStamps(end); else; maxTime=obsOnTimes(i+1); end
+    inds = find(frameTimeStamps>minTime & frameTimeStamps<maxTime);
+    locationsTrial = locationsBotPaws(inds,:,:);
+    obsPosTrial = obsPixPositionsContinuous(:,inds);
+    swingIdsTrial = allSwingIdentities(inds,:);
+    timesTrial = frameTimeStamps(inds);
+    
+    try
+        for j = 1:4
+            % find id for swing that crosses obs
+            overObsInd = find(locationsTrial(:,1,j)<obsPosTrial(i,:)', 1, 'last') + 1; % finding last frame that is less than obsPos, rather than first frame that is greater than obsPos, prevents me from getting steps that go under the obs (because these have to return behind obsPos and then get over it again)
+            swingOverObsIdentity = swingIdsTrial(overObsInd, j);  % step number 'swingOverObsIdentity' is the first to get over the obstacle
             
-            % .06 find id of first swing during or after obs contact with wisk
-            firstModifiedInd = find(~isnan(allSwingIdentities(:,j)) & frameTimeStamps>=contactTimes(i), 1, 'first');
-            firstModifiedIdentity = allSwingIdentities(firstModifiedInd, j);
+            % find id of first swing during or after obs contact with wisk
+            firstModifiedInd = find(~isnan(swingIdsTrial(:,j)) & timesTrial>=contactTimes(i), 1, 'first');
+            firstModifiedIdentity = swingIdsTrial(firstModifiedInd, j);
             
-            % .06 find id of first swing during or after obs turns on
-            firstObsOnInd = find(~isnan(allSwingIdentities(:,j)) & frameTimeStamps>=obsOnTimes(i), 1, 'first');
-            firstObsOnIdentitiy = allSwingIdentities(firstObsOnInd, j);
+            % find id of first swing during or after obs turns on
+            firstObsOnInd = find(~isnan(swingIdsTrial(:,j)) & timesTrial>=obsOnTimes(i), 1, 'first');
+            firstObsOnIdentitiy = swingIdsTrial(firstObsOnInd, j);
 
-        
-            % .018
-            modifiedBins = (allSwingIdentities(:,j) >= firstModifiedIdentity) & ...
-                           (allSwingIdentities(:,j) <= swingOverObsIdentity);
-            controlBins = (allSwingIdentities(:,j) >= (firstModifiedIdentity-controlSteps)) & ...
-                          (allSwingIdentities(:,j) < firstModifiedIdentity);
-            obsOffBins = (allSwingIdentities(:,j) >= (firstObsOnIdentitiy-noObsSteps)) & ...
-                         (allSwingIdentities(:,j) < firstObsOnIdentitiy);
+            % find bins wihtin swingIdsTrial
+            modifiedBins = (swingIdsTrial(:,j) >= firstModifiedIdentity) & ...
+                           (swingIdsTrial(:,j) <= swingOverObsIdentity);
+            controlBins = (swingIdsTrial(:,j) >= (firstModifiedIdentity-controlSteps)) & ...
+                          (swingIdsTrial(:,j) < firstModifiedIdentity);
+            obsOffBins = (swingIdsTrial(:,j) >= (firstObsOnIdentitiy-noObsSteps)) & ...
+                         (swingIdsTrial(:,j) < firstObsOnIdentitiy);
             
-            % .002
-            modifiedStepIdentities(modifiedBins, j) = allSwingIdentities(modifiedBins,j)-firstModifiedIdentity+1;
-            controlStepIdentities(controlBins, j) = allSwingIdentities(controlBins,j)-(firstModifiedIdentity-controlSteps)+1;
-            noObsStepIdentities(obsOffBins, j) = allSwingIdentities(obsOffBins,j)-(firstObsOnIdentitiy-noObsSteps)+1;
-        catch
-            fprintf('  problem with trial %i\n', i)
+            % store results
+            modifiedStepIdentities(inds(modifiedBins), j) = swingIdsTrial(modifiedBins,j)-firstModifiedIdentity+1;
+            controlStepIdentities(inds(controlBins), j) = swingIdsTrial(controlBins,j)-(firstModifiedIdentity-controlSteps)+1;
+            noObsStepIdentities(inds(obsOffBins), j) = swingIdsTrial(obsOffBins,j)-(firstObsOnIdentitiy-noObsSteps)+1;
+            startInd = inds(find(obsOffBins, 1, 'first'));
         end
+        trialStartInds(i) = find(any(noObsStepIdentities,2) & frameTimeStamps>minTime, 1, 'first');
+    catch
+        fprintf('  problem with trial %i\n', i)
     end
 end
+
+
 
 
 % plot control and modified step segmentation
@@ -70,7 +84,7 @@ if plotExample
     
     % get trial
     trial = randperm(length(obsOnTimes)-1, 1)+1;
-    trialBins = frameTimeStamps>obsOffTimes(trial-1) & frameTimeStamps<obsOffTimes(trial);
+    trialBins = (1:length(frameTimeStamps)>trialStartInds(trial))' & frameTimeStamps<obsOffTimes(trial);  % plus one to be safe
     paws = [1 2 3 4];
     xLocations = squeeze(locationsBotPaws(:,1,:)) - obsPixPositionsContinuous(trial,:)';
     colors = hsv(4);
@@ -111,13 +125,7 @@ if plotExample
     line([contactTimes(trial) contactTimes(trial)], get(gca,'ylim'))
     line([obsOnTimes(trial) obsOnTimes(trial)], get(gca,'ylim'))
 
-    pimpFig
+    pimpFig; pause(.001)
 end
-
-
-
-
-
-
 
 

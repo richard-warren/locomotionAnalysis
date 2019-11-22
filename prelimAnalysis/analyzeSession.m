@@ -12,7 +12,7 @@ function analyzeSession(session, varargin)
 
 
     % settings
-    s.verbose = true;
+    s.verbose = false;
     s.targetFs = 1000; % frequency that positional data will be resampled to
     s.overwriteVars = '';
     s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
