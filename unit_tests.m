@@ -138,21 +138,27 @@ for i = 1:length(sessions)
     end
 end
 
-%% recompute prelimAnalysis
+%% recompute stuff
 
 [sessions, experiments] = getAllExperimentSessions('baselineNotes');
 % [sessions, experiments] = getAllExperimentSessions();
 problemSessions = {};
 
-for i = 29:length(sessions)
-    fprintf('\n\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
-    try 
+for i = 8:length(sessions)
+    fprintf('\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
+%     try 
 %         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
-        getKinematicData(sessions{i});
-    catch
-        fprintf('WARNING: %s failed to analyze...\n');
-        problemSessions{end+1} = sessions{i};
-    end
+
+%         getKinematicData(sessions{i});
+        
+        % test getTracking
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), 'frameTimeStamps', 'pixelsPerM')
+        locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'trackedFeaturesRaw.csv')); % get raw tracking data
+        fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
+%     catch
+%         fprintf('WARNING: %s failed to analyze...\n', sessions{i});
+%         problemSessions{end+1} = sessions{i};
+%     end
 end
 
 

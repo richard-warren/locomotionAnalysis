@@ -14,7 +14,7 @@ function [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities, tr
 
 
 % settings
-plotExample = true;
+plotExample = false;
 
 
 % give each swing a number across all trials, in ascending order

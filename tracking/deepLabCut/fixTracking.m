@@ -2,14 +2,22 @@ function [locations, features, featurePairInds, isInterped, scores] = ...
     fixTracking(locationsTable, frameTimeStamps, pixelsPerM)
 
 
-% todo: check vel thing // document // add options for each stage of analysis?
+% todo: given raw tracking data (locationsTable, read from csv), produces
+% locations matrix (nFrames X 2 X nFeatures) encoding the locations (in
+% pixels) of each feature // in addition to structuring the data in this
+% away, it fixes the tracking by: 1) removing low confidence frames, 2)
+% removing frames that violate a velocity constraint, 3) removing top
+% locations that deviate too far in the x dimension from the bottom view,
+% 4) median filter and interpolate missing values, and 5) replacing missing
+% x coordinates in the top view with x coordinates determined by creating
+% second order mapping from bottom to top x coordinates for each paw
 
 % settings
-xDiffMax = .005;  % (m)
-scoreThresh = .99;
-pairNames = {'paw1', 'paw2', 'paw3', 'paw4'};  % two features both containing the same string in this array are considered the same feature in the top and bottom views
+xDiffMax = .005;  % (m) the same paw in the bottom and top view cannot deviate more than xDiffMax in the x dimension
+scoreThresh = .99;  % remove tracking with confidence values beneathe scoreThresh
+pairNames = {'paw1', 'paw2', 'paw3', 'paw4'};  % two features both containing the same string in this array are considered the same feature in the top and bottom views, and are subject to xDiffMax constraint
 maxSpeed = 2;  % (m/s) tracked feature cannot move faster than this across adjacent frames
-lookAheadFrames = 100;
+lookAheadFrames = 200;  % this is relevant to the non-intuitive but fast algorithm i use to find velocity constraint violations // don't touch this unless you understand setp 2
 
 
 
@@ -56,6 +64,14 @@ locations(lowScoreBins) = nan;
 
 
 % 2) remove inds that violate velocity constraint
+% 
+% for each feature find inds (checkVelInds) where velocity constraint is
+% violated, or where there are nans // for each such ind, find most recent
+% valid ind and compute the necessary speed to move from that position to
+% the next lookAheadFrames positions // replaces subsequent values with
+% nans up until the first frame within lookAheadFrames that doesn't violate
+% velocity constraint
+
 maxSpeedPixels = maxSpeed * pixelsPerM;
 for i = 1:length(features)
 
@@ -64,7 +80,7 @@ for i = 1:length(features)
 
     for j = checkVelInds'
 
-        % find first frame where tracking doesn't violate max speed
+        % find most recent frame where tracking doesn't violate max speed
         lastTrackedInd = j-1; while isnan(locations(lastTrackedInd,1,i)); lastTrackedInd = lastTrackedInd-1; end
 
         inds = lastTrackedInd+1 : min(lastTrackedInd+lookAheadFrames, size(locations,1));
@@ -72,7 +88,9 @@ for i = 1:length(features)
         dt = frameTimeStamps(inds)-frameTimeStamps(lastTrackedInd);
         vels = dp ./ dt;
 
-        nextTrackedInd = lastTrackedInd + find(vels<maxSpeedPixels,1,'first');
+        indsUntilNextTracked = find(vels<maxSpeedPixels,1,'first');
+        if isempty(indsUntilNextTracked); indsUntilNextTracked = lookAheadFrames; end
+        nextTrackedInd = min(lastTrackedInd + indsUntilNextTracked, size(locations,1));
 
         % replace values violating speed constraint with nans
         locations(lastTrackedInd+1:nextTrackedInd-1,:,i) = nan;
@@ -92,7 +110,7 @@ end
 
 
 
-% 4) fill in missing values AND median filter?
+% 4) fill in missing values AND median filter
 pawInds = find(contains(features, 'paw'));
 isInterped = isnan(squeeze(locations(:,1,:)));
 
@@ -100,9 +118,7 @@ locations(:,1,pawInds) = medfilt2(squeeze(locations(:,1,pawInds)), [3, 1]);
 locations(:,2,pawInds) = medfilt2(squeeze(locations(:,2,pawInds)), [3, 1]);
 
 locations(:,1,pawInds) = fillmissing(squeeze(locations(:,1,pawInds)), 'pchip', 'endvalues', 'none');
-locations(:,2,pawInds) = fillmissing(squeeze(locations(:,2,pawInds)), 'pchip', 'endvalues', 'none');
-% locations(:,1,pawInds) = fillgaps(squeeze(locations(:,1,pawInds)), 1000, 50);
-% locations(:,2,pawInds) = fillgaps(squeeze(locations(:,2,pawInds)), 1000, 50);
+locations(:,2,pawInds) = fillmissing(squeeze(locations(:,2,pawInds)), 'pchip', 'endvalues', 'none');  % change to pchip after debugging...
 
 
 
@@ -122,8 +138,4 @@ for i = 1:size(featurePairInds,1)
     
     locations(interpedBins,1,featurePairInds(i,2)) = polyval(fit, locations(interpedBins,1,featurePairInds(i,1)));
 end
-
-
-
-
 

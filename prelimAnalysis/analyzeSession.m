@@ -12,7 +12,7 @@ function analyzeSession(session, varargin)
 
 
     % settings
-    s.verbose = false;
+    s.verbose = true;
     s.targetFs = 1000; % frequency that positional data will be resampled to
     s.overwriteVars = '';
     s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
@@ -531,7 +531,7 @@ function analyzeSession(session, varargin)
         
         % get xz positions for paws
         if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        [locations, features] = fixTracking(locationsTable, data.frameTimeStamps);
+        [locations, features] = fixTracking(locationsTable, data.frameTimeStamps, data.pixelsPerM);
         pawXZ = nan(size(locations,1), 2, 4);
         for i = 1:4
             pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
