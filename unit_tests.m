@@ -1,3 +1,9 @@
+%% test getExperimentData
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(1:5,:);
+data = getExperimentData(sessionInfo, 'all');
+
 %% test getFrameTimes with fake data
 
 while true

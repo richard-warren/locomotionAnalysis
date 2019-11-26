@@ -1,7 +1,6 @@
 %% compute experiment data from scratch
 
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
-sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);
 mice = unique(sessionInfo.mouse);
 
 data = cell(1,length(mice));

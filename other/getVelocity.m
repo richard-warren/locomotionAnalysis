@@ -8,6 +8,8 @@ function velocity = getVelocity(positions, windowSize, fs)
     %               fs: (hz) frequency with which data are sampled
     %
     % output        velocity: (m/s) computed velocity
+    %
+    % note: assumes positions are sampled at even intervals
     
 
     % compute window size in samples

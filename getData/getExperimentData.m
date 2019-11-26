@@ -5,20 +5,19 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 % sanity checks for all dvs (eg step over hgt cant be less than hgt of asdf
 % obstacle...) // dft fcns for getting session, mouse, trial vars, etc...
 
-% TO DO: throw error when var missing, or when var is requested that depends on higher up var that has not been requested...
-% make this with recursive function?
-% ignore vars if can't be computed (eg if looking for field in sessionInfo that doest exist for given experiment)
-% parallelize...
+% todo: store all sessionInfo columns as session variables automatically //
+% change conditionNum and sessionNum to colums in spreadsheet to handle day
+% discontinuities, or you must deal with dates...
 
 % 'g' stores global variables, allowing things to be passed around!
 
 
 % settings
-metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'}; % these parameters will be stored as experiment metadata
-g.touchThresh = 5;
-g.speedTime = .01; % (s) compute velocity over this interval
-g.preObsLim = .008; % (m) compute paw height this many meters before it reaches obstacle x postion
-g.clearanceBuffer = .001; % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
+metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};  % these parameters will be stored as experiment metadata
+g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
+g.speedTime = .01;  % (s) compute velocity over this interval
+g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
+g.clearanceBuffer = .001;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
 
 g.velVsPositionPrePost = [-1.5 .4]; % (m) positions before and after whisker contact to collect velocity data
 g.velVsPositionRes = 500; % (tics) how many samples in the x grid
@@ -33,6 +32,7 @@ if ischar(sessionInfo) % if sessionInfo is a string, then it contains the name o
     sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
     sessionInfo = sessionInfo(strcmp(sessionInfo.session, sessionName),:);
 end
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove empty lines
 g.sessionInfo = sessionInfo;
 g.velVsPositionX = linspace(g.velVsPositionPrePost(1), g.velVsPositionPrePost(2), g.velVsPositionRes);
 g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velContinuousAtContactPrePost(2), g.velContinuousAtContactRes);
@@ -40,8 +40,8 @@ g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velCo
 
 mouseVars = {};
 sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
-trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', 'isWheelBreak', 'obsHgt', ...
-             'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
+trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', ...
+             'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
@@ -77,7 +77,7 @@ for mouse = 1:length(g.mice)
     
     % get session data
     g.sessions = g.sessionInfo.session(strcmp(g.sessionInfo.mouse, g.mice{mouse}) & logical(g.sessionInfo.include));
-    g.expData(mouse).sessions = struct('session', g.sessions);
+    g.expData(mouse).sessions = struct('session', g.sessions);  % create nested 'session' struct for mouse
     for sessionVar = 1:length(sessionVars)
         try
         temp = getVar(sessionVars{sessionVar}, g);
@@ -90,15 +90,12 @@ for mouse = 1:length(g.mice)
         g.session = session;
         
         % check if session already exists in oldData
+        sesBin = false;
         if exist('oldData', 'var')
             mouseBin = strcmp({oldData.data.mouse}, g.mice{mouse});
             if any(mouseBin)
                 sesBin = strcmp({oldData.data(mouseBin).sessions.session}, g.sessions{session});
-            else
-                sesBin = false;
             end
-        else
-            sesBin = false;
         end
         
         % if session exists in old data, copy it over
@@ -108,33 +105,30 @@ for mouse = 1:length(g.mice)
         
         % otherwise, compute de novo
         else
-            % load data from session
+            % load data from session, or compute if necessary
             if exist(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'file')
                 g.sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'kinData');
             else
                 try
-                    getKinematicData(g.sessions{session});
+                    g.sesKinData = getKinematicData(g.sessions{session});
                 catch
                     fprintf('%s: problem with getKinematicData!', g.sessions{session});
                 end
-                g.sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'kinData');
             end
             g.sesKinData = g.sesKinData.kinData;
             g.sesKinInds = find([g.sesKinData.isTrialAnalyzed]);
             g.sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'runAnalyzed.mat'));
             warning('off', 'MATLAB:load:variableNotFound');
             g.sesSpikeData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'run.mat'), 'breaks', 'stimulus');
-            g.wheelVel = getVelocity(g.sesData.wheelPositions, g.speedTime, 1000);
-            g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/1000, g);
+            g.wheelVel = getVelocity(g.sesData.wheelPositions, g.speedTime, g.sesData.targetFs);
+            g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/g.sesData.targetFs, g);
 
             % get size of kin data entries
-            try
-                g.locationsSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
-                g.locationsInterpSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
-            end
+            g.locationsSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
+            g.locationsInterpSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
 
             % get trial data
-            g.expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(g.sesKinData)));
+            g.expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(g.sesKinData)));  % create nested 'trial' struct for mouse
             for trialVar = 1:length(trialVars)
                 try
                 temp = getVar(trialVars{trialVar}, g);
@@ -148,14 +142,15 @@ for mouse = 1:length(g.mice)
                 g.trial = trial;
 
                 % get paw data
-                g.expData(mouse).sessions(session).trials(trial).paws = struct('paw', {1,2,3,4}, 'pawName', {'LH', 'LF', 'RF', 'RH'});
+                g.expData(mouse).sessions(session).trials(trial).paws = struct('paw', {1,2,3,4}, 'pawName', {'LH', 'LF', 'RF', 'RH'});  % create nested 'paw' struct for mouse
                 for pawVar = 1:length(pawVars)
                     try
                     temp = getVar(pawVars{pawVar}, g);
                     [g.expData(mouse).sessions(session).trials(trial).paws(1:4).(pawVars{pawVar})] = temp{:};
                     catch; end
                 end
-
+                
+                % record whether each step is successfully analyzed
                 if ismember('stepOverKinInterp', vars)
                     isStepOverAnalyzed(trial,:) = cellfun(@(x) ~all(isnan(x(:))), {g.expData(mouse).sessions(session).trials(trial).paws.stepOverKinInterp});
                 end
@@ -167,11 +162,10 @@ for mouse = 1:length(g.mice)
         end
     end
 end
-expData = g.expData;
-
 
 % save experiment metadata
-dataTemp = expData; clear expData; % nest expData within itself
+expData = g.expData;
+dataTemp = expData; clear expData;  % nest expData within itself
 expData.data = dataTemp; clear dataTemp;
 for m = 1:length(metadata); expData.(metadata{m}) = g.(metadata{m}); end % add one field per metadatum
 
@@ -214,12 +208,10 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell(nan(1,height(sessionInfoSub)));
             conditions = unique(sessionInfoSub.condition);
             for i = conditions'
-%                 if strcmp(i{1}, 'postContra'); keyboard; end
                 bins = strcmp(sessionInfoSub.condition, i{1});
                 var(bins) = num2cell(1:sum(bins));
             end
             var = var(logical(sessionInfoSub.include));
-            
             
         case 'sessionNum'  % ??? what is this exactly?
             allMouseSessions = g.sessionInfo.session(strcmp(g.sessionInfo.mouse, g.mice{g.mouse})); % all sessions, including those where .include==false
@@ -341,10 +333,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactTimes]);
             
         case 'lightOnTimes'
-            try
             var = num2cell(nan(1,length(g.sesKinData)));
             var([g.sesData.isLightOn]) = num2cell([g.sesData.obsLightOnTimes]);
-            catch; keyboard; end
             
         case 'isContraFirst'
             side = g.expData(g.mouse).sessions(g.session).side;
@@ -715,8 +705,8 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             
         case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: traiing hind
             stepTypeSequence = [true false true false; true true false false]';  % leading fore, trailing fore, leading hind, traiing hind
-            isLeadingIsLagging = [[g.expData.sessions(session).trials(trial).paws.isLeading]', ...
-                         [g.expData.sessions(session).trials(trial).paws.isFore]'];  % 4x2 matrix where each row is a paw, and each colum is [isLeading, isFore]
+            isLeadingIsLagging = [[g.expData(mouse).sessions(session).trials(trial).paws.isLeading]', ...
+                         [g.expData(mouse).sessions(session).trials(trial).paws.isFore]'];  % 4x2 matrix where each row is a paw, and each colum is [isLeading, isFore]
             [~, var] = ismember(isLeadingIsLagging, stepTypeSequence, 'rows');
             var = num2cell(var);
     end
