@@ -1,6 +1,6 @@
 %% test getExperimentData
 
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
 sessionInfo = sessionInfo(1:5,:);
 data = getExperimentData(sessionInfo, 'all');
 
