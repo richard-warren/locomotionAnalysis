@@ -1,12 +1,13 @@
-function velocity = getVelocity(data, windowSize, fs)
+function velocity = getVelocity(positions, windowSize, fs)
 
-    % gets velocity by smoothing with first order Savitzky-Golay filter, then differentiating
+    % gets velocity at each point in positions by subtracting points to the
+    % left and right and then dividing by delta time
     %
-    % input         data: position data from which to compute velocity
-    %               windowSize: size of window separating samples that are subtracted from one another to compute velocity (s)
-    %               fs: frequency at which data are sampled
+    % input         data: (m) position data from which to compute velocity
+    %               windowSize: (s) size of window separating samples that are subtracted from one another to compute velocity
+    %               fs: (hz) frequency with which data are sampled
     %
-    % output        velocity: computed velocity
+    % output        velocity: (m/s) computed velocity
     
 
     % compute window size in samples
@@ -14,13 +15,8 @@ function velocity = getVelocity(data, windowSize, fs)
     if mod(windowSmps,2)==0; windowSmps = windowSmps+1; end % ensure window size is odd
 
     % compute velocity
-    smoothed = sgolayfilt(data, 1, windowSmps);
-    velocity = diff(smoothed) * fs;
-    
-    % interpolate velocity s.t. values correspond to original times of data
-    inds = 1:length(data);
-    indsVel = inds(1:end-1) + .5; % values of velocity actually represent velocity in between samples
-    velocity = interp1(indsVel, velocity, inds, 'linear', 'extrap');
-    
-
+    kernel = [1, zeros(1,windowSmps-2), -1];
+    velocity = conv(positions, kernel, 'valid') / ((windowSmps-1)/fs);
+    pad = (windowSmps-1) / 2;
+    velocity = [repelem(velocity(1),pad), velocity, repelem(velocity(end),pad)];
 end
