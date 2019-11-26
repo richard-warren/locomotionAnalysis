@@ -150,11 +150,12 @@ end
 % [sessions, experiments] = getAllExperimentSessions();
 % problemSessions = {};
 
-parfor i = 1:length(sessions)
+for i = 1:length(sessions)
     fprintf('\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
 %     try 
 %         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
-        getKinematicData(sessions{i});
+%         getKinematicData(sessions{i});
+        analyzeSession(sessions{i}, 'plotObsTracking', false)
         
 %         % test getTracking
 %         load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), 'frameTimeStamps', 'pixelsPerM')

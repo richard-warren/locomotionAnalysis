@@ -68,14 +68,15 @@ function analyzeSession(session, varargin)
 
         saveVars('rewardTimes', rewardTimes);
     end
-
-
     
-
+    
+    
+    
     % decode obstacle position (based on obstacle track rotary encoder)
     if analyzeVar('obsPositions', 'obsTimes')
-        load(fullfile(sessionDir, 'run.mat'), 'obEncodA', 'obEncodB')
+        
         if s.verbose; fprintf('%s: decoding obstacle position\n', session); end
+        load(fullfile(sessionDir, 'run.mat'), 'obEncodA', 'obEncodB')
         
         if ~isempty(obEncodA.times) && ~isempty(obEncodB.times)
             [obsPositions, obsTimes] = rotaryDecoder(obEncodA.times, obEncodA.level,...
@@ -135,6 +136,23 @@ function analyzeSession(session, varargin)
         obsOffTimes = obsOffTimes(validBins);
         
         saveVars('obsOnTimes', obsOnTimes, 'obsOffTimes', obsOffTimes)
+    end
+    
+    
+    
+    
+    % compute whether each trial had a wheel break or not
+    if analyzeVar('isWheelBreak')
+        
+        if s.verbose; fprintf('%s: finding wheel break trials\n', session); end
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), 'breaks')
+
+        isWheelBreak = false(size(data.obsOnTimes));
+        for i = 1:length(data.obsOnTimes)
+            isWheelBreak(i) = any(breaks.times>data.obsOnTimes(i) & breaks.times<data.obsOffTimes(i));
+        end
+        
+        saveVars('isWheelBreak', isWheelBreak);
     end
     
     
