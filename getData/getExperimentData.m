@@ -41,15 +41,14 @@ g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velCo
 
 
 mouseVars = {};
-sessionVars = {'experiment', 'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
+sessionVars = {'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
 trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', ...
              'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'optoOnTimes', 'optoOnPositions', 'optoPower', 'isOptoOn', ...
-             'earlyOptoTermination', 'touchFrames', 'modPawOnlySwing'};
+             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'touchFrames', 'modPawOnlySwing'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
@@ -190,9 +189,6 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         
         % session variables
         % -----------------
-        case 'experiment'  % read from sessionInfo column
-            var = getTableColumn('experiment', g);
-        
         case 'condition'  % read from sessionInfo column
             var = getTableColumn('condition', g);
             
@@ -464,59 +460,6 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             
         case 'trialDuration'  % duration of trial (from obstalce on to obstacle off time)
             var = num2cell(g.sesData.obsOffTimes - g.sesData.obsOnTimes);
-            
-%         case 'optoOnTimes'  % for optogenetics experiments, encodes when opto turns on for every trial // assumes light can during on during a trial, or 'buffer' seconds after the previous obstacle turns off
-%             buffer = .5;  % how many seconds after previous obs off time do you start to look for light on for subsequent trial
-%             lightThresh = .1;  % volts // how high does signal have to rise for it to be considered a stimulus
-%             light = g.sesSpikeData.stimulus.values;
-%             times = g.sesSpikeData.stimulus.times;
-%             
-%             var = num2cell(nan(1,length(g.sesKinData)));
-%             for i = 1:length(g.sesKinData)
-%                 if i>1; prevTime=g.sesData.obsOffTimes(i-1)+buffer; else; prevTime=0; end
-%                 lightOnInd = find(times>prevTime & times<g.sesData.obsOffTimes(i) & light>lightThresh, 1, 'first');
-%                 if ~isempty(lightOnInd); var{i} = times(lightOnInd); end
-%             end
-%             
-%         case 'optoOnPositions'  % position of wheel at time opto light turns on (relative to point at which obstacle is at the nose)
-%             var = num2cell(nan(1,length(g.sesKinData)));
-%             optoOnTimes = [g.expData(mouse).sessions(session).trials.optoOnTimes];
-% 
-%             for i = find(~isnan(optoOnTimes))
-%                 obsAtNoseTime = g.sesData.obsTimes(find(g.sesData.obsPositionsFixed>=0 & ...
-%                                 g.sesData.obsTimes>g.sesData.obsOnTimes(i) & ...
-%                                 g.sesData.obsTimes<g.sesData.obsOffTimes(i), 1, 'first'));
-%                 if ~isempty(obsAtNoseTime)
-%                     obsAtNosePos = g.sesData.wheelPositions(find(g.sesData.wheelTimes>=obsAtNoseTime,1,'first'));
-%                     var{i} = interp1(g.sesData.wheelTimes, g.sesData.wheelPositions, optoOnTimes(i)) - obsAtNosePos;
-%                 end
-%             end
-%             
-%         case 'optoPower'  % power of light stimulus, expressed as fraction of 5 volt max
-%             light = g.sesSpikeData.stimulus.values;
-%             times = g.sesSpikeData.stimulus.times;
-%             optoOnTimes = [g.expData(mouse).sessions(session).trials.optoOnTimes];
-%             
-%             var = num2cell(zeros(1,length(g.sesKinData)));  % start with zeros, not nans, bc assume no power unless otherwise detected
-%             for i = find(~isnan(optoOnTimes))
-%                 trialStim = light(times>g.sesData.obsOnTimes(i) & times<g.sesData.obsOffTimes(i));
-%                 var{i} = max(trialStim)/5;  % peak signal is trialPower fraction of 5V max
-%             end
-%             
-%         case 'isOptoOn'  % whether opto stim was on for trial
-%             var = num2cell(~isnan([g.expData(mouse).sessions(session).trials.optoOnTimes]));
-%             
-%         case 'earlyOptoTermination'  % whether the opto stim terminated before obs turned off (which occurs when mice slow down too much)
-%             lightThresh = .1;  % volts // how high does signal have to rise for it to be considered a stimulus
-%             light = g.sesSpikeData.stimulus.values;
-%             times = g.sesSpikeData.stimulus.times;
-%             
-%             var = num2cell(nan(1,length(g.sesKinData)));  % start with zeros, not nans, bc assume no power unless otherwise detected
-%             for i = find([g.expData(mouse).sessions(session).trials.isOptoOn])
-%                 lightOffInd = find(times<g.expData(mouse).sessions(session).trials(i).obsOffTimes & ...
-%                                    light>lightThresh, 1, 'last');  % last light on ind during obsOn epoch
-%                 var{i} = times(lightOffInd) < g.expData(mouse).sessions(session).trials(i).obsOffTimes - .1;  % does light terminate earlier than .1 seconds before light off?
-%             end
             
         case 'touchFrames'  % number of frames in trial where paw is contacting obstacle
             var = cell(1,length(g.sesKinData));
