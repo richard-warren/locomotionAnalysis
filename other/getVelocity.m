@@ -17,6 +17,7 @@ function velocity = getVelocity(positions, windowSize, fs)
     if mod(windowSmps,2)==0; windowSmps = windowSmps+1; end % ensure window size is odd
 
     % compute velocity
+    positions = positions(:)';  % force horizontal orientation
     kernel = [1, zeros(1,windowSmps-2), -1];
     velocity = conv(positions, kernel, 'valid') / ((windowSmps-1)/fs);
     pad = (windowSmps-1) / 2;

@@ -41,14 +41,14 @@ g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velCo
 
 
 mouseVars = {};
-sessionVars = {'condition', 'side', 'brainRegion', 'mW', 'conditionNum', 'sessionNum', 'whiskers'};
+sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum', 'sessionNum', 'whiskers'};
 trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', ...
              'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'modPawContactInd', 'trialDuration', 'touchFrames', 'modPawOnlySwing'};
+             'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
@@ -67,7 +67,7 @@ pawVars = pawVars(ismember(pawVars, vars));
 g.mice = unique(g.sessionInfo.mouse);
 g.expData = struct('mouse', g.mice);
 for mouseVar = 1:length(mouseVars)
-    temp = getVar(mouseVars{mouseVar}, g);
+    temp = getVar(mouseVars{mouseVar});
     [g.expData(1:length(g.mice)).(mouseVars{mouseVar})] = temp{:};
 end
 
@@ -81,7 +81,7 @@ for mouse = 1:length(g.mice)
     g.expData(mouse).sessions = struct('session', g.sessions);  % create nested 'session' struct for mouse
     for sessionVar = 1:length(sessionVars)
         try
-        temp = getVar(sessionVars{sessionVar}, g);
+        temp = getVar(sessionVars{sessionVar});
         [g.expData(mouse).sessions(1:length(g.sessions)).(sessionVars{sessionVar})] = temp{:};
         catch; end
     end
@@ -122,17 +122,18 @@ for mouse = 1:length(g.mice)
             warning('off', 'MATLAB:load:variableNotFound');
             g.sesSpikeData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'run.mat'), 'breaks', 'stimulus');
             g.wheelVel = getVelocity(g.sesData.wheelPositions, g.speedTime, g.sesData.targetFs);
-            g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/g.sesData.targetFs, g);
+            g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/g.sesData.targetFs);
 
             % get size of kin data entries
             g.locationsSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
             g.locationsInterpSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
+            g.numControlSteps = size(g.sesKinData(find(g.sesKinInds,1,'first')).controlLocations{1},1);
 
             % get trial data
             g.expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(g.sesKinData)));  % create nested 'trial' struct for mouse
             for trialVar = 1:length(trialVars)
                 try
-                temp = getVar(trialVars{trialVar}, g);
+                temp = getVar(trialVars{trialVar});
                 [g.expData(mouse).sessions(session).trials(1:length(g.sesKinData)).(trialVars{trialVar})] = temp{:};
                 catch; end
             end
@@ -146,7 +147,7 @@ for mouse = 1:length(g.mice)
                 g.expData(mouse).sessions(session).trials(trial).paws = struct('paw', {1,2,3,4}, 'pawName', {'LH', 'LF', 'RF', 'RH'});  % create nested 'paw' struct for mouse
                 for pawVar = 1:length(pawVars)
                     try
-                    temp = getVar(pawVars{pawVar}, g);
+                    temp = getVar(pawVars{pawVar});
                     [g.expData(mouse).sessions(session).trials(trial).paws(1:4).(pawVars{pawVar})] = temp{:};
                     catch; end
                 end
@@ -183,26 +184,25 @@ for m = 1:length(metadata); expData.(metadata{m}) = g.(metadata{m}); end % add o
 % FUNCTIONS
 % ---------
 
-function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, session, trial, sesKinData, sesData, wheelVel, isValidZ, breakTimes, touchThresh, sesKinInds, locationsInterpSmps, preObsLim
+function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, session, trial, sesKinData, sesData, wheelVel, isValidZ, breakTimes, touchThresh, sesKinInds, locationsInterpSmps, preObsLim
     
     switch dvName
         
         % session variables
         % -----------------
         case 'condition'  % read from sessionInfo column
-            var = getTableColumn('condition', g);
+            var = getTableColumn('condition');
             
         case 'side'  % read from sessionInfo column
-            var = getTableColumn('side', g);
+            var = getTableColumn('side');
             
         case 'brainRegion'  % read from sessionInfo column
-            var = getTableColumn('brainRegion', g);
-            
-        case 'mW'  % read from sessionInfo column
-            var = getTableColumn('mW', g);
+            var = getTableColumn('brainRegion');
             
         case 'conditionNum'  % which day of a particular condition is the session, e.g. conditionNum=3 means this is the third session for this condition
-            % note: excluded sessions are ignored in conditionNum computation!
+            % note: excluded sessions are ignored in conditionNum
+            % computation! also, assumes sessions are in temporal order
+            % (oldest to most recent) in sessionInfo
             sessionInfoSub = g.sessionInfo(strcmp(g.sessionInfo.mouse, g.expData(g.mouse).mouse),:);
             var = num2cell(nan(1,height(sessionInfoSub)));
             conditions = unique(sessionInfoSub.condition);
@@ -219,7 +219,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             var = num2cell(inds);
             
         case 'whiskers'
-            var = getTableColumn('whiskers', g);
+            var = getTableColumn('whiskers');
         
             
             
@@ -241,26 +241,27 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         
         case 'velContinuousAtContact'  % continuous velocity vector surrouding moment of whisker contact
             times = g.velContinuousAtContactX;
-            var = repmat({nan(1, length(times))},1,length(g.sesKinData));
+            var = repmat({nan(1, length(times))}, 1, length(g.sesKinData));
             
             for i = g.sesKinInds
-                bins = g.sesData.wheelTimes>g.sesData.obsOnTimes(i)-range(times) & ...
-                    g.sesData.wheelTimes<g.sesData.obsOffTimes(i)+range(times); % add range(times) as a buffer in case the desired times fall outside the range of the obstacle being on
+                bins = g.sesData.wheelTimes>(g.sesData.obsOnTimes(i)-range(times)) & ...
+                    g.sesData.wheelTimes<(g.sesData.obsOffTimes(i)+range(times));  % add range(times) as a buffer in case the desired times fall outside the range of the obstacle being on
                 var{i} = interp1(g.sesData.wheelTimes(bins), g.wheelVel(bins), times+g.sesData.wiskContactTimes(i));
             end
             
         case 'velVsPosition'  % continuous velocity as a function of position of obstacle relative to nose
-            var = repmat({nan(1, length(g.velVsPositionX))},1,length(g.sesKinData));
+            var = repmat({nan(1, length(g.velVsPositionX))}, 1, length(g.sesKinData));
             
             for i = g.sesKinInds
                 obsAtNoseTime = g.sesData.obsTimes(find(g.sesData.obsPositionsFixed>=0 & ...
                                 g.sesData.obsTimes>g.sesData.obsOnTimes(i) & ...
                                 g.sesData.obsTimes<g.sesData.obsOffTimes(i), 1, 'first'));
                 if ~isempty(obsAtNoseTime)
-                    obsAtNosePos = g.sesData.wheelPositions(find(g.sesData.wheelTimes>obsAtNoseTime,1,'first'));
-                    trialBins = (g.sesData.wheelPositions > obsAtNosePos+g.velVsPositionPrePost(1)) & (g.sesData.wheelPositions < obsAtNosePos+g.velVsPositionPrePost(2));
-                    trialPos = g.sesData.wheelPositions(trialBins) - obsAtNosePos; % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
-                    trialVel = g.wheelVel(trialBins); % wheel vel for trial
+                    obsAtNosePos = g.sesData.wheelPositions(find(g.sesData.wheelTimes>obsAtNoseTime,1,'first'));  % position of the WHEEL when obstacle reaches nose
+                    trialBins = (g.sesData.wheelPositions > (obsAtNosePos+g.velVsPositionPrePost(1))) & ...
+                                (g.sesData.wheelPositions < (obsAtNosePos+g.velVsPositionPrePost(2)));
+                    trialPos = g.sesData.wheelPositions(trialBins) - obsAtNosePos;  % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
+                    trialVel = g.wheelVel(trialBins);  % wheel vel for trial
 
                     % remove duplicate positional values (would be better to average all values in a particular bin)
                     [trialPos, uniqueInds] = unique(trialPos, 'stable');
@@ -280,30 +281,31 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'obsHgt'  % height of obstacle, in meters
             var = num2cell(g.sesData.obsHeights/1000);  % convert back to meters
         
-        case 'isTrialSuccess'  % whether paw is touch obstacle in fewer than 'touchThresh' frames for each trial
+        case 'isTrialSuccess'  % whether paw is touching obstacle in fewer than 'touchThresh' frames for each trial
             var = cell(1,length(g.sesKinData));
             for i = 1:length(g.sesKinData)
                 var{i} = sum(any(g.sesData.touchesPerPaw(g.sesKinData(i).trialInds,:),2)) < g.touchThresh;
             end
             
         case 'trialVel'  % average trial velocity, excluding periods after wheel breaks
-            var = avgSignalPerTrial(g.wheelVel, g.sesData.wheelTimes, g);
+            var = avgSignalPerTrial(g.wheelVel, g.sesData.wheelTimes);
         
         case 'velAtWiskContact'  % running speed at moment of whisker contact
             var = num2cell(interp1(g.sesData.wheelTimes, g.wheelVel, g.sesData.wiskContactTimes));
             
-        case 'firstModPaw' % first modified paw identity
+        case 'firstModPaw'  % first modified paw identity
             var = num2cell(nan(1,length(g.sesKinData)));
             var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.firstModPaw]);
             
         case 'trialAngle'  % average body angle for trial, excluding periods after wheel breaks
-            var = avgSignalPerTrial(g.sesData.bodyAngles, g.sesData.frameTimeStamps, g);
+            var = avgSignalPerTrial(g.sesData.bodyAngles, g.sesData.frameTimeStamps);
             
         case 'trialAngleContra'  % average body angle for trial wrt 'side', excluding periods after wheel breaks
             side = g.expData(g.mouse).sessions(g.session).side;
-            if strcmp(side, 'left') || strcmp(side, 'right')
-                var = getVar('trialAngle', g);
-                if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
+            if strcmp(side, 'left')
+                var = num2cell(-[g.expData(g.mouse).sessions(g.session).trials.trialAngle]);
+            elseif strcmp(side, 'right')
+                var = num2cell([g.expData(g.mouse).sessions(g.session).trials.trialAngle]);
             end
         
         case 'angleAtWiskContact'  % body angle at moment of whisker contact
@@ -312,39 +314,34 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             
         case 'angleAtWiskContactContra'  % body angle at moment of whisker contact wrt 'side'
             side = g.expData(g.mouse).sessions(g.session).side;
-            if strcmp(side, 'left') || strcmp(side, 'right')
-                var = getVar('angleAtWiskContact', g);
-                if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = num2cell(cellfun(@(x) -x, var)); end % if side is left, then contra limbs are on the right side
-            else % if side is 'both'
-                var = num2cell(nan(1,length(g.sesKinData)));
+            if strcmp(side, 'left')
+                var = num2cell(-[g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
+            elseif strcmp(side, 'right')
+                var = num2cell([g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
             end
             
         case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact
-            var = num2cell(nan(1,length(g.sesKinData)));
-            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactPositions]);
+            var = {g.sesKinData.wiskContactPositions};
             
         case 'wiskContactTimes'  % times of whisker contact
-            var = num2cell(nan(1,length(g.sesKinData)));
-            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactTimes]);
+            var = {g.sesKinData.wiskContactTimes};
             
         case 'lightOnTimes'  % times at which obstacle light turns on
-            var = num2cell(nan(1,length(g.sesKinData)));
-            var([g.sesData.isLightOn]) = num2cell([g.sesData.obsLightOnTimes]);
+            var = {g.sesData.obsLightOnTimes};
             
-        case 'isContraFirst'  % whether the paw contralateral to 
+        case 'isContraFirst'  % whether the paw contralateral to 'side' is the first paw over the obstacle
             side = g.expData(g.mouse).sessions(g.session).side;
-            if strcmp(side, 'left') || strcmp(side, 'right')
-                var = num2cell(false(1,length(g.sesKinData)));
-                for i = g.sesKinInds; var{i} = ismember(g.sesKinData(i).pawOverSequence(1), [1, 2]); end % is first paw over on left side of body
-                if strcmp(side, 'left'); var = num2cell(cellfun(@not, var)); end % if side is left, then contra limbs are on the right side
-            else % if side is 'both'
-                var = num2cell(nan(1,length(g.sesKinData)));
+            sequences = cat(2, g.sesKinData.pawOverSequence);
+            if strcmp(side, 'left')
+                var = num2cell(ismember(sequences(1,:), [3 4]));
+            elseif strcmp(side, 'right')
+                var = num2cell(ismember(sequences(1,:), [1 2]));
             end
             
         case 'isBigStep'  % whether this is a 'big step' or 'little step' trial
-            var = num2cell(false(1,length(g.sesKinData)));
+            var = num2cell(nan(1,length(g.sesKinData)));
             for i = g.sesKinInds
-                var{i} = max(g.sesKinData(i).modifiedStepIdentities(:,g.sesKinData(i).firstModPaw))==1; % should i just check the length of modifiedLocations instead?
+                var{i} = size(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw},1)==1;
             end
             
         case 'isModPawContra'  % whether the 'first modified paw' (the forepaw in the air at the moment of whisker contact) is contralateral to 'side'
@@ -360,7 +357,7 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             for i = g.sesKinInds
                 tailHgts(g.sesKinData(i).trialInds) = g.sesKinData(i).locationsTail(:,3,1);
             end
-            var = avgSignalPerTrial(tailHgts, g.sesData.frameTimeStamps, g);
+            var = avgSignalPerTrial(tailHgts, g.sesData.frameTimeStamps);
             
         case 'tailHgtAtWiskContact'  % height of base of tail at moment of whisker contact
             var = num2cell(nan(1,length(g.sesKinData)));
@@ -387,21 +384,20 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             
         case 'modPawKin'  % kinematics of first modified step for first modified paw
             var = repmat({nan(3,g.locationsSmps)},1,length(g.sesKinData));
-            
+            isBigStep = [g.expData(mouse).sessions(session).trials.isBigStep];
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,:,:));
-                if ~g.isValidZ(i,g.sesKinData(i).firstModPaw) && size(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw},1)==1 % if step doesn't pass over obstacle and wasn't supposed to pass over obstacle
+                if ~g.isValidZ(i,g.sesKinData(i).firstModPaw) && isBigStep(i)  % if step doesn't pass over obstacle but was supposed to pass over obstacle (i.e. is big step)
                     var{i} = nan(3,g.locationsSmps);
                 end
             end
             
         case 'modPawKinInterp'  % interpolated kinematics of first modified step for first modified paw
-            % kinematics (interpolated) of first modified step for first modified paw
             var = repmat({nan(3,g.locationsInterpSmps)},1,length(g.sesKinData));
-            
+            isBigStep = [g.expData(mouse).sessions(session).trials.isBigStep];
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).modifiedLocationsInterp{g.sesKinData(i).firstModPaw}(1,:,:));
-                if ~g.isValidZ(i,g.sesKinData(i).firstModPaw) && size(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw},1)==1 % if step doesn't pass over obstacle and wasn't supposed to pass over obstacle
+                if ~g.isValidZ(i,g.sesKinData(i).firstModPaw) && isBigStep(i)  % if step doesn't pass over obstacle but was supposed to pass over obstacle (i.e. is big step)
                     var{i} = nan(3,g.locationsInterpSmps);
                 end
             end
@@ -409,14 +405,12 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
         case 'preModPawKin'
             % kinematics of steps (plural!) preceding first modified step for first modified paw
             % note: this matrix contains MULTIPLE steps, and has 3 dimensions as a results ([step X dimension (xyz) X time])
-            
-            numControlSteps = size(g.sesKinData(find(g.sesKinInds,1,'first')).controlLocations{1},1);
-            var = repmat({nan(numControlSteps,3,g.locationsSmps)}, 1, length(g.sesKinData));
+            var = repmat({nan(g.numControlSteps,3,g.locationsSmps)}, 1, length(g.sesKinData));
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).controlLocations{g.sesKinData(i).firstModPaw});
             end
             
-        case 'preModPawKinInterp'  % kinematics (interpolated) of step preceding first modified step for first modified paw
+        case 'preModPawKinInterp'  % interpolated kinematics of step preceding first modified step for first modified paw
             var = repmat({nan(3,g.locationsInterpSmps)},1,length(g.sesKinData));
             for i = g.sesKinInds
                 var{i} = squeeze(g.sesKinData(i).controlLocationsInterp{g.sesKinData(i).firstModPaw}(end,:,:));
@@ -447,15 +441,16 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
             if hasWhiskers; conditions = {'W', 'WL'}; else; conditions = {'-', 'L'}; end
             var = conditions([g.sesData.isLightOn]+1);
             
-        case 'isValidZ'
-            % checks whether step over obstacle passes under obstacle, indicating a tracking error
-            % other variables that rely on z coordinates should check whether isValidZ
-            var = num2cell(g.isValidZ(g.trial,:));
-            
-        case 'modPawContactInd'  % ind in modPawKin at which whiskers contact obstacle
+        case 'contactInd'  % ind in modPawKin at which whiskers contact obstacle
             var = num2cell(nan(1,length(g.sesKinData)));
             for i = g.sesKinInds
                 var{i} = g.sesKinData(i).pawObsPosInd(g.sesKinData(i).firstModPaw); 
+            end
+            
+        case 'contactIndInterp'  % ind in modPawKinInterp at which whiskers contact obstacle
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                var{i} = g.sesKinData(i).pawObsPosIndInterp(g.sesKinData(i).firstModPaw); 
             end
             
         case 'trialDuration'  % duration of trial (from obstalce on to obstacle off time)
@@ -467,10 +462,10 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                 var{i} = sum(any(g.sesData.touchesPerPaw(g.sesKinData(i).trialInds,:),2));
             end
             
-        case 'modPawOnlySwing'  % whether the mod paw the only one in swing at the moment of contact (see getKinematicData for formal definition of firstModPaw)
-            var = false(size(g.sesKinData));
+        case 'modPawOnlySwing'  % whether the mod paw is the only one in swing at the moment of contact (see getKinematicData for formal definition of firstModPaw)
+            var = nan(size(g.sesKinData));
             var([g.sesKinData.isTrialAnalyzed]) = ...
-                ([g.sesKinData.isRightSwingAtContact]+[g.sesKinData.isLeftSwingAtContact])==1;
+                xor([g.sesKinData.isRightSwingAtContact], [g.sesKinData.isLeftSwingAtContact]);
             var = num2cell(var);
             
             
@@ -564,6 +559,11 @@ function var = getVar(dvName, g) % sessionInfo, expData, mice, mouse, sessions, 
                     g.sesKinData(g.trial).controlLocationsInterp(g.isValidZ(g.trial,:)), 'UniformOutput', false);
             end
             
+        case 'isValidZ'
+            % checks whether step over obstacle passes under obstacle, indicating a tracking error
+            % other variables that rely on z coordinates should check whether isValidZ
+            var = num2cell(g.isValidZ(g.trial,:));
+            
         case 'preObsKin'  % interpolated kinematics of step over obs, but truncated at the moment paw is preObsLim in from the obstacle
             var = repmat({nan(3,g.locationsInterpSmps)},1,4);
             if g.sesKinData(g.trial).isTrialAnalyzed
@@ -649,8 +649,7 @@ end
 
 
 
-
-function col = getTableColumn(colName, g)
+function col = getTableColumn(colName)
     % given column name in sessionInfo, finds values in column name associated with all sessions belonging to a particular mouse
     
     [~, inds] = intersect(g.sessionInfo.session, g.sessions, 'stable');
@@ -684,28 +683,25 @@ end
 
 
 
-function avgs = avgSignalPerTrial(sig, sigTimes, g, preObsOnly)
-    % averages a signal (velocity, body angle, tail height) for each trial, but ommitting periods after wheel breaks for each trial
-    % if 'preObsOnly'
+function avgs = avgSignalPerTrial(sig, sigTimes)
+    % averages a signal (e.g. velocity, body angle, tail height) for each
+    % trial, ommitting periods after wheel breaks
     
     avgs = cell(1, length(g.sesKinData));
     for i = 1:length(avgs)
-        
         if any(g.sesSpikeData.breaks.times>g.sesData.obsOnTimes(i) & ...
                g.sesSpikeData.breaks.times<g.sesData.obsOffTimes(i))
             endTime = g.sesSpikeData.breaks.times(find(g.sesSpikeData.breaks.times>g.sesData.obsOnTimes(i),1,'first'));
         else
             endTime = g.sesData.obsOffTimes(i);
         end
-        
-        inds = sigTimes>g.sesData.obsOnTimes(i) & sigTimes<endTime;
-        avgs{i} = nanmean(sig(inds));
+        avgs{i} = nanmean(sig(sigTimes>g.sesData.obsOnTimes(i) & sigTimes<endTime));
     end
 end
 
 
 
-function isValidZ = getSessionValidZ(kinData, obsHgts, g)
+function isValidZ = getSessionValidZ(kinData, obsHgts)
     % for each paw in each trial for a session, checks whether paws passes
     % under rather than over the obstacle // returns [trials X paw] logical
     % matrix
