@@ -23,7 +23,7 @@ function analyzeSession(session, varargin)
     s.rerunPawContactNetwork = false;
 
     % rig characteristics
-    s.whEncoderSteps = 2880; % 720cpr * 4
+    s.whEncoderSteps = 2880; % 720cpr * 4t
     s.wheelRad = 95.25; % mm
     s.obEncoderSteps = 1000; % 250cpr * 4
     s.obsPulleyRad = 96 / (2*pi); % radius of timing pulley driving belt of obstacles platform

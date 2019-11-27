@@ -19,7 +19,7 @@ metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPo
 g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
 g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
-g.clearanceBuffer = .001;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
+g.clearanceBuffer = .000;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
 
 g.velVsPositionPrePost = [-1.5 .4]; % (m) positions before and after whisker contact to collect velocity data
 g.velVsPositionRes = 500; % (tics) how many samples in the x grid
@@ -475,37 +475,37 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
         % -------------
         case 'isContra'  % whether paw is contralateral to 'side'
             side = g.expData(g.mouse).sessions(g.session).side;
-            if strcmp(side, 'left') || strcmp(side, 'right')
-                var = [1 1 0 0]; % left side contra by default
-                if strcmp(g.expData(g.mouse).sessions(g.session).side, 'left'); var = ~var; end % if side is left, then contra limbs are on the right side
-                var = num2cell(var);
+            if strcmp(side, 'left')
+                var = num2cell(logical([0 0 1 1]));
+            elseif strcmp(side, 'right')
+                var = num2cell(logical([1 1 0 0]));
             end
             
         case 'isFore'  % whether paw is a forelimb
             var = num2cell(logical([0 1 1 0]));
         
-        case 'isLeading'  % whether is leading (first to get over obstacle relative to other fore/hind limb)
-            var = num2cell(logical([1 1 0 0])); % start assuming left is leading
+        case 'isLeading'  % whether paw is leading (first to get over obstacle relative to other fore/hind limb)
+            var = num2cell(logical([1 1 0 0]));  % start assuming left is leading
             seq = g.sesKinData(g.trial).pawOverSequence;
-            if find(seq==4)<find(seq==1); var([1,4]) = var([4,1]); end
-            if find(seq==3)<find(seq==2); var([2,3]) = var([3,2]); end
+            if find(seq==4)<find(seq==1); var([1,4]) = var([4,1]); end  % if right hind crosses before left hind
+            if find(seq==3)<find(seq==2); var([2,3]) = var([3,2]); end  % if right fore crosses before left fore
             
         case 'isPawSuccess'  % whether paw is in contact with obstacle for fewer than touchThresh frames in trial
-            var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:),1) < g.touchThresh);
+            var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:)~=0,1) < g.touchThresh);
         
         case 'stepOverMaxHgt'  % maximum height of paw on step over obstacle
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 var(g.isValidZ(g.trial,:)) = num2cell(cellfun(@(x) max(x(end,3,:)), ...
                     g.sesKinData(g.trial).modifiedLocationsInterp(g.isValidZ(g.trial,:))));
-                if any(cellfun(@(x) x<0, var(g.isValidZ(g.trial,:)))); disp('problem detecting valid z trials... wtf...'); end
+                if any(cellfun(@(x) x<0, var(g.isValidZ(g.trial,:)))); disp('trial included with NEGATIVE max height... what the fuck?!'); end
             end
             
         case 'preObsHgt'  % height of paw when the step over is preObsLim in front of osbtacle (use to gauge height shaping at a moment when the paw has not had the opportunity to contact the osbatcle)
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 for i = find(g.isValidZ(g.trial,:))
-                    ind = find(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,1,:)>-g.preObsLim, 1, 'first');
+                    ind = find(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,1,:) > (-g.preObsLim), 1, 'first');
                     if ind>1; var{i} = g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,3,ind); end
                 end
             end
@@ -514,7 +514,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 for i = find(g.isValidZ(g.trial,:))
-                    ind = find(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,1,:)>-g.preObsLim, 1, 'first');
+                    ind = find(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,1,:) > (-g.preObsLim), 1, 'first');
                     if ind>1; var{i} = g.sesKinData(g.trial).controlLocationsInterp{i}(end,3,ind); end
                 end
             end
@@ -522,7 +522,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
         case 'noObsStepHgt'  % avg step hgt for steps before the obstalce turns on
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
-                var = cellfun(@(x) nanmean(max(squeeze(x(:,3,:)),[],2)), ... % avg the max z for each noObsStep
+                var = cellfun(@(x) nanmean(max(squeeze(x(:,3,:)),[],2)), ...  % avg the max z for each noObsStep
                     g.sesKinData(g.trial).noObsLocationsInterp, 'UniformOutput', false);
             end
             
@@ -568,9 +568,8 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
             var = repmat({nan(3,g.locationsInterpSmps)},1,4);
             if g.sesKinData(g.trial).isTrialAnalyzed
                 for i = find(g.isValidZ(g.trial,:))
-                    ind = find(g.sesKinData(g.trial).modifiedLocations{i}(end,1,:)>-g.preObsLim, 1, 'first');
+                    ind = find(g.sesKinData(g.trial).modifiedLocations{i}(end,1,:) >- (g.preObsLim), 1, 'first');
                     kin = squeeze(g.sesKinData(g.trial).modifiedLocations{i}(end,:,1:ind));
-                    
                     if ind>1
                         for j = 1:3 % x, y, z
                             var{i}(j,:) = interp1(1:size(kin,2), kin(j,:), linspace(1,size(kin,2), g.locationsInterpSmps), 'linear');
@@ -605,44 +604,39 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
         
         case 'isVentralContact'  % whether each paw contacts obs ventrally for >= touchThresh frames
             var = num2cell(nan(1,4));
-            
             if g.sesKinData(g.trial).isTrialAnalyzed
                 foreVentInd = find(strcmp(g.sesData.touchClassNames, 'fore_ventral'));
                 hindVentInd = find(strcmp(g.sesData.touchClassNames, 'hind_ventral_low'));
-            
-                trialTouches = g.sesData.touches(g.sesKinData(g.trial).trialInds);
                 trialTouchesPerPaw = g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:);
             
-                var{1} = sum(trialTouchesPerPaw(:,1)' & trialTouches==hindVentInd) >= g.touchThresh;
-                var{2} = sum(trialTouchesPerPaw(:,2)' & trialTouches==foreVentInd) >= g.touchThresh;
-                var{3} = sum(trialTouchesPerPaw(:,3)' & trialTouches==foreVentInd) >= g.touchThresh;
-                var{4} = sum(trialTouchesPerPaw(:,4)' & trialTouches==hindVentInd) >= g.touchThresh;
+                var{1} = sum(trialTouchesPerPaw(:,1)==hindVentInd) >= g.touchThresh;
+                var{2} = sum(trialTouchesPerPaw(:,2)==foreVentInd) >= g.touchThresh;
+                var{3} = sum(trialTouchesPerPaw(:,3)==foreVentInd) >= g.touchThresh;
+                var{4} = sum(trialTouchesPerPaw(:,4)==hindVentInd) >= g.touchThresh;
             end
             
         case 'isDorsalContact'  % whether each paw contacts obs dorsally for >= touchThresh frames
             var = num2cell(nan(1,4));
-            
             if g.sesKinData(g.trial).isTrialAnalyzed
                 foreVentInd = find(strcmp(g.sesData.touchClassNames, 'fore_dorsal'));
                 hindVentInd = find(strcmp(g.sesData.touchClassNames, 'hind_dorsal'));
-            
-                trialTouches = g.sesData.touches(g.sesKinData(g.trial).trialInds);
                 trialTouchesPerPaw = g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:);
             
-                var{1} = sum(trialTouchesPerPaw(:,1)' & trialTouches==hindVentInd) >= g.touchThresh;
-                var{2} = sum(trialTouchesPerPaw(:,2)' & trialTouches==foreVentInd) >= g.touchThresh;
-                var{3} = sum(trialTouchesPerPaw(:,3)' & trialTouches==foreVentInd) >= g.touchThresh;
-                var{4} = sum(trialTouchesPerPaw(:,4)' & trialTouches==hindVentInd) >= g.touchThresh;
+                var{1} = sum(trialTouchesPerPaw(:,1)==hindVentInd) >= g.touchThresh;
+                var{2} = sum(trialTouchesPerPaw(:,2)==foreVentInd) >= g.touchThresh;
+                var{3} = sum(trialTouchesPerPaw(:,3)==foreVentInd) >= g.touchThresh;
+                var{4} = sum(trialTouchesPerPaw(:,4)==hindVentInd) >= g.touchThresh;
             end
             
         case 'numTouchFrames'  % number of frames in which paw is in contact with obstacles
-            var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:),1));
+            var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:)~=0,1));
             
         case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: traiing hind
-            stepTypeSequence = [true false true false; true true false false]';  % leading fore, trailing fore, leading hind, traiing hind
-            isLeadingIsLagging = [[g.expData(mouse).sessions(session).trials(trial).paws.isLeading]', ...
-                         [g.expData(mouse).sessions(session).trials(trial).paws.isFore]'];  % 4x2 matrix where each row is a paw, and each colum is [isLeading, isFore]
-            [~, var] = ismember(isLeadingIsLagging, stepTypeSequence, 'rows');
+            stepTypeSequence = [true false true false;   % leading/trailing
+                                true true false false];  % fore/hind
+            isLeadingIsLagging = [[g.expData(mouse).sessions(session).trials(trial).paws.isLeading]; ...
+                                  [g.expData(mouse).sessions(session).trials(trial).paws.isFore]];  % 2x4 matrix where each column is a paw, and each row is [isLeading, isFore]
+            [~, var] = ismember(isLeadingIsLagging', stepTypeSequence', 'rows');
             var = num2cell(var);
     end
 end
@@ -660,20 +654,19 @@ end
 
 
 function [lengths, durations] = getTrialStepLengthsAndDurations(trialData, stepInd)
-    % give kinData for a trial (one row of kinData), returns the lengths of
-    % the steps for all paws for a given stepInd, where 0 is step over, -1
-    % is step before step over, -2 is step before that, etc...
+    % given kinData for a trial (one row of kinData), returns the lengths 
+    % and durations of the steps for all paws for a given stepInd, where 0 
+    % is step over, -1 is step before step over, -2 is step before that...
     [lengths, durations] = deal(num2cell(nan(1,4)));
-    numControlSteps = size(trialData.controlSwingDurations,1);
     if trialData.isTrialAnalyzed    
         for i = 1:4
             numModSteps = size(trialData.modifiedLocations{i},1);
             ind = numModSteps+stepInd;
-            if ind>0 % if desired step is in modSteps, and not controlSteps
+            if ind>0  % if desired step is in modSteps, and not controlSteps
                 lengths{i} = trialData.modifiedSwingLengths(ind,i);
                 durations{i} = trialData.modifiedSwingDurations(ind,i);
             else
-                ind = numControlSteps + (numModSteps + stepInd); % ind of step within controlSteps
+                ind = ind + g.numControlSteps;  % ind of step within controlSteps
                 lengths{i} = trialData.controlSwingLengths(ind,i);
                 durations{i} = trialData.controlSwingDurations(ind,i);
             end 
@@ -705,18 +698,16 @@ function isValidZ = getSessionValidZ(kinData, obsHgts)
     % for each paw in each trial for a session, checks whether paws passes
     % under rather than over the obstacle // returns [trials X paw] logical
     % matrix
-    
     isValidZ = false(length(kinData), 4);
     for i = g.sesKinInds
         for j = 1:4
-            atObsInd = find(kinData(i).modifiedLocationsInterp{j}(end,1,:)>=0, 1, 'first'); % ind at which step is at the obstacle in the x dimension
+            atObsInd = find(kinData(i).modifiedLocationsInterp{j}(end,1,:)<=0, 1, 'last'); % final ind at which step is at the obstacle in the x dimension
             if ~isempty(atObsInd)
                 isValidZ(i,j) = kinData(i).modifiedLocationsInterp{j}(end,3,atObsInd) > (obsHgts(i)-g.clearanceBuffer); % .001 (m) is a forgiveness factor
             end
         end
     end
 end
-
 
 
 
