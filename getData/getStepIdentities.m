@@ -71,7 +71,7 @@ for i = 1:length(obsOnTimes)
         end
         trialStartInds(i) = find(any(noObsStepIdentities,2) & frameTimeStamps>minTime, 1, 'first');
     catch
-        fprintf('  problem with trial %i\n', i)
+%         fprintf('  problem with trial %i\n', i)
     end
 end
 

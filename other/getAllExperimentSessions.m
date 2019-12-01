@@ -9,7 +9,7 @@ function [sessions, experiments] = getAllExperimentSessions(sheets)
 % settings
 spreadsheet = fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx');
 if ~exist('sheets', 'var')
-    sheets = {'baselineNotes', 'lesionNotes', 'senLesionNotes', 'muscimolNotes', 'sensoryDependenceNotes', 'whiskerTrimNotes'};  % which sheets to analyze
+    sheets = {'baselineNotes', 'mtcLesionNotes', 'senLesionNotes', 'muscimolNotes', 'sensoryDependenceNotes', 'whiskerTrimNotes'};  % which sheets to analyze
 elseif ischar(sheets)
     sheets = {sheets};
 end

@@ -10,6 +10,7 @@ function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPosit
 obsPositionsFixed = nan(size(obsPositions));
 epochTimes = [obsOnTimes; obsTimes(end)];
 obsPixPositions = obsPixPositions(:)';  % enforce horizontal orientation
+anyNotFixed = false;
 
 for i = 1:length(obsOnTimes)
     
@@ -30,9 +31,15 @@ for i = 1:length(obsOnTimes)
         trialObsPosBins = (obsTimes>=epochTimes(i)) & (obsTimes<epochTimes(i+1));
         obsPositionsFixed(trialObsPosBins) = obsPositions(trialObsPosBins) - obsAtNosePos;
     catch
-        fprintf('WARNING! Could not fix obstacle positions for trial %i\n', i)
+        if ~anyNotFixed
+            fprintf('WARNING! Could not fix obstacle positions for trial(s): %i', i)
+            anyNotFixed = true;
+        else
+            fprintf(' %i', i);
+        end
     end
 end
+if anyNotFixed; fprintf('\n'); end
 
 % replace first obsPositions with first fixed obsPosition
 firstRealInd = find(~isnan(obsPositionsFixed), 1, 'first');
