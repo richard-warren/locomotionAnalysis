@@ -5,7 +5,7 @@ clear all; tcm190910_config;
 
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_muscimol';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 maxEarlySessions = 3;  % only include this many days post lesion in lesions figs
 

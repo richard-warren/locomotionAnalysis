@@ -1,3 +1,7 @@
+%% test propensity matching
+
+
+
 %% test flattenData
 
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')

@@ -9,9 +9,6 @@ function dataOut = flattenData(data, varsToGet, varsGotten)
 % becuase isFore is a paw level varialbe. don't use varsGotten, which is
 % only used in the recursive calls of this function
 
-% todo: don't go deeper in tree if all vars are already found // how to
-% deal with bins of continuous variables? // add conditionals here?
-
 
 if ~exist('varsGotten', 'var'); varsGotten = struct(); end
 if ischar(varsToGet); varsToGet={varsToGet}; end  % allows user to pass a single variable as a string, rather multiple variables using a cell array of strings

@@ -1,16 +1,16 @@
 function pairs = propensityMatching(X, isManip, opts)
 
 % performs propensity score matching // computes propensity score as likelihood that each trial
-% came from control or manip condition using logistic regression on
-% predictors, and finds matched populations of control and manip trials
-% that are matched for propensity score // X is samples X predictors matrix
-% of predictors, and isManip is boolean encoding whether a trial is in
-% manipulated condition // pairs is (num matched samples) X 2 matrix, where each row is a matched
+% came from control or manipulated condition using logistic regression on
+% predictors, and finds populations of control and manip trials
+% that are matched for propensity score // 'X' is samples x predictors matrix, 
+% and isManip is logical vector encoding whether a trial is in
+% manipulated condition // pairs is (num matched samples) x (2) matrix, where each row is a matched
 % control, manip ind (inds are wrt X and is Manip)
 
 % settings
-s.percentileThresh = 10; % only take trials pairs with propensity score differences in the top percentileThresh percentile
-s.predictorNames = {}; % names of columns of X // used to print out how the means of these variables are affected by matching
+s.percentileThresh = 10;  % only take trials pairs with propensity score differences in the top percentileThresh percentile
+s.predictorNames = {};  % names of columns of X // used to print out how the means of these variables are affected by matching
 s.verbose = true;
 
 % reassign settings contained in opts
@@ -22,13 +22,12 @@ glm = fitglm(X, isManip, 'Distribution', 'binomial');
 p = predict(glm, X);
 ctlInds = find(~isManip);
 manipInds = find(isManip);
-distances = abs(repmat(p(isManip), 1, sum(~isManip)) - p(~isManip)'); % rows and manip trials, cols are control trials, and entries are propensity score differences between each pair of manip/control trials
+distances = abs(repmat(p(isManip),1,length(ctlInds)) - p(~isManip)');  % rows are manip trials, cols are control trials, and entries are propensity score differences between each pair of manip/control trials
 
 
-
-% greedy search for pairs (would be better to replace with hungarian algorithm...)
+% greedy search for matched pairs (would be better to replace with hungarian algorithm...)
 distancesTemp = distances;
-pairNum = floor(s.percentileThresh/100*length(manipInds));
+pairNum = floor(s.percentileThresh/100*length(manipInds));  % find the most closely matched pairNum pairs
 pairs = nan(pairNum, 2); % numPairs X 2, where columns are control and manip inds
 
 for i = 1:pairNum
@@ -50,8 +49,3 @@ if s.verbose
     if ~isempty(s.predictorNames); fprintf('\n          '); fprintf('%s ', s.predictorNames{:}); end
     fprintf('\n\n')
 end
-
-
-
-
-
