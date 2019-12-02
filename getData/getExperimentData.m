@@ -125,9 +125,9 @@ for mouse = 1:length(g.mice)
             g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/g.sesData.targetFs);
 
             % get size of kin data entries
-            g.locationsSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocations{1}, 3);
-            g.locationsInterpSmps = size(g.sesKinData(find([g.sesKinData.isTrialAnalyzed],1,'first')).modifiedLocationsInterp{1}, 3);
-            g.numControlSteps = size(g.sesKinData(find(g.sesKinInds,1,'first')).controlLocations{1},1);
+            g.locationsSmps = size(g.sesKinData(g.sesKinInds(1)).modifiedLocations{1}, 3);
+            g.locationsInterpSmps = size(g.sesKinData(g.sesKinInds(1)).modifiedLocationsInterp{1}, 3);
+            g.numControlSteps = size(g.sesKinData(g.sesKinInds(1)).controlLocations{1},1);
 
             % get trial data
             g.expData(mouse).sessions(session).trials = struct('trial', num2cell(1:length(g.sesKinData)));  % create nested 'trial' struct for mouse

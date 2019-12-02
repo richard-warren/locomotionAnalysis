@@ -1,3 +1,35 @@
+%% test flattenData
+
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+
+sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum', 'sessionNum', 'whiskers'};
+trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', ...
+             'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
+             'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
+             'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
+             'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
+             'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
+             'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing'};
+pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
+           'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
+           'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
+           'isVentralContact', 'isDorsalContact', 'numTouchFrames', 'stepType'};
+allVars = cat(2, sessionVars, trialVars, pawVars);
+
+flat1 = []; flat2 = [];
+numVars = [];
+recursiveTimes = [];
+nonrecursiveTimes = [];
+while isequaln(flat1, flat2)
+    numVars(end+1) = randi(length(allVars));
+    vars = allVars(randsample(length(allVars), numVars(end)));
+    fprintf('%i variables... ', numVars(end));
+    tic; flat1 = flattenData(data, vars); recursiveTimes(end+1) = toc;
+    tic; flat2 = flattenData_nonrecursive(data, vars); nonrecursiveTimes(end+1) = toc;
+    fprintf('recursive: %.1f, nonrecursive, %.1f\n', recursiveTimes(end), nonrecursiveTimes(end));
+end
+disp('outputs not equal!')
+
 %% test getExperimentData
 
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
@@ -8,8 +40,6 @@ data = getExperimentData(sessionInfo, 'all');
 
 while true
 
-    % !!! breaks when misses frame right before reward...
-    
     % settings
     frames = 250000;
     missedFrames = 100;
@@ -155,11 +185,6 @@ for i = 1:length(sessions)
     try 
         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
         getKinematicData(sessions{i});
-        
-%         % test getTracking
-%         load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), 'frameTimeStamps', 'pixelsPerM')
-%         locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'trackedFeaturesRaw.csv')); % get raw tracking data
-%         fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
     catch
         fprintf('WARNING: %s failed to analyze...\n', sessions{i});
         problemSessions{end+1} = sessions{i};
