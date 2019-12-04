@@ -84,9 +84,6 @@ for i = find(binsToAnalyze)
                 dvMatrixInds = num2cell([conditionInds j i]);
                 dvMatrix(dvMatrixInds{:}) = dvsFound(j);
             end
-%             dvMatrixInds
-%             dvMatrixInds = [num2cell(conditionInds), {':'}, {':'}];
-%             disp(squeeze(dvMatrix(dvMatrixInds{:})))
         
         % loop through nested structs if all dvs have yet to be found
         else

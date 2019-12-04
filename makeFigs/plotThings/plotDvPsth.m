@@ -1,4 +1,4 @@
-function plotDvPsth(data, dv, plotVar, opts)
+function mouseAvgs = plotDvPsth(data, dv, plotVar, opts)
 
 
 % used to plot PSTHs of continuous data signals stored in data struct //
@@ -56,7 +56,7 @@ s.mouseColors = eval([s.mouseColors '(length(mice))']);
 if ischar(s.conditionColors); s.conditionColors = eval([s.conditionColors '(length(s.plotConditions))']); end % set colorspace if color is specified as a string
 
 % collect data for each mouse in each condition
-mouseAvgs = nan(length(s.plotConditions), length(rowConditions), length(mice), length(xGrid)); % condition X mouse X light off/on X position
+mouseAvgs = nan(length(s.plotConditions), length(rowConditions), length(mice), length(xGrid)); % plt condition X row condition X mouse X position
 dvData = reshape([data.(dv)],[],length(data))'; % turn dv into matrix
 for i = 1:length(s.plotConditions)
     for j = 1:length(rowConditions)

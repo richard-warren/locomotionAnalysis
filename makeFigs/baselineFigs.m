@@ -23,44 +23,80 @@ conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
 % PLOT THINGS
 %  ----------
 
+%% show multiple frames with overlaid tracking
+
+% settings
+session = '180703_000';
+trials = [40 41 49];
+
+imgs = showTrackingOverFrames(session, trials, 1, ...
+    'topOnly', true, 'contrastLims', [0 .8], 'alpha', .6, 'scatLines', true, 'scatSize', 100);
+img = cat(1, imgs{:});
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'trackingOverFrames.png');
+fprintf('writing %s to disk...\n', file);
+imwrite(img, file)
+
+%% show single frame of example tracking
+
+% settings
+session = '180703_000';
+trial = 40;
+
+showSingleFrameTracking(session, trial, ...
+    'contrastLims', [0 .8], 'addWiskCam', true);
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'tracking.png');
+fprintf('writing %s to disk...\n', file);
+saveas(gcf, file)
+
 %% IMAGE MONTAGE OF LEADING/LAGGING/HIND/FORE
 
 showLeadingLaggingImg('190318_000', 43, colors)
 
-%% SPEED VS. POSITION
+%% speed vs. position
 
 % settings
 yLims = [0 .8];
-obsOnColor = [0 0 0];
-obsOnAlpha = .05;
+obsOnColor = [188 125 181] / 255;
+obsOnAlpha = .15;
 meanColor = [0 0 0];
 
 % initializations
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
     'velVsPosition', 'velVsPositionX', 'isWheelBreak', 'wiskContactPosition'});
 flat = flat([flat.isLightOn]);
-close all; figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off')
+close all; figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off'); hold on
 
 % add obstacle rectangle and lines
 x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
     'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
-line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
-    
+
 % plot
-plotDvPsth(flat, 'velVsPosition', [], ...
-    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], 'errorFcn', @(x) nanstd(x), 'xlim', [-.5 .2]})
+velData = plotDvPsth(flat, 'velVsPosition', [], ...
+    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], 'errorFcn', @(x) nanstd(x), 'xlim', [-.5 .2]});
+line([0 0], yLims, 'linewidth', 2, 'color', get(gca, 'XColor'));
 
 % pimp fig
 set(gca, 'YLim', yLims);
-xlabel('position relaive to nose (m)')
+xlabel('position relative to nose (m)')
 ylabel('velocity (m/s)')
+text(x(1), yLims(2), 'obstace engaged', 'VerticalAlignment', 'bottom')
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'baselineVel');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
+
+%% get vel at moment obstacle is under nose
+
+atNoseInd = find(flat(1).velVsPositionX>=0,1,'first');
+noseVels = squeeze(velData(1,1,:,atNoseInd));
+obsOnInd = find(flat(1).velVsPositionX>=x(1),1,'first');
+obsOnVels = squeeze(velData(1,1,:,obsOnInd));
+
+fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
+fprintf('obs on:      %.2f +- %.2f SEM\n', mean(obsOnVels), std(obsOnVels)/sqrt(length(obsOnVels)))
 
 
 %% KINEMATICS

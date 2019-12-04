@@ -30,13 +30,13 @@ mainAlpha = .5;
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
 pawSequence = [3 2 4 1]; % only include trials with this sequence of paws going over
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData')
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'frameTimeStamps')
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'frameTimeStamps', 'pixelsPerM')
 fade = repmat(linspace(0,1,edgeFading), vid.Height, 1);
 
 % get kinematics in original pixel coordinates (kinData kinematics have
 % been transformed st they cannot be directly overlaid on frames)
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features] = fixTracking(locationsTable, frameTimeStamps);
+[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
 clear locationsTable
 
 % choose trial(s)

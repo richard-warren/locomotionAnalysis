@@ -1,5 +1,25 @@
-%% test propensity matching
+%% test getDvMatrix
 
+% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+
+vars.isLightOn = struct('name', 'isLightOn', 'levels', [1 0], 'levelNames', {{'light on', 'light off'}});
+vars.isWheelBreak = struct('name', 'isWheelBreak', 'levels', [1 0], 'levelNames', {{'break', 'no break'}});
+vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
+vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore paw', 'hind paw'}});
+
+conditionals.lightOn = struct('name', 'isLightOn', 'condition', @(x) x==1);
+conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
+conditionals.isFast = struct('name', 'trialVel', 'condition', @(x) x>.5);
+
+varsSub = [vars.isWheelBreak; vars.isLightOn];
+dv = 'trialVel';
+dvMatrix = getDvMatrix(data, dv, varsSub, {'mouse', 'session'}, conditionals.isFast);
+close all; figure('position', [2067.00 277.00 560.00 420.00]);
+barFancy(dvMatrix, 'levelNames', {varsSub.levelNames}, 'ylabel', dv)
+
+%%
+flat = flattenData(data, {'mouse', 'session', 'isLightOn', 'isWheelBreak', 'trialVel'});
+dvMatrix2 = nan(2,2,20);
 
 
 %% test flattenData
