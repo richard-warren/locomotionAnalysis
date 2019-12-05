@@ -3,11 +3,7 @@ function showWiskContactSeries(session, trials, framesPerRow)
 % detected contact frame
 
 % settings
-% session = '190319_002';
-% trials = 10:10:30;
-% framesPerRow = 6;
 contrastLims = [.05 .4]; % pixels at these proportional values are mapped to 0 and 255
-scaling = .5;
 botCrop = 60; % trim this much off the bottom of the images
 verticalSpacing = 20; % number of pixels separating rows
 
@@ -32,8 +28,7 @@ end
 img = imadjust(img, contrastLims, [0 1]);
 
 
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'wiskContactImgs', ...
-        'whiskerContactImgs.png');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'whiskerContactImgs.png');
 fprintf('writing %s to disk...\n', file)
 imwrite(img, file);
 

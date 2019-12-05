@@ -13,6 +13,7 @@ fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baselin
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 %% global settings
+global_config;  % initialize global settings
 colors = hsv(4);  % last term is control step color
 ctlColor = [.5 .5 .5];
 isLeading = [true false true false]; % sequence of conditions for plots
@@ -27,14 +28,51 @@ conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
 
 % settings
 session = '180703_000';
-trials = [40 41 49];
+% trials = [40 41 49];
+trials = [40];
 
-imgs = showTrackingOverFrames(session, trials, 1, ...
-    'topOnly', true, 'contrastLims', [0 .8], 'alpha', .6, 'scatLines', true, 'scatSize', 100);
+imgs = showTrackingOverFrames(session, trials, 2, 'showFig', false, ...
+    'topOnly', false, 'contrastLims', [0 .8], 'alpha', .6, 'scatLines', true, 'scatSize', 100);
 img = cat(1, imgs{:});
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'trackingOverFrames.png');
 fprintf('writing %s to disk...\n', file);
 imwrite(img, file)
+
+%% show obs tracking of wheel velocity
+
+% settings
+showObsTracking('180703_000', 'numTrials', 15, 'waterColor', waterColor, 'obsColor', obsColor, ...
+    'figPos', [2000 400 500 400], 'wheelColor', [.4 .4 .4])
+
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'obsTracking');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+%% show example session with trial structure
+
+% settings
+session = '180714_004';
+trialsToShow = 20;
+
+plotSingleSessionVel(session, 'waterColor', waterColor, 'obsOnAlpha', obsAlpha, 'obsOnColor', obsColor, ...
+    'trialsToShow', trialsToShow, 'trialColors', jet(trialsToShow), 'meanColor', axisColor);
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+        'singleSessionVel');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+%% show paw and whisker contacts
+
+% settings
+cols = 3;
+preContactFrames = 2;
+
+disp('creating contact images...')
+showPawContactSeries('180703_000', preContactFrames, cols);
+showWiskContactSeries('180803_003', 20, cols);
+
 
 %% show single frame of example tracking
 
@@ -56,8 +94,6 @@ showLeadingLaggingImg('190318_000', 43, colors)
 
 % settings
 yLims = [0 .8];
-obsOnColor = [188 125 181] / 255;
-obsOnAlpha = .15;
 meanColor = [0 0 0];
 
 % initializations
@@ -69,7 +105,7 @@ close all; figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Posi
 % add obstacle rectangle and lines
 x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
-    'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
+    'FaceColor', [obsColor obsAlpha], 'EdgeColor', 'none');
 
 % plot
 velData = plotDvPsth(flat, 'velVsPosition', [], ...

@@ -114,7 +114,7 @@ if s.showLegend
     legend(lines, conditionNames, 'Location', 'best', 'Box', 'off', 'AutoUpdate', 'off');
 end
 
-
+mouseAvgs = squeeze(mouseAvgs);
 
 
 
