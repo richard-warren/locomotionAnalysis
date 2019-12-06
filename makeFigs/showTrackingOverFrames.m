@@ -23,6 +23,7 @@ s.pawColors = jet(4);
 s.scatSize = 80;
 s.obsWidth = 5;
 s.alpha = .8;
+s.highlightStepOver = true;  % todo
 
 
 % initializations
@@ -97,6 +98,9 @@ for t = 1:length(trials)
             else
                 plot(x, y, 'LineWidth', 2, 'Color', [color s.alpha]); hold on
             end
+            
+            % trace step over obs
+            keyboard
         end
     end
     

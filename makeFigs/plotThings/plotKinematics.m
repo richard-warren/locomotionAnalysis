@@ -1,4 +1,4 @@
-function plotKinematics(trajectories, obsHgts, conditions, opts)
+function plotKinematics(trajectories, obsHgts, conditions, varargin)
 
 % plots kinematic trajectories for different conditions on top of one
 % another, including obstacle position // trajectories is [number of trials
@@ -12,7 +12,8 @@ function plotKinematics(trajectories, obsHgts, conditions, opts)
 
 % settings
 obsRadius = 3.175 / 2 / 1000; % (m)
-s.colors = 'hsv';
+s.colors = 'hsv';  % colors for kinematic traces
+s.obsColors = [];
 s.conditionNames = {}; % user can specify this by passing in via 'opts'
 s.obsAlpha = .8; % transparency of obstacles
 s.lineAlpha = 1; % transparency of plot lines
@@ -25,16 +26,29 @@ s.isBotView = false; % if true, then plots are assumed to plot kinematics from t
 s.trialsToOverlay = []; % if not empty, plot individual trials for each condition
 s.yLimZero = true; % makes min of y axis zero so traces don't dip beneathe 'floor' on plots
 s.lineColor = 'black';
+s.plotObs = true;  % whether to plot the obstacle
 
-% reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 % initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if ischar(s.colors); s.colors = eval([s.colors '(max(conditions))']); end % set colorspace if color is specified as a string
 if ~isempty(s.mouseNames); mice = unique(s.mouseNames); end
 
 % add line at top of wheel
 if ~s.isBotView; line([-.2 .2], [0 0], 'color', s.lineColor); end
+
+% draw obstacles for each condition
+if isempty(s.obsColors); s.obsColors = s.colors; end
+for i = 1:max(conditions)
+    if ~s.isBotView
+        z = nanmean(obsHgts(conditions==i));
+        rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
+            'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+    else
+        rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
+            'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+    end
+end
 
 % plot kinematics for each condition
 for i = 1:max(conditions)
@@ -72,23 +86,11 @@ for i = 1:max(conditions)
     end
 end
 
-% draw obstacles for each condition
-for i = 1:max(conditions)
-    if ~s.isBotView
-        z = nanmean(obsHgts(conditions==i));
-        rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
-            'curvature', [1 1], 'facecolor', [s.colors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
-    else
-        rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
-            'facecolor', [s.colors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
-    end
-end
 
 % pimp fig
 set(gca, 'DataAspectRatio', [1 1 1], 'XColor', 'none', 'YColor', 'none')
+% set(gca, 'DataAspectRatio', [1 1 1])
 if s.yLimZero && ~s.isBotView; set(gca, 'YLim', max(get(gca, 'YLim'),0)); end
 if ~isempty(s.conditionNames); legend(s.conditionNames, 'box', 'off', 'Location', 'best'); end
 
 pause(.001)
-
-
