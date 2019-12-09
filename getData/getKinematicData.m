@@ -46,6 +46,7 @@ if timeOperations; tic; end
 locationsPaws = nan(size(locations,1), 3, 4);  % frameNum X xyz X pawNum
 locationsPaws(:,1:2,:) = locations(:,:,botPawInds);
 locationsPaws(:,3,:) = locations(:,2,topPawInds);
+locationsPawsPixels = locationsPaws;  % copy version in pixel coordinates before making subsequent transformations
 locationsPaws(:,2,:) = locationsPaws(:,2,:) - nosePos(2); % subtract midline from all y values
 locationsPaws(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsPaws(:,3,:); % flip z and set s.t. top of wheel is zero
 
@@ -83,7 +84,10 @@ isTrialAnalyzed = true(1,length(kinData)); % keeps track of whereh kinematic dat
 for j = 1:length(obsOnTimes)
         
     % first get trial specific data because 'find' function works much quicker on the smaller data slices
-    endInd = find(all(isnan(modifiedStepIdentities),2) & frameTimeStamps>obsOffTimes(j), 1, 'first'); % end when all mod steps in trial are over
+    if j==length(obsOnTimes); maxTime=frameTimeStamps(end); else; maxTime = obsOnTimes(j+1); end
+    endInd = find(frameTimeStamps>obsOffTimes(j) & ...  % after obs is off
+                  frameTimeStamps<maxTime & ...         % before next obs is on
+                  ~any(controlStepIdentities==1 | noObsStepIdentities==1, 2), 1, 'last');  % before subsequent trial steps apear
     trialInds = trialStartInds(j):endInd;
 
     % get trial data
@@ -94,6 +98,7 @@ for j = 1:length(obsOnTimes)
     trialLocations = locationsPaws(trialInds,:,:);
     trialLocationsTail = locationsTail(trialInds,:,:);
     trialWheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps(trialInds));
+    trialObsPixPos = obsPixPositionsContinuous(j, trialInds);
 
     
     % get kinematic data for trial
@@ -192,10 +197,12 @@ for j = 1:length(obsOnTimes)
         % save trial kinematics
         kinData(j).trialInds = trialInds;  % inds for frames included in trial
         kinData(j).locations = trialLocations;  % paw kinematics for trial (frame X xyz X pawNum)
+        kinData(j).locationsPix = locationsPawsPixels(trialInds,:,:);  % paw kinematics for trial in original pixel coordinates
         kinData(j).locationsTail = trialLocationsTail;  % tail kinematics for trial (frame X xyz X tailPosition)
         kinData(j).wiskContactPositions = wiskContactPositions(j);  % position relative to nose at which whiskers touch obstacle
         kinData(j).wiskContactTimes = wiskContactTimes(j);  % time at which whiskers touch obstacle
         kinData(j).contactInd = contactInd;  % frame index within trial at which whiskers contact obstacle
+        kinData(j).obsPixPos = trialObsPixPos;  % positions of the obstacle in pixels coordinates, prior to shifting kinematics such that obstacle is 'stationary' // use this to 'undo' the unravelling of paw kinematics in other code as necessary
 
         % kinematics
         kinData(j).controlLocations = allLocations{1};

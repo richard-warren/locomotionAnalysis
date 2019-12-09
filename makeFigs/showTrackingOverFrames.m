@@ -13,9 +13,7 @@ s.topOnly = false;  % whether to show only top view
 s.kinematicsOnly = false;  % if true, don't show frames or overwrite obstalce
 s.scatLines = false;  % if true, use scatter instead of lines to show kinematics
 s.imgSpacing = 0; % spacing between image tiles
-s.obsFramePixels = 300; % in the middle frame, at what pixel is the obstacle
-s.featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
-                    'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot'};
+s.overObsPixels = 10; % in the middle frame, how many pixels beyond the obstacle should the leading paw be
 
 s.edgeFading = 60; % fading at the edges of images
 s.contrastLims = [.2 .8]; % pixels at these proportional values are mapped to 0 and 255
@@ -23,42 +21,35 @@ s.pawColors = jet(4);
 s.scatSize = 80;
 s.obsWidth = 5;
 s.alpha = .8;
-s.highlightStepOver = true;  % todo
+s.highlightStepOver = true;  % whether to trace over step over obstacles with thicker line
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
 vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPixPositions', 'wheelPositions', 'pixelsPerM', ...
-    'wheelTimes', 'wheelToObsPixPosMappings', 'obsPixPositionsUninterped');
-locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
-obsPixPositionsContinuous = getObsPixPositionsContinuous(...
-    wheelToObsPixPosMappings, wheelTimes, wheelPositions, frameTimeStamps, ...
-    obsPixPositions, obsPixPositionsUninterped, obsOnTimes, obsOffTimes);
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData');
 fade = repmat(linspace(0,1,s.edgeFading), vidTop.Height+vidBot.Height, 1);
 
 imgs = cell(1, length(trials));
 for t = 1:length(trials)
     
     trial = trials(t);
-    trialLocations = locations;
-    trialLocations(:,1,:) = trialLocations(:,1,:) - obsPixPositionsContinuous(trial,:)'; % unravel coordinates to account for movement of wheel
+    trialLocations = kinData(trial).locationsPix;  % convert back to pixels
+    trialLocations(:,1,:) = trialLocations(:,1,:) - kinData(trial).obsPixPos';
     
-    
-    middleFrameInd = find(obsPixPositionsContinuous(trial,:)<s.obsFramePixels, 1, 'first'); % ind of frame where mouse is getting over obstacle
-    middleFrameObsPos = round(obsPixPositionsContinuous(trial,middleFrameInd));
-    frameObsPosits = middleFrameObsPos + fliplr(-imgNum:imgNum)*(vidTop.Width+s.imgSpacing); % obsPixPositions for frames, from left to right
-    imgInds = knnsearch(obsPixPositionsContinuous(trial,:)', frameObsPosits'); % inds of imgs corresponding to the desired frame positions (framePosits)
+    middleFrameInd = find(any(squeeze(trialLocations(:,1,:)) > s.overObsPixels, 2), 1, 'first');  % ind of frame where mouse is getting over obstacle
+    middleFrameObsPos = round(kinData(trial).obsPixPos(middleFrameInd));
+    frameObsPosits = middleFrameObsPos + fliplr(-imgNum:imgNum)*(vidTop.Width+s.imgSpacing);  % obsPixPositions for frames, from left to right
+    inds = knnsearch(kinData(trial).obsPixPos', frameObsPosits');  % inds of imgs corresponding to the desired frame positions (framePosits)
+    imgInds = kinData(trial).trialInds(inds);
     imgOffsets = -frameObsPosits + max(frameObsPosits) + 1; % positions in the image of all of the frames
     obsPos = middleFrameObsPos + imgOffsets(imgNum+1); % position of obstacle in final frame
     imgDims = [vidBot.Height+vidTop.Height imgOffsets(end)+vidTop.Width];
     allImgs = double(zeros(imgNum, imgDims(1), imgDims(2)));
     if s.showFig; vis = 'on'; else; vis = 'off'; end
     figure('name', sprintf('%s, trial %i', session, trial), ...
-        'Color', 'white', 'Position', [100 442 imgDims(2) imgDims(1)], 'MenuBar', 'none', 'visible', vis)
+        'Color', 'white', 'Position', [2000 442 imgDims(2) imgDims(1)], 'MenuBar', 'none', 'visible', vis)
 
     if ~s.kinematicsOnly
         
@@ -81,45 +72,46 @@ for t = 1:length(trials)
     
     
     % and kinematic traces or scatters
-    for i = 1:length(features)
-        if ismember(features{i}, s.featuresToShow)
-            if contains(features{i}, 'paw')
-                pawNum = str2double(features{i}(4));
-                color = s.pawColors(pawNum,:);
-            else
-                color = [.8 .8 .8];
-            end
-            
-            % traces
-            x = trialLocations(imgInds(1):imgInds(end),1,i) + obsPos;
-            y = trialLocations(imgInds(1):imgInds(end),2,i);
-            if s.scatLines
-                scatter(x, y, 20, color, 'filled', 'MarkerFaceAlpha', s.alpha); hold on
-            else
-                plot(x, y, 'LineWidth', 2, 'Color', [color s.alpha]); hold on
-            end
-            
-            % trace step over obs
-            keyboard
+    scats = cell(1,4);
+    for i = 1:4
+        color = s.pawColors(kinData(trial).pawOverSequence==i, :);  % arrange colors to correspond to sequence of paws over obstalce
+
+        % traces
+        x = repmat(trialLocations(inds(1):inds(end),1,i) + obsPos, 2, 1);
+        y_bot = trialLocations(inds(1):inds(end),2,i);
+        y_top = trialLocations(inds(1):inds(end),3,i);
+        y = [y_bot; y_top];
+        if s.scatLines
+            scatter(x, y, 20, color, 'filled', 'MarkerFaceAlpha', s.alpha); hold on
+        else
+            plot(x, y, 'LineWidth', 2, 'Color', [color s.alpha]); hold on
         end
+        
+        
+        % highlight step over obstacle
+        if s.highlightStepOver
+            
+            numModSteps = size(kinData(trial).modifiedLocations{i}, 1);
+            bins =kinData(trial).modifiedStepIdentities(:,i)==numModSteps;
+            
+            % plot bot
+            x = trialLocations(bins,1,i) + obsPos;
+            y_bot = trialLocations(bins,2,i);
+            y_top = trialLocations(bins,3,i);
+            plot(x, y_bot, 'LineWidth', 4, 'Color', [color .8])
+            plot(x, y_top, 'LineWidth', 4, 'Color', [color .8])
+        end
+        
+        
+        % scatter over paws
+        x = repmat(trialLocations(inds,1,i) + obsPos, 2, 1);
+        y_bot = trialLocations(inds,2,i);
+        y_top = trialLocations(inds,3,i);
+        y = [y_bot; y_top];
+        scats{i} = scatter(x, y, s.scatSize, color, 'filled', 'MarkerEdgeColor', 'white', 'LineWidth', 2);
     end
+    uistack(cat(2, scats{:}), 'top')  % move scatter to top
     
-    % add scatters on paws at times of frames
-    for i = 1:length(features)
-        if ismember(features{i}, s.featuresToShow)
-            if contains(features{i}, 'paw')
-                pawNum = str2double(features{i}(4));
-                color = s.pawColors(pawNum,:);
-            else
-                color = [.8 .8 .8];
-            end
-            
-            % scatters
-            x = trialLocations(imgInds,1,i) + obsPos;
-            y = trialLocations(imgInds,2,i);
-            scatter(x, y, s.scatSize, color, 'filled')
-        end
-    end
     
     % add obstacle
     if ~s.kinematicsOnly

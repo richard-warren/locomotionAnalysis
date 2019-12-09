@@ -15,6 +15,7 @@ s.imgSpacing = 0; % pixels for separating images
 s.edgeFading = 60; % fading at the edges of images
 s.contrastLims = [.05 .8]; % pixels at these proportional values are mapped to 0 and 255
 s.colors = hsv(4);
+s.vertical = false;  % whether to lay images on top of one another rather than side by side
 
 s.overlays = 8; % how many trial kinematics to overlay
 s.overlayAlpha = .5;
@@ -23,6 +24,7 @@ s.mainWidth = 2;
 s.mainAlpha = .5;
 s.randSeed = 1;  % for selecting the same random trials to show
 s.scatter = false;  % whether to scatter rather than plot kinematic overlays
+
 
 
 % initializations
