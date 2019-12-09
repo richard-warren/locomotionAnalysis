@@ -11,6 +11,9 @@ obsColor = [188 125 181] / 255;
 obsAlpha = .15;
 waterColor = [48 135 227]*.75 / 255;
 ctlStepColor = [.5 .5 .5];
+barProperties = {'scatterAlpha', .5, 'barAlpha', .4, 'labelSizePerFactor', .1, ...
+                 'lineThickness', 2, 'scatterColors', 'lines', 'connectDots', true, ...
+                 'lineAlpha', .05};
 
 % set step colors
 stepSaturation = .9;

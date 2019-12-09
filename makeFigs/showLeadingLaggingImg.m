@@ -42,7 +42,11 @@ locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, '
 clear locationsTable
 
 % choose trial(s)
-dims = [vid.Height, vid.Width*4 + s.imgSpacing*3];
+if s.vertical
+    dims = [vid.Height*4, vid.Width];
+else    
+    dims = [vid.Height, vid.Width*4 + s.imgSpacing*3];
+end
 pawOverSequence = nan(length(kinData),4);
 pawOverSequence([kinData.isTrialAnalyzed],:) = [kinData.pawOverSequence]';
 trials = find(ismember(pawOverSequence, pawSequence, 'rows') & ...
@@ -59,7 +63,7 @@ else
 
 
     figure('name', sprintf('leadLagImg_%s_trial%i.png', session, trial), ...
-        'menubar', 'none', 'Position', [2000 600 dims(2) dims(1)], 'InvertHardcopy', 'off');
+        'menubar', 'none', 'Position', [2000 200 dims(2) dims(1)], 'InvertHardcopy', 'off');
     colormap gray;
     montage = uint8(zeros(dims));
     img = image(montage, 'cdatamapping', 'scaled'); hold on
@@ -70,17 +74,24 @@ else
     for i = 1:4
 
         % add frame to image montage
-        offset = (i-1)*(vid.Width+s.imgSpacing)+1;
+        if s.vertical
+            offset_x = 0;
+            offset_y = (i-1)*vid.Height+1;
+        else
+            offset_x = (i-1)*(vid.Width+s.imgSpacing)+1;
+            offset_y = 0;
+        end
         featureBin = contains(features, ['paw' num2str(pawSequence(i))]) & contains(features, 'top');
         frameInd = find(kinData(trial).locations(:,1,pawSequence(i))<s.pawPos, 1, 'last'); % ind of frame within trial
         frameInd = kinData(trial).trialInds(frameInd); % ind of frame within entire video
-        scats{i} = scatter(locations(frameInd,1,featureBin)+offset, locations(frameInd,2,featureBin), ...
+        scats{i} = scatter(locations(frameInd,1,featureBin)+offset_x, locations(frameInd,2,featureBin)+offset_y, ...
             100, s.colors(i,:), 'filled', 'MarkerEdgeColor', 'white', 'LineWidth', 2); hold on
 
         frame = double(rgb2gray(read(vid, frameInd)));
         frame(:,1:s.edgeFading) = frame(:,1:s.edgeFading) .* fade; % left fade
         frame(:,end+1-s.edgeFading:end) = frame(:,end+1-s.edgeFading:end) .* fliplr(fade); % right fade
-        montage(:,offset:offset+vid.Width-1) = uint8(frame);
+        
+        montage(offset_y+1:offset_y+vid.Height, offset_x+1:offset_x+vid.Width) = uint8(frame);
 
         for j = [trial trials']
             % get inds of mod step start, mid mod step where the frame is taken, and mod step end
@@ -93,8 +104,8 @@ else
             stepEnd = kinData(j).trialInds(stepEnd);
 
             % plot kinematics
-            x = locations(stepStart:stepEnd,1,featureBin)+offset;
-            y = locations(stepStart:stepEnd,2,featureBin);
+            x = locations(stepStart:stepEnd,1,featureBin)+offset_x;
+            y = locations(stepStart:stepEnd,2,featureBin)+offset_y;
             if j==trial
                 plot(x, y, 'LineWidth', s.mainWidth, 'Color', [s.colors(i,:) s.mainAlpha])
             else
@@ -116,7 +127,11 @@ else
     set(gca, 'Visible', 'off', 'Position', [0 0 1 1])
 
     % save
-    file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'leadLagImgs.png');
+    if s.vertical
+        file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'leadLagImgs_vertical.png');
+    else
+        file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'leadLagImgs.png');
+    end
     fprintf('writing %s to disk...\n', file)
     saveas(gcf, file)
 end
