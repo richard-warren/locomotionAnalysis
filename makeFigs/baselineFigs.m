@@ -410,20 +410,34 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
+fprintf('\nheight increase factor -> LF %.1f, TF %.1f, LH %.1f, TH %.1f, overall %.1f\n', ...
+    mean(mat(1,1,2,:)) / mean(mat(1,1,1,:)), ...
+    mean(mat(1,2,2,:)) / mean(mat(1,1,1,:)), ...
+    mean(mat(2,1,2,:)) / mean(mat(1,1,1,:)), ...
+    mean(mat(2,2,2,:)) / mean(mat(1,1,1,:)), ...
+    mean(reshape(mat(:,:,2,:),1,[])) / mean(reshape(mat(:,:,1,:),1,[])))
 
-% % step length
-% figure('position', [2200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-% matMod = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
-% matBl = getDvMatrix(data, 'controlStepLength', figVars, {'mouse'}, figConditionals) * 1000;
-% mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
-% colorsWithBl = repelem(ctlStepColor,8,1);
-% colorsWithBl(2:2:8,:) = stepColors;
-% barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step length (mm)', ...
-%     'colors', colorsWithBl, barProperties{:})
-% set(gca, 'YTick', 0:60:120, 'TickDir', 'out')
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepLength');
-% fprintf('writing %s to disk...\n', file)
-% saveas(gcf, file, 'svg');
+
+% step length
+figure('position', [2200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+matMod = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
+matBl = getDvMatrix(data, 'controlStepLength', figVars, {'mouse'}, figConditionals) * 1000;
+mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
+colorsWithBl = repelem(ctlStepColor,8,1);
+colorsWithBl(2:2:8,:) = stepColors;
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step length (mm)', ...
+    'colors', colorsWithBl, barProperties{:})
+set(gca, 'YTick', 0:60:120, 'TickDir', 'out')
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepLength');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+fprintf('\nlength increase factor -> LF %.0f%%, TF %.0f%%, LH %.0f%%, TH %.0f%%, overall %.0f%%\n', ...
+    (mean(mat(1,1,2,:)) / mean(mat(1,1,1,:)) - 1)*100, ...
+    (mean(mat(1,2,2,:)) / mean(mat(1,1,1,:)) - 1)*100, ...
+    (mean(mat(2,1,2,:)) / mean(mat(1,1,1,:)) - 1)*100, ...
+    (mean(mat(2,2,2,:)) / mean(mat(1,1,1,:)) - 1)*100, ...
+    (mean(reshape(mat(:,:,2,:),1,[])) / mean(reshape(mat(:,:,1,:),1,[])) - 1)*100)
 
 
 % starting horizontal distance
@@ -458,14 +472,22 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-% % horizontal distance at zenith
-% figure('position', [3000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-% mat = getDvMatrix(data, 'xDistanceAtPeak', figVars, {'mouse'}, figConditionals) * 1000;
-% barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance to obstalce at zenith (mm)', ...
-%     'colors', stepColors, barProperties{:})
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineHorDistAtZenith');
-% fprintf('writing %s to disk...\n', file)
-% saveas(gcf, file, 'svg');
+% horizontal distance at zenith
+figure('position', [3000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+mat = abs(getDvMatrix(data, 'xDistanceAtPeak', figVars, {'mouse'}, figConditionals) * 1000);
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance to obstalce at zenith (mm)', ...
+    'YLim', [0 12], 'colors', stepColors, barProperties{:})
+set(gca, 'YTick', 0:4:12)
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineHorDistAtZenith');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+fprintf('\nhorizontal distance -> LF %.1f, TF %.1f, LH %.1f, TH %.1f, overall %.1f\n', ...
+    mean(mat(1,1,:)), ...
+    mean(mat(1,2,:)), ...
+    mean(mat(2,1,:)), ...
+    mean(mat(2,2,:)), ...
+    mean(reshape(mat(:,:,:),1,[])));
 
 
 % length of steps leading up to obstacle
