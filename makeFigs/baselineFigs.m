@@ -98,7 +98,6 @@ showLeadingLaggingImg('190318_000', 44, ...
 
 % settings
 yLims = [0 .8];
-meanColor = [0 0 0];
 
 % initializations
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
@@ -136,6 +135,31 @@ obsOnVels = squeeze(velData(1,1,:,obsOnInd));
 
 fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
 fprintf('obs on:      %.2f +- %.2f SEM\n', mean(obsOnVels), std(obsOnVels)/sqrt(length(obsOnVels)))
+
+
+%% speed triggered at obs on and wisk contact
+
+% initializations
+flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
+    'velContinuousAtContact', 'velContinuousAtContactX', 'isWheelBreak'});
+flat = flat([flat.isLightOn]);
+close all; figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000.00 50.00 360.00 300.00], 'inverthardcopy', 'off'); hold on
+
+% plot
+velData = plotDvPsth(flat, 'velContinuousAtContact', [], ...
+    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], 'errorFcn', @(x) nanstd(x), 'xlim', [-.5 .2]});
+line([0 0], [0 .8], 'linewidth', 2, 'color', obsColor);
+
+% pimp fig
+set(gca, 'YTick', 0:.4:.8, 'XLim', [-.4 .2], 'XTick', -.4:.2:.2);
+xlabel('time from whisker contact (s)')
+ylabel('velocity (m/s)')
+text(0, .8, 'whisker contact', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineVelAtContact');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
 
 %% kinematics
@@ -255,7 +279,6 @@ saveas(gcf, file, 'svg');
 
 %% height shaping
 
-
 % settings
 xLims = [3 10];
 yLims = [3 20];
@@ -281,6 +304,7 @@ obsHgts = [flat.obsHgt]*1000;
 
 
 % bars
+mice = unique({flat.mouse});
 [corrs, corrsControl, slopes] = deal(nan(2,2,length(mice))); % isFore(10) X isLeading(10) X mouse
 foreSequence = [true false];
 leadingSequence = [true false];
@@ -346,53 +370,8 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
+%% success by obs height
 
-%% step length and height
-
-close all
-
-vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
-vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
-figVars = [vars.isFore; vars.isLeading];
-figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
-
-
-% step height
-figure('position', [2000.00 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-matMod = getDvMatrix(data, 'stepOverMaxHgt', figVars, {'mouse'}, figConditionals) * 1000;
-matBl = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, figConditionals) * 1000;
-mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
-colorsWithBl = repelem(ctlStepColor,8,1);
-colorsWithBl(2:2:8,:) = stepColors;
-barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step height (mm)', ...
-    'colors', colorsWithBl, barProperties{:})
-set(gca, 'YTick', 0:10:20, 'TickDir', 'out')
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepHeight');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
-
-% step length
-figure('position', [2500.00 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-matMod = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
-matBl = getDvMatrix(data, 'controlStepLength', figVars, {'mouse'}, figConditionals) * 1000;
-mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
-colorsWithBl = repelem(ctlStepColor,8,1);
-colorsWithBl(2:2:8,:) = stepColors;
-barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step length (mm)', ...
-    'colors', colorsWithBl, barProperties{:})
-set(gca, 'YTick', 0:60:120, 'TickDir', 'out')
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepLength');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
-
-
-
-%% SUCCESS BY OBS HEIGHT
-close all
 figure('Color', 'white', 'Position', [2000 400 400 300], 'MenuBar', 'none');
 logPlotRick([flat.obsHgt]*1000, [flat.isPawSuccess], ...
     {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'obstacle height', 'ylabel', 'success rate', 'plotMice', false, ...
@@ -407,80 +386,101 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-%% BORING REPLICATIONS
+%% bar plots
 
-rows = 3;
-cols = 4;
-figure('position', [2000 200 1600 700], 'color', 'white', 'menubar', 'none');
-
-% initializations
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
 vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
 figVars = [vars.isFore; vars.isLeading];
+figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
+% figConditionals = struct('name', '');  % for no conditionals
 
-conditionals.lightOn = struct('name', 'isLightOn', 'condition', @(x) x==1);
-conditionals.lightOff = struct('name', 'isLightOn', 'condition', @(x) x==0);
-conditionals.noWheelBreak = struct('name', 'isWheelBreak', 'condition', @(x) x==0);
-conditionals.isLagging = struct('name', 'isLeading', 'condition', @(x) x==0);
-% figConditionals = [conditionals.lightOn];
-figConditionals = [conditionals.lightOff];
 
-% x distance to obs at peak
-subplot(rows,cols,2)
-mat = getDvMatrix(data, 'xDistanceAtPeak', figVars, {'mouse'}, figConditionals) * 1000;
-barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'horizontal distance at peak (mm)', ...
-    'showViolins', true, 'lineThickness', 5, 'conditionColors', stepColors, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
+% step height
+figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+matMod = getDvMatrix(data, 'stepOverMaxHgt', figVars, {'mouse'}, figConditionals) * 1000;
+matBl = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, figConditionals) * 1000;
+mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
+colorsWithBl = repelem(ctlStepColor,8,1);
+colorsWithBl(2:2:8,:) = stepColors;
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step height (mm)', ...
+    'colors', colorsWithBl, barProperties{:})
+set(gca, 'YTick', 0:10:20, 'TickDir', 'out')
 
-% x starting distance
-subplot(rows,cols,3)
-mat = abs(getDvMatrix(data, 'stepOverStartingDistance', figVars, {'mouse'}, figConditionals) * 1000);
-barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'horizontal distance at start (mm)', ...
-    'showViolins', true, 'lineThickness', 5, 'conditionColors', stepColors, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepHeight');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
-% x ending distance
-subplot(rows,cols,4)
+
+% % step length
+% figure('position', [2200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+% matMod = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
+% matBl = getDvMatrix(data, 'controlStepLength', figVars, {'mouse'}, figConditionals) * 1000;
+% mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
+% colorsWithBl = repelem(ctlStepColor,8,1);
+% colorsWithBl(2:2:8,:) = stepColors;
+% barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step length (mm)', ...
+%     'colors', colorsWithBl, barProperties{:})
+% set(gca, 'YTick', 0:60:120, 'TickDir', 'out')
+% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepLength');
+% fprintf('writing %s to disk...\n', file)
+% saveas(gcf, file, 'svg');
+
+
+% starting horizontal distance
+figure('position', [2400 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+mat = getDvMatrix(data, 'stepOverStartingDistance', figVars, {'mouse'}, figConditionals) * -1000;
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance at lift (mm)', ...
+    'colors', stepColors, barProperties{:})
+set(gca, 'YTick', 0:20:80, 'TickDir', 'out')
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtLift');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+% ending horizontal distance
+figure('position', [2600 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 mat = getDvMatrix(data, 'stepOverEndingDistance', figVars, {'mouse'}, figConditionals) * 1000;
-barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'horizontal distance at end (mm)', ...
-    'showViolins', true, 'lineThickness', 5, 'conditionColors', stepColors, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance at land (mm)', ...
+    'colors', stepColors, barProperties{:})
+set(gca, 'YTick', 0:20:80, 'TickDir', 'out')
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtLand');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
-% step over length
-subplot(rows,cols,5)
-mat = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
-barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'step over length (mm)', ...
-    'showViolins', true, 'lineThickness', 5, 'conditionColors', stepColors, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'showStats', true})
+
+% linear distance at zenith
+figure('position', [2800 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+mat = getDvMatrix(data, 'distanceToObs', figVars, {'mouse'}, figConditionals) * 1000;
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'distance to obstalce at zenith (mm)', ...
+    'colors', stepColors, barProperties{:})
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtZenith');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+% % horizontal distance at zenith
+% figure('position', [3000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+% mat = getDvMatrix(data, 'xDistanceAtPeak', figVars, {'mouse'}, figConditionals) * 1000;
+% barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance to obstalce at zenith (mm)', ...
+%     'colors', stepColors, barProperties{:})
+% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineHorDistAtZenith');
+% fprintf('writing %s to disk...\n', file)
+% saveas(gcf, file, 'svg');
+
 
 % length of steps leading up to obstacle
-subplot(rows,cols,6:7)
+figure('position', [2000 100 800 328.00], 'color', 'white', 'menubar', 'none');
 matPrePre = getDvMatrix(data, 'prePreStepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
 matPre = getDvMatrix(data, 'preStepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
 mat = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
 mat = permute(cat(4,matPrePre,matPre,mat), [1 2 4 3]); % add baseline vs mod steps as additional conditions
 
 conditionNamesTemp = cat(2,conditionNames, {{'-2','-1','0'}});
-colorsTemp = repelem(stepColors,3,1) .* repmat(linspace(.5,1,3)',4,1); % each color is repeated thrice, fading from black to the full color... lol
-% close all; figure;
-barPlotRick(mat, {'conditionNames', conditionNamesTemp, 'ylabel', 'step length (mm)', ...
-    'showStats', false, 'showViolins', true, 'lineThickness', 5, 'conditionColors', colorsTemp, ...
-    'violinAlpha', .1, 'scatColors', [.6 .6 .6], 'scatAlpha', .3, 'groupSeparation', .25, 'ylim' [20 120]})
+colorsTemp = repelem(stepColors,3,1) .* repmat([.2; .6; 1],4,1); % each color is repeated thrice, fading from black to the full color... lol
+barFancy(mat, 'levelNames', conditionNamesTemp, 'ylabel', 'step length (mm)', ...
+    'colors', colorsTemp, barProperties{:})
 
-% pre obs height of paws
-subplot(rows,cols,8)
-matMod = getDvMatrix(data, 'preObsHgt', figVars, {'mouse'}, figConditionals) * 1000;
-matBl = getDvMatrix(data, 'controlPreObsHgt', figVars, {'mouse'}, figConditionals) * 1000;
-mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
-colorsWithBl = repelem(ctlStepColor,8,1);
-colorsWithBl(2:2:8,:) = stepColors;
-barPlotRick(mat, {'conditionNames', conditionNames, 'ylabel', 'peak pre obs height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colorsWithBl, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'lineWidth', 1.5})
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baselineBoringReplicationBars');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePrecedingStepLengths');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 

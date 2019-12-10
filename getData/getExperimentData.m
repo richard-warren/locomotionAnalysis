@@ -52,7 +52,7 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
-           'isVentralContact', 'isDorsalContact', 'numTouchFrames', 'stepType'};
+           'isVentralContact', 'isDorsalContact', 'numTouchFrames', 'stepType', 'distanceToObs'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -638,6 +638,17 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                                   [g.expData(mouse).sessions(session).trials(trial).paws.isFore]];  % 2x4 matrix where each column is a paw, and each row is [isLeading, isFore]
             [~, var] = ismember(isLeadingIsLagging', stepTypeSequence', 'rows');
             var = num2cell(var);
+            
+        case 'distanceToObs'  % linear distance of paw to top of obstacle at zenith of paw trajectory
+            var = num2cell(nan(1,4));
+            if g.sesKinData(g.trial).isTrialAnalyzed
+                for i = find(g.isValidZ(g.trial,:))
+                    [~, maxInd] = max(g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,3,:)); % ind at which paw reaches max height
+                    xz_paw = g.sesKinData(g.trial).modifiedLocationsInterp{i}(end,[1 3],maxInd);
+                    xz_obs = [0 g.sesData.obsHeights(g.trial)/1000];
+                    var{i} = norm(xz_paw - xz_obs);  % distance beteen paw and top of obstacle
+                end
+            end     
     end
 end
 
