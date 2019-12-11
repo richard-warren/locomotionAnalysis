@@ -5,7 +5,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 mice = unique(sessionInfo.mouse);
 
 data = cell(1,length(mice));
-parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+for i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
@@ -93,6 +93,57 @@ showLeadingLaggingImg('190318_000', 44, ...
     'colors', stepColors, 'contrastLims', [0 .6], 'pawPos', .008, ...
     'overlays', 8, 'overlayWidth', 3, 'overlayAlpha', .4, ...
     'randSeed', 1, 'scatter', false, 'vertical', false);
+
+%% obstacle contact time distributions
+
+flat = flattenData(data, {'obsHgt', 'touchFrames'});
+
+%% settings
+hgtBinNum = 4;
+hgtLims = [4 10];
+xCenters = 0:4:20;
+yLims = [0 1];
+
+
+hgtBinEdges = linspace(hgtLims(1), hgtLims(2), hgtBinNum+1)/1000;
+hgtConditions = discretize([flat.obsHgt], hgtBinEdges);
+dx = diff(xCenters(1:2));
+xEdges = [xCenters xCenters(end)+dx] - dx/2;
+colors = repmat(obsColor, hgtBinNum, 1) .* linspace(.2,1,hgtBinNum)';
+
+
+close all;
+figure('color', 'white', 'position', [1995.00 565.00 364.00 326.00], 'menubar', 'none'); hold on;
+
+for i = 1:hgtBinNum
+    
+    h = histcounts([flat(hgtConditions==i).touchFrames], xEdges, ...
+        'Normalization', 'probability');
+    h2 = histcounts([flat(hgtConditions==i).touchFrames], xEdges, ...
+        'Normalization', 'cdf');
+    
+    scatter(xCenters, h2, 25, colors(i,:), 'filled');
+    lines(i) = plot(xCenters, h2, 'Color', colors(i,:), 'LineWidth', 2);
+    
+%     fill([xCenters(1) xCenters xCenters(end) xCenters(1)], ...
+%          [yLims(1) h yLims(1) yLims(1)], colors(i,:), ...
+%          'FaceAlpha', .2, 'EdgeColor', 'none')
+    
+end
+
+set(gca, 'XTick', linspace(xCenters(1),xCenters(end),3), 'YLim', yLims, 'YTick', 0:.5:1, 'TickDir', 'out')
+xlabel('contact duration (ms)')
+ylabel('cumulative density')
+
+hgtCenters = (hgtBinEdges(1:end-1) + (diff(hgtBinEdges(1:2))/2)) * 1000;
+hgtCenters = strsplit(sprintf('%.1f mm,', hgtCenters), ',');
+hgtCenters = hgtCenters(1:end-1);
+legend(lines, hgtCenters, 'Location', 'best', 'Box', 'off')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineContactDurations');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
 
 %% speed vs. position
 
