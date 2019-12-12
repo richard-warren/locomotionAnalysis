@@ -18,6 +18,12 @@ isLeading = [true false true false]; % sequence of conditions for plots
 isFore = [true true false false];
 conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
 
+% initializations
+vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
+vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
+figVars = [vars.isFore; vars.isLeading];
+figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
+
 %% ----------
 % PLOT THINGS
 %  ----------
@@ -28,7 +34,6 @@ conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
 session = '180703_000';
 trials = 40;
 
-close all
 imgs = showTrackingOverFrames(session, trials, 1, 'showFig', true, ...
     'topOnly', false, 'contrastLims', [0 .8], 'alpha', .6, 'scatLines', true, 'scatSize', 100, 'pawColors', stepColors, ...
     'imgSpacing', 0);
@@ -438,12 +443,6 @@ saveas(gcf, file, 'svg');
 
 
 %% bar plots
-
-vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
-vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
-figVars = [vars.isFore; vars.isLeading];
-figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
-% figConditionals = struct('name', '');  % for no conditionals
 
 
 % step height

@@ -15,17 +15,13 @@ fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensory
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!')
 
 % global settings
-colorWisk = [51 204 255]/255; %[255 204 51];
-colorVision = [255 221 21]/255; %[51 204 255];
-colorNone = [.2 .2 .2];
-ctlColor = [.5 .5 .5];
+global_config;
 varsToAvg = {'mouse'};
 miceToExclude = {'sen1'};
 
 
 % initializations
 data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
-colors = [mean([colorWisk;colorVision],1); colorWisk; colorVision; colorNone];
 
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.sensoryCondition = struct('name', 'sensoryCondition', 'levels', {{'WL', 'W', 'L', '-'}}, 'levelNames', {{'W+V', 'W', 'V', '-'}});
@@ -44,118 +40,73 @@ conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 %  ----------
 
 
-%% BARS
-
-% initializations
-rows = 3;
-cols = 4;
-figure('name', 'sensoryDependence', 'color', 'white', 'menubar', 'none', 'position', [2000 50 1200 600])
+%% bar plots
 
 % success
-subplot(rows, cols, 1);
+figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg);
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 1], 'ytick', 0:.5:1, ...
-    'compareToFirstOnly', true})
+mat = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg);
+barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
+    'colors', sensColors, barProperties{:}, 'YLim', [0 1])
+set(gca, 'YTick', 0:.5:1, 'TickDir', 'out')
 
-% velocity
-subplot(rows, cols, 2);
-conditions = [vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'velovity at', 'whisker contact (m/s)'}, ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 .75], 'ytick', 0:.25:.75, ...
-    'compareToFirstOnly', false})
-
-% paw error rate
-subplot(rows, cols, 3:4);
-conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'isPawSuccess', conditions, varsToAvg);
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'paw error rate', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', repmat(colors,4,1), 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [0 1], 'ytick', 0:.5:1, ...
-    'compareToFirstOnly', false, 'lineWidth', 1.5})
-
-% step over height for all paws
-subplot(rows, cols, 5:6);
-conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
-dvMatrix = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg) * 1000;
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'step over height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', repmat(colors,4,1), 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
-    'compareToFirstOnly', false})
-
-% step over height for leading forelimbs
-subplot(rows, cols, 7)
-conditions = [vars.sensoryCondition];
-figConditionals = [conditionals.isFore; conditionals.isLeading];
-matMod = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg, figConditionals) * 1000;
-matBl = getDvMatrix(data, 'controlPreObsHgt', conditions, varsToAvg, figConditionals) * 1000;
-dvMatrix = permute(cat(3,matBl,matMod), [1 3 2]); % add baseline vs mod steps as additional conditions
-colorsWithBl = repelem(ctlColor,8,1);
-colorsWithBl(2:2:8,:) = colors;
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'leading fore paw', 'step over height (mm)'}, ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colorsWithBl, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
-    'compareToFirstOnly', false, 'lineWidth', 1.5})
-
-% wisk contact position (light, manip)
-subplot(rows, cols, 8);
-conditions = [vars.sensoryCondition];
-dvMatrix = abs(getDvMatrix(data, 'wiskContactPosition', conditions, varsToAvg)) * 1000;
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', {'distance to nose', 'at whisker contact (mm)'}, ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
-    'compareToFirstOnly', false})
-
-% baseline step hgt
-subplot(rows, cols, 9);
-conditions = [vars.isFore; vars.sensoryCondition];
-dvMatrix = abs(getDvMatrix(data, 'controlStepHgt', conditions, varsToAvg)) * 1000;
-barPlotRick(dvMatrix, {'conditionNames', {conditions.levelNames}, 'ylabel', 'baseline step height (mm)', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', repmat(colors,4,1), 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, ...
-    'compareToFirstOnly', false})
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'sensoryDependenceBars');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceSuccessBars');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
+% velocity at whisker contact
+figure('position', [2200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+conditions = [vars.sensoryCondition];
+mat = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
+barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'velocity at whisker contact (m/s)', ...
+    'colors', sensColors, barProperties{:})
+set(gca, 'YTick', 0:.2:.8, 'TickDir', 'out')
 
-%% SPEED VS. POSITION
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceVelBars');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+% step over height for all paws (measured before paw reaches obstacle)
+figure('position', [2400 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
+conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
+mat = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg) * 1000;
+barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'step over height (mm)', ...
+    'colors', repmat(sensColors,4,1), barProperties{:})
+set(gca, 'YTick', 0:4:16, 'TickDir', 'out')
+
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceStepHgts');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+%% speed vs. position
 
 % settings
-obsOnColor = [0 0 0];
-obsOnAlpha = .05;
 yLims = [.3 .7];
 plotSequence = [4 3 2 1]; % determine which lines on plotted on top of which
 
 % initializations
 flat = flattenData(data, {'mouse', 'session', 'trial', 'sensoryCondition', 'obsOnPositions', 'obsOffPositions', ...
     'velVsPosition', 'velVsPositionX', 'velContinuousAtContact', 'velContinuousAtContactX', 'isWheelBreak', 'wiskContactPosition'});
-colorsTemp = [colors(1:end-1,:); .6 .6 .6]; % the no vision no whisker condition can be a little lighter here
+colorsTemp = [sensColors(1:end-1,:); .6 .6 .6]; % the no vision no whisker condition can be a little lighter here
 
 % speed vs position
-figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 700 400], 'inverthardcopy', 'off')
+figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off')
 x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
-    'FaceColor', [obsOnColor obsOnAlpha], 'EdgeColor', 'none');
+    'FaceColor', [obsColor obsAlpha], 'EdgeColor', 'none');
 line([0 0], yLims, 'linewidth', 2, 'color', obsOnColor)
 plotDvPsth(flat, 'velVsPosition', 'sensoryCondition', ...
     {'showLegend', false, 'conditionColors', colorsTemp(plotSequence,:), 'xlim', [-.5 .2], ... 
      'plotConditions', vars.sensoryCondition.levels(plotSequence), 'errorAlpha', .1, 'lineWidth', 4})
 set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
-xlabel('position relaive to nose (m)')
+xlabel('position relative to nose (m)')
 ylabel('velocity (m/s)')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'sensoryDependenceVel');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceVel');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 

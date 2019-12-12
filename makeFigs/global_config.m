@@ -21,3 +21,13 @@ stepColors = hsv2rgb([.65 stepSaturation 1;
                       .55 stepSaturation 1;
                       .02 stepSaturation 1;
                       .12 stepSaturation 1]);  % LF, TF, LH, TH
+
+% sensory dependence colors
+% colorWisk = [51 204 255]/255;
+% colorVision = [255 221 21]/255;
+colorWisk = hsv2rgb([.05 1 1]);
+colorVision = obsColor;
+colorNone = [.2 .2 .2];
+% both = mean([colorWisk;colorVision],1);
+both = hsv2rgb(mean([rgb2hsv(colorWisk); rgb2hsv(colorVision)],1));
+sensColors = [both; colorWisk; colorVision; colorNone];
