@@ -52,7 +52,7 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
-           'isVentralContact', 'isDorsalContact', 'numTouchFrames', 'stepType', 'distanceToObs'};
+           'isVentralContact', 'isDorsalContact', 'numTouchFrames', 'stepType', 'distanceToObs', 'anyTouchFrames'};
 
 % compute only requested vars
 if isequal(vars, 'all'); vars = cat(2, sessionVars, trialVars, pawVars); end
@@ -648,7 +648,10 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                     xz_obs = [0 g.sesData.obsHeights(g.trial)/1000];
                     var{i} = norm(xz_paw - xz_obs);  % distance beteen paw and top of obstacle
                 end
-            end     
+            end
+            
+        case 'anyTouchFrames'  % whether the paw contacted the obstacle for any frames
+            var = num2cell(any(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:)~=0,1));
     end
 end
 

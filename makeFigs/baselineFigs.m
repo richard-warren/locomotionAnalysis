@@ -185,9 +185,9 @@ saveas(gcf, file, 'svg');
 
 % get vel at moment obstacle is under nose
 atNoseInd = find(flat(1).velVsPositionX>=0,1,'first');
-noseVels = squeeze(velData(1,1,:,atNoseInd));
+noseVels = squeeze(velData(:,atNoseInd));
 obsOnInd = find(flat(1).velVsPositionX>=x(1),1,'first');
-obsOnVels = squeeze(velData(1,1,:,obsOnInd));
+obsOnVels = squeeze(velData(:,obsOnInd));
 
 fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
 fprintf('obs on:      %.2f +- %.2f SEM\n', mean(obsOnVels), std(obsOnVels)/sqrt(length(obsOnVels)))
@@ -296,10 +296,11 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-% TOP VIEW OVERLAYS
 
-% initializations
+% bot and top view overlays
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [1997.00 99.00 878.00 833.00])
+
+% top view
 subplot(2,1,1)
 
 % get condition numbers, where each condition is unique combinate of isLeading and isFore
@@ -312,12 +313,7 @@ plotKinematics(kinData(:,[1,3],:), [flat.obsHgt], stepTypeConditions', ...
     'errorFcn', @nanstd, 'lineWidth', 3, 'obsColors', repmat(obsColors, 4, 1), 'yLimZero', false) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
 set(gca, 'XLim', xLims)
 
-% % save
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineKinematics_overlayTop');
-% fprintf('writing %s to disk...\n', file)
-% saveas(gcf, file, 'svg');
-
-% BOT VIEW OVERLAYS
+% bot view
 subplot(2,1,2)
 yLimsBot = [-1 1]*.02;
 

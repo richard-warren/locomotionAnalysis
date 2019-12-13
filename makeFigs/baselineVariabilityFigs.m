@@ -1,19 +1,16 @@
 %% load experiment data
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
-% global settings
-
-
-
-% global initializations
+% initializations
 mice = {data.data.mouse};
+global_config;
 
 
 %% ----------
 % PLOT THINGS
 %  ----------
 
-%% GET DISTANCE AND TIME TO CONTACT DATA
+%% distance and time to contact
 
 % settings
 trialSmps = 100;
@@ -23,8 +20,8 @@ trialSmps = 100;
 
 for i = 1:length(mice)
     
-    fprintf('%s: collectin data, ya heard...\n', mice{i})
-    sessions = {data.data(i).sessions.session}; % sessions for mouse
+    fprintf('%s: collecting data...\n', mice{i})
+    sessions = {data.data(i).sessions.session};  % sessions for mouse
     
     [distances{i}, times{i}] = deal([]);
     for j = 1:length(sessions)
