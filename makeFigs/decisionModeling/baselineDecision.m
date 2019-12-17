@@ -1,3 +1,15 @@
+%% load experiment data
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+
+% initializations
+mice = {data.data.mouse};
+global_config;
+
+
+
+
+
+
 %% COMPUTE PREDICTORS
 
 % !!! should i restrict to light off trials???
