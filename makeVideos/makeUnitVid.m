@@ -24,7 +24,10 @@ s.wiskBorder = 2;
 s.lowPassFreq = 6000; % 6000 // set to false to turn off lowpass
 
 s.includeWiskCam = true;
-s.compressVideo = true;
+s.compressVideo = false;
+s.showSpecificTrials = true; % whether picking specific trails to show or not
+s.specificTrials = [50, 2; 64, 2; 69, 1; 87, 1]; % refer to specific reward delivery times, rather than obs events
+
 
 s.spkScatterColor = [1 1 0];
 s.lineColors = [.8 .4 1];
@@ -38,12 +41,12 @@ if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end;
 disp('initializing...')
 vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
 vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
-if s.includeWiskCam; vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']); end
+if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
 initialFs = vidTop.FrameRate;
 vidWriter = vision.VideoFileWriter(fileName, ...
     'AudioInputPort', true, ...
     'FrameRate', round(initialFs*s.playbackSpeed));
-vidWriter.VideoCompressor = 'MJPEG Compressor';
+% vidWriter.VideoCompressor = 'MJPEG Compressor';
 
 % load spike data
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
@@ -129,10 +132,29 @@ if ~exist('timeEpochs', 'var'); timeEpochs = cat(2, obsOnTimes, obsOffTimes); en
 
 
 % get min and max time for unit
-minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
-maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
-validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); % make sure trials aren't too long
-trials = validTrials(round(linspace(2,length(validTrials)-1,s.trialsToShow))); % remove first and last inds to avoid catching beginning and end of usable spikes period
+
+if s.showSpecificTrials == false
+    minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
+    maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
+    validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); % make sure trials aren't too long
+    trials = validTrials(round(linspace(2,length(validTrials)-1,s.trialsToShow))); % remove first and last inds to avoid catching beginning and end of usable spikes period
+    
+else
+    
+    % pick trials based on reward times
+    rewardTrailsSelected = s.specificTrials(:, 1);
+    % rewardTimesSelected = rewardTimes(rewardTrailsSelected, 1);
+    rewardTimeBinsSelected = [rewardTimes(rewardTrailsSelected, 1), rewardTimes(rewardTrailsSelected + 1, 1)];
+    validTrials = find(timeEpochs(:, 1) > rewardTimeBinsSelected(1, 1) & timeEpochs(:, 2) < rewardTimeBinsSelected(1, 2));
+    validTrials = validTrials(s.specificTrials(1, 2));
+    for i = 2:length(rewardTimeBinsSelected)
+        temp = find(timeEpochs(:, 1) > rewardTimeBinsSelected(i, 1) & timeEpochs(:, 2) < rewardTimeBinsSelected(i, 2));
+        temp = temp(s.specificTrials(i, 2));
+        validTrials = cat(1, validTrials, temp);
+    end
+    trials = validTrials;
+end
+
 
 % create video
 fprintf('\nwriting video... ')
@@ -168,6 +190,19 @@ for i = 1:length(trials)
         topBotFrame = cat(1, rgb2gray(read(vidTop, j)), rgb2gray(read(vidBot, j)));
         topBotFrame = imadjust(topBotFrame, s.contrastLims, [0 1]); % adjust contrast
         frame(:,1:vidBot.Width) = topBotFrame;
+        
+        % add trial number onto frames
+        position = [10, 10];
+        textString = ['trial ', num2str(trials(i))];
+        RGB = insertText(frame, position, textString, 'TextColor','white');
+        frame = rgb2gray(RGB);
+        if s.showSpecificTrials
+            position2 = [80, 10];
+            textString2 = ['reward trial ', num2str(s.specificTrials(i, 1))];
+            RGB = insertText(frame, position2, textString2, 'TextColor','white');
+            frame = rgb2gray(RGB);
+        end
+     
         
         % get wisk frame
         if s.includeWiskCam
