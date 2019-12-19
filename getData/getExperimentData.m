@@ -159,8 +159,10 @@ for mouse = 1:length(g.mice)
             end
 
             stepOverAnalyzedRates = num2cell(mean(isStepOverAnalyzed,1));
-            fprintf('%s: analysis success rates -> paw1: %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
-                g.sessions{session}, stepOverAnalyzedRates{:})
+            if ~isempty(pawVars)
+                fprintf('%s: analysis success rates -> paw1: %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
+                    g.sessions{session}, stepOverAnalyzedRates{:})
+            end
         end
     end
 end
@@ -321,10 +323,12 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
             end
             
         case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact
-            var = {g.sesKinData.wiskContactPositions};
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactPositions]);
             
         case 'wiskContactTimes'  % times of whisker contact
-            var = {g.sesKinData.wiskContactTimes};
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactTimes]);
             
         case 'lightOnTimes'  % times at which obstacle light turns on
             var = {g.sesData.obsLightOnTimes};

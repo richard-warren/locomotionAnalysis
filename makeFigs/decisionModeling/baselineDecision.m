@@ -1,30 +1,21 @@
 %% load experiment data
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
+% settings
+referenceModPaw = 2;  % flip trials around the y axis if first modified paw is not referenceModPaw
+velTime = .05;  % how many samples to compute velocity over
+useReferencePaw = true;  % if true, flip everything with respect to referenceModPaw
+frameRate = 250;  % frame rate for videos
+
+
 % initializations
 mice = {data.data.mouse};
 global_config;
+velSmps = round(velTime * frameRate);
 
 
 
-
-
-
-%% COMPUTE PREDICTORS
-
-% !!! should i restrict to light off trials???
-
-% global settings
-referenceModPaw = 2;
-velSmps = 10; % how many samples to compute velocity over
-frameRate = 250;
-stepTypeColors = [0.850 0.325 0.098; 0 0.447 0.741]; % first entry is small step, second is big step
-useReferencePaw = true; % if true, flip everything with respect to referenceModPaw
-
-% load experiment data
-fprintf('loading...'); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
-
-% flatten data and compute predictors
+%% compute predictors for behavioral model
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isTrialSuccess', ...
     'firstModPaw', 'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'isBigStep', ...
     'modPawKinInterp', 'preModPawKinInterp', 'isLightOn', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs'});
@@ -83,7 +74,7 @@ disp('all done!')
 
 
 
-%% BUILD MODELS
+%% build models
 
 % settings
 iterations = 20;
@@ -92,7 +83,7 @@ barColors = [0 .24 .49; .6 .75 .23; .2 .2 .2];
 
 % prepare training data
 [X, y, predictorNames, isCategorical] = ...
-    prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
+    prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, 'balanceClasses', true);
 predDistBin = ismember(predictorNames, 'modPawPredictedDistanceToObs'); % this var will ONLY be included in the GLM, not the neural net
     
     
@@ -133,12 +124,23 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(gcf, file, 'svg');
 
 
-%% PREDICTOR SCATTERS
+%% schematic imgs for step type decision
+
+session = '180630_001';
+yMax = [];  % set to 140 to trim the bottom view out
+
+close all
+showDecisionFrames(session, 'stepColors', decisionColors, 'yMax', yMax, ...
+    'contrastLims', contrast, 'leftPadding', 0, 'rightPadding', 70, 'drawKinematics', false);
+
+
+
+%% predictor scatters
 
 
 figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
-scatterHistoRick([flat.x_paw2]*1000, [flat.obsHgt]*1000, ...
-    {'groupId', [flat.isBigStep]+1, 'colors', stepTypeColors, ...
+scatterHistoRick([flat.x_paw2]*1000, [flat.trialVel]*1000, ...
+    {'groupId', [flat.isBigStep]+1, 'colors', decisionColors, ...
     'xlabel', 'paw position (mm)', 'ylabel', 'obstalce height (mm)', ...
     'showCrossHairs', false, 'scatSize', 4, 'scatAlpha', .4, ...
     'xLims', [-70 -15], 'yLims', [3 11], 'groupHistoLineWidth', 3, ...
@@ -150,7 +152,7 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(gcf, file, 'svg');
 
 
-%% BINNED KINEMATICS AND HEATMAP
+%% binned kinematics
 
 % settings
 binNum = 5;
@@ -196,7 +198,7 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(gcf, file, 'svg');
 
 
-%% HEATMAP
+%% heatmap
 
 % settings
 xLims = [-.03 .015];

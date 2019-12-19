@@ -8,7 +8,6 @@ function imgs = showTrackingOverFrames(session, trials, imgNum, varargin)
 
 % settings
 s.showFig = false;  % whether to show figure (otherwise is only written to disk)
-s.writeToDisk = false;
 s.topOnly = false;  % whether to show only top view
 s.kinematicsOnly = false;  % if true, don't show frames or overwrite obstalce
 s.scatLines = false;  % if true, use scatter instead of lines to show kinematics
@@ -129,13 +128,5 @@ for t = 1:length(trials)
         set(gca, 'YLim', [1 vidTop.Height], 'Units', 'normalized', 'Position', [0 0 1 1])
     end
 
-    % save
-    if s.writeToDisk
-        file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'trackingOverFrames', ...
-            [session '_imgs' num2str(imgNum*2+1) '_trial' num2str(trial) '.png']);
-        fprintf('writing %s to disk...\n', file)
-        saveas(gcf, file)
-    end
-    
     imgs{t} = frame2im(getframe(gcf));
 end

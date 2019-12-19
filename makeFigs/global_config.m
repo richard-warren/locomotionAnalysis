@@ -15,12 +15,14 @@ barProperties = {'scatterAlpha', .5, 'barAlpha', .4, 'labelSizePerFactor', .1, .
                  'lineThickness', 2, 'scatterColors', 'lines', 'connectDots', true, ...
                  'lineAlpha', .05};
 
-% set step colors
+
+% step type colors (leading, lagging, fore, hind)
 stepSaturation = .9;
 stepColors = hsv2rgb([.65 stepSaturation 1;
                       .55 stepSaturation 1;
                       .02 stepSaturation 1;
                       .12 stepSaturation 1]);  % LF, TF, LH, TH
+
 
 % sensory dependence colors
 % colorWisk = [51 204 255]/255;
@@ -31,3 +33,21 @@ colorNone = [.2 .2 .2];
 % both = mean([colorWisk;colorVision],1);
 both = hsv2rgb(mean([rgb2hsv(colorWisk); rgb2hsv(colorVision)],1));
 sensColors = [both; colorWisk; colorVision; colorNone];
+
+
+% big little step colors
+decisionColors = [0 0.447 0.741; 0.850 0.325 0.098]; % first entry is small step, second is big step
+preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));% preDecisionColor(3) = 1;
+
+
+% video contast
+contrast = [0 .75];
+
+
+% contact color (paw, whiskers)
+contactColor = [1 .2 .2];
+
+
+
+
+

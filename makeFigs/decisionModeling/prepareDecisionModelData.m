@@ -1,5 +1,5 @@
 function [X, y, predictorNames, isCategorical] = ...
-    prepareDecisionModelData(flat, predictors, outcome, useAllPaws, referenceModPaw, normalizeData, opts)
+    prepareDecisionModelData(flat, predictors, outcome, useAllPaws, referenceModPaw, normalizeData, varargin)
 
 % given data struct flat containing predictors and outcome, creates X and y
 % matrices that can be used to train models // useAllPaws is boolean
@@ -15,12 +15,9 @@ s.removeNans = true; % whether to remove rows in X and y containing nans
 s.balanceClasses = true; % whether to remove entries of modal y s.t. groups are perfectly balanced
 
 
-% reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
-
-
 
 % initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 if strcmp(predictors, 'all'); predictors = allPredictors; end
 cols = flat.Properties.VariableNames;
 predictorNames = {};
