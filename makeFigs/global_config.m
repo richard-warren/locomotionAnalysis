@@ -36,8 +36,10 @@ sensColors = [both; colorWisk; colorVision; colorNone];
 
 
 % big little step colors
-decisionColors = [0 0.447 0.741; 0.850 0.325 0.098]; % first entry is small step, second is big step
+% decisionColors = [0 0.447 0.741; 0.850 0.325 0.098]; % first entry is small step, second is big step
+decisionColors = flipud(colorme(2, 'offset', .2, 'showSamples', false)); % first entry is small step, second is big step
 preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));% preDecisionColor(3) = 1;
+modelColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));
 
 
 % video contast
