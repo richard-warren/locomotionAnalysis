@@ -14,8 +14,16 @@ frameRate = 250;  % frame rate for videos
 mice = {data.data.mouse};
 global_config;
 velSmps = round(velTime * frameRate);
-plotcol
 
+
+%% schematic imgs for step type decision
+
+session = '180630_001';
+yMax = [];  % set to 140 to trim the bottom view out
+
+close all
+showDecisionFrames(session, 'stepColors', decisionColors, 'yMax', yMax, ...
+    'contrastLims', contrast, 'leftPadding', 0, 'rightPadding', 70, 'drawKinematics', false);
 
 
 %% compute predictors for behavioral model
@@ -58,7 +66,7 @@ for i = 1:length(sessions)
         pawSequence = [1 2 3 4];
         if useReferencePaw && kinData(j).firstModPaw~=referenceModPaw; pawSequence = [4 3 2 1]; end
         flatBin = sessionBins & [flat.trial]==j;
-        flat.firstModPaw(flatBin) = pawSequence(flat.firstModPaw(flatBin));
+%         flat.firstModPaw(flatBin) = pawSequence(flat.firstModPaw(flatBin));
         
         for k = 1:4
             
@@ -93,10 +101,11 @@ disp('all done!')
 flat_all = flat;
 if lightOffOnly; flat = flat(logical(~[flat.isLightOn]),:); end
 if modPawOnlySwing; flat = flat([flat.modPawOnlySwing]==1,:); end
+flat = flat(~isnan([flat.isBigStep]),:);
 
 
-%% prepare training data
-[X, y, predictorNames, isCategorical] = ...  % less inclusive model
+% prepare training data
+[X, y, predictorNames] = ...  % less inclusive model
     prepareDecisionModelData(flat, ...
     {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'x', 'xVel', 'z', 'zVel'}, ...
     'isBigStep', 'balanceClasses', true, 'useAllPaws', false, 'normalizeData', true, 'referencePaw', referenceModPaw);
@@ -112,40 +121,12 @@ if modPawOnlySwing; flat = flat([flat.modPawOnlySwing]==1,:); end
 %     'isBigStep', 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
 
 
-% %% stepwise glm
-% 
-% model = stepwiseglm(X, y, 'linear', 'Distribution', 'binomial', ...
-%     'PredictorVars', predictorNames, 'CategoricalVars', isCategorical);
-% [~, sortInds] = sort(abs(glm.Coefficients.tStat(2:end)));
-
-
-% %% lasso glm
-% 
-% % settings
-% kFolds = 4;  % number of folds for k-folds cross validation
-% 
-% [B, fitInfo] = lassoglm(X, logical(y), 'binomial', ...
-%     'CV', kFolds, 'PredictorNames', predictorNames, 'Standardize', false);
-% % lassoPlot(B, fitInfo, 'PlotType', 'CV');  legend('show')
-% % lassoPlot(B, fitInfo, 'PlotType', 'Lambda');  legend('show')
-% 
-% lambdaInd = fitInfo.IndexMinDeviance;
-% % lambdaInd = fitInfo.Index1SE;
-% [vals, sortInds] = sort(abs(B(:,lambdaInd)));
-% fitInfo.PredictorNames(sortInds(vals~=0))
-% yhat = X*B(:,lambdaInd)>0;
-% accuracy = mean(yhat==y);
-% fprintf('accuracy: %.2f\n', accuracy)
-
-
 %% forward feature selection
 
 % settings
 kFolds = 10;
 
 % function that determines misclassification rate of the model
-% classf = @(xtrain, ytrain, xtest, ytest) ...
-%     sum(ytest~=classify(xtest, xtrain, ytrain, 'linear'));
 classf = @(xtrain, ytrain, xtest, ytest) ...
     sum(ytest ~= round(predict(fitglm(xtrain,ytrain,'linear','Distribution','binomial'), xtest)));
 
@@ -177,16 +158,6 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(gcf, file, 'svg');
 
 
-% %% glm
-% 
-% glm = fitglm(X, y, 'linear', 'Distribution', 'binomial', ...
-%     'PredictorVars', predictorNames, 'CategoricalVars', isCategorical);
-% accuracy = mean(round(predict(glm,X))==y);
-% fprintf('accuracy: %.2f\n', accuracy);
-% [~, sortInds] = sort(abs(glm.Coefficients.tStat(2:end)));
-% sortInds = flipud(sortInds);  % inds of best predictors from top to bottom
-% glm
-
 %% predictor scatters and histograms
 
 % close all
@@ -194,7 +165,7 @@ figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778.00 5
 scatSz = 8;
 scatAlpha = .4;
 maxScatters = 1000;  % only plot this many per condition to avoid large vector images
-percentileLims = [5 99];
+percentileLims = [1 99];
 binNum = 15;
 maxPlots = 4;
 
@@ -250,98 +221,92 @@ saveas(gcf, file, 'svg');
 
 
 
-% %% neural network vs. glm models
-% 
-% % settings
-% iterations = 20;
-% barColors = [0 .24 .49; .6 .75 .23; .2 .2 .2];
-%     
-%     
-% accuracies = nan(3,iterations);
-% for i = 1:iterations
-%     
-%     % NEURAL NET
-%     net = patternnet(100);
-%     net.divideParam.trainRatio = .7;
-%     net.divideParam.valRatio = .15;
-%     net.divideParam.testRatio = .15;
-%     [net, tr] = train(net, X(:,~predDistBin)', y');
-%     outputs = net(X(:,~predDistBin)');
-%     accuracies(1,i) = mean(round(outputs(tr.testInd))==y(tr.testInd)');
-%     
-%     % NN SHUFFLED
-%     shuffleInds = randperm(length(tr.testInd));
-%     accuracies(3,i) = mean(round(outputs(tr.testInd))==y(tr.testInd(shuffleInds))'); % NN shuffled
-%     
-%     % GLM
-% %     glmPredictorBins = true(1,size(X,2));  % bins of predictors to include in GLM (columns of X)
-%     glmPredictorBins = predDistBin;
-%     glm = fitglm(X([tr.trainInd tr.valInd], glmPredictorBins), y([tr.trainInd tr.valInd]), ...
-%         'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
-%     accuracies(2,i) = mean(round(predict(glm, X(tr.testInd,glmPredictorBins)))==y(tr.testInd));
-%     
-% end
-% 
-% %
-% figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
-% barPlotRick(accuracies, {'conditionNames', {{'NN', 'GLM', 'shuffled'}}, ...
-%     'lineThickness', 2, 'addBars', true, 'scatColors', 'hsv', 'scatAlpha', .5, 'showStats', false, ...
-%     'ylim', [0 1], 'ytick', [0 .5 1], 'ylabel', 'accuracy', 'conditionColors', barColors})
-% set(gca, 'Position', [0.15 0.2 0.75 0.79])
-% 
-% % save
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-%         'baseline_decision_modelAccuracies');
-% saveas(gcf, file, 'svg');
+%% neural network vs. glm models
 
-
-%% schematic imgs for step type decision
-
-session = '180630_001';
-yMax = [];  % set to 140 to trim the bottom view out
-
-close all
-showDecisionFrames(session, 'stepColors', decisionColors, 'yMax', yMax, ...
-    'contrastLims', contrast, 'leftPadding', 0, 'rightPadding', 70, 'drawKinematics', false);
+% settings
+iterations = 100;
+maxFeatures = 4;  % take best 'maxFeatures' based on forward model selection to include in GLM
+hiddenUnits = 100;
+validationRatio = .2;
+testRatio = .2;
 
 
 
-%% predictor scatters
+% prepare data
+[X, y, predictorNames_full, isCategorical] = ...  % most inclusive model
+    prepareDecisionModelData(flat, ...
+    {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modStepStart', 'x', 'z', 'xVel', 'zVel'}, ...
+    'isBigStep', 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
+glmPredictorBins = ismember(predictorNames_full, predictorNames(sortInds(1:maxFeatures)));  % bins of predictors to be used in restricted dataset
 
 
-figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
-scatterHistoRick([flat.x_paw2]*1000, [flat.trialVel]*1000, ...
-    {'groupId', [flat.isBigStep]+1, 'colors', decisionColors, ...
-    'xlabel', 'paw position (mm)', 'ylabel', 'obstalce height (mm)', ...
-    'showCrossHairs', false, 'scatSize', 4, 'scatAlpha', .4, ...
-    'xLims', [-70 -15], 'yLims', [3 11], 'groupHistoLineWidth', 3, ...
-    'groupHistoAlpha', .8, 'histoAlpha', 0});
+accuracies = nan(3,iterations);
+for i = 1:iterations
+    
+    % neural net
+    net = patternnet(hiddenUnits);
+    net.divideParam.trainRatio = 1 - validationRatio - testRatio;
+    net.divideParam.valRatio = validationRatio;
+    net.divideParam.testRatio = testRatio;
+    [net, tr] = train(net, X', y');
+%     outputs = net(X');
+    accuracies(1,i) = mean(round(net(X(tr.testInd,:)'))==y(tr.testInd)');
+    
+    % shuffled
+    shuffleInds = randperm(length(tr.testInd));
+    accuracies(3,i) = mean(round(net(X(tr.testInd,:)'))==y(tr.testInd(shuffleInds))'); % NN shuffled
+    
+    % GLM
+    rowBins = [tr.trainInd tr.valInd];
+%     glmPredictorBins = 1;
+    glm = fitglm(X(rowBins, glmPredictorBins), y(rowBins), ...
+        'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
+    accuracies(2,i) = mean(round(predict(glm, X(tr.testInd, glmPredictorBins)))==y(tr.testInd));
+end
+
+
+figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
+modelColors = [modelColor; modelColor*.5; .2 .2 .2];
+barFancy(accuracies, 'levelNames', {{'NN', 'GLM', 'shuffled'}}, 'colors', modelColors, ...
+    barProperties{:}, 'textRotation', 0)
+set(gca, 'YTick', 0:.5:1)
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baseline_decision_PositionObsHgtScatter');
+        'baseline_decision_modelAccuracies');
 saveas(gcf, file, 'svg');
+
+fprintf('\nneural net accuracy: %.3f +- %.2f SEM', mean(accuracies(1,:)), std(accuracies(1,:))/sqrt(length(accuracies(1,:))))
+fprintf('\nGLM accuracy:        %.3f +- %.2f SEM', mean(accuracies(2,:)), std(accuracies(1,:))/sqrt(length(accuracies(2,:))))
+fprintf('\nshuffled accuracy:   %.3f +- %.2f SEM\n', mean(accuracies(3,:)), std(accuracies(1,:))/sqrt(length(accuracies(3,:))))
 
 
 %% binned kinematics
 
 % settings
 binNum = 5;
-pctileBins = true;
+pctileBins = false;
+xLims = [-.08 .03];
 
 
 % initializations
 kin = permute(cat(3,flat.modPawKinInterp{:}), [3,1,2]);
 kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
-[X, y, predictorNames, isCategorical] = ...
-        prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, ...
-        {'balanceClasses', false, 'removeNans', false});  % must recom 
+[X, y, predictorNames_full, isCategorical] = ...  % most inclusive model
+    prepareDecisionModelData(flat, ...
+    {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modStepStart', 'x', 'z', 'xVel', 'zVel'}, ...
+    'isBigStep', 'balanceClasses', false, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);  % note that balanceClasses is FALSE, which means rows of 'X' correspond to rows of 'flat'
+glmPredictorBins = ismember(predictorNames_full, predictorNames(sortInds(1:maxFeatures)));  % bins of predictors to be used in restricted dataset
 
-% prepareDecisionModelData(flat, 'all', 'isBigStep', true, referenceModPaw, normalizeData, {'balanceClasses', true});
+% train model with ALL data
+glm = fitglm(X(:, glmPredictorBins), y(:), ...
+    'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
+
 
 
 % choose binning variable
-binVar = net(X(:,~predDistBin)'); % neural network output
+binVar = predict(glm, X(:,glmPredictorBins));
+% binVar = net(X(:,~predDistBin)'); % neural network output
 % binVar = -flat.x_paw2; % position of mod paw at moment of contact
 % binVar = flat.velAtWiskContact; % vel
 % binVar = flat.modStepStart_paw2; % starting position of mod paw
@@ -358,14 +323,75 @@ end
 condition = discretize(binVar, binEdges);
 
 
-figure('color', 'white', 'menubar', 'none', 'position', [2000 100 750 100*binNum], 'InvertHardcopy', 'off');
+figure('color', 'white', 'menubar', 'none', 'position', [2000.00 100.00 750.00 707.00], 'InvertHardcopy', 'off');
 plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
-    {'colors', stepTypeColors, 'xLims', [-.09 .04], 'addHistos', false, 'lineWid', 3, ...
-    'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false})
+    'colors', decisionColors, 'xLims', xLims, 'addHistos', false, 'lineWid', 3, ...
+    'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false, 'obsColor', obsColor)
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
         'baseline_decision_kinematics');
+saveas(gcf, file, 'svg');
+
+
+%% trial kinematics with landing position distribution
+
+% settings
+trialsToShow = 50;
+histoFillAlpha = .2;
+rng(10)
+xLims = [-.11 .08];
+
+% initializations
+kinData = permute(cat(3, flat.modPawKinInterp{:}), [3,1,2]);
+kinDataCtl = permute(cat(3, flat.preModPawKinInterp{:}), [3,1,2]);
+kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
+
+kinData(flat.firstModPaw==3,2,:) = -kinData(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
+kinDataCtl(flat.firstModPaw==3,2,:) = -kinDataCtl(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
+
+condition = ~([flat.isBigStep]==1) + 1;
+figure('Color', 'white', 'Position', [2001.00 653.00 900.00 297.00], 'MenuBar', 'none');
+
+
+
+
+% plot kinematics
+subplot(2,1,1)
+plotKinematics(kinData(:,[1 3],:), [flat.obsHgt], condition, ...
+    'colors', decisionColors, 'trialsToOverlay', trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'plotObs', false)
+plotKinematics(kinDataCtl(:,[1 3],:), [flat.obsHgt], ones(1,height(flat)), ...
+    'colors', ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', obsColor)
+set(gca, 'XLim', xLims)
+
+
+% plot pdfs
+subplot(2,1,2); hold on;
+
+xGrid = linspace(xLims(1), xLims(2), 500);
+longShortRatio = sum(condition==1)/length(condition);
+
+kdCtl = ksdensity(kinDataCtl(:,1,end), xGrid);
+kdLong = ksdensity(kinData(condition==1,1,end), xGrid) * longShortRatio;
+kdShort = ksdensity(kinData(condition==2,1,end), xGrid) * (1-longShortRatio);
+
+
+% plot that shit
+fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], ctlStepColor, 'FaceAlpha', histoFillAlpha)
+plot(xGrid, kdCtl, 'Color', ctlStepColor, 'LineWidth', 4)
+
+fill([xGrid xGrid(1)], [kdLong kdLong(1)], decisionColors(1,:), 'FaceAlpha', histoFillAlpha)
+plot(xGrid, kdLong, 'Color', decisionColors(1,:), 'LineWidth', 4)
+
+fill([xGrid xGrid(1)], [kdShort kdShort(1)], decisionColors(2,:), 'FaceAlpha', histoFillAlpha)
+plot(xGrid, kdShort, 'Color', decisionColors(2,:), 'LineWidth', 4)
+
+set(gca, 'XLim', xLims, 'YDir', 'reverse', 'Visible', 'off')
+
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baseline_modStepVariability');
+fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 

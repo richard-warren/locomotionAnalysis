@@ -39,14 +39,16 @@ if ~s.isBotView; line([-.2 .2], [0 0], 'color', s.lineColor); end
 
 % draw obstacles for each condition
 if isempty(s.obsColors); s.obsColors = s.colors; end
-for i = 1:max(conditions)
-    if ~s.isBotView
-        z = nanmean(obsHgts(conditions==i));
-        rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
-            'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
-    else
-        rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
-            'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+if s.plotObs
+    for i = 1:max(conditions)
+        if ~s.isBotView
+            z = nanmean(obsHgts(conditions==i));
+            rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
+                'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+        else
+            rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
+                'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+        end
     end
 end
 
