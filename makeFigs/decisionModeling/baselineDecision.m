@@ -26,6 +26,41 @@ showDecisionFrames(session, 'stepColors', decisionColors, 'yMax', yMax, ...
     'contrastLims', contrast, 'leftPadding', 0, 'rightPadding', 70, 'drawKinematics', false);
 
 
+%% overlay images
+
+% settings
+sessions = {'180628_004', '180703_001', '180711_000', '180803_003'};
+trialsToOverlay = 10;
+
+for s = 1:length(sessions)
+    vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{s}, 'runTop.mp4'));
+    vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{s}, 'runBot.mp4'));
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{s}, 'runAnalyzed.mat'), ...
+        'frameTimeStamps', 'obsOnTimes', 'wiskContactTimes');
+    wiskContactTimes = wiskContactTimes(~isnan(wiskContactTimes));
+    frameTimes = sort(wiskContactTimes(randperm(length(wiskContactTimes), trialsToOverlay)));
+
+    imgsTop = uint8(zeros(vidTop.Height, vidTop.Width, trialsToOverlay));
+    imgsBot = uint8(zeros(vidBot.Height, vidBot.Width, trialsToOverlay));
+
+    for i = 1:trialsToOverlay
+        imgsTop(:,:,i) = rgb2gray(read(vidTop, knnsearch(frameTimeStamps, frameTimes(i))));
+        imgsBot(:,:,i) = rgb2gray(read(vidBot, knnsearch(frameTimeStamps, frameTimes(i))));
+    end
+
+    overlayTop = overlayImgs(imgsTop, 'colors', 'jet', 'contrastLims', [.3 .75], 'cutoff', 100, 'projection', 'mean');
+    overlayBot = overlayImgs(imgsBot, 'colors', 'jet', 'contrastLims', [.3 .5], 'cutoff', 100, 'projection', 'mean');
+    overlay = cat(1,overlayTop, overlayBot);
+    figure(); imshow(overlay);
+
+
+    % write image to desk
+    file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', ['variability' num2str(s) '.png']);
+    fprintf('writing %s to disk...\n', file)
+    imwrite(overlay, file);
+end
+
+
 %% compute predictors for behavioral model
 
 
@@ -350,7 +385,7 @@ kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
 kinData(flat.firstModPaw==3,2,:) = -kinData(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 kinDataCtl(flat.firstModPaw==3,2,:) = -kinDataCtl(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 
-condition = ~([flat.isBigStep]==1) + 1;
+condition = ([flat.isBigStep]==1) + 1;
 figure('Color', 'white', 'Position', [2001.00 653.00 900.00 297.00], 'MenuBar', 'none');
 
 
@@ -439,8 +474,6 @@ fprintf('overall accuracy: %.3f\n\n', mean(accuracies))
 fprintf('significance: %.3f\n\n', p)
 
 
-%%
-close all
 figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 'none');
 barFancy(successRates, barProperties{:}, ...
     'levelNames', {{'correct', 'incorrect'}}, 'textRotation', 0, 'colors', [modelColor; modelColor*.2])
@@ -451,23 +484,23 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-%% heatmap
-
-% settings
-xLims = [-.03 .015];
-yLims = [-.03 .03];
-
-figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
-heatmapRick(flat.modPawPredictedDistanceToObs, flat.modPawDistanceToObs, ...
-    {'xLims', xLims, 'yLims', yLims, ...
-    'xlabel', 'predicted distance to obstalce (m)', 'ylabel', 'distance to obstalce (m)'})
-set(gca, 'DataAspectRatio', [1 1 1])
-line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baseline_decision_heatmaps');
-saveas(gcf, file, 'svg');
+% %% heatmap
+% 
+% % settings
+% xLims = [-.03 .015];
+% yLims = [-.03 .03];
+% 
+% figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
+% heatmapRick(flat.modPawPredictedDistanceToObs, flat.modPawDistanceToObs, ...
+%     {'xLims', xLims, 'yLims', yLims, ...
+%     'xlabel', 'predicted distance to obstalce (m)', 'ylabel', 'distance to obstalce (m)'})
+% set(gca, 'DataAspectRatio', [1 1 1])
+% line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
+% 
+% % save
+% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+%         'baseline_decision_heatmaps');
+% saveas(gcf, file, 'svg');
 
 
 
