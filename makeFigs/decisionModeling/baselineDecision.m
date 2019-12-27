@@ -354,8 +354,6 @@ condition = ~([flat.isBigStep]==1) + 1;
 figure('Color', 'white', 'Position', [2001.00 653.00 900.00 297.00], 'MenuBar', 'none');
 
 
-
-
 % plot kinematics
 subplot(2,1,1)
 plotKinematics(kinData(:,[1 3],:), [flat.obsHgt], condition, ...
@@ -391,6 +389,64 @@ set(gca, 'XLim', xLims, 'YDir', 'reverse', 'Visible', 'off')
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baseline_modStepVariability');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+%% success rate by model prediction adherence
+
+% settings
+confidenceLims = [.4 .6];  % only include trials where model is very confident
+
+% compute overall success rate
+glm = fitglm(X(:, glmPredictorBins), y, ...
+    'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
+predictions = predict(glm, X(:,glmPredictorBins));
+confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
+isModelCorrect = round(predictions) == [flat.isBigStep];  % bins where decision agrees with model prediction
+fprintf('POOLED MODEL\n')
+fprintf('correct prediction success:   %.3f (n=%i)\n', ...
+    mean(flat.isTrialSuccess(isModelCorrect & confidentBins)), sum(isModelCorrect & confidentBins))
+fprintf('incorrect prediction success: %.3f (n=%i)\n\n', ...
+    mean(flat.isTrialSuccess(~isModelCorrect & confidentBins)), sum(~isModelCorrect & confidentBins))
+
+% build per-mouse models
+mice = unique(flat.mouse);
+successRates = nan(2, length(mice));  % (correct, incorrect model predictions) X mouse
+accuracies = nan(1,length(mice));
+
+for i = 1:length(mice)
+    mouseBins = strcmp(flat.mouse, mice{i});
+    glm_temp = fitglm(X(mouseBins, glmPredictorBins), y(mouseBins), ...
+        'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
+    
+    predictions = predict(glm, X(mouseBins, glmPredictorBins));
+    confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
+    isModelCorrect = round(predictions) == flat.isBigStep(mouseBins);
+    mouseSuccess = flat.isTrialSuccess(mouseBins);
+    
+    successRates(1,i) = mean(mouseSuccess(confidentBins & isModelCorrect));
+    successRates(2,i) = mean(mouseSuccess(confidentBins & ~isModelCorrect));
+    
+    accuracies(i) = mean(isModelCorrect);
+end
+
+fprintf('INDIVIDUAL MOUSE MODELS\n')
+fprintf('correct prediction success:   %.3f\n', mean(successRates(1,:)))
+fprintf('incorrect prediction success: %.3f\n', mean(successRates(2,:)))
+fprintf('overall accuracy: %.3f\n\n', mean(accuracies))
+[h, p] = ttest(successRates(1,:), successRates(2,:));
+fprintf('significance: %.3f\n\n', p)
+
+
+%%
+close all
+figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 'none');
+barFancy(successRates, barProperties{:}, ...
+    'levelNames', {{'correct', 'incorrect'}}, 'textRotation', 0, 'colors', [modelColor; modelColor*.2])
+set(gca, 'YTick', 0:.5:1)
+
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineModelIncorrectAccuracy');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
