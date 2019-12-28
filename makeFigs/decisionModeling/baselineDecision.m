@@ -63,6 +63,9 @@ end
 
 %% compute predictors for behavioral model
 
+% settings
+trialSmps = 100;  % fit linear model of leading forepaw position over this many samples
+fps = 250;
 
 % note: this code is a little strange, in that i flip predictors relative
 % to referenceModPaw that are subsequently used by
@@ -123,6 +126,16 @@ for i = 1:length(sessions)
         
         % ind in modPawKinInterp at which whiskers contact obs
         flat.contactInd(flatBin) = kinData(j).pawObsPosIndInterp(kinData(j).firstModPaw);
+        
+        
+        % find distance and time to contact
+        % get distance of leading paw at contact
+        flat.distances(flatBin) = abs(max(kinData(j).locations(kinData(j).contactInd,1,:)))*1000;
+
+        trialX = max(kinData(j).locations(kinData(j).contactInd-trialSmps+1:kinData(j).contactInd,1,:), [], 3);
+        predictedAtObsInd = polyval(polyfit(trialX', 1:trialSmps, 1), 0);
+        flat.times(flatBin) = abs((predictedAtObsInd-trialSmps) / fps)*1000; % frame until contact / (frames/second)
+            
     end
     
     % remove unanalyzed trials
@@ -196,7 +209,9 @@ saveas(gcf, file, 'svg');
 %% predictor scatters and histograms
 
 % close all
-figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778.00 587.00]);
+f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778.00 587.00]);
+f2 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750 554.00 523.00 464.00]);
+set(0, 'CurrentFigure', f1)
 scatSz = 8;
 scatAlpha = .4;
 maxScatters = 1000;  % only plot this many per condition to avoid large vector images
@@ -225,6 +240,19 @@ for r = 1:sz
                 'FaceColor', decisionColors(1,:));
             histogram(X(logical(y),r_X), edges, ...
                 'FaceColor', decisionColors(2,:))
+            
+            % add to second figure that has only histograms, no scatters
+            set(0, 'CurrentFigure', f2)
+            subplot(2,2,r); hold on
+            histogram(X(~logical(y),r_X), edges, ...
+                'FaceColor', decisionColors(1,:));
+            histogram(X(logical(y),r_X), edges, ...
+                'FaceColor', decisionColors(2,:))
+            title(predictorNames{r_X}, 'Color', predictorColors(r,:), 'Interpreter', 'none');
+            set(gca, 'XLim', lims(r_X,:), 'Box', 'off', 'XTick', [], 'YTick', [])
+            set(0, 'CurrentFigure', f1)
+
+
         
         % otherwise scatter
         elseif r>c
@@ -251,8 +279,33 @@ end
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePredictors');
-saveas(gcf, file, 'svg');
+saveas(f1, file, 'svg');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
+saveas(f2, file, 'svg');
 
+
+
+
+%% whisker contact frame image for making schematic of predictor variables
+
+% settings
+session = '180630_001';
+trial = 19;
+
+
+vidRun = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
+vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+    'frameTimeStamps', 'frameTimeStampsWisk', 'wiskContactFrames')
+runContactFrame = knnsearch(frameTimeStamps, frameTimeStampsWisk(wiskContactFrames(trial)));
+frame = getFrameWithWisk(vidRun, vidWisk, frameTimeStamps, frameTimeStampsWisk, runContactFrame, ...
+    'runContrast', contrast);
+
+figure('position', [1937.00 518.00 size(frame,2) size(frame,1)], 'MenuBar', 'none');
+colormap gray
+image(frame, 'cdatamapping', 'scaled')
+set(gca, 'Position', [0 0 1 1], 'Visible', 'off')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'contactFrame.png'));
 
 
 
@@ -484,23 +537,82 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-% %% heatmap
-% 
-% % settings
-% xLims = [-.03 .015];
-% yLims = [-.03 .03];
-% 
-% figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
-% heatmapRick(flat.modPawPredictedDistanceToObs, flat.modPawDistanceToObs, ...
-%     {'xLims', xLims, 'yLims', yLims, ...
-%     'xlabel', 'predicted distance to obstalce (m)', 'ylabel', 'distance to obstalce (m)'})
-% set(gca, 'DataAspectRatio', [1 1 1])
-% line(xLims, xLims, 'color', [.5 .5 1 .8], 'lineWidth', 3)
-% 
-% % save
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-%         'baseline_decision_heatmaps');
-% saveas(gcf, file, 'svg');
+%% distance and time to contact
+
+
+% settings
+xLims = [15 50];
+yLims = [0 150];
+scatSize = 4;
+scatAlpha = .3;
+mouseColors = true;
+scatPlotSize = .7;
+border = .15;
+
+
+% initializations
+d = flat.distances;
+t = flat.times;
+[~,~,mouseIds] = unique(flat.mouse);
+
+% plot that shit
+figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
+scatterHistoRick(d,t, ...
+    'groupId', mouseIds, 'colors', 'jet', 'groupFcn', @nanmedian, ...
+    'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
+    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', true, 'scatSize', scatSize, 'scatAlpha', scatAlpha);
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+% get median distances and times for all mice
+[distances, times] = deal(nan(1,length(mice)));
+for i = 1:length(mice)
+    mouseBins = strcmp(flat.mouse, mice{i});
+    distances(i) = median(flat.distances(mouseBins));
+    times(i) = median(flat.times(mouseBins));
+end
+
+fprintf('\ndistance to contact:   %.1f +- %.1f SEM\n', mean(distances), std(distances)/sqrt(length(distances)))
+fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
+
+%% predicted distance heatmap
+
+% settings
+xLims = [-.03 .015]*1000;
+yLims = [-.03 .03]*1000;
+binWidth = 5;  % (mm) width for sliding average of big ste probability
+binNum = 100;  % number of bins for sliding average of big step probability
+
+
+close all
+figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
+heatmapRick(flat.modPawPredictedDistanceToObs*1000, flat.modPawDistanceToObs*1000, ...
+    'xLims', xLims, 'yLims', yLims, 'colormap', 'hot', ...
+    'xlabel', 'predicted landing distance (m)', 'ylabel', 'landing distance (mm)')
+set(gca, 'DataAspectRatio', [1 1 1])
+line(xLims, xLims, 'color', [ctlStepColor .5], 'lineWidth', 3)
+
+% add moving average of big step probability
+binCenters = linspace(xLims(1), xLims(2), binNum);
+bigStepProbs = nan(1,binNum);
+for i = 1:length(binCenters)
+    binLims = binCenters(i) + [-binWidth/2 binWidth/2];
+    bins = flat.modPawPredictedDistanceToObs*1000>binLims(1) & ...
+        flat.modPawPredictedDistanceToObs*1000<=binLims(2);
+    bigStepProbs(i) = mean(flat.isBigStep(bins));
+end
+
+yyaxis right
+plot(binCenters, bigStepProbs, 'LineWidth', 3, 'Color', decisionColors(1,:))
+set(gca, 'YColor', decisionColors(1,:), 'YTick', 0:.5:1, 'box', 'off')
+ylabel('big step probability')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDecisionHeatmap');
+saveas(gcf, file, 'svg');
 
 
 

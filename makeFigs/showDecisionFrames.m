@@ -78,9 +78,9 @@ for t = 1:2
     % read frames
     frameNum = kinData(trial).trialInds(finalInd);
     contactFrame = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, kinData(trial).trialInds(contactInd), ...
-        'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false, 'edgeFading', s.edgeFading);
+        'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false, 'edgeFading', s.edgeFading, 'runContrast', s.contrastLims);
     finalFrame = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, kinData(trial).trialInds(finalInd), ...
-        'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false, 'edgeFading', s.edgeFading);
+        'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false, 'edgeFading', s.edgeFading, 'runContrast', s.contrastLims);
     
     if ~isempty(s.yMax)
         contactFrame = contactFrame(1:s.yMax,:,:);
@@ -98,10 +98,6 @@ for t = 1:2
     end
     
     
-    contactFrame = imadjust(contactFrame, s.contrastLims, [0 1]);
-    finalFrame = imadjust(finalFrame, s.contrastLims, [0 1]);
-    
-    
     % whisker contact frame
     figs{(t-1)*2+1} = figure('name', imgNames{(t-1)*2+1}, 'Color', 'black', 'MenuBar', 'none');
     inds = startInd:contactInd;
@@ -116,7 +112,7 @@ for t = 1:2
             kinData(trial).locationsPix(contactInd,2:3,3), 100, s.contactColor, 'filled')
     end
     set(gcf, 'Position', [2000 400 imgDims(2) imgDims(1)])
-        set(gca, 'Position', [0 0 1 1])
+    set(gca, 'Position', [0 0 1 1])
     
     
     % step over frame

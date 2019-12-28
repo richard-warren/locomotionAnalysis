@@ -1,4 +1,4 @@
-function scatterHistoRick(x, y, opts)
+function scatterHistoRick(x, y, varargin)
 
 % scatters data with nice marginal histos on the top and right of the plot
 % // can give grouped data such that dft groups of data have dft colors,
@@ -15,18 +15,15 @@ s.border = .15; % fraction of plot to be occupied by the border
 s.xlabel = [];
 s.ylabel = [];
 s.groupId = []; % group id for each element in x and y, categorical variable deterimining color of scatter point 
-s.groupFcn = @nanmean; % summary state used to collapse across items within a group (eg. change to median if you want to take the median within each group)
+s.groupFcn = @nanmean; % summary stat used to collapse across items within a group (eg. change to median if you want to take the median within each group)
 s.showCrossHairs = true; % whether to show crosshairs showing std and mean for each variable
 s.groupHistoLineWidth = 1; % width of group histograms
 s.groupHistoAlpha = .4; % alpha for group histos
 s.histoAlpha = 1; % alpha of main histos
 
-% reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
-
-
 
 % initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings contained in opts
 if isempty(s.groupId); s.groupId = ones(size(x)); end
 if isempty(s.xLims); s.xLims = [min(x) max(x)]; end
 if isempty(s.yLims); s.yLims = [min(y) max(y)]; end

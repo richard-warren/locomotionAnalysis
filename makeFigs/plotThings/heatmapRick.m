@@ -1,4 +1,4 @@
-function heatmapRick(x, y, opts)
+function heatmapRick(x, y, varargin)
 
 % plots joint pdf for x and y and plots as heat map
 
@@ -11,12 +11,9 @@ s.percentileLims = [5 95]; % exclude x values outside these percentile limits
 s.binNum = 100;
 s.colormap = 'hot';
 
-% reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
-
-
 
 % initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings contained in opts
 if isempty(s.xLims); s.xLims = prctile(x, s.percentileLims); end % 5th to 95th percentile
 if isempty(s.yLims); s.yLims = prctile(y, s.percentileLims); end % 5th to 95th percentile
 xBins = linspace(s.xLims(1), s.xLims(2), s.binNum);
