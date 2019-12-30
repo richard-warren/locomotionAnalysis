@@ -61,6 +61,28 @@ for s = 1:length(sessions)
 end
 
 
+%% whisker contact frame image for making schematic of predictor variables
+
+% settings
+session = '180630_001';
+trial = 19;
+
+
+vidRun = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
+vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+    'frameTimeStamps', 'frameTimeStampsWisk', 'wiskContactFrames')
+runContactFrame = knnsearch(frameTimeStamps, frameTimeStampsWisk(wiskContactFrames(trial)));
+frame = getFrameWithWisk(vidRun, vidWisk, frameTimeStamps, frameTimeStampsWisk, runContactFrame, ...
+    'runContrast', contrast);
+
+figure('position', [1937.00 518.00 size(frame,2) size(frame,1)], 'MenuBar', 'none');
+colormap gray
+image(frame, 'cdatamapping', 'scaled')
+set(gca, 'Position', [0 0 1 1], 'Visible', 'off')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'contactFrame.png'));
+
+
 %% compute predictors for behavioral model
 
 % settings
@@ -282,31 +304,6 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 saveas(f1, file, 'svg');
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
 saveas(f2, file, 'svg');
-
-
-
-
-%% whisker contact frame image for making schematic of predictor variables
-
-% settings
-session = '180630_001';
-trial = 19;
-
-
-vidRun = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
-vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'frameTimeStamps', 'frameTimeStampsWisk', 'wiskContactFrames')
-runContactFrame = knnsearch(frameTimeStamps, frameTimeStampsWisk(wiskContactFrames(trial)));
-frame = getFrameWithWisk(vidRun, vidWisk, frameTimeStamps, frameTimeStampsWisk, runContactFrame, ...
-    'runContrast', contrast);
-
-figure('position', [1937.00 518.00 size(frame,2) size(frame,1)], 'MenuBar', 'none');
-colormap gray
-image(frame, 'cdatamapping', 'scaled')
-set(gca, 'Position', [0 0 1 1], 'Visible', 'off')
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs', 'contactFrame.png'));
-
 
 
 %% neural network vs. glm models
@@ -591,7 +588,7 @@ close all
 figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
 heatmapRick(flat.modPawPredictedDistanceToObs*1000, flat.modPawDistanceToObs*1000, ...
     'xLims', xLims, 'yLims', yLims, 'colormap', 'hot', ...
-    'xlabel', 'predicted landing distance (m)', 'ylabel', 'landing distance (mm)')
+    'xlabel', 'predicted landing distance (mm)', 'ylabel', 'landing distance (mm)')
 set(gca, 'DataAspectRatio', [1 1 1])
 line(xLims, xLims, 'color', [ctlStepColor .5], 'lineWidth', 3)
 
@@ -613,6 +610,24 @@ ylabel('big step probability')
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDecisionHeatmap');
 saveas(gcf, file, 'svg');
+
+% test accuracy of model using only predicted distance to obstacle
+[X, y, predictorNames_full, isCategorical] = ...  % most inclusive model
+    prepareDecisionModelData(flat, {'modPawPredictedDistanceToObs'}, ...
+    'isBigStep', 'balanceClasses', true, 'useAllPaws', false, 'normalizeData', true, 'referencePaw', referenceModPaw);
+accuracies = nan(1,kFolds);
+for i = 1:kFolds
+    % train
+    bins = crossVals.training(i);
+    glm = fitglm(X(bins), y(bins), 'Distribution', 'binomial');
+    %test
+    bins = crossVals.test(i);
+    predictions = round(predict(glm, X(bins)));
+    accuracies(i) = mean(y(bins)==predictions);
+end
+
+fprintf('predicted distance only GLM accuracy: %.3f\n', mean(accuracies))
+
 
 
 

@@ -322,7 +322,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell([g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
             end
             
-        case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact
+        case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact (more negative numbers mean further away from the nose at whisker contact)
             var = num2cell(nan(1,length(g.sesKinData)));
             var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactPositions]);
             
