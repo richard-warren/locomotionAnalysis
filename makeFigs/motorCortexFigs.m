@@ -337,7 +337,7 @@ yLims = [0 .016];
 colNames = {'contra', 'ipsi'};
 rowNames = {'muscimol', 'lesion'};
 conditions = {[1,2], [1,2], [3,4,5], [3,4,5]};
-if matchPropensities; conditions = {[1,2], [1,2], [3,4], [3,4]};; end
+if matchPropensities; conditions = {[1,2], [1,2], [3,4], [3,4]}; end
 isContraFirst = [true false true false];
 
 flat = flattenData(data, {'mouse', 'session', 'isTrialSuccess', 'trial', 'isLightOn', 'isWheelBreak', ...

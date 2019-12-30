@@ -134,8 +134,6 @@ fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(
 %% height shaping
 
 
-% SCATTER ACROSS ALL ANIMALS
-
 % settings
 xLims = [3 10];
 isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
@@ -145,7 +143,7 @@ flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', ...
     'obsHgt', 'preObsHgt', 'isFore', 'isLeading', 'stepOverMaxHgt', 'sensoryCondition'});
 flat = flat(~isnan([flat.obsHgt]) & ...
             ~isnan([flat.stepOverMaxHgt]) & ...
-            ~isnan([flat.preObsHgt])); % add conditionals here
+            ~isnan([flat.preObsHgt]));  % add conditionals here
 if isHgtPreObs; pawHgts = [flat.preObsHgt]*1000; else; pawHgts = [flat.stepOverMaxHgt]*1000; end
 obsHgts = [flat.obsHgt]*1000;
 [~, conditions] = ismember({flat.sensoryCondition}, vars.sensoryCondition.levels);
@@ -176,9 +174,8 @@ for i = 1:2  % isFore
 end
 
 
-%% height shaping bars
+% plot things
 
-close all
 % all paws
 figure('position', [2000.00 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
 temp = [vars.isFore; vars.isLeading; vars.sensoryCondition];
