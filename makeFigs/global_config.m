@@ -1,9 +1,5 @@
 % global settings for paper
 
-% sizes
-% figHgt = 3.75;  % inches
-% font = 'Calibri';
-% fontSize = 12;
 
 % global
 axisColor = [.15 .15 .15];  % use this for black
@@ -43,14 +39,13 @@ preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));% preDecisionColor(3
 modelColor = [56, 222, 53] / 255;
 
 
-% video contast
-contrast = [0 .75];
+% manipulations
+lesionColor = [177 13 4]/255;
+muscimolColor = [251 106 6]/255;
 
 
-% contact color (paw, whiskers)
-contactColor = [1 .2 .2];
-
-
-
+% other
+contrast = [0 .75];  % for videos and images
+contactColor = [1 .2 .2];  % contact color (paw, whiskers)
 
 
