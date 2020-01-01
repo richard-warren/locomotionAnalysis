@@ -635,13 +635,15 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
         case 'numTouchFrames'  % number of frames in which paw is in contact with obstacles
             var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:)~=0,1));
             
-        case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: traiing hind
+        case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: trailing hind
+            try
             stepTypeSequence = [true false true false;   % leading/trailing
                                 true true false false];  % fore/hind
             isLeadingIsLagging = [[g.expData(mouse).sessions(session).trials(trial).paws.isLeading]; ...
                                   [g.expData(mouse).sessions(session).trials(trial).paws.isFore]];  % 2x4 matrix where each column is a paw, and each row is [isLeading, isFore]
             [~, var] = ismember(isLeadingIsLagging', stepTypeSequence', 'rows');
             var = num2cell(var);
+            catch; keyboard; end
             
         case 'distanceToObs'  % linear distance of paw to top of obstacle at zenith of paw trajectory
             var = num2cell(nan(1,4));
