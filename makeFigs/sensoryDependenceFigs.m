@@ -31,8 +31,7 @@ vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore pa
 
 conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
-
-
+conditionals.none = struct('name', '', 'condition', @(x) x);
 
 
 %% ----------
@@ -174,7 +173,7 @@ for i = 1:2  % isFore
 end
 
 
-% plot things
+%% plot things
 
 % all paws
 figure('position', [2000.00 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
@@ -183,7 +182,7 @@ barFancy(corrs, 'levelNames', {temp.levelNames}, 'ylabel', 'paw obstacle correla
     'colors', repmat(sensColors,4,1), 'YLim', [], barProperties{:})
 set(gca, 'YTick', -.2:.2:.8, 'TickDir', 'out', 'position', [.15 .0 .8 .9])
 
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrsAllPaws');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrsAllPaws');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -194,7 +193,7 @@ barFancy(squeeze(corrs(1,1,:,:)), 'levelNames', {vars.sensoryCondition.levelName
     'colors', repmat(sensColors,4,1), 'YLim', [-.2 .6], barProperties{:})
 set(gca, 'YTick', -.2:.2:1, 'TickDir', 'out', 'position', [.15 .0 .8 .9])
 
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrs');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrs');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -210,8 +209,7 @@ logPlotRick(obsHgts(lfBins), pawHgts(lfBins), ...
 set(gca, 'xlim', [4 10], 'YTick', 4:2:12, 'TickDir', 'out')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'sensoryDependenceHeightShapingMovingAvgs');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeightShapingMovingAvgs');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 

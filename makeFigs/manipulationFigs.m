@@ -20,7 +20,7 @@ clear all
 clear all;  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_lesion';
+dataset = 'senLesion';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 maxEarlySessions = 3;  % only include this many days post lesion in lesions figs
 
@@ -74,7 +74,7 @@ end
 
 % load data
 fprintf(['loading ' dataset ' data... ']);
-tic; load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data'); toc
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data');
 mice = {data.data.mouse};
 
 
@@ -143,7 +143,7 @@ flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositi
     'isBigStep', 'preObsKin', 'conditionNum'});
 
 if contains(dataset, {'lesion', 'Lesion'})
-    fprintf('restricting flat to early sessions... ');
+    fprintf('restricting ''flat'' to early sessions... ');
     flat = flat([flat.conditionNum]<=maxEarlySessions);
 end
 
@@ -160,7 +160,6 @@ fprintf('data loaded!\n');
 
 
 %% bars
-% close all
 
 % success rate
 figure('position', [2000.00 472.00 382 328.00], 'color', 'white', 'menubar', 'none');
@@ -220,6 +219,16 @@ barFancy(dv, 'ylabel', 'success rate', 'levelNames', {figVars(1:end-1).levelName
     'colors', repmat(colors,colorRepeats,1), barProperties{:})
 % set(gca, 'YTick', 0:7:14)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawContacts']), 'svg');
+
+%% baseline step heights
+figure('position', [2600.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
+figVars = [vars.isFore; vars.condition];
+dv = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, [figConditionals])*1000;
+colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
+barFancy(dv, 'ylabel', 'control step height (mm)', 'levelNames', {figVars(1:end-1).levelNames}, ...
+    'colors', repmat(colors,colorRepeats,1), barProperties{:})
+% set(gca, 'YTick', 0:7:14)
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_baselineHeights']), 'svg');
 
 
 % %% SESSIONS OVER TIME
