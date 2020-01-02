@@ -1,3 +1,12 @@
+%% estimate tissue shrinkage landmarks
+mmWidth = 11;
+im = imread('Y:\obstacleData\papers\hurdles_paper1\figures\histology\rostalHippocampus_coronal.PNG');
+
+mmPerPix = mmWidth / size(im,2);
+figure; imshow(im)
+ventricalScale = [626-266] * mmPerPix;
+baseScale = [569-331] * mmPerPix;
+
 %% test load times for large .mat files, FML!!!
 
 tic; fprintf('\n\n-----SPEED TESTS-----\n')
