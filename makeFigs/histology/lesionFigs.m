@@ -2,8 +2,8 @@ close all
 
 % settings
 global_config;
-brainRegion = 'sen';  % mtc, sen
-rostralHippoPos = .58; %50/101;  % vertical position of the rostral edge of the hippocampus, expressed as percentage from top of image (this is used to vertically align lesions)
+brainRegion = 'mtc';  % mtc, sen
+rostralHippoPos = 77/158;  % vertical position of the rostral edge of the hippocampus, expressed as percentage from top of image (this is used to vertically align lesions)
 mmWidth = 11;  % width of cartoon in mm
 interpPoints = 200;
 smoothSmps = 5;
@@ -11,11 +11,12 @@ roiFolder = 'Y:\obstacleData\papers\hurdles_paper1\figures\histology\lesionRois'
 ventricalScale = 4.4;  % (mm)
 baseScale = 2.9089;  % (mm)
 figWidth = 400;
+alpha = .6;
+lineWidth = .5;
 
 
 % initializations
 cartoon = imread(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'histology', 'brainCartoon', ['cartoon_' brainRegion]), 'png');
-% cartoon = uint8(cartoon(:,:,1)~=0) * 255;
 cartoon = imgaussfilt(cartoon, 1);
 whRatio = size(cartoon,2) / size(cartoon,1);
 
@@ -50,7 +51,7 @@ colors = lines(length(mice));
 files = dir(fullfile(roiFolder, '*.mat'));
 
 
-
+edges = cell(1,length(mice));
 for i = 1:length(mice)
     
     % load mouse roi
@@ -60,15 +61,15 @@ for i = 1:length(mice)
     end
     load(fullfile(roiFolder, files(fileBin).name))
 
-    vScale = table2array(Combine(end,1));
-    bScale = table2array(Combine(end-1,1));
+    vScale = ventricleDistance;
+    bScale = bottomDistance;
     shrinkage = mean([vScale/ventricalScale, bScale/baseScale]);
     
     
-    x = table2array(Combine(1:end-2,1));
-    disp(mean(x))
+    x = table2array(ExportPoints(:,1));
     if mean(x)>0; x=-x; end  % display on lesions on the left side of figure
-    y = table2array(Combine(1:end-2,2));
+    y = table2array(ExportPoints(:,2));
+    y = y - HippocampusY;
     x = x/shrinkage;
     y = y/shrinkage;
     
@@ -82,11 +83,10 @@ for i = 1:length(mice)
     x = interp1(l, [x; x(1)], linspace(l(1), l(end), interpPoints), method);
     y = interp1(l, [y; y(1)], linspace(l(1), l(end), interpPoints), method);
 
-    % close all; figure('Position', [1980.00 428.00 560.00 420.00])
-%     fill(x, y, colors(i,:), 'FaceAlpha', .4, 'LineWidth', 2)
-    fill(x, y, lesionColor, 'FaceAlpha', .4, 'LineWidth', 2, 'EdgeColor', colors(i,:))
-%     fill(x, y, colors(i,:), 'FaceAlpha', .4, 'LineWidth', 2, 'EdgeColor', lesionColor)
+    patch(x, y, lesionColor, 'FaceAlpha', alpha, 'LineWidth', lineWidth, 'EdgeColor', axisColor);
+%     if showLine; edges{i} = plot(x, y, 'LineWidth', lineWidth, 'Color', colors(i,:)); end
 end
+for i = 1:length(edges); uistack(edges{i}, 'top'); end
 
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'histology', ['lesions_', brainRegion '.svg']);
 saveas(gcf, file)

@@ -308,14 +308,15 @@ for i = 1:length(data.data) % compute session number relative to first lesion se
 end
 
 
-% success
+%% success
 figure('position', [2018.00 100 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'isTrialSuccess', vars.sessionsPostLesion, {'mouse'});
 if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'success rate', 'xlabel', 'days post lesion', ...
     'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
-set(gca, 'YLim', [0 1], 'YTick', 0:.5:1, 'TickDir', 'out')
-ln = line(-[.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 2); uistack(ln, 'bottom')
+set(gca, 'YLim', [0 1], 'YTick', 0:.5:1)
+ln = line(-[.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+% yLims = get(gca, 'YLim'); r = rectangle('Position', [-.5 yLims(1) sessionsToShow(end)+.5 diff(yLims)], 'FaceColor', [lesionColor .1], 'EdgeColor', 'none'); uistack(r, 'bottom')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_succesOverSessions' suffix1 suffix2]), 'svg');
 
 % velocity
@@ -324,19 +325,22 @@ dv = getDvMatrix(data, 'velAtWiskContact', vars.sessionsPostLesion, {'mouse'});
 if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'velocity (m/s)', 'xlabel', 'days post lesion', ...
     'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
-% set(gca, 'YLim', [.1 .5], 'TickDir', 'out')
-ln = line(-[.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 2); uistack(ln, 'bottom')
+set(gca, 'YTick', [.2 .35 .5])
+ln = line(-[.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+% yLims = get(gca, 'YLim'); r = rectangle('Position', [-.5 yLims(1) sessionsToShow(end)+.5 diff(yLims)], 'FaceColor', [lesionColor .1], 'EdgeColor', 'none'); uistack(r, 'bottom')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_velOverSessions' suffix1 suffix2]), 'svg');
 
-%% correlations
+% correlations
 figure('position', [2018.00 700 521.00 239.00], 'color', 'white', 'menubar', 'none')
-dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.sessionsPostLesion, {'mouse'}, {'session'}, figConditionals, 'corr'); % perform regression for each session, then average slopes across sessions for each mouse
+tempConditionals = [figConditionals; conditionals.isLeading; conditionals.isFore];
+dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.sessionsPostLesion, {'mouse'}, {'session'}, tempConditionals, 'corr'); % perform regression for each session, then average slopes across sessions for each mouse
 if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
-sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'velocity (m/s)', 'xlabel', 'days post lesion', ...
+sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'correlation', 'xlabel', 'days post lesion', ...
     'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
-% set(gca, 'YLim', [.1 .5], 'TickDir', 'out')
-ln = line(-[.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 2); uistack(ln, 'bottom')
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_velOverSessions' suffix1 suffix2]), 'svg');
+set(gca, 'YTick', [.1 .35 .6])
+% yLims = get(gca, 'YLim');; r = rectangle('Position', [-.5 yLims(1) sessionsToShow(end)+.5 diff(yLims)], 'FaceColor', [lesionColor .1], 'EdgeColor', 'none'); uistack(r, 'bottom')
+ln = line(-[.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_corrOverSessions' suffix1 suffix2]), 'svg');
 
 
 
