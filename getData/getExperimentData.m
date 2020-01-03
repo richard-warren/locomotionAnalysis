@@ -19,7 +19,7 @@ metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPo
 g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
 g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
-g.clearanceBuffer = .000;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
+g.clearanceBuffer = .001;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle // positive numbers are more inclusive (excluding few trials) //could probably get away with .0015
 
 g.velVsPositionPrePost = [-1.5 .4]; % (m) positions before and after whisker contact to collect velocity data
 g.velVsPositionRes = 500; % (tics) how many samples in the x grid
@@ -320,6 +320,8 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell(-[g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
             elseif strcmp(side, 'right')
                 var = num2cell([g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
+            else  % if 'side' is 'bilateral', for example
+                var = num2cell(nan(1,length(g.sesKinData)));
             end
             
         case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact (more negative numbers mean further away from the nose at whisker contact)

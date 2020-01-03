@@ -1,3 +1,22 @@
+%% check out which trials are being excluded based on paw height
+
+
+fprintf('loading data... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', ['mtc_muscimol_data.mat']), 'data'); fprintf('data loaded!\n')
+flat = flattenData(data, {'mouse', 'session', 'trial', 'paw', 'isValidZ', 'stepOverMaxHgt', 'obsHgt', 'modPawKin'});
+sessions = unique({flat.session});
+
+%%
+fprintf('INVALID-Z TRIALS:\n')
+fprintf('-----------------\n')
+for i = 1:length(sessions)
+    fprintf('%s:  ', sessions{i})
+    bins = strcmp({flat.session}, sessions{i}) & ~[flat.isValidZ] & [flat.paw]==2;
+    fprintf('%i ', unique([flat(bins).trial]))
+    fprintf('\n')
+end
+
+
+
 %% estimate tissue shrinkage landmarks
 mmWidth = 11;
 im = imread('Y:\obstacleData\papers\hurdles_paper1\figures\histology\rostalHippocampus_coronal.PNG');

@@ -37,6 +37,7 @@ end
 % pimp fig
 if ~isempty(s.xlabel); xlabel(s.xlabel); end
 if ~isempty(s.ylabel); ylabel(s.ylabel); end
+set(gca, 'TickDir', 'out')
 
 pause(.001)
 

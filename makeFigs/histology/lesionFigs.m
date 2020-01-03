@@ -1,6 +1,7 @@
 close all
 
 % settings
+global_config;
 brainRegion = 'sen';  % mtc, sen
 rostralHippoPos = .58; %50/101;  % vertical position of the rostral edge of the hippocampus, expressed as percentage from top of image (this is used to vertically align lesions)
 mmWidth = 11;  % width of cartoon in mm
@@ -82,8 +83,9 @@ for i = 1:length(mice)
     y = interp1(l, [y; y(1)], linspace(l(1), l(end), interpPoints), method);
 
     % close all; figure('Position', [1980.00 428.00 560.00 420.00])
-    fill(x, y, colors(i,:), ...
-        'FaceAlpha', .4, 'LineWidth', 1)
+%     fill(x, y, colors(i,:), 'FaceAlpha', .4, 'LineWidth', 2)
+    fill(x, y, lesionColor, 'FaceAlpha', .4, 'LineWidth', 2, 'EdgeColor', colors(i,:))
+%     fill(x, y, colors(i,:), 'FaceAlpha', .4, 'LineWidth', 2, 'EdgeColor', lesionColor)
 end
 
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'histology', ['lesions_', brainRegion '.svg']);
