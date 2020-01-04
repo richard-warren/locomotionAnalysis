@@ -27,6 +27,7 @@ s.trialsToOverlay = []; % if not empty, plot individual trials for each conditio
 s.yLimZero = true; % makes min of y axis zero so traces don't dip beneathe 'floor' on plots
 s.lineColor = 'black';
 s.plotObs = true;  % whether to plot the obstacle
+s.scatterEnds = true;  % whether to add scatter points to the end of the individual trials
 
 
 % initializations
@@ -83,8 +84,10 @@ for i = 1:max(conditions)
             plot(squeeze(conditionTrajectories(j,1,:)), squeeze(conditionTrajectories(j,2,:)), ...
                 'LineWidth', 1, 'Color', [s.colors(i,:) s.trialAlpha]); hold on
         end
-        scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
-            20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
+        if s.scatterEnds
+            scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
+                20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
+        end
     end
 end
 

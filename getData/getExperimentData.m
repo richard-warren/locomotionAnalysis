@@ -485,6 +485,8 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell(logical([0 0 1 1]));
             elseif strcmp(side, 'right')
                 var = num2cell(logical([1 1 0 0]));
+            else  % if 'side' is 'bilateral', for example
+                var = num2cell(nan(1,4));
             end
             
         case 'isFore'  % whether paw is a forelimb

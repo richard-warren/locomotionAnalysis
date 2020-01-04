@@ -41,7 +41,7 @@ modelColor = [56, 222, 53] / 255;
 
 % manipulations
 lesionColor = [177 13 4]/255;
-muscimolColor = [251 106 6]/255;
+muscimolColor = [13 177 111]/255;
 
 
 % other
