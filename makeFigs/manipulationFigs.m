@@ -19,9 +19,9 @@ clear all
 clear all;  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_lesion';
-poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
-splitEarlyLate = true;  % whether to split early and late post-lesion sessions
+dataset = 'senLesion';
+poolSenLesionConditions = false;  % whether to use all conditions or pool postBi and postContra
+splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 3];  % min and max sessions to include in 'early' lesion sessions
 lateSessions = [5 7];  % min and max sessions to include in 'late' lesion sessions
 
@@ -75,11 +75,13 @@ elseif strcmp(dataset, 'senLesion')
             figConditionals = struct('name', 'conditionNum', 'condition', @(x) x>=earlySessions(1) & x<=earlySessions(2));
         end
     else
-        colors = winter(6);
+%         colors = winter(6);
+        colors = [ctlStepColor; repmat(lesionColor,4,1).*linspace(1,.25,4)'];
         vars.condition = struct('name', 'condition', ...
-            'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, ...
-            'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});
+            'levels', {{'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, ...
+            'levelNames', {{'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});  % i ommitted preTrim for simplicity
         matchConditions = {'pre' 'postContra'};  % for propensity score matching, math these two conditions
+        figConditionals = struct('name', 'conditionNum', 'condition', @(x) x>=earlySessions(1) & x<=earlySessions(2));
     end
     
     extraVars = {'condition'};  % vars to extract using flattenData that are specific to this experiment
@@ -112,7 +114,7 @@ if splitEarlyLate && ~strcmp(dataset, 'mtc_muscimol')  % only do this for lesion
     fprintf('splitting early and late post lesion epochs... ');
     
     for i = 1:length(data.data)
-        postSessions = find(contains({data.data(i).sessions.condition}, 'post'));
+        postSessions = find(strcmp({data.data(i).sessions.condition}, 'post'));
         
         % early sessions
         inds = earlySessions(1):earlySessions(2);
@@ -143,8 +145,12 @@ if matchTrials
     matchedTrials = cell2table(cell(0,3), 'VariableNames', {'mouse', 'session', 'trial'});  % struct containing the mouse, session, and trial number for propensity score matched trials
     for mouse = mice
 
-        bins = strcmp(flat.mouse, mouse{1}) & ismember(flat.condition, matchConditions);
-        if contains(dataset, {'lesion', 'Lesion'}); bins = bins & [flat.conditionNum]>=earlySessions(1) & [flat.conditionNum]<=earlySessions(2); end
+        bins = strcmp(flat.mouse, mouse{1}) & ...
+            ismember(flat.condition, matchConditions);
+        if contains(dataset, {'lesion', 'Lesion'})
+            bins = bins & [flat.conditionNum]>=earlySessions(1) & [flat.conditionNum]<=earlySessions(2);
+            fprintf('restricting matched sessions to ''early'' data...');
+        end
         flat_sub = flat(bins,:);
 
         X = table2array(flat_sub(:, varBins));
@@ -161,8 +167,10 @@ if matchTrials
             bins = strcmp(matchedTrials.mouse, data_matched.data(i).mouse) & ...
                    strcmp(matchedTrials.session, data_matched.data(i).sessions(j).session);
             sesTrials = sort(matchedTrials.trial(bins));
-            data_matched.data(i).sessions(j).trials = data_matched.data(i).sessions(j).trials(sesTrials);  % !!! this assumes all trials are present in sessions(j).trials
-            if ~isequal(sesTrials, [data_matched.data(i).sessions(j).trials.trial]'); disp('WARNING! Trials should be the same in matchedTrials and data_matched'); keyboard; end
+            if ~isempty(sesTrials)
+                data_matched.data(i).sessions(j).trials = data_matched.data(i).sessions(j).trials(sesTrials);  % !!! this assumes all trials are present in sessions(j).trials
+                if ~isequal(sesTrials, [data_matched.data(i).sessions(j).trials.trial]'); disp('WARNING! Trials should be the same in matchedTrials and data_matched'); keyboard; end
+            end
         end
 
         % remove unused sessions
@@ -191,38 +199,39 @@ fprintf('data loaded!\n');
 figure('position', [2000.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, [figConditionals]);
 barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
-set(gca, 'YTick', 0:.5:1)
+% set(gca, 'YTick', 0:.5:1)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_success' suffix1 suffix2]), 'svg');
 
 % velocity
 figure('position', [2300.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'trialVel', vars.condition, {'mouse'}, [figConditionals]);
 barFancy(dv, 'ylabel', 'velocity (m/s)', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
-set(gca, 'YTick', 0:.2:.6)
+% set(gca, 'YTick', 0:.2:.6)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_velocity' suffix1 suffix2]), 'svg');
 
 % tail height
 figure('position', [2600.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'tailHgt', vars.condition, {'mouse'}, [figConditionals])*1000;
 barFancy(dv, 'ylabel', 'tail height (mm)', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
-set(gca, 'YTick', 0:10:20)
+% set(gca, 'YTick', 0:10:20)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_tailHeight' suffix1 suffix2]), 'svg');
 
 % body angle
 figure('position', [2900.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'trialAngleContra', vars.condition, {'mouse'}, [figConditionals]);
 barFancy(dv, 'ylabel', 'body angle ({\circ})', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
-set(gca, 'YTick', -15:15:15)
+% set(gca, 'YTick', -15:15:15)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_bodyAngle' suffix1 suffix2]), 'svg');
 
 % paw height
 figure('position', [2000.00 100 320 328.00], 'color', 'white', 'menubar', 'none');
 figVars = [vars.isContra; vars.isFore; vars.condition];
+if strcmp(dataset, 'senLesion'); figVars = [vars.isFore; vars.condition]; end
 dv = getDvMatrix(data, 'preObsHgt', figVars, {'mouse'}, [figConditionals]) * 1000;
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
-barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {figVars(1:end-1).levelNames}, ...
-    'colors', repmat(colors,colorRepeats,1), barProperties{:})
-set(gca, 'YTick', 0:7:14)
+barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {figVars(1:end).levelNames}, ...
+    'colors', repmat(colors,colorRepeats,1), barProperties{:}, 'showBars', false, 'lineThickness', 4)
+% set(gca, 'YTick', 0:7:14)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawHeight' suffix1 suffix2]), 'svg');
 
 % paw correlations
@@ -239,6 +248,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 % paw contacts
 figure('position', [2600.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
 figVars = [vars.isContra; vars.isFore; vars.isLeading; vars.condition];
+if strcmp(dataset, 'senLesion'); figVars = [vars.isFore; vars.condition]; end
 dv = 1-getDvMatrix(data, 'anyTouchFrames', figVars, {'mouse'}, [figConditionals]);
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
 barFancy(dv, 'ylabel', 'success rate', 'levelNames', {figVars(1:end-1).levelNames}, ...
@@ -270,11 +280,12 @@ end
 %% sessions over time
 
 
-if strcmp(dataset, 'mtc_lesion')
-    sessionsToShow = -1:8;
-elseif strcmp(dataset, 'senLesion')
-    sessionsToShow = -2:4;
-end
+% if strcmp(dataset, 'mtc_lesion')
+%     sessionsToShow = -1:8;
+% elseif strcmp(dataset, 'senLesion')
+%     sessionsToShow = -2:7;
+% end
+sessionsToShow = -2:lateSessions(end);
 manipInd = find(sessionsToShow==0);
 
     
@@ -282,7 +293,7 @@ manipInd = find(sessionsToShow==0);
 vars.sessionsPostLesion = struct('name', 'sessionsPostLesion', 'levels', sessionsToShow);
 for i = 1:length(data.data) % compute session number relative to first lesion session
     sessionNums = [data.data(i).sessions.sessionNum];
-    firstLesSession = sessionNums(find(contains({data.data(i).sessions.condition}, 'post'), 1, 'first'));
+    firstLesSession = sessionNums(find(ismember({data.data(i).sessions.condition}, {'post', 'postEarly', 'postLate'}), 1, 'first'));  % we don't want 'postIpsi' getting in here!!!
     sessionsPostLesion = num2cell([data.data(i).sessions.sessionNum] - firstLesSession+1);
     [data.data(i).sessions.sessionsPostLesion] = sessionsPostLesion{:};
 
@@ -333,6 +344,26 @@ for i = 1:sessionsToShow(end)+1
     fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
 end
 
+
+% %% paw height
+% figure('position', [2018.00 400 521.00 239.00], 'color', 'white', 'menubar', 'none')
+% dv = getDvMatrix(data, 'preObsHgt', vars.sessionsPostLesion, {'mouse'}) * 1000;
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+% sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'average paw height (mm)', 'xlabel', 'sessions post lesion', ...
+%     'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
+% % set(gca, 'YTick', [.2 .35 .5], 'XLim', [sessionsToShow(1) sessionsToShow(end)])
+% ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawHgtOverSessions' suffix1 suffix2]), 'svg');
+% 
+% % stats
+% fprintf('\nPAW HEIGHT VS. BASELINE\n')
+% bl = mean(dv(1:manipInd-1,:),1);
+% for i = 1:sessionsToShow(end)+1
+%     [sig, p] = ttest(bl, dv(manipInd+i-1,:));
+%     fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
+% end
+
+
 % correlations
 figure('position', [2018.00 700 521.00 239.00], 'color', 'white', 'menubar', 'none')
 tempConditionals = [figConditionals; conditionals.isLeading; conditionals.isFore];
@@ -340,8 +371,9 @@ dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.sessionsPostLesion, {'mo
 if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'correlation', 'xlabel', 'sessions post lesion', ...
     'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
-set(gca, 'YTick', [.1 .35 .6], 'XLim', [sessionsToShow(1) sessionsToShow(end)])
-ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+yLims = get(gca, 'yLim');
+ln = line([.5 .5], [0 1], 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)], 'YLim', yLims)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_corrOverSessions' suffix1 suffix2]), 'svg');
 
 % stats
@@ -381,17 +413,17 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 % settings
 kFolds = 10;
-% predictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition'};
-modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
-lightOffOnly = false;  % whether to restrict to light on trials
+modPawOnlySwing = true;  % if true, only include trials where the modified paw is the only one in swing
+lightOffOnly = true;  % whether to restrict to light on trials
+weightClasses = false;
 
 
 flat = flattenData(data, {'mouse', 'session', 'trial', 'conditionNum', 'modPawOnlySwing', 'condition', ...
-    'isBigStep', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawKin', 'contactInd', 'isLightOn'});
+    'isBigStep', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawKin', 'contactInd', 'isLightOn', 'modPawPredictedDistanceToObs'});
 if contains(dataset, {'lesion', 'Lesion'})
     flat = flat([flat.conditionNum]>=earlySessions(1) & [flat.conditionNum]<=earlySessions(2));
 end
-if lightOffOnly; flat = flat([flat.isLightOn]~=1); end
+if lightOffOnly; flat = flat([flat.isLightOn]==0); end
 if modPawOnlySwing; flat = flat([flat.modPawOnlySwing]==1); end
 flat = flat(~isnan([flat.isBigStep]));
 
@@ -403,48 +435,124 @@ for i = 1:length(flat)
 end
 
 
-%% compute models
-accuracies = nan(3, length(mice));  % rows are: pre accuracy, post accuracy, pre evaluated on post accuracy
+% compute models for pre and post data
+accuracies = nan(4, length(mice));  % rows are: pre accuracy, post accuracy, pre evaluated on post accuracy, shuffled
 X = [[flat.modPawX]; [flat.obsHgt]; [flat.velAtWiskContact]; [flat.wiskContactPosition]]';
 y = [flat.isBigStep];
+
+preBins = strcmp({flat.condition}, matchConditions(1));
+postBins = strcmp({flat.condition}, matchConditions(2));
+allBins = {preBins, postBins};
 
 for i = 1:length(mice)
     
     mouseBins = strcmp({flat.mouse}, mice{i});
-    preBins = strcmp({flat.condition}, matchConditions(1));
-    postBins = strcmp({flat.condition}, matchConditions(2));
+    models = cell(1,2);
     
-    % pre model
-    X_sub = X(mouseBins & preBins,:);
-    y_sub = y(mouseBins & preBins);
-    crossVals = cvpartition(length(y_sub), 'kfold', kFolds);  % corss validation splits
-    mouseAccuracies = nan(1, kFolds);
-    
-    for j = 1:kFolds
-        glm = fitglm(X_sub(crossVals.training(j),:), y_sub(crossVals.training(j)), 'Distribution', 'binomial');
-        predictions = round(predict(glm, X_sub(crossVals.test(j),:)));
-        mouseAccuracies(j) = mean(y_sub(crossVals.test(j))==predictions');
+    for j = 1:2
+        X_sub = X(mouseBins & allBins{j},:);
+        y_sub = y(mouseBins & allBins{j});
+        crossVals = cvpartition(length(y_sub), 'kfold', kFolds);  % cross validation splits
+        mouseAccuracies = nan(1, kFolds);
+
+        for k = 1:kFolds
+            if weightClasses
+                y_temp = y_sub(crossVals.training(k));
+                weights = ones(1,length(y_temp));
+                weights(y_temp) = sum(~y_temp) / length(y_temp);
+                weights(~y_temp) = sum(y_temp) / length(y_temp);
+            else
+                weights = ones(1,sum(crossVals.training(k)));
+            end
+            
+            glm = fitglm(X_sub(crossVals.training(k),:), y_sub(crossVals.training(k)), 'Distribution', 'binomial', 'Weights', weights);
+            predictions = round(predict(glm, X_sub(crossVals.test(k),:)));
+            mouseAccuracies(k) = mean(y_sub(crossVals.test(k))==predictions');
+        end
+        models{j} = fitglm(X_sub, y_sub, 'Distribution', 'binomial');  % mouse model for this condition
+        accuracies(j,i) = mean(mouseAccuracies);
     end
-    glmPre = fitglm(X_sub, y_sub, 'Distribution', 'binomial');
-    accuracies(1,i) = mean(mouseAccuracies);
     
-    
-    % post model
-    X_sub = X(mouseBins & postBins,:);
-    y_sub = y(mouseBins & postBins);
-    crossVals = cvpartition(length(y_sub), 'kfold', kFolds);  % corss validation splits
-    mouseAccuracies = nan(1, kFolds);
-    
-    for j = 1:kFolds
-        glm = fitglm(X_sub(crossVals.training(j),:), y_sub(crossVals.training(j)), 'Distribution', 'binomial');
-        predictions = round(predict(glm, X_sub(crossVals.test(j),:)));
-        mouseAccuracies(j) = mean(y_sub(crossVals.test(j))==predictions');
-    end
-    accuracies(2,i) = mean(mouseAccuracies);
     
     % pre model evaluated on post data
-    accuracies(3,i) = mean(round(predict(glmPre, X_sub)) == y_sub'); 
+    X_sub = X(mouseBins & postBins,:);
+    y_sub = y(mouseBins & postBins);
+    accuracies(3,i) = mean(round(predict(models{1}, X_sub)) == y_sub'); 
+    
+    
+    % shuffled
+    X_sub = X(mouseBins,:);
+    y_sub = y(mouseBins);
+    crossVals = cvpartition(length(y_sub), 'kfold', kFolds);  % corss validation splits
+    mouseAccuracies = nan(1, kFolds);
+    
+    for j = 1:kFolds
+        if weightClasses
+            y_temp = y_sub(crossVals.training(j));
+            weights = ones(1,length(y_temp));
+            weights(y_temp) = sum(~y_temp) / length(y_temp);
+            weights(~y_temp) = sum(y_temp) / length(y_temp);
+        else
+            weights = ones(1,sum(crossVals.training(j)));
+        end
+            
+        glm = fitglm(X_sub(crossVals.training(j),:), y_sub(crossVals.training(j)), 'Distribution', 'binomial', 'Weights', weights);
+        predictions = round(predict(glm, X_sub(crossVals.test(j),:)));
+        mouseAccuracies(j) = mean(y_sub(crossVals.test(j))==predictions(randperm(length(predictions)))');
+    end
+    accuracies(4,i) = mean(mouseAccuracies);
 end
+
+if strcmp(dataset, 'mtc_muscimol')
+    colors_temp = [ctlStepColor; muscimolColor; mean([ctlStepColor; muscimolColor],1); ctlStepColor*.5];
+else
+    colors_temp = [ctlStepColor; lesionColor; mean([ctlStepColor; lesionColor],1); ctlStepColor*.5];
+end
+figure('position', [2018.00 100.00 252.00 239.00], 'color', 'white', 'menubar', 'none')
+barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {{'pre', 'post', 'pre->post', 'shuffled'}}, 'colors', colors_temp, barProperties{:})
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionModels' suffix1 suffix2]), 'svg');
+
+
+% compare decision thresholds
+thresholds = nan(2, length(mice));  % (pre/post) X (mouse)
+for i = 1:length(mice)
+    mouseBins = strcmp({flat.mouse}, mice{i});
+    preBins = strcmp({flat.condition}, matchConditions(1));
+    postBins = strcmp({flat.condition}, matchConditions(2));
+    allBins = {preBins, postBins};
+    
+    for j = 1:2
+        x = [flat(mouseBins & allBins{j}).modPawPredictedDistanceToObs] * 1000;
+        y = [flat(mouseBins & allBins{j}).isBigStep];
+        
+        glm = fitglm(x', y', 'Distribution', 'binomial');
+        coeffs = glm.Coefficients.Estimate;
+        thresholds(j,i) = (-coeffs(1)) / coeffs(2); % solve for prediction = 0
+    end
+    
+end
+
+figure('position', [2018.00 100.00 252.00 239.00], 'color', 'white', 'menubar', 'none')
+barFancy(thresholds, 'ylabel', 'decision threshold', 'levelNames', {vars.condition.levelNames}, ...
+    'colors', colors, barProperties{:}, 'textRotation', 0)
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionThresholds' suffix1 suffix2]), 'svg');
+
+% show histograms to sanity check decision thresholds
+% figure;
+% bins = -50:1:50;
+% x = [flat.modPawPredictedDistanceToObs] * 1000;
+% y = [flat.isBigStep];
+% subplot(2,1,1);
+% histogram(x(y & preBins), bins); hold on; histogram(x(~y & preBins), bins)
+% subplot(2,1,2);
+% histogram(x(y & postBins), bins); hold on; histogram(x(~y & postBins), bins)
+
+
+
+
+
+
+
 
 
 

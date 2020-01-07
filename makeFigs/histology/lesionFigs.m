@@ -2,7 +2,7 @@ close all
 
 % settings
 global_config;
-brainRegion = 'mtc';  % mtc, sen
+brainRegion = 'sen';  % mtc, sen
 rostralHippoPos = 77/158;  % vertical position of the rostral edge of the hippocampus, expressed as percentage from top of image (this is used to vertically align lesions)
 mmWidth = 11;  % width of cartoon in mm
 interpPoints = 200;
