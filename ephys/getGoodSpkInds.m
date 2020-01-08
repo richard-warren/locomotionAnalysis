@@ -12,8 +12,13 @@ addpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 allSpkInds = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_times.npy'));
 clusters = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_clusters.npy'));
-clusterGroups = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_groups.csv'));
-unit_ids = clusterGroups.cluster_id(strcmp(clusterGroups.group, 'good'));
+clusterGroups = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_group.tsv'));
+unit_ids = [];
+for i = 1:size(clusterGroups.group, 1)
+    if strcmp(clusterGroups.group(i, :), 'good ')
+        unit_ids = [unit_ids; clusterGroups.cluster_id(i)];
+    end
+end
 
 % get spike times for individual units
 spkInds = cell(1,length(unit_ids));
@@ -22,6 +27,7 @@ for i = 1:length(unit_ids)
 end
 
 % % get best channels
+% strcmp(clusterGroups.group(i, :), 'good ')
 % spike_templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_templates.npy'));
 % templates = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'templates.npy'));
 % channel_map = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'channel_map.npy')) + 1; % add 1 to avoid zero indexing

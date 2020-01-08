@@ -4,22 +4,41 @@
 x = 1:7;
 y = 1:3;
 [x_value, y_value] = meshgrid(x, y);
+sz = 200;
 
-c = parula(8);
+c = jet(9);
 
 figure('Color', 'white');
+
+
 for i = 1:3
     y_value = repmat(i, 1, length(x_value));
-    scatter(x_value(i, :), y_value, [], c((2*i-1), :), 'filled');
+    scatter(x_value(i, :), y_value, sz, c((2*i-1), :), 'filled');
     hold on;
 end
 
 hold on;
-scatter(8, 1.5, [], c(2,:), 'filled');
+scatter(8, 1.5, sz, c(2,:), 'filled');
 hold on;
-scatter(8, 2.5, [], c(4,:), 'filled');
+scatter(8, 2.5, sz, c(4,:), 'filled');
 hold on;
-scatter(8, 3.5, [], c(6,:), 'filled');
+scatter(8, 3.5, sz, c(6,:), 'filled');
+hold on;
+scatter(8, 4.5, sz, c(8,:), 'filled');
+set(gca, 'visible', 'off');
+
+
+x = 4:7;
+y = 4:5;
+[x_value, y_value] = meshgrid(x, y);
+hold on
+
+for i = 1:2
+    y_value = repmat(i+3, 1, length(x_value));
+    scatter(x_value(i, :), y_value, sz, c((2*i+5), :), 'filled');
+    hold on;
+end
+
 set(gca, 'visible', 'off');
 
 
@@ -113,7 +132,9 @@ c = parula(8);
 x_value = -x_value;
 y_value = -y_value;
 
-hold on;
+%hold on;
+figure('Color', 'white');
+
 for i = 1:3
     y_value = repmat(i, 1, length(x_value));
     scatter(x_value(i, :), y_value, [], c((2*i-1), :), 'filled');

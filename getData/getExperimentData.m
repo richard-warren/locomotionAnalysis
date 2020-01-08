@@ -16,7 +16,7 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 
 % settings
 metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};  % these parameters will be stored as experiment metadata
-g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
+g.touchThresh = 1;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
 g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
 g.clearanceBuffer = .000;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle

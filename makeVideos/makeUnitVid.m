@@ -1,4 +1,4 @@
-function makeUnitVid(session, unit_id, fileName, timeEpochs, opts)
+function makeUnitVid(session, unit_id, fileName, opts)
 
 % creates videos of mouse running with the raw neural trace plotted in real time
 % along with the sound of the neuron // tell it the session, the unit_id
@@ -14,7 +14,12 @@ function makeUnitVid(session, unit_id, fileName, timeEpochs, opts)
 
 
 % settings
-s.trialsToShow = 5;
+s.trialsToShow = 5; % how many random trials to show if specific trial numbers are not indicated
+s.vidType = 'showObsEvents'; % choose from 'showObsEvents' and 'showRewardEvents'.
+s.specificObsTrials = []; % pick specific trials to show. Time is from obsOn to obsOff. Trial number refers to obsOn and obsOff times.
+s.specificRewardTrials = []; % pick specific trials to show. Time is reward delivery +- timeBuffer. Trial number refers to reward times.
+s.timeBuffer = [2, 2]; % how many seconds before and after reward delivery to show. Default is 2s before and 2s after.
+
 s.contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
 s.playbackSpeed = 0.25;
 s.voltageWindow = .75;
@@ -25,9 +30,6 @@ s.lowPassFreq = 6000; % 6000 // set to false to turn off lowpass
 
 s.includeWiskCam = true;
 s.compressVideo = false;
-s.showSpecificTrials = true; % whether picking specific trails to show or not
-s.specificTrials = [50, 2; 64, 2; 69, 1; 87, 1]; % refer to specific reward delivery times, rather than obs events
-
 
 s.spkScatterColor = [1 1 0];
 s.lineColors = [.8 .4 1];
@@ -127,46 +129,54 @@ wiskText = text(plotAxis, 0, s.yLims(2), 'whisker contact', 'Color', 'white');
 rewardLine = line(plotAxis, [0 0], s.yLims, 'linewidth', 2, 'color', s.lineColors);
 rewardText = text(plotAxis, 0, s.yLims(2), 'reward', 'Color', 'white');
 
-if ~exist('timeEpochs', 'var'); timeEpochs = cat(2, obsOnTimes, obsOffTimes); end
-
-
-
-% get min and max time for unit
-
-if s.showSpecificTrials == false
-    minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
-    maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
-    validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); % make sure trials aren't too long
-    trials = validTrials(round(linspace(2,length(validTrials)-1,s.trialsToShow))); % remove first and last inds to avoid catching beginning and end of usable spikes period
-    
-else
-    
-    % pick trials based on reward times
-    rewardTrailsSelected = s.specificTrials(:, 1);
-    % rewardTimesSelected = rewardTimes(rewardTrailsSelected, 1);
-    rewardTimeBinsSelected = [rewardTimes(rewardTrailsSelected, 1), rewardTimes(rewardTrailsSelected + 1, 1)];
-    validTrials = find(timeEpochs(:, 1) > rewardTimeBinsSelected(1, 1) & timeEpochs(:, 2) < rewardTimeBinsSelected(1, 2));
-    validTrials = validTrials(s.specificTrials(1, 2));
-    for i = 2:length(rewardTimeBinsSelected)
-        temp = find(timeEpochs(:, 1) > rewardTimeBinsSelected(i, 1) & timeEpochs(:, 2) < rewardTimeBinsSelected(i, 2));
-        temp = temp(s.specificTrials(i, 2));
-        validTrials = cat(1, validTrials, temp);
-    end
-    trials = validTrials;
+% get timeEpochs for trials to display in the vid
+% current setup only supports 'showObsEvents' and 'showRewardEvents'
+switch s.vidType
+    case 'showObsEvents'
+        timeEpochs = cat(2, obsOnTimes, obsOffTimes);
+        minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
+        maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
+        validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); % make sure trials aren't too long
+        
+        if length(s.specificObsTrials) == 0 & length(s.specificRewardTrials) == 0  % specific trials are not indicated 
+            trialsToShow = validTrials(round(linspace(2,length(validTrials)-1,s.trialsToShow)));
+            timeEpochs = timeEpochs(trialsToShow, :);
+        else
+            trialNum = s.specificObsTrials;
+            trialsToShow = trialNum(ismember(trialNum, validTrials));
+            timeEpochs = timeEpochs(trialsToShow, :);
+        end
+        
+    case 'showRewardEvents'
+        timeEpochs = cat(2, rewardTimes - s.timeBuffer(1), rewardTimes + s.timeBuffer(2));
+        minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
+        maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
+        validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); 
+        % make sure trials aren't too long
+        if length(s.specificObsTrials) == 0 & length(s.specificRewardTrials) == 0  % specific trials are not indicated 
+            trialsToShow = validTrials(round(linspace(1,length(validTrials),s.trialsToShow)));
+            timeEpochs = timeEpochs(trialsToShow, :);
+        else
+            trialNum = s.specificRewardTrials;
+            trialsToShow = trialNum(ismember(trialNum, validTrials));
+            timeEpochs = timeEpochs(trialsToShow, :);
+        end
 end
+            
+            
 
 
 % create video
 fprintf('\nwriting video... ')
-for i = 1:length(trials)
+for i = 1:length(trialsToShow)
     
     % get trial frame indices
-    trialInds = find(frameTimeStamps>timeEpochs(trials(i),1) & ...
-                     frameTimeStamps<timeEpochs(trials(i),2));
+    trialInds = find(frameTimeStamps>timeEpochs(i,1) & ...
+                     frameTimeStamps<timeEpochs(i,2));
                  
     % get voltage for entire trial
-    voltageBins = timeStampsMapped>timeEpochs(trials(i),1)-s.voltageWindow-1 & ...
-                  timeStampsMapped<timeEpochs(trials(i),2)+1; % add and subtract 1 as a buffer
+    voltageBins = timeStampsMapped>timeEpochs(i,1)-s.voltageWindow-1 & ...
+                  timeStampsMapped<timeEpochs(i,2)+1; % add and subtract 1 as a buffer
     timeStampsSub = timeStampsMapped(voltageBins);
     voltageRaw = getVoltage(data, bestChannel, voltageBins); % maybe replace this by reading data within trial prior to writing each trials data...
     if s.lowPassFreq
@@ -177,11 +187,20 @@ for i = 1:length(trials)
     
     
     % update obstacle and whisker contact lines
-    if isLightOn(trials(i)); obsOnString = 'obstacle (light on)'; else; obsOnString = 'obstacle (light off)'; end
-	updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
-    updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
-    updateTextAndLine(rewardText, rewardLine, rewardTimes)
-  
+    if s.vidType == 'showObsEvents'
+        if isLightOn(trialsToShow(i)); obsOnString = 'obstacle (light on)'; else; obsOnString = 'obstacle (light off)'; end
+        updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
+        updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
+        updateTextAndLine(rewardText, rewardLine, rewardTimes)
+    else
+        updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
+        updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
+        updateTextAndLine(rewardText, rewardLine, rewardTimes)
+    end
+    
+ 
+        
+    
     % get frames for trials
     for j = trialInds'
 
@@ -193,14 +212,14 @@ for i = 1:length(trials)
         
         % add trial number onto frames
         position = [10, 10];
-        textString = ['trial ', num2str(trials(i))];
-        RGB = insertText(frame, position, textString, 'TextColor','white');
-        frame = rgb2gray(RGB);
-        if s.showSpecificTrials
-            position2 = [80, 10];
-            textString2 = ['reward trial ', num2str(s.specificTrials(i, 1))];
-            RGB = insertText(frame, position2, textString2, 'TextColor','white');
+        if s.vidType == 'showObsEvents'
+            textString = ['trial ', num2str(trialsToShow(i))];
+            RGB = insertText(frame, position, textString, 'TextColor','white');
             frame = rgb2gray(RGB);
+        elseif s.vidType == 'showRewardEvents'
+            textString = ['Reward Trial ', num2str(trialsToShow(i))];
+            RGB = insertText(frame, position, textString, 'TextColor','white');
+            frame = rgb2gray(RGB);            
         end
      
         
@@ -244,7 +263,7 @@ for i = 1:length(trials)
         % add fade in/out for first and last sample
         if i==1 && j==trialInds(1)
             audio = int16(double(audio) .* linspace(0,1,length(audio))'); % fade in on first sample
-        elseif i==length(trials) && j==trialInds(end)
+        elseif i==length(trialsToShow) && j==trialInds(end)
             audio = int16(double(audio) .* linspace(1,0,length(audio))'); % fade out on last sample
         end
             
@@ -274,8 +293,8 @@ disp(' all done!')
 
 % update position of lines and text marking events of interest
 function updateTextAndLine(text, line, eventTimes, textString)
-    eventInd = find(eventTimes>=timeEpochs(trials(i),1)-s.voltageWindow & ...
-                    eventTimes<=timeEpochs(trials(i),2),1,'first');
+    eventInd = find(eventTimes>=timeEpochs(i,1)-s.voltageWindow & ...
+                    eventTimes<=timeEpochs(i,2),1,'first');
     if ~isempty(eventInd)
         eventTime = eventTimes(eventInd);
         set(text, 'Position', [eventTime+s.voltageWindow*.01 s.yLims(2)])
