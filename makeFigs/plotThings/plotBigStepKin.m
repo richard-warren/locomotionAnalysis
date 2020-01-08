@@ -1,4 +1,4 @@
-function plotBigStepKin(kin, kinCtl, obsHgts, rowInds, isBigStep, opts)
+function plotBigStepKin(kin, kinCtl, obsHgts, rowInds, isBigStep, varargin)
 
 % plots kinematics of first modified paw, with one line showing
 % trajectories for big steps, and another for shortened steps // relative
@@ -28,11 +28,10 @@ s.showSmpNum = false; % if true, shows number of big and small steps per bin
 s.ctlDistances = []; % if provided, uses this as control distro instead of the final x position of the control kinematics for each step
 s.verticalBuffer = .05;  % space to added between rows of plot, expressed as fraction of total height
 
-% reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 
 % initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings contained in opts
 if s.addHistos; s.yLims(1) = -s.yLims(2); end
 rowInds=rowInds(:); isBigStep=isBigStep(:); % make sure everybody is a column vector
 numRows = max(rowInds);
@@ -55,7 +54,7 @@ for h = 1:numRows
     oneTwoRatio = sum(oneStepBins) / (sum(oneStepBins) + sum(twoStepBins)); % ratio of trials in which swing foot takes one large step to those in which an additional step is taken
 
     % add line to bottom
-    line(s.xLims, [0 0], 'color', s.obsColor, 'linewidth', 2)
+    line(s.xLims, [0 0], 'color', [1 1 1]*.15, 'linewidth', 1)
     
     % plot control steps
     x = squeeze(nanmean(kinCtl(ctlBins,1,:),1));
@@ -63,8 +62,8 @@ for h = 1:numRows
     plot(x, z, 'color', s.controlColor, 'linewidth', s.lineWid);
     
     % plot modified steps
-    allBins = {oneStepBins, twoStepBins};
-    ratios = [oneTwoRatio 1-oneTwoRatio];
+    allBins = {twoStepBins, oneStepBins};
+    ratios = [1-oneTwoRatio, oneTwoRatio];
 
     for i = 1:2
         if any(allBins{i})

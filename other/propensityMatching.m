@@ -47,5 +47,5 @@ if s.verbose
     fprintf('\nmanip:    ')
     fprintf('%.4f  ', nanmean(X(pairs(:,2),:),1));
     if ~isempty(s.predictorNames); fprintf('\n          '); fprintf('%s ', s.predictorNames{:}); end
-    fprintf('\n\n')
+    fprintf('\n')
 end

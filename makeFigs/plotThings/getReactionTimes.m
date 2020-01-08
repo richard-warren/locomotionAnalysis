@@ -45,7 +45,7 @@ modLocationsRaw = modLocationsRaw - repmat(modLocationsRaw(:,:,1), 1, 1, swingMa
 
 
 
-% initializations data containers
+% initialization data containers
 modLocations = nan(length(flat), 3, length(times));
 controlLocations = nan(length(flat), 3, length(times), neighborNum);
 control2Locations = nan(length(flat), 3, length(times), neighborNum);

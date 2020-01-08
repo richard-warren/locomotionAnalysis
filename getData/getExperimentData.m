@@ -19,7 +19,7 @@ metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPo
 g.touchThresh = 1;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
 g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
-g.clearanceBuffer = .000;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle
+g.clearanceBuffer = .001;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle // positive numbers are more inclusive (excluding few trials) //could probably get away with .0015
 
 g.velVsPositionPrePost = [-1.5 .4]; % (m) positions before and after whisker contact to collect velocity data
 g.velVsPositionRes = 500; % (tics) how many samples in the x grid
@@ -159,8 +159,10 @@ for mouse = 1:length(g.mice)
             end
 
             stepOverAnalyzedRates = num2cell(mean(isStepOverAnalyzed,1));
-            fprintf('%s: analysis success rates -> paw1: %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
-                g.sessions{session}, stepOverAnalyzedRates{:})
+            if ~isempty(pawVars)
+                fprintf('%s: analysis success rates -> paw1: %.2f, paw2: %.2f, paw3: %.2f, paw4: %.2f \n', ...
+                    g.sessions{session}, stepOverAnalyzedRates{:})
+            end
         end
     end
 end
@@ -318,13 +320,17 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell(-[g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
             elseif strcmp(side, 'right')
                 var = num2cell([g.expData(g.mouse).sessions(g.session).trials.angleAtWiskContact]);
+            else  % if 'side' is 'bilateral', for example
+                var = num2cell(nan(1,length(g.sesKinData)));
             end
             
-        case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact
-            var = {g.sesKinData.wiskContactPositions};
+        case 'wiskContactPosition'  % position of obstacle relative to nose at moment of contact (more negative numbers mean further away from the nose at whisker contact)
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactPositions]);
             
         case 'wiskContactTimes'  % times of whisker contact
-            var = {g.sesKinData.wiskContactTimes};
+            var = num2cell(nan(1,length(g.sesKinData)));
+            var([g.sesKinData.isTrialAnalyzed]) = num2cell([g.sesKinData.wiskContactTimes]);
             
         case 'lightOnTimes'  % times at which obstacle light turns on
             var = {g.sesData.obsLightOnTimes};
@@ -479,6 +485,8 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell(logical([0 0 1 1]));
             elseif strcmp(side, 'right')
                 var = num2cell(logical([1 1 0 0]));
+            else  % if 'side' is 'bilateral', for example
+                var = num2cell(nan(1,4));
             end
             
         case 'isFore'  % whether paw is a forelimb
@@ -631,13 +639,15 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
         case 'numTouchFrames'  % number of frames in which paw is in contact with obstacles
             var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:)~=0,1));
             
-        case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: traiing hind
+        case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: trailing hind
+            try
             stepTypeSequence = [true false true false;   % leading/trailing
                                 true true false false];  % fore/hind
             isLeadingIsLagging = [[g.expData(mouse).sessions(session).trials(trial).paws.isLeading]; ...
                                   [g.expData(mouse).sessions(session).trials(trial).paws.isFore]];  % 2x4 matrix where each column is a paw, and each row is [isLeading, isFore]
             [~, var] = ismember(isLeadingIsLagging', stepTypeSequence', 'rows');
             var = num2cell(var);
+            catch; keyboard; end
             
         case 'distanceToObs'  % linear distance of paw to top of obstacle at zenith of paw trajectory
             var = num2cell(nan(1,4));

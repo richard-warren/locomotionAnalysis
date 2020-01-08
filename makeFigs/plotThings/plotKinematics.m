@@ -27,6 +27,7 @@ s.trialsToOverlay = []; % if not empty, plot individual trials for each conditio
 s.yLimZero = true; % makes min of y axis zero so traces don't dip beneathe 'floor' on plots
 s.lineColor = 'black';
 s.plotObs = true;  % whether to plot the obstacle
+s.scatterEnds = true;  % whether to add scatter points to the end of the individual trials
 
 
 % initializations
@@ -39,14 +40,16 @@ if ~s.isBotView; line([-.2 .2], [0 0], 'color', s.lineColor); end
 
 % draw obstacles for each condition
 if isempty(s.obsColors); s.obsColors = s.colors; end
-for i = 1:max(conditions)
-    if ~s.isBotView
-        z = nanmean(obsHgts(conditions==i));
-        rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
-            'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
-    else
-        rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
-            'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+if s.plotObs
+    for i = 1:max(conditions)
+        if ~s.isBotView
+            z = nanmean(obsHgts(conditions==i));
+            rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
+                'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+        else
+            rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
+                'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+        end
     end
 end
 
@@ -81,8 +84,10 @@ for i = 1:max(conditions)
             plot(squeeze(conditionTrajectories(j,1,:)), squeeze(conditionTrajectories(j,2,:)), ...
                 'LineWidth', 1, 'Color', [s.colors(i,:) s.trialAlpha]); hold on
         end
-        scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
-            20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
+        if s.scatterEnds
+            scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
+                20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
+        end
     end
 end
 

@@ -1,4 +1,4 @@
-function sesPlotRick(data, opts)
+function sesPlotRick(data, varargin)
 
 % given matrix where first dim is mouse number, and second dim is session
 % number, plots variavle for all mice as function of session number, eg to
@@ -12,12 +12,11 @@ s.meanColor = [.2 .2 .2];
 s.xvals = [];
 s.xlabel = [];
 s.ylabel = [];
-
-% reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
+s.lineWidth = 4;
 
 
 % initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings contained in varargin
 if ischar(s.colors); s.colors= eval([s.colors '(size(data,1))']); end
 if isempty(s.xvals); s.xvals = 1:size(data,2); end
 hold on
@@ -29,15 +28,16 @@ for i = 1:size(data,1)
 end
 
 % plot mean and std
-plot(s.xvals, nanmean(data,1), 'LineWidth', 4, 'Color', s.meanColor);
+plot(s.xvals, nanmean(data,1), 'LineWidth', s.lineWidth, 'Color', s.meanColor);
 for i = 1:size(data,2)
     std = nanstd(data(:,i));
-    line([s.xvals(i) s.xvals(i)], [-std std]+nanmean(data(:,i)), 'Color', s.meanColor, 'lineWidth', 2)
+    line([s.xvals(i) s.xvals(i)], [-std std]+nanmean(data(:,i)), 'Color', s.meanColor, 'lineWidth', s.lineWidth/2)
 end
 
 % pimp fig
 if ~isempty(s.xlabel); xlabel(s.xlabel); end
 if ~isempty(s.ylabel); ylabel(s.ylabel); end
+set(gca, 'TickDir', 'out')
 
 pause(.001)
 
