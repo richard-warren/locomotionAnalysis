@@ -22,31 +22,22 @@ load(fullfile(sessionFolder, 'runAnalyzed.mat'), ...
         'obsOnTimes', 'obsOffTimes',  'wiskContactFrames', 'frameTimeStamps', ...
         'frameTimeStampsWisk', 'rewardTimes', 'isLightOn', 'touches', 'touchesPerPaw', 'touchClassNames');
 
-ephysInfo = getSessionEphysInfo(session);    
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'openEphysToSpikeMapping', 'spkRates', 'timeStamps', 'unit_ids', 'spkTimes')
-
-   
 % load kinData if it exists // otherwise compute kinData    
 if exist(fullfile(sessionFolder, 'kinData.mat'))
     load(fullfile(sessionFolder, 'kinData.mat'), 'kinData', 'stanceBins')
 else
-    [kinData, stanceBins] = getKinematicData5(session);
+    [kinData, stanceBins] = getKinematicData(session);
 end
 
 load(fullfile(sessionFolder, 'neuralData.mat'), 'unit_ids');
 
 for cellNum = 1:length(unit_ids)
     
-    minTime = timeStamps(find(~isnan(spkRates(cellNum,:)),1,'first'));
-    maxTime = timeStamps(find(~isnan(spkRates(cellNum,:)),1,'last'));    
-    
     % !!! load cell firing rate and times
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(unit_ids))
     figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
         'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', get(0,'ScreenSize')); hold on
     plotInd = 0;
-    
     
     % reward delivery
     plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
@@ -125,58 +116,6 @@ for cellNum = 1:length(unit_ids)
         {'conditionNames', s.pawNames, 'errorFcn', false});
     xlabel('swing start -> stance end')
     
-    % PSTH center around 
-    for paw = 1:4
-        % plot PSTH center around swing start point
-        plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
-        
-        swingStartInds = find(diff(~stanceBins(:,paw))==1);
-        swingStartTimes = frameTimeStamps(swingStartInds);        
-        validBins = find(swingStartTimes > minTime & swingStartTimes < maxTime);
-        validSwingStartTimes = swingStartTimes(validBins);
-        
-        swingEndInds = find(diff(stanceBins(:,paw))== 1);
-        swingEndTimes = frameTimeStamps(swingEndInds);              
-        validBins = find(swingEndTimes > minTime & swingEndTimes < maxTime);
-        validSwingEndTimes = swingEndTimes(validBins);
-        
-        % quality check
-        if length(validSwingStartTimes) > length(validSwingEndTimes)
-            if validSwingStartTimes(end) > validSwingEndTimes(end)
-                validSwingStartTimes = validSwingStartTimes(1:end-1);
-            else
-                validSwingStartTimes = validSwingStartTimes(2:end);
-            end
-            
-        elseif length(validSwingStartTimes) < length(validSwingEndTimes)
-            if validSwingEndTimes(1) < validSwingStartTimes(1)
-                validSwingEndTimes = validSwingEndTimes(2:end);
-            else
-                validSwingEndTimes = validSwingEndTimes(1:end-1);
-            end
-        end
-        
-        substracted = validSwingEndTimes - validSwingStartTimes;
-        if any(substracted < 0)
-            fprintf('WARNING: swing start and end points mismatch');
-        end
-        
-        % discard steps which swing phases are too long
-        if any(substracted > 0.5)
-            validSwingEndTimes(find(substracted > 0.5)) = [];
-            validSwingStartTimes(find(substracted > 0.5)) = [];
-        end
-                            
-        plotPSTH2(session, cellNum, validSwingStartTimes, {'xLims', [-0.05 0.05], 'colors', s.pawColors(paw,:)});
-        xlabel(sprintf('%s: swing start', s.pawNames{paw}))
-        
-        % plot PSTH center around stance start point
-        plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);               
-        plotPSTH2(session, cellNum, validSwingEndTimes, {'xLims', [-0.05 0.05], 'colors', s.pawColors(paw,:)});
-        xlabel(sprintf('%s: stance start', s.pawNames{paw}))
-    end
-    
-    
     
     % step over vs. control steps
     for paw = 1:4
@@ -237,7 +176,7 @@ for cellNum = 1:length(unit_ids)
         % get first contact for paw on each trial
         for i = 1:length(obsOnTimes)
             trialBins = frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i);
-            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds)';
+            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
             pawTouchInd = find(pawTouchBins, 1, 'first');
             if sum(pawTouchBins)>=minTouchInds; times(end+1) = frameTimeStamps(pawTouchInd); end
         end
@@ -253,4 +192,3 @@ for cellNum = 1:length(unit_ids)
     saveas(gcf, [fileName '.png'])
 end
 disp('all done!')
-

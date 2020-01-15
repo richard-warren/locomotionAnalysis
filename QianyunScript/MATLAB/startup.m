@@ -1,8 +1,13 @@
 % Addpath of the often use folders
-addpath('D:\DCN_project\Github');
-addpath('D:\DCN_project\Github\QianyunScript')
+setenv('GITDIR', 'D:\DCN_project\Github');
+
+addpath(genpath('D:\DCN_project\Github'));
 addpath('Z:\obstacleData\ephys');
 addpath('Z:\obstacleData\spreadSheets');
 
-setenv('GITDIR', 'D:\DCN_project\Github');
+warning('off','all');
+rmpath(genpath('D:\DCN_project\Github\LocomotionAnalysis_QZ'));
+warning('on','all');
+
+
 display('finish loading startup.m');

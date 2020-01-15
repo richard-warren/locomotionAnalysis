@@ -4,7 +4,7 @@ function plotQualityMetrics(session)
 
 % SETTINGS
 % general
-spkWindow = [-.5 .75]; % ms pre and post spike time to plot
+spkWindow = [-.3 .75]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
 showFigures = 'on';
 % highPassFreq = 300;
@@ -46,8 +46,16 @@ for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extra
 spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
     'xcoords', 'ycoords')
-[allSpkInds, unit_ids] = getGoodSpkInds(session); % get spike times for good units
-bestChannels = getBestChannels(session, ephysInfo);
+
+% only for visualizatoon purpose (the spike on probe plot)
+xcoords(33:64) = 21;
+
+[allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
+% bestChannels = getBestChannels(session, ephysInfo);
+
+
+
+
 
 
 % function to extract voltage from binary file
@@ -71,7 +79,7 @@ for c = 1:length(unit_ids)
 
     fprintf('plotting cell %i... ', unit_ids(c))
     figure('Name', sprintf('%s cell %i', session, unit_ids(c)), 'Visible', showFigures, ...
-        'Color', 'white', 'Position', [2000 45 1601 865]); hold on
+        'Color', 'white', 'Position', get(0,'ScreenSize')); hold on
     spkInds = allSpkInds{c};
 
     
@@ -99,12 +107,12 @@ for c = 1:length(unit_ids)
     colors = getColors(timeBinNum, cellColors(c,:));
     sameShankInds = find(abs(xcoords - xcoords(bestChannels(c)))<50);
     
-    for j = sameShankInds'
+    for j = 1:64
         for i = 1:timeBinNum
             firingRate = sum(timeBins==i) / (range(timeStamps)/timeBinNum);
             if firingRate>minFiringRate % don't plot average trace if rate of spikes in bin is too low, which happens when the unit is lost
                 trace = squeeze(mean(allWaveforms(timeBins==i,j,:),1));
-                plot(xcoords(j)*xSpacing + spkWindowInds, ...
+                plot(xcoords(j)*xSpacing + double(spkWindowInds), ...
                     ycoords(j)*ySpacing + trace, ...
                     'Color', colors(i,:), 'LineWidth', 2)
             end
@@ -115,7 +123,6 @@ for c = 1:length(unit_ids)
                 num2str(j), 'Color', textColor)
     end
     set(gca, 'visible', 'off')
-
 
 
     % PLOT SAMPLE TRACES
@@ -231,7 +238,7 @@ for c = 1:length(unit_ids)
 end
 
 % plotting all channels
-showChannelsOverTime(session, 3, true, fullfile(folder, [session 'allUnits.png']), bestChannels);
+showChannelsOverTime(session, 5, true, fullfile(folder, [session 'allUnits.png']), bestChannels);
 
 
 % check if these unit_ids have already been written to cellData.csv file

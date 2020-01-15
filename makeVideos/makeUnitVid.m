@@ -107,7 +107,7 @@ audioSmpsPerFrame = round((1/initialFs) * ephysInfo.fs);
 
 
 % set up figure
-fig = figure('color', [0 0 0], 'position', [1925, 50, frameDim(2), frameDim(1)], 'menubar', 'none');
+fig = figure('color', [0 0 0], 'position', [50, 50, frameDim(2), frameDim(1)], 'menubar', 'none');
 traceLength = s.voltageWindow*ephysInfo.fs;
 
 axes('position', [0 .2 1 .8], 'CLim', [0 255]); colormap gray

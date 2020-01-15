@@ -33,7 +33,7 @@ eventSpikeTimes = cell2mat(struct2cell(eventSpikeTimes));
 
 
 if length(eventEphysTimes)~=length(eventSpikeTimes)
-    fprintf('WARNING: %i obsOnTimes in spike and %i obsOnTimes in openEphys...', length(eventSpikeTimes), length(eventEphysTimes))
+    fprintf('WARNING: %i events in spike and %i events in openEphys...', length(eventSpikeTimes), length(eventEphysTimes))
     
     if length(eventEphysTimes) > length(eventSpikeTimes)
         longString = eventEphysTimes;

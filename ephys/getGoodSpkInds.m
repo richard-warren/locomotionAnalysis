@@ -1,4 +1,4 @@
-function [spkInds, unit_ids] = getGoodSpkInds(session)
+function [spkInds, unit_ids, bestChannels] = getGoodSpkInds(session)
 
 % given session name, returns cell array where each entry is vector of
 % spike times for units marked as 'good' in kilosort
@@ -13,11 +13,30 @@ addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 allSpkInds = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_times.npy'));
 clusters = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_clusters.npy'));
 clusterGroups = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_group.tsv'));
+clusterInfo = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_info.tsv'));
+
+
+
+% get good units
 unit_ids = [];
 for i = 1:size(clusterGroups.group, 1)
-    if strcmp(clusterGroups.group(i, :), 'good ')
-        unit_ids = [unit_ids; clusterGroups.cluster_id(i)];
+    if strcmp(clusterGroups.group(i, 1:4), 'good')
+        unit_ids = [unit_ids, clusterGroups.cluster_id(i)];        
     end
+end
+
+% get best channels for each good units
+ephysInfo = getSessionEphysInfo(session);
+for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
+load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
+    'xcoords', 'ycoords', 'connected', 'channelNum_OpenEphys')
+channelNum_OpenEphys = channelNum_OpenEphys - 1;
+
+
+bestChannels = nan(1, length(unit_ids));
+for i = 1:length(unit_ids)
+    ind = find(clusterInfo.id == unit_ids(i));
+    bestChannels(i) = clusterInfo.channel(ind)+1;   
 end
 
 % get spike times for individual units
