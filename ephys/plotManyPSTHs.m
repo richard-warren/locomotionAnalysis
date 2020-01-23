@@ -26,7 +26,7 @@ load(fullfile(sessionFolder, 'runAnalyzed.mat'), ...
 if exist(fullfile(sessionFolder, 'kinData.mat'))
     load(fullfile(sessionFolder, 'kinData.mat'), 'kinData', 'stanceBins')
 else
-    [kinData, stanceBins] = getKinematicData5(session);
+    [kinData, stanceBins] = getKinematicData(session);
 end
 
 load(fullfile(sessionFolder, 'neuralData.mat'), 'unit_ids');
@@ -36,12 +36,12 @@ for cellNum = 1:length(unit_ids)
     % !!! load cell firing rate and times
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(unit_ids))
     figure('name', sprintf('%s - unit %i', session, unit_ids(cellNum)), ...
-        'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', [2000 20 1800 1000]); hold on
+        'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', get(0,'ScreenSize')); hold on
     plotInd = 0;
     
     % reward delivery
     plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
-    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-5 2]});
+    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-1 1]});
     xlabel('reward delivery')
     
     % reward delivery -> reward delivery
@@ -176,7 +176,7 @@ for cellNum = 1:length(unit_ids)
         % get first contact for paw on each trial
         for i = 1:length(obsOnTimes)
             trialBins = frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i);
-            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds)';
+            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
             pawTouchInd = find(pawTouchBins, 1, 'first');
             if sum(pawTouchBins)>=minTouchInds; times(end+1) = frameTimeStamps(pawTouchInd); end
         end
@@ -192,4 +192,3 @@ for cellNum = 1:length(unit_ids)
     saveas(gcf, [fileName '.png'])
 end
 disp('all done!')
-

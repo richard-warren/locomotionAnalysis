@@ -9,10 +9,10 @@ function showChannelsOverTime(session, timeBinNum, showSortedSpikes, figureName,
 
 % settings
 % highPassFreq = 300;
-yLims = [-400 400]; % microvols
+yLims = [-500 500]; % microvols
 if ~exist('timeBinNum', 'var'); timeBinNum = 4; end
 if ~exist('showSortedSpikes', 'var'); showSortedSpikes = false; end
-windowSize = .2/timeBinNum; % length of window in which to show spikes
+windowSize = 2.0/timeBinNum; % the length of the time window for plotting traces. eg, for each time interval, plot 0.5 sec of the data
 if ~exist('figureName', 'var'); figureName = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'drift', [session '.png']); end
 spkWindow = [-.5 1]; % ms pre and post spike time to plot
 
@@ -21,11 +21,20 @@ spkWindow = [-.5 1]; % ms pre and post spike time to plot
 ephysInfo = getSessionEphysInfo(session);
 for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
-    'xcoords', 'ycoords', 'connected')
-[~, sortIndsTemp] = sort(ycoords); sortInds = nan(1,channelNum);
-for i = 1:channelNum; sortInds(i) = find(sortIndsTemp==i); end % a hack, this works but dont really understand why
+    'xcoords', 'ycoords', 'connected', 'channelNum_OpenEphys')
+
+
+
+% transfer the openephys channel order into its physical location order on the probe
+% in order to determin the spacing offset for every channel for the drift plots.
+sortedInds = [];
+for i = 1:64
+    temp = find(channelNum_OpenEphys == i); 
+    sortedInds = [sortedInds; 65 - temp];
+end
     
-% timesSub = linspace(0,windowSize/fs,windowSize*fs);
+
+
 if showSortedSpikes
     [spkInds, unit_ids] = getGoodSpkInds(session);
     spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
@@ -33,6 +42,8 @@ if showSortedSpikes
 else
     colors = hsv(channelNum);
 end
+
+
 
 % function to extract voltage from binary file
 getVoltage = @(data, channel, inds) ...
@@ -44,12 +55,14 @@ data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolde
 
 
 % plot all channels at dft time intervals
-figure('color', 'white', 'Units', 'pixels', 'Position', [2000 20 1800 950]);
+figure('color', 'white', 'Units', 'pixels', 'position', get(0,'ScreenSize'));
+
 timeBinEdges = linspace(min(timeStamps), max(timeStamps), timeBinNum+1);
 timeStarts = timeBinEdges(1:end-1);
 traces = nan(channelNum, length(timeStarts), windowSize*fs);
 
-% collect traces)
+
+% collect traces
 for j = 1:length(timeStarts)
     startInd = find(timeStamps>timeStarts(j),1,'first');
     inds = startInd:startInd+windowSize*fs-1;
@@ -58,17 +71,20 @@ end
 
 
 % plot traces
-timesSub = linspace(0, windowSize, windowSize*fs);
-offsets = sortInds*(range(yLims));
+timesSub = linspace(0, windowSize, windowSize*fs); % xlim for plotting the traces
+offsets = sortedInds*(range(yLims)); % set offsets for every channel based on its physical location on the probe
 for i = 1:channelNum
     for j = 1:length(timeStarts)
         subplot(1,length(timeStarts),j); hold on
+        
+        hold on;
         if showSortedSpikes; color=[.5 .5 .5]; else; color=colors(i,:); end
         
         plot(timesSub, squeeze(traces(i,j,:)) + offsets(i), 'Color', color);
         
         if connected(i); color='black'; else; color='red'; end
-        text(timesSub(1), offsets(i), num2str(i), 'Color', color)
+        hold on
+        text(timesSub(1), offsets(i), ['(' num2str(i) ')' num2str(65 - offsets(i)/1000)], 'Color', color)
     end
 end
 
@@ -113,6 +129,7 @@ for i = 1:length(timeStarts)
         [num2str(round((timeStarts(i)-min(timeStarts))/60)) ' minutes'], ...
         'FontWeight', 'bold')
 end
+
 if showSortedSpikes; legend(lines, cellstr(num2str(unit_ids)), 'location', 'northeast'); end
 
 
