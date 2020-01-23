@@ -76,10 +76,10 @@ elseif strcmp(dataset, 'senLesion')
         end
     else
 %         colors = winter(6);
-        colors = [ctlStepColor; repmat(lesionColor,4,1).*linspace(1,.25,4)'];
+        colors = [ctlStepColor; ctlStepColor; repmat(lesionColor,4,1).*linspace(1,.25,4)'];
         vars.condition = struct('name', 'condition', ...
-            'levels', {{'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, ...
-            'levelNames', {{'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});  % i ommitted preTrim for simplicity
+            'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, ...
+            'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});  % i ommitted preTrim for simplicity
         matchConditions = {'pre' 'postContra'};  % for propensity score matching, math these two conditions
         figConditionals = struct('name', 'conditionNum', 'condition', @(x) x>=earlySessions(1) & x<=earlySessions(2));
     end
@@ -279,12 +279,6 @@ end
 
 %% sessions over time
 
-
-% if strcmp(dataset, 'mtc_lesion')
-%     sessionsToShow = -1:8;
-% elseif strcmp(dataset, 'senLesion')
-%     sessionsToShow = -2:7;
-% end
 sessionsToShow = -2:lateSessions(end);
 manipInd = find(sessionsToShow==0);
 
@@ -383,6 +377,37 @@ for i = 1:sessionsToShow(end)+1
     [sig, p] = ttest(bl, dv(manipInd+i-1,:));
     fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
 end
+
+
+%% success over days post wisk trim
+
+sessionsToShow = -2:3;
+
+% add sessionsPostTim to data structure
+vars.sessionsPostTrim = struct('name', 'sessionsPostTrim', 'levels', sessionsToShow);
+for i = 1:length(data.data) % compute session number relative to first whisker trim session
+    sessionNums = [data.data(i).sessions.sessionNum];
+    firstTrimSession = sessionNums(find(strcmp({data.data(i).sessions.condition}, 'noWisk'), 1, 'first'));  % we don't want 'postIpsi' getting in here!!!
+    sessionsPostTrim = num2cell([data.data(i).sessions.sessionNum] - firstTrimSession+1);
+    [data.data(i).sessions.sessionsPostTrim] = sessionsPostTrim{:};
+
+    % make sure 'pre' not included
+    for j = 1:length(data.data(i).sessions)
+        if ismember(data.data(i).sessions(j).condition, {'preTrim', 'pre'})
+            data.data(i).sessions(j).sessionsPostTrim = nan;
+        end
+    end
+end
+
+% success post trim
+figure('position', [2018.00 100 521.00 239.00], 'color', 'white', 'menubar', 'none')
+dv = getDvMatrix(data, 'isTrialSuccess', vars.sessionsPostTrim, {'mouse'});
+if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+sesPlotRick(dv', 'xvals', vars.sessionsPostTrim.levels, 'ylabel', 'success rate', 'xlabel', 'sessions post whisker trim', ...
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
+set(gca, 'YLim', [0 1], 'YTick', 0:.5:1, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
+ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_succesOverSessionsTrim' suffix1 suffix2]), 'svg');
 
 
 %% kinematics of leading forepaw

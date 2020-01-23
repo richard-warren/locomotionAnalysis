@@ -93,6 +93,15 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
+% baseline step heights
+figure('position', [2800.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
+figVars = [vars.isFore; vars.sensoryCondition];
+dv = getDvMatrix(data, 'controlStepHgt', figVars, varsToAvg)*1000;
+colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
+barFancy(dv, 'ylabel', 'control step height (mm)', 'levelNames', {figVars().levelNames}, 'colors', repmat(sensColors,colorRepeats,1), barProperties{:})
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependencePawSuccess'), 'svg');
+
+
 %% speed vs. position
 
 % settings
