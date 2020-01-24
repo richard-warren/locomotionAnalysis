@@ -7,7 +7,7 @@ function showTracking(session, trainingDataPath)
 onlyShowFramesNearObs = true;
 vidFs = 250;
 vidDelay = .02;
-showDlcScores = true;
+showDlcScores = false;
 showTouchData = true;
 showStance = true;
 circSize = 100;

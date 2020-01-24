@@ -275,6 +275,12 @@ file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
+%% decision making
+
+
+flat = flattenData(data, {'mouse', 'session', 'trial', 'conditionNum', 'modPawOnlySwing', 'sensoryCondition', 'isTrialSuccess', ...
+    'isBigStep', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawKin', 'contactInd', 'isLightOn', 'modPawPredictedDistanceToObs'});
+
 
 
 

@@ -120,7 +120,9 @@ for j = 1:length(obsOnTimes)
         %
         % if one in swing and one in stance at contact, first mod step is 
         % one in swing // otherwise first mod paw is first paw to land on
-        % the other side
+        % the other side !!! this doesn't make sense (if both in stance,
+        % choose first to leave stance, if both in air, choose first to
+        % touch floor, or perhaps paw furthest forward?)
         if xor(isLeftSwingAtContact, isRightSwingAtContact)
             if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
         else

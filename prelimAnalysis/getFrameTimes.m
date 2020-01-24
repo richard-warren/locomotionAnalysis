@@ -31,7 +31,7 @@ else
     ttlGapDurations = diff(ttlTimes(ttlGaps));
     camGapDurations = diff(camTimes(camGaps));
     
-    if length(ttlGaps)==length(camGaps)  % if same number of gaps, used the most similar gaps (to avoid using a gap where a frame may be lost at the beginning or the end)
+    if length(ttlGaps)==length(camGaps)  % if same number of gaps, use the most similar gap (to avoid using a gap where a frame may be lost at the beginning or the end)
         [~, minInd] = min(abs(ttlGapDurations-camGapDurations));
         ttlGap = minInd;
         camGap = minInd;
