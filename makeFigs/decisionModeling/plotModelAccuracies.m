@@ -6,23 +6,31 @@ function plotModelAccuracies(data, varargin)
 
 
 % settings
-s.kFolds = 5;  % for k folds cross validation
+s.condition = '';  % name of field in 'data' that contains different experimental conditions
+s.levels = {''};  % levels of s.condition to plot
+s.colors = [];
+
+s.kFolds = 4;  % for k folds cross validation
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 
+s.saveLocation = '';  % if provided, save figure automatically to this location
+
 
 % initialization
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
+if isempty(s.colors); s.colors = jet(length(s.levels)+1); end
 
-flat = flattenData(data, {'mouse', 'session', 'trial', 'conditionNum', 'modPawOnlySwing', 'condition', 'isTrialSuccess', ...
-    'isBigStep', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawKin', 'contactInd', 'isLightOn', 'modPawPredictedDistanceToObs'});
+flat = flattenData(data, {'mouse', 'session', 'trial', 'modPawOnlySwing', 'isTrialSuccess', ...
+    'isBigStep', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawKin', 'contactInd', 'isLightOn', s.condition});
 
 % restrict to desired trials
+if s.successOnly; flat = flat([flat.isTrialSuccess]==1); end
 if s.lightOffOnly; flat = flat([flat.isLightOn]==0); end
 if s.modPawOnlySwing; flat = flat([flat.modPawOnlySwing]==1); end
-if s.modPawOnlySwing; flat = flat([flat.isTrialSuccess]==1); end
+
 
 % compute x position of first mod paw at moment of whisker contact
 for i = 1:length(flat)
@@ -36,121 +44,86 @@ end
 X = [[flat.modPawX]; [flat.obsHgt]; [flat.velAtWiskContact]; [flat.wiskContactPosition]]';
 y = [flat.isBigStep];
 
+
 % remove bins with NaNs
 validBins = all(~isnan([X,y']), 2);
 flat = flat(validBins);
 X = X(validBins,:);
 y = y(validBins);
+y = logical(y);
 
 
 mice = unique({flat.mouse});
+[~, condition] = ismember({flat.(s.condition)}, s.levels);  % turn the 'condition' into numbers
+models = cell(length(s.levels)+1, length(mice));  % one model per mouse per experimental condition, plus one per mouse for shuffled models
+[accuracies, f1Scores] = deal(nan(length(s.levels)+1, length(mice)));
 
+
+% loop over mice
 for i = 1:length(mice)
-    
     mouseBins = strcmp({flat.mouse}, mice{i});
-    models = cell(1,2);
     
-    for j = 1:2
-        X_sub = X(mouseBins & allBins{j},:);
-        y_sub = y(mouseBins & allBins{j});
-        crossVals = cvpartition(length(y_sub), 'kfold', kFolds);  % cross validation splits
-        [mouseAccuracies, mouseF1s] = deal(nan(1, kFolds));
-
-        for k = 1:kFolds
-            glm = fitglm(X_sub(crossVals.training(k),:), y_sub(crossVals.training(k)), 'Distribution', 'binomial');
-            predictions = round(predict(glm, X_sub(crossVals.test(k),:)));
-            mouseAccuracies(k) = mean(y_sub(crossVals.test(k))==predictions');
-            
-            confusion = confusionmat(y_sub(crossVals.test(k)), logical(predictions));
-            precision = confusion(2,2)/sum(confusion(:,2));
-            recall = confusion(2,2)/sum(confusion(2,:));
-            mouseF1s(k) = harmmean([precision, recall]);
-        end
-        models{j} = fitglm(X_sub, y_sub, 'Distribution', 'binomial');  % mouse model for this condition
-        accuracies(j,i) = mean(mouseAccuracies);
-        f1Scores(j,i) = mean(mouseF1s);
+    % models per condition
+    for j = 1:length(s.levels)
+        conditionBins = condition==j;
+        X_sub = X(mouseBins & conditionBins,:);
+        y_sub = y(mouseBins & conditionBins);
+        if isempty(y_sub); keyboard; end
+        [models{j,i}, accuracies(j,i), f1Scores(j,i)] = ...
+            computeModel(X_sub, y_sub, s.kFolds);  % mouse model for this condition
     end
-    
-    
-    % pre model evaluated on post data
-    X_sub = X(mouseBins & postBins,:);
-    y_sub = y(mouseBins & postBins);
-    predictions = round(predict(models{1}, X_sub));
-    accuracies(3,i) = mean(predictions == y_sub'); 
-    
-    confusion = confusionmat(y_sub, logical(predictions));
-    precision = confusion(2,2)/sum(confusion(:,2));
-    recall = confusion(2,2)/sum(confusion(2,:));
-    f1Scores(3,i) = harmmean([precision, recall]);
-    
     
     % shuffled
     X_sub = X(mouseBins,:);
     y_sub = y(mouseBins);
-    crossVals = cvpartition(length(y_sub), 'kfold', kFolds);  % corss validation splits
-    mouseAccuracies = nan(1, kFolds);
+    y_sub = y_sub(randperm(length(y_sub)));
+    [models{end,i}, accuracies(end,i), f1Scores(end,i)] = ...
+            computeModel(X_sub, y_sub, s.kFolds);
+end
+
+
+
+
+function [model, accuracy, f1] = computeModel(X, y, kFolds)
+    % compute model accuracies and f1 score // accuracy and f1 score are
+    % average of kFold partitions // model is created across all trials
     
-    for j = 1:kFolds
-        glm = fitglm(X_sub(crossVals.training(j),:), y_sub(crossVals.training(j)), 'Distribution', 'binomial');
-        predictions = round(predict(glm, X_sub(crossVals.test(j),:)));
-        predictions = predictions(randperm(length(predictions)));  % shuffle
-        mouseAccuracies(j) = mean(y_sub(crossVals.test(j))==predictions');
-        
-        confusion = confusionmat(y_sub(crossVals.test(j)), logical(predictions));
+    partitions = cvpartition(length(y), 'kfold', kFolds);  % cross validation splits
+    [acc, f1s] = deal(nan(1, kFolds));
+    
+    for k = 1:kFolds
+        model = fitglm(X(partitions.training(k),:), y(partitions.training(k)), 'Distribution', 'binomial');
+        yhat = predict(model, X(partitions.test(k),:)) > .5;
+        acc(k) = mean(y(partitions.test(k))==yhat');
+
+        confusion = confusionmat(y(partitions.test(k))', yhat, 'Order', [false true]);
         precision = confusion(2,2)/sum(confusion(:,2));
         recall = confusion(2,2)/sum(confusion(2,:));
-        f1Scores(4,i) = harmmean([precision, recall]);
+        f1s(k) = harmmean([precision, recall]);
+%         if isnan(f1s(k)); keyboard; end
     end
-    accuracies(4,i) = mean(mouseAccuracies);
+    
+    model = fitglm(X, y, 'Distribution', 'binomial');  % fit model on all data
+    accuracy = nanmean(acc);
+    f1 = nanmean(f1s);
 end
 
-if strcmp(dataset, 'mtc_muscimol')
-    colors_temp = [ctlStepColor; muscimolColor; mean([ctlStepColor; muscimolColor],1); ctlStepColor*.5];
-else
-    colors_temp = [ctlStepColor; lesionColor; mean([ctlStepColor; lesionColor],1); ctlStepColor*.5];
-end
+
+
+% plot everything
+figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
 
 % accuracies
-figure('position', [2018.00 100.00 252.00 239.00], 'color', 'white', 'menubar', 'none')
-barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {{'pre', 'post', 'pre->post', 'shuffled'}}, 'colors', colors_temp, barProperties{:})
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionModels' suffix1 suffix2]), 'svg');
+subplot(1,2,1)
+barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors)
 
 % f1 scores
-figure('position', [2018.00 100.00 252.00 239.00], 'color', 'white', 'menubar', 'none')
-barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {{'pre', 'post', 'pre->post', 'shuffled'}}, 'colors', colors_temp, barProperties{:})
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionModelsF1' suffix1 suffix2]), 'svg');
+subplot(1,2,2)
+barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors)
 
 
+% save
+if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
 
-% % compare decision thresholds
-% thresholds = nan(2, length(mice));  % (pre/post) X (mouse)
-% for i = 1:length(mice)
-%     mouseBins = strcmp({flat.mouse}, mice{i});
-%     preBins = strcmp({flat.condition}, matchConditions(1));
-%     postBins = strcmp({flat.condition}, matchConditions(2));
-%     allBins = {preBins, postBins};
-%     
-%     for j = 1:2
-%         x = [flat(mouseBins & allBins{j}).modPawPredictedDistanceToObs] * 1000;
-%         y = [flat(mouseBins & allBins{j}).isBigStep];
-%         
-%         glm = fitglm(x', y', 'Distribution', 'binomial');
-%         coeffs = glm.Coefficients.Estimate;
-%         thresholds(j,i) = (-coeffs(1)) / coeffs(2); % solve for prediction = 0
-%     end
-% end
+end
 
-figure('position', [2018.00 100.00 252.00 239.00], 'color', 'white', 'menubar', 'none')
-barFancy(thresholds, 'ylabel', 'decision threshold', 'levelNames', {vars.condition.levelNames}, ...
-    'colors', colors, barProperties{:}, 'textRotation', 0)
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionThresholds' suffix1 suffix2]), 'svg');
-
-% show histograms to sanity check decision thresholds
-% figure;
-% bins = -50:1:50;
-% x = [flat.modPawPredictedDistanceToObs] * 1000;
-% y = [flat.isBigStep];
-% subplot(2,1,1);
-% histogram(x(y & preBins), bins); hold on; histogram(x(~y & preBins), bins)
-% subplot(2,1,2);
-% histogram(x(y & postBins), bins); hold on; histogram(x(~y & postBins), bins)

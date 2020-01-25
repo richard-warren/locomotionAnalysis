@@ -1,4 +1,4 @@
-function heatmapRick(x, y, varargin)
+function [heatmap, xBins, yBins] = heatmapRick(x, y, varargin)
 
 % plots joint pdf for x and y and plots as heat map
 
@@ -10,6 +10,7 @@ s.yLims = [];
 s.percentileLims = [5 95]; % exclude x values outside these percentile limits
 s.binNum = 100;
 s.colormap = 'hot';
+s.showPlot = true;  % whether to plot heatmap (otherwise you can just use the returned heatmap)
 
 
 % initializations
@@ -25,9 +26,11 @@ heatmap =  ksdensity([x(:), y(:)], [meshX(:), meshY(:)]);
 heatmap = reshape(heatmap, length(xBins), length(yBins));
 heatmap = heatmap ./ repmat(max(heatmap, [], 1), length(yBins), 1); % set max of each column to 1
 
-colormap(s.colormap)
-imagesc(xBins, yBins, heatmap)
-set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
+if s.showPlot
+    colormap(s.colormap)
+    imagesc(xBins, yBins, heatmap)
+    set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
+end
 
 if ~isempty(s.xlabel); xlabel(s.xlabel); end
 if ~isempty(s.ylabel); ylabel(s.ylabel); end

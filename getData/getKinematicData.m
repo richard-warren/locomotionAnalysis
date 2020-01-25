@@ -58,21 +58,22 @@ locationsTail(:,1:2,:) = locations(:,:,botTailBins);
 locationsTail(:,3,:) = locations(:,2,topTailBins);
 locationsTail(:,2,:) = locationsTail(:,2,:) - nosePos(2); % subtract midline from all y values
 locationsTail(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsTail(:,3,:); % flip z and set s.t. top of wheel is zero
-
-% unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
-% this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
-prevInd = 1;
-for j = 1:length(obsOnTimes)
-    finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
-    if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
-    
-    locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-    locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-    prevInd = finalInd+1;
-end
-locationsPaws = locationsPaws / pixelsPerM; % convert to meters
-locationsTail = locationsTail / pixelsPerM; % convert to meters
 if timeOperations; fprintf('getting xyz coords: %i seconds\n', round(toc)); end
+
+% % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+% % this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
+% prevInd = 1;
+% for j = 1:length(obsOnTimes)
+%     finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
+%     if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
+%     
+%     locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
+%     locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
+%     prevInd = finalInd+1;
+% end
+% locationsPaws = locationsPaws / pixelsPerM; % convert to meters
+% locationsTail = locationsTail / pixelsPerM; % convert to meters
+
 
 
 
@@ -83,20 +84,30 @@ isTrialAnalyzed = true(1,length(kinData)); % keeps track of whereh kinematic dat
 
 for j = 1:length(obsOnTimes)
         
-    % first get trial specific data because 'find' function works much quicker on the smaller data slices
+    % find trial indices
     if j==length(obsOnTimes); maxTime=frameTimeStamps(end); else; maxTime = obsOnTimes(j+1); end
     endInd = find(frameTimeStamps>obsOffTimes(j) & ...  % after obs is off
                   frameTimeStamps<maxTime & ...         % before next obs is on
                   ~any(controlStepIdentities==1 | noObsStepIdentities==1, 2), 1, 'last');  % before subsequent trial steps apear
     trialInds = trialStartInds(j):endInd;
+    
+    % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    % this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
+    trialLocations = locationsPaws(trialInds,:,:);
+    trialLocationsTail = locationsTail(trialInds,:,:);
 
-    % get trial data
+    trialLocations(:,1,:) = trialLocations(:,1,:) - obsPixPositionsContinuous(j, trialInds)';
+    trialLocationsTail(:,1,:) = trialLocationsTail(:,1,:) - obsPixPositionsContinuous(j, trialInds)';
+    
+    trialLocations = trialLocations / pixelsPerM; % convert to meters
+    trialLocationsTail = trialLocationsTail / pixelsPerM; % convert to meters
+
+
+    % first get trial specific data because 'find' function works much quicker on the smaller data slices
     trialTimes = frameTimeStamps(trialInds);
     trialControlStepIds = controlStepIdentities(trialInds,:);
     trialModStepIds = modifiedStepIdentities(trialInds,:);
     trialNoObsStepIds = noObsStepIdentities(trialInds,:);
-    trialLocations = locationsPaws(trialInds,:,:);
-    trialLocationsTail = locationsTail(trialInds,:,:);
     trialWheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps(trialInds));
     trialObsPixPos = obsPixPositionsContinuous(j, trialInds);
 
@@ -117,10 +128,6 @@ for j = 1:length(obsOnTimes)
 
 
         % determine 'first modified paw' (forepaws only)
-        %
-        % if one in swing and one in stance at contact, first mod step is 
-        % one in swing // otherwise first mod paw is first paw to land on
-        % the other side
         
         % if one swing, one stance: pick the one in swing
         if xor(isLeftSwingAtContact, isRightSwingAtContact)
@@ -134,7 +141,7 @@ for j = 1:length(obsOnTimes)
                 firstModPaw = 3;
             end
             
-        % if both in stance: pick firt paw to enter swing
+        % if both in stance: pick first paw to enter swing
         else
             if find(~isnan(trialModStepIds(:,2)), 1, 'first') < find(~isnan(trialModStepIds(:,3)), 1, 'first')
                 firstModPaw = 2;

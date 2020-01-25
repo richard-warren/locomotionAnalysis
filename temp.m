@@ -9,19 +9,20 @@ levels = {'WL', 'W', 'L', '-'};
 %% load muscimol data
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'mtc_muscimol_data.mat'), 'data'); disp('sensoryDependence data loaded!')
 condition = 'condition';
-levels = {'muscimol', 'saline'};
+levels = {'saline', 'muscimol'};
 
 %% heatmaps
 
 plotDecisionHeatmaps(data, 'condition', condition, 'levels', levels, ...
-    'successOnly', true, 'modPawOnlySwing', false);
+    'successOnly', false, 'modPawOnlySwing', false, 'lightOffOnly', false, ...
+    'avgMice', true, 'plotMice', true);
 
 %% trials scatters
 
 plotDecisionTrials(data, 'condition', condition, 'levels', levels, ...
-    'successOnly', true, 'modPawOnlySwing', true, 'lightOffOnly', false);
+    'successOnly', false, 'modPawOnlySwing', true, 'lightOffOnly', false);
 
 %% model accuracies
 
 plotModelAccuracies(data, 'condition', condition, 'levels', levels, ...
-    'successOnly', false, 'modPawOnlySwing', false, 'lightOffOnly', false);
+    'successOnly', false, 'modPawOnlySwing', true, 'lightOffOnly', false);
