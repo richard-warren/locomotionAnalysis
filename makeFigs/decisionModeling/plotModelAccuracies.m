@@ -16,6 +16,7 @@ s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 
+s.barProps = {};  % properties to pass to barFancy
 s.saveLocation = '';  % if provided, save figure automatically to this location
 
 
@@ -115,11 +116,11 @@ figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'no
 
 % accuracies
 subplot(1,2,1)
-barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors)
+barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors, s.barProps{:})
 
 % f1 scores
 subplot(1,2,2)
-barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors)
+barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors, s.barProps{:})
 
 
 % save

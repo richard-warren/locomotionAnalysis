@@ -103,7 +103,7 @@ showLeadingLaggingImg('190318_000', 44, ...
 
 flat = flattenData(data, {'obsHgt', 'touchFrames'});
 
-%% settings
+% settings
 hgtBinNum = 4;
 hgtLims = [4 10];
 xCenters = 0:4:20;

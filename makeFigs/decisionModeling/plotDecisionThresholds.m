@@ -9,6 +9,9 @@ s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 
+s.barProps = {};  % properties to pass to barFancy
+s.saveLocation = '';  % if provided, save figure automatically to this location
+
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
@@ -24,7 +27,6 @@ if s.lightOffOnly; flat = flat(~[flat.isLightOn]); end
 
 [~, condition] = ismember({flat.(s.condition)}, s.levels);  % turn the 'condition' into numbers
 mice = unique({flat.mouse});
-
 
 
 thresholds = nan(length(s.levels), length(mice));
@@ -44,6 +46,10 @@ for i = 1:length(mice)
 end
 
 figure('position', [2018.00 100.00 252.00 239.00], 'color', 'white', 'menubar', 'none')
-barFancy(thresholds, 'ylabel', 'decision threshold', 'levelNames', {s.levels}, 'colors', s.colors)
+barFancy(thresholds, 'ylabel', 'decision threshold', 'levelNames', {s.levels}, 'colors', s.colors, s.barProps{:})
+
+
+% save
+if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
 
 

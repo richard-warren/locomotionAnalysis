@@ -79,7 +79,7 @@ for i = 1:length(s.levels)
     if i==1; ylabel('average'); end
     
     yyaxis right
-    plot(binCenters, mean(cat(1, bigStepProbs{i,:}), 1), 'LineWidth', 3, 'Color', s.colors(i,:))
+    plot(binCenters, nanmean(cat(1, bigStepProbs{i,:}), 1), 'LineWidth', 3, 'Color', s.colors(i,:))
     set(gca, 'YColor', s.colors(i,:), 'YTick', 0:.5:1, 'box', 'off', 'ylim', [0 1])
     
     title(s.levels{i})
@@ -88,7 +88,7 @@ end
 % average log plots
 subplot(rows, length(s.levels)+1, length(s.levels)+1); hold on
 for i = 1:length(s.levels)
-    plot(mean(cat(1, bigStepProbs{i,:}), 1), 'Color', s.colors(i,:), 'LineWidth', 2)
+    plot(nanmean(cat(1, bigStepProbs{i,:}), 1), 'Color', s.colors(i,:), 'LineWidth', 2)
     title('big step probability')
 end
 
