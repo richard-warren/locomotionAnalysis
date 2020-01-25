@@ -120,13 +120,27 @@ for j = 1:length(obsOnTimes)
         %
         % if one in swing and one in stance at contact, first mod step is 
         % one in swing // otherwise first mod paw is first paw to land on
-        % the other side !!! this doesn't make sense (if both in stance,
-        % choose first to leave stance, if both in air, choose first to
-        % touch floor, or perhaps paw furthest forward?)
+        % the other side
+        
+        % if one swing, one stance: pick the one in swing
         if xor(isLeftSwingAtContact, isRightSwingAtContact)
             if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
+        
+        % if both in swing: pick the paw closest to the hurdle
+        elseif (isLeftSwingAtContact && isRightSwingAtContact)
+            if trialLocations(contactInd,1,2) > trialLocations(contactInd,1,3)
+                firstModPaw = 2;
+            else
+                firstModPaw = 3;
+            end
+            
+        % if both in stance: pick firt paw to enter swing
         else
-            firstModPaw = pawOverSequence(1);
+            if find(~isnan(trialModStepIds(:,2)), 1, 'first') < find(~isnan(trialModStepIds(:,3)), 1, 'first')
+                firstModPaw = 2;
+            else
+                firstModPaw = 3;
+            end
         end
 
 
