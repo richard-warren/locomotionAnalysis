@@ -26,3 +26,14 @@ plotDecisionTrials(data, 'condition', condition, 'levels', levels, ...
 
 plotModelAccuracies(data, 'condition', condition, 'levels', levels, ...
     'successOnly', false, 'modPawOnlySwing', true, 'lightOffOnly', false);
+
+%% decision threshold
+
+plotDecisionThresholds(data, 'condition', condition, 'levels', levels, ...
+    'successOnly', false, 'modPawOnlySwing', true, 'lightOffOnly', false);
+
+
+
+
+
+
