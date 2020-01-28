@@ -2,8 +2,13 @@
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 % settings
-modPawOnlySwing = true;  % if true, only include trials where the modified paw is the only one in swing
+predictDirection = true;  % whether to predict whether step is shortened or lengthened (as opposed to predicting whether a big or a little step is taken)
+outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
+
+modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 lightOffOnly = true;  % whether to restrict to light on trials
+successOnly  = false;  % whether to restrict to successful trials
+
 referenceModPaw = 2;  % flip trials around the y axis if first modified paw is not referenceModPaw
 velTime = .05;  % how many samples to compute velocity over
 useReferencePaw = true;  % if true, flip everything with respect to referenceModPaw
@@ -98,7 +103,7 @@ fps = 250;
 % downstream can inherit correctly flipped data...
 
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isTrialSuccess', ...
-    'firstModPaw', 'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'isBigStep', ...
+    'firstModPaw', 'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'isBigStep', 'isModPawLengthened', ...
     'modPawKinInterp', 'preModPawKinInterp', 'isLightOn', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawOnlySwing'});
 flat = struct2table(flat);
 
@@ -171,30 +176,30 @@ disp('all done!')
 flat_all = flat;
 if lightOffOnly; flat = flat(logical(~[flat.isLightOn]),:); end
 if modPawOnlySwing; flat = flat([flat.modPawOnlySwing]==1,:); end
-flat = flat(~isnan([flat.isBigStep]),:);
+if successOnly; flat = flat([flat.isTrialSuccess]==1,:); end
 
 
 % prepare training data
 [X, y, predictorNames] = ...  % less inclusive model
     prepareDecisionModelData(flat, ...
     {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'x', 'xVel', 'z', 'zVel'}, ...
-    'isBigStep', 'balanceClasses', true, 'useAllPaws', false, 'normalizeData', true, 'referencePaw', referenceModPaw);
+    outcome, 'balanceClasses', true, 'useAllPaws', false, 'normalizeData', true, 'referencePaw', referenceModPaw);
 
-% [X, y, predictorNames, isCategorical] = ...  % more inclusive model
+% [X, y, predictorNames] = ...  % more inclusive model
 %     prepareDecisionModelData(flat, ...
 %     {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'x', 'xVel', 'z', 'zVel'}, ...
-%     'isBigStep', 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
+%     outcome, 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
 
-% [X, y, predictorNames, isCategorical] = ...  % most inclusive model
+% [X, y, predictorNames] = ...  % most inclusive model
 %     prepareDecisionModelData(flat, ...
 %     {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modStepStart', 'x', 'z', 'xVel', 'zVel'}, ...
-%     'isBigStep', 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
+%     outcome, 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
 
 
 %% forward feature selection
 
 % settings
-kFolds = 10;
+kFolds = 5;
 
 % function that determines misclassification rate of the model
 classf = @(xtrain, ytrain, xtest, ytest) ...
@@ -219,12 +224,12 @@ plot(1:numFeatures, 1-fsHistory.Crit, ...
 scatter(1:numFeatures, 1-fsHistory.Crit, 60, predictorColors, 'filled');
 xlabel('number of features')
 ylabel('cross-validation accuracy')
-set(gca, 'YLim', [.7 .9], 'YTick', .7:.1:.9, 'XLim', [1, numFeatures])
+set(gca, 'XLim', [1, numFeatures])
 fprintf('max accuracy: %.2f\n', max(1-fsHistory.Crit))
 fprintf('PREDICTORS: '); fprintf('%s ', predictorNames{sortInds}); fprintf('\n')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineModelAccuracy');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelAccuracy');
 saveas(gcf, file, 'svg');
 
 
@@ -300,9 +305,9 @@ for r = 1:sz
 end
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePredictors');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors');
 saveas(f1, file, 'svg');
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
 saveas(f2, file, 'svg');
 
 
@@ -310,8 +315,8 @@ saveas(f2, file, 'svg');
 
 % settings
 iterations = 100;
-maxFeatures = 4;  % take best 'maxFeatures' based on forward model selection to include in GLM
-hiddenUnits = 100;
+maxFeatures = 8;  % take best 'maxFeatures' based on forward model selection to include in GLM
+hiddenUnits = 200;
 validationRatio = .2;
 testRatio = .2;
 
@@ -321,7 +326,7 @@ testRatio = .2;
 [X, y, predictorNames_full, isCategorical] = ...  % most inclusive model
     prepareDecisionModelData(flat, ...
     {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modStepStart', 'x', 'z', 'xVel', 'zVel'}, ...
-    'isBigStep', 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
+    outcome, 'balanceClasses', true, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);
 glmPredictorBins = ismember(predictorNames_full, predictorNames(sortInds(1:maxFeatures)));  % bins of predictors to be used in restricted dataset
 
 
@@ -354,10 +359,9 @@ figure('Color', 'white', 'MenuBar', 'none', 'Position', [1964 646 339 300]);
 modelColors = [modelColor; modelColor*.5; .2 .2 .2];
 barFancy(accuracies, 'levelNames', {{'NN', 'GLM', 'shuffled'}}, 'colors', modelColors, ...
     barProperties{:}, 'textRotation', 0)
-set(gca, 'YTick', 0:.5:1)
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', ...
         'baseline_decision_modelAccuracies');
 saveas(gcf, file, 'svg');
 
@@ -380,7 +384,7 @@ kinCtl = permute(cat(3,flat.preModPawKinInterp{:}), [3,1,2]);
 [X, y, predictorNames_full, isCategorical] = ...  % most inclusive model
     prepareDecisionModelData(flat, ...
     {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modStepStart', 'x', 'z', 'xVel', 'zVel'}, ...
-    'isBigStep', 'balanceClasses', false, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);  % note that balanceClasses is FALSE, which means rows of 'X' correspond to rows of 'flat'
+    outcome, 'balanceClasses', false, 'useAllPaws', true, 'normalizeData', true, 'referencePaw', referenceModPaw);  % note that balanceClasses is FALSE, which means rows of 'X' correspond to rows of 'flat'
 glmPredictorBins = ismember(predictorNames_full, predictorNames(sortInds(1:maxFeatures)));  % bins of predictors to be used in restricted dataset
 
 % train model with ALL data
@@ -409,73 +413,15 @@ condition = discretize(binVar, binEdges);
 
 
 figure('color', 'white', 'menubar', 'none', 'position', [2000.00 100.00 750.00 707.00], 'InvertHardcopy', 'off');
-plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.isBigStep, ...
+plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), flat.obsHgt, condition, flat.(outcome), ...
     'colors', decisionColors, 'xLims', xLims, 'addHistos', false, 'lineWid', 3, ...
     'contactInds', flat.contactInd, 'histoHgt', .5, 'showSmpNum', false, 'obsColor', obsColor)
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', ...
         'baseline_decision_kinematics');
 saveas(gcf, file, 'svg');
 
-
-%% trial kinematics with landing position distribution
-
-% settings
-trialsToShow = 50;
-histoFillAlpha = .2;
-rng(10)
-xLims = [-.11 .08];
-
-% initializations
-kinData = permute(cat(3, flat.modPawKinInterp{:}), [3,1,2]);
-kinDataCtl = permute(cat(3, flat.preModPawKinInterp{:}), [3,1,2]);
-kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
-
-kinData(flat.firstModPaw==3,2,:) = -kinData(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
-kinDataCtl(flat.firstModPaw==3,2,:) = -kinDataCtl(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
-
-condition = ([flat.isBigStep]==1) + 1;
-figure('Color', 'white', 'Position', [2001.00 653.00 900.00 297.00], 'MenuBar', 'none');
-
-
-% plot kinematics
-subplot(2,1,1)
-plotKinematics(kinData(:,[1 3],:), [flat.obsHgt], condition, ...
-    'colors', decisionColors, 'trialsToOverlay', trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'plotObs', false)
-plotKinematics(kinDataCtl(:,[1 3],:), [flat.obsHgt], ones(1,height(flat)), ...
-    'colors', ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', obsColor)
-set(gca, 'XLim', xLims)
-
-
-% plot pdfs
-subplot(2,1,2); hold on;
-
-xGrid = linspace(xLims(1), xLims(2), 500);
-longShortRatio = sum(condition==1)/length(condition);
-
-kdCtl = ksdensity(kinDataCtl(:,1,end), xGrid);
-kdLong = ksdensity(kinData(condition==1,1,end), xGrid) * longShortRatio;
-kdShort = ksdensity(kinData(condition==2,1,end), xGrid) * (1-longShortRatio);
-
-
-% plot that shit
-fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], ctlStepColor, 'FaceAlpha', histoFillAlpha)
-plot(xGrid, kdCtl, 'Color', ctlStepColor, 'LineWidth', 4)
-
-fill([xGrid xGrid(1)], [kdLong kdLong(1)], decisionColors(1,:), 'FaceAlpha', histoFillAlpha)
-plot(xGrid, kdLong, 'Color', decisionColors(1,:), 'LineWidth', 4)
-
-fill([xGrid xGrid(1)], [kdShort kdShort(1)], decisionColors(2,:), 'FaceAlpha', histoFillAlpha)
-plot(xGrid, kdShort, 'Color', decisionColors(2,:), 'LineWidth', 4)
-
-set(gca, 'XLim', xLims, 'YDir', 'reverse', 'Visible', 'off')
-
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baseline_modStepVariability');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
 
 
 %% success rate by model prediction adherence
@@ -488,7 +434,7 @@ glm = fitglm(X(:, glmPredictorBins), y, ...
     'Distribution', 'binomial', 'CategoricalVars', isCategorical(glmPredictorBins));
 predictions = predict(glm, X(:,glmPredictorBins));
 confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-isModelCorrect = round(predictions) == [flat.isBigStep];  % bins where decision agrees with model prediction
+isModelCorrect = round(predictions) == [flat.(outcome)];  % bins where decision agrees with model prediction
 fprintf('POOLED MODEL\n')
 fprintf('correct prediction success:   %.3f (n=%i)\n', ...
     mean(flat.isTrialSuccess(isModelCorrect & confidentBins)), sum(isModelCorrect & confidentBins))
@@ -507,7 +453,7 @@ for i = 1:length(mice)
     
     predictions = predict(glm, X(mouseBins, glmPredictorBins));
     confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-    isModelCorrect = round(predictions) == flat.isBigStep(mouseBins);
+    isModelCorrect = round(predictions) == flat.(outcome)(mouseBins);
     mouseSuccess = flat.isTrialSuccess(mouseBins);
     
     successRates(1,i) = mean(mouseSuccess(confidentBins & isModelCorrect));
@@ -529,7 +475,7 @@ barFancy(successRates, barProperties{:}, ...
     'levelNames', {{'correct', 'incorrect'}}, 'textRotation', 0, 'colors', [modelColor; modelColor*.2])
 set(gca, 'YTick', 0:.5:1)
 
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineModelIncorrectAccuracy');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelIncorrectAccuracy');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -577,57 +523,9 @@ fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqr
 
 %% predicted distance heatmap
 
-% settings
-xLims = [-.03 .015]*1000;
-yLims = [-.03 .03]*1000;
-binWidth = 5;  % (mm) width for sliding average of big ste probability
-binNum = 100;  % number of bins for sliding average of big step probability
-
-
-close all
-figure('Color', 'white', 'Position', [2006 540 384 395], 'MenuBar', 'none');
-heatmapRick(flat.modPawPredictedDistanceToObs*1000, flat.modPawDistanceToObs*1000, ...
-    'xLims', xLims, 'yLims', yLims, 'colormap', 'hot', ...
-    'xlabel', 'predicted landing distance (mm)', 'ylabel', 'landing distance (mm)')
-set(gca, 'DataAspectRatio', [1 1 1])
-line(xLims, xLims, 'color', [ctlStepColor .5], 'lineWidth', 3)
-
-% add moving average of big step probability
-binCenters = linspace(xLims(1), xLims(2), binNum);
-bigStepProbs = nan(1,binNum);
-for i = 1:length(binCenters)
-    binLims = binCenters(i) + [-binWidth/2 binWidth/2];
-    bins = flat.modPawPredictedDistanceToObs*1000>binLims(1) & ...
-        flat.modPawPredictedDistanceToObs*1000<=binLims(2);
-    bigStepProbs(i) = mean(flat.isBigStep(bins));
-end
-
-yyaxis right
-plot(binCenters, bigStepProbs, 'LineWidth', 3, 'Color', decisionColors(1,:))
-set(gca, 'YColor', decisionColors(1,:), 'YTick', 0:.5:1, 'box', 'off')
-ylabel('big step probability')
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDecisionHeatmap');
-saveas(gcf, file, 'svg');
-
-% test accuracy of model using only predicted distance to obstacle
-[X, y, predictorNames_full, isCategorical] = ...  % most inclusive model
-    prepareDecisionModelData(flat, {'modPawPredictedDistanceToObs'}, ...
-    'isBigStep', 'balanceClasses', true, 'useAllPaws', false, 'normalizeData', true, 'referencePaw', referenceModPaw);
-accuracies = nan(1,kFolds);
-for i = 1:kFolds
-    % train
-    bins = crossVals.training(i);
-    glm = fitglm(X(bins), y(bins), 'Distribution', 'binomial');
-    %test
-    bins = crossVals.test(i);
-    predictions = round(predict(glm, X(bins)));
-    accuracies(i) = mean(y(bins)==predictions);
-end
-
-fprintf('predicted distance only GLM accuracy: %.3f\n', mean(accuracies))
-
-
-
+% heatmaps
+plotDecisionHeatmaps(data, ...
+    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
+    'avgMice', true, 'plotMice', false, 'binNum', 50, 'deltaMin', .5, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_heatMaps'));
 

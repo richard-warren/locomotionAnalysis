@@ -1,4 +1,4 @@
-function plotModelAccuracies(data, varargin)
+function [accuracies, f1Scores] = plotModelAccuracies(data, varargin)
 
 % train models to predict big vs. little step for different experimental
 % conditions to see whether behavioral determinants are affected by
@@ -9,6 +9,8 @@ function plotModelAccuracies(data, varargin)
 s.condition = '';  % name of field in 'data' that contains different experimental conditions
 s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
+
+s.predictDirection = false;  % whether to predict whether step is shortened or lengthened (as opposed to predicting whether a big or a little step is taken)
 
 s.kFolds = 4;  % for k folds cross validation
 
@@ -24,7 +26,7 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if isempty(s.colors); s.colors = jet(length(s.levels)+1); end
 
-flat = flattenData(data, {'mouse', 'session', 'trial', 'modPawOnlySwing', 'isTrialSuccess', ...
+flat = flattenData(data, {'mouse', 'session', 'trial', 'modPawOnlySwing', 'isTrialSuccess', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', ...
     'isBigStep', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawKin', 'contactInd', 'isLightOn', s.condition});
 
 % restrict to desired trials
@@ -43,7 +45,11 @@ end
 
 % prepare predictor and target data
 X = [[flat.modPawX]; [flat.obsHgt]; [flat.velAtWiskContact]; [flat.wiskContactPosition]]';
-y = [flat.isBigStep];
+if s.predictDirection
+    y = [flat.modPawPredictedDistanceToObs] < [flat.modPawDistanceToObs];  % whether the step was extended
+else
+    y = [flat.isBigStep];
+end
 
 
 % remove bins with NaNs
@@ -69,9 +75,10 @@ for i = 1:length(mice)
         conditionBins = condition==j;
         X_sub = X(mouseBins & conditionBins,:);
         y_sub = y(mouseBins & conditionBins);
-        if isempty(y_sub); keyboard; end
-        [models{j,i}, accuracies(j,i), f1Scores(j,i)] = ...
-            computeModel(X_sub, y_sub, s.kFolds);  % mouse model for this condition
+        if ~isempty(y_sub)
+            [models{j,i}, accuracies(j,i), f1Scores(j,i)] = ...
+                computeModel(X_sub, y_sub, s.kFolds);  % mouse model for this condition
+        end
     end
     
     % shuffled

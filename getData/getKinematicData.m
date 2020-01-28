@@ -1,5 +1,4 @@
-function [kinData, stanceBins, models] = getKinematicData(session)
-
+function [kinData, stanceBins, models] = getKinematicData(session, varargin)
 
 % after analyzeSession computes low level information for each session,
 % getKinematicData is used to extract more processed kinematic information,
@@ -15,10 +14,11 @@ swingMaxSmps = 50;       % when averaging swing locations without interpolating 
 noObsSteps = 3;          % how many steps per trial per paw to take before the obstacle becomes engaged
 controlSteps = 2;        % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
 timeOperations = false;  % whether to report time it takes to compute differnt parts of this script
-showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
+s.showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
 
 
 % load session data
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 fprintf('%s: getting kinematic data\n', session);
 if timeOperations; tic; end
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'))
@@ -283,6 +283,7 @@ try
     % make model to predict would-be mod swing length from wheel vel at start of swing
 
     % generate models
+%     keyboard
     models = cell(1,4);
     controlVels = cat(1, kinData.controlWheelVels);
     controlLengths = cat(1,kinData.controlSwingLengths);
@@ -302,7 +303,7 @@ try
     end
 
     % show model fits
-    if showStepLengthFits
+    if s.showStepLengthFits
         figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white')
         colors = hsv(4);
         for i = 1:4
@@ -321,7 +322,8 @@ catch
     fprintf('%s: failed to make swing length model!\n', session)
 end
 
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models', '-v7.3')
+save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), ...
+    'kinData', 'stanceBins', 'models', '-v7.3')
 
 
 

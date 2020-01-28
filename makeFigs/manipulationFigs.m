@@ -79,7 +79,7 @@ elseif strcmp(dataset, 'senLesion')
         colors = [ctlStepColor; ctlStepColor; repmat(lesionColor,4,1).*linspace(1,.25,4)'];
         vars.condition = struct('name', 'condition', ...
             'levels', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}}, ...
-            'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});  % i ommitted preTrim for simplicity
+            'levelNames', {{'preTrim', 'pre', 'postIpsi', 'postContra', 'postBi', 'noWisk'}});
         matchConditions = {'pre' 'postContra'};  % for propensity score matching, math these two conditions
         figConditionals = struct('name', 'conditionNum', 'condition', @(x) x>=earlySessions(1) & x<=earlySessions(2));
     end
@@ -445,7 +445,7 @@ successOnly = false;  % whether to only include successful trials
 % heatmaps
 plotDecisionHeatmaps(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
     'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
-    'avgMice', true, 'plotMice', true, 'colors', colors, ...
+    'avgMice', true, 'plotMice', true, 'colors', colors, 'binNum', 50, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heatMaps' suffix1 suffix2]));
 
 % trials scatters
@@ -467,8 +467,24 @@ plotDecisionThresholds(data, 'condition', 'condition', 'levels', vars.condition.
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_thresholds' suffix1 suffix2]));
 
 
+%% temp (find touch thresh that maximally discriminates between conditions)
 
+flat = flattenData(data, {'session', 'trial', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isBigStep', 'condition', 'touchFrames'});
 
+preBins = strcmp({flat.condition}, 'pre');
+postBins = strcmp({flat.condition}, 'post');
+
+[preSuccess, postSuccess] = deal(nan(1,20));
+for i = 1:20
+    preSuccess(i) = mean([flat(preBins).touchFrames]<i);
+    postSuccess(i) = mean([flat(postBins).touchFrames]<i);
+end
+
+close all; figure
+% plot(preSuccess); hold on;
+% plot(postSuccess);
+plot(preSuccess - postSuccess)
+legend('pre', 'post')
 
 
 

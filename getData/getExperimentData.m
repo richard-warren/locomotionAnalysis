@@ -16,7 +16,7 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 
 % settings
 metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};  % these parameters will be stored as experiment metadata
-g.touchThresh = 1;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
+g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
 g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
 g.clearanceBuffer = .001;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle // positive numbers are more inclusive (excluding few trials) //could probably get away with .0015
@@ -48,7 +48,8 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing'};
+             'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing', ...
+             'isModPawLengthened'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
@@ -473,6 +474,14 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
             var([g.sesKinData.isTrialAnalyzed]) = ...
                 xor([g.sesKinData.isRightSwingAtContact], [g.sesKinData.isLeftSwingAtContact]);
             var = num2cell(var);
+            
+        case 'isModPawLengthened'  % whether the first modified paw is lengthened relative to predicted length
+            var = num2cell(false(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                predictedLength = g.sesKinData(i).modPredictedLengths(1,g.sesKinData(i).firstModPaw);
+                actualLength = g.sesKinData(i).modifiedSwingLengths(1,g.sesKinData(i).firstModPaw);
+                var{i} = actualLength  > predictedLength;
+            end
             
             
             

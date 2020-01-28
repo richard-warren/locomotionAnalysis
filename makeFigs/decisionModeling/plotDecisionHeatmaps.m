@@ -32,7 +32,16 @@ if s.successOnly; flat = flat([flat.isTrialSuccess]); end
 if s.modPawOnlySwing; flat = flat([flat.modPawOnlySwing]==1); end
 if s.lightOffOnly; flat = flat(~[flat.isLightOn]); end
 
+
+
+if isempty(s.condition)  % if no condition provided, create dummy variable
+    s.condition = 'condition';
+    s.levels = {'temp'};
+    for i = 1:length(flat); flat(i).condition = 'temp'; end
+end
+
 [~, condition] = ismember({flat.(s.condition)}, s.levels);  % turn the 'condition' into numbers
+
 if ~s.avgMice; for i = 1:length(flat); flat(i).mouse = 'temp'; end; end  % if pooling across mice, rename all mice with dummy string
 mice = unique({flat.mouse});
 
@@ -43,23 +52,31 @@ binCenters = linspace(s.xLims(1), s.xLims(2), s.binNum);
 
 for i = 1:length(s.levels)
     conditionBins = condition==i;
+    fprintf('%s: ', s.levels{i})
     
     for j = 1:length(mice)
+        fprintf('%i/%i ', j, length(mice))
         bins = conditionBins & strcmp({flat.mouse}, mice{j});
     
-        heatmaps{i,j} = heatmapRick([flat(bins).modPawPredictedDistanceToObs]*1000, [flat(bins).modPawDistanceToObs]*1000, ...
-            'xLims', s.xLims, 'yLims', s.yLims, 'showPlot', false);
+        if any(bins)
+            heatmaps{i,j} = heatmapRick([flat(bins).modPawPredictedDistanceToObs]*1000, [flat(bins).modPawDistanceToObs]*1000, ...
+                'xLims', s.xLims, 'yLims', s.yLims, 'showPlot', false, 'binNum', s.binNum);
 
-        % compute moving average for big step probability
-        bigStepProbs{i,j} = nan(1, length(binCenters));
-        for k = 1:length(binCenters)
-            binLims = binCenters(k) + [-s.binWidth/2 s.binWidth/2];
-            binsSub = bins & ...
-                   [flat.modPawPredictedDistanceToObs]*1000 > binLims(1) & ...
-                   [flat.modPawPredictedDistanceToObs]*1000 <= binLims(2);
-            bigStepProbs{i,j}(k) = nanmean([flat(binsSub).isBigStep]);
+            % compute moving average for big step probability
+            bigStepProbs{i,j} = nan(1, length(binCenters));
+            for k = 1:length(binCenters)
+                binLims = binCenters(k) + [-s.binWidth/2 s.binWidth/2];
+                binsSub = bins & ...
+                       [flat.modPawPredictedDistanceToObs]*1000 > binLims(1) & ...
+                       [flat.modPawPredictedDistanceToObs]*1000 <= binLims(2);
+                bigStepProbs{i,j}(k) = nanmean([flat(binsSub).isBigStep]);
+            end
+        else
+            heatmaps{i,j} = nan(s.binNum, s.binNum);  % !!! this will fail if the first heatmap is unsuccessfull
+            bigStepProbs{i,j} = nan(1, length(binCenters));
         end
     end
+    fprintf('\n')
 end
 
     
@@ -73,7 +90,7 @@ y = linspace(s.yLims(1), s.yLims(2), size(heatmaps{1,1},1));
 % average heatmaps
 for i = 1:length(s.levels)
     subplot(rows, length(s.levels)+1, i)
-    imagesc(x, y, mean(cat(3, heatmaps{i,:}), 3))
+    imagesc(x, y, nanmean(cat(3, heatmaps{i,:}), 3))
     set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
     line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)
     if i==1; ylabel('average'); end
@@ -94,28 +111,29 @@ end
 
 
 % mouse plots
-for m = 1:length(mice)
-    
-    % heatmaps
-    for i = 1:length(s.levels)
-        subplot(rows, length(s.levels)+1, i + m*(length(s.levels)+1))
-        imagesc(x, y, heatmaps{i,m})
-        set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
-        line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)
-        if i==1; ylabel(mice{m}); end
+if s.plotMice    
+    for m = 1:length(mice)
 
-        yyaxis right
-        plot(binCenters, bigStepProbs{i,m}, 'LineWidth', 3, 'Color', s.colors(i,:))
-        set(gca, 'YColor', s.colors(i,:), 'YTick', 0:.5:1, 'box', 'off', 'ylim', [0 1])
+        % heatmaps
+        for i = 1:length(s.levels)
+            subplot(rows, length(s.levels)+1, i + m*(length(s.levels)+1))
+            imagesc(x, y, heatmaps{i,m})
+            set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
+            line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)
+            if i==1; ylabel(mice{m}); end
+
+            yyaxis right
+            plot(binCenters, bigStepProbs{i,m}, 'LineWidth', 3, 'Color', s.colors(i,:))
+            set(gca, 'YColor', s.colors(i,:), 'YTick', 0:.5:1, 'box', 'off', 'ylim', [0 1])
+        end
+
+        % log plot
+        subplot(rows, length(s.levels)+1, (m+1)*(length(s.levels)+1)); hold on
+        for i = 1:length(s.levels)
+            plot(bigStepProbs{i,m}, 'Color', s.colors(i,:), 'LineWidth', 2)
+        end 
     end
-
-    % log plot
-    subplot(rows, length(s.levels)+1, (m+1)*(length(s.levels)+1)); hold on
-    for i = 1:length(s.levels)
-        plot(bigStepProbs{i,m}, 'Color', s.colors(i,:), 'LineWidth', 2)
-    end 
 end
-
 
 % save
 if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
