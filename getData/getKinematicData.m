@@ -283,10 +283,14 @@ try
     % make model to predict would-be mod swing length from wheel vel at start of swing
 
     % generate models
-%     keyboard
     models = cell(1,4);
+    
     controlVels = cat(1, kinData.controlWheelVels);
     controlLengths = cat(1,kinData.controlSwingLengths);
+    controlVels = controlVels(2:2:end, :);  % take only second control step vels
+    controlLengths = controlLengths(2:2:end, :);  % predict second control step length
+    
+    
     for paw = 1:4
         validInds = ~isnan(controlVels(:,paw)) & ~isnan(controlLengths(:,paw));
         models{paw} = fitlm(controlVels(validInds,paw), controlLengths(validInds,paw), 'Linear', 'RobustOpts', 'on');
@@ -324,6 +328,5 @@ end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), ...
     'kinData', 'stanceBins', 'models', '-v7.3')
-
 
 
