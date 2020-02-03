@@ -5,7 +5,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 mice = unique(sessionInfo.mouse);
 
 data = cell(1,length(mice));
-for i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
@@ -178,7 +178,7 @@ ylabel('velocity (m/s)')
 text(x(1), yLims(2), 'obstace engaged', 'VerticalAlignment', 'bottom')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', ...
         'baselineVel');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
@@ -191,6 +191,7 @@ obsOnVels = squeeze(velData(:,obsOnInd));
 
 fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
 fprintf('obs on:      %.2f +- %.2f SEM\n', mean(obsOnVels), std(obsOnVels)/sqrt(length(obsOnVels)))
+fprintf('overal:      %.2f +- %.2f SEM\n', mean(nanmean(velData,2)), std(nanmean(velData,2))/sqrt(length(obsOnVels)))
 
 
 %% speed triggered at obs on and wisk contact

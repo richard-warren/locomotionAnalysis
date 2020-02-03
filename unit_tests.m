@@ -204,7 +204,7 @@ end
 [sessions, experiments] = getAllExperimentSessions();
 problemSessions = {};
 
-for i = 331:length(sessions)
+for i = 1:length(sessions)
     fprintf('\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
     try 
 %         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)

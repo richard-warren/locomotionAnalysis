@@ -1,7 +1,7 @@
 %% compute experiment data from scratch (only need to do once)
 
 % settings
-dataset = 'mtc_muscimol';  % senLesion, mtc_lesion, mtc_muscimol
+dataset = 'senLesion';  % senLesion, mtc_lesion, mtc_muscimol
 
 if strcmp(dataset,'senLesion'); sheet='senLesionNotes'; elseif strcmp(dataset,'mtc_lesion'); sheet='mtcLesionNotes'; elseif strcmp(dataset,'mtc_muscimol'); sheet='muscimolNotes'; end
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', sheet);
@@ -19,13 +19,13 @@ clear all
 clear all;  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_muscimol';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 3];  % min and max sessions to include in 'early' lesion sessions
 lateSessions = [5 7];  % min and max sessions to include in 'late' lesion sessions
 
-matchTrials = false;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
+matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 25;  % take manipPercent percent of best matched manip trials
 
@@ -436,58 +436,33 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 %% decision making
 
-% settings
-modPawOnlySwing = true;  % if true, only include trials where the modified paw is the only one in swing
-lightOffOnly = false;  % whether to restrict to light on trials
-successOnly = false;  % whether to only include successful trials
+flat = flattenData(data, ...
+    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw'}]);
 
-
-% heatmaps
-plotDecisionHeatmaps(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
-    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
-    'avgMice', true, 'plotMice', true, 'colors', colors, 'binNum', 50, ...
+%% heatmaps
+plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', true, 'plotMice', true, 'colors', sensColors, 'outcome', 'isModPawLengthened', ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heatMaps' suffix1 suffix2]));
 
-% trials scatters
-plotDecisionTrials(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
-    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
+%% trials scatters
+plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
+    'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', decisionColors, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionKin' suffix1 suffix2]));
 
-% model accuracies
-plotModelAccuracies(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
-    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
-    'colors', [colors; .2 .2 .2], 'barProps', barProperties, ...
+%% model accuracies
+accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
+    'condition', 'condition', 'levels', vars.condition.levels, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', [sensColors; .2 .2 .2], 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_models' suffix1 suffix2]));
 
-% decision threshold
-plotDecisionThresholds(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
-    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
-    'colors', colors, 'barProps', barProperties, ...
+%% decision threshold
+plotDecisionThresholds(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_thresholds' suffix1 suffix2]));
-
-
-%% temp (find touch thresh that maximally discriminates between conditions)
-
-flat = flattenData(data, {'session', 'trial', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'isBigStep', 'condition', 'touchFrames'});
-
-preBins = strcmp({flat.condition}, 'pre');
-postBins = strcmp({flat.condition}, 'post');
-
-[preSuccess, postSuccess] = deal(nan(1,20));
-for i = 1:20
-    preSuccess(i) = mean([flat(preBins).touchFrames]<i);
-    postSuccess(i) = mean([flat(postBins).touchFrames]<i);
-end
-
-close all; figure
-% plot(preSuccess); hold on;
-% plot(postSuccess);
-plot(preSuccess - postSuccess)
-legend('pre', 'post')
-
-
-
 
 
 

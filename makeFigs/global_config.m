@@ -31,11 +31,15 @@ both = hsv2rgb(mean([rgb2hsv(colorWisk); rgb2hsv(colorVision)],1));
 sensColors = [both; colorWisk; colorVision; colorNone];
 
 
-% big little step colors
-% decisionColors = [0 0.447 0.741; 0.850 0.325 0.098]; % first entry is small step, second is big step
+% decision making
+m.deltaMin =.5;
+m.lightOffOnly = false;
+m.modPawOnlySwing = true;
+m.successOnly = false;
+m.predictors = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
+m.heatmapNormalize = 'col';  % normalize row or colum to sum to 1
 decisionColors = flipud(colorme(2, 'offset', .2, 'showSamples', false)); % first entry is small step, second is big step
-preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));% preDecisionColor(3) = 1;
-% modelColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));
+preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));
 modelColor = [56, 222, 53] / 255;
 
 

@@ -1,4 +1,4 @@
-function plotDecisionTrials(data, varargin)
+function plotDecisionTrials(flat, varargin)
 
 
 
@@ -7,6 +7,7 @@ function plotDecisionTrials(data, varargin)
 % settings
 s.condition = '';  % name of field in 'data' that contains different experimental conditions
 s.levels = {''};  % levels of s.condition to plot
+s.outcome = 'isBigStep';  % variable used to color trials // isBigStep or isModPawLengthened
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
@@ -30,9 +31,7 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
-flat = struct2table(flattenData(data, ...
-    {'modPawKinInterp', 'isBigStep', 'preModPawKinInterp', 'firstModPaw', 'obsHgt', ...
-    'isLightOn', 'isTrialSuccess', 'modPawOnlySwing', s.condition}));
+if isstruct(flat); flat = struct2table(flat); end
 
 % restrict to desired trials
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
@@ -48,7 +47,11 @@ kinData(flat.firstModPaw==3,2,:) = -kinData(flat.firstModPaw==3,2,:); % flip st 
 kinDataCtl(flat.firstModPaw==3,2,:) = -kinDataCtl(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 
 figure('Color', 'white', 'Position', [2001.00 10 900.00 250*length(s.levels)], 'MenuBar', 'none');
-[~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
+if ~isempty(s.condition)  % if no condition provided, create dummy variable
+    [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
+else
+    condition = ones(height(flat), 1);
+end
 
 
 for i = 1:length(s.levels)
@@ -56,17 +59,17 @@ for i = 1:length(s.levels)
     bins = condition == i;
     
     % plot kinematics
-    plotKinematics(kinData(bins,[1 3],:), flat.obsHgt(bins), flat.isBigStep(bins) + 1, ...
+    plotKinematics(kinData(bins,[1 3],:), flat.obsHgt(bins), flat.(s.outcome)(bins) + 1, ...
         'colors', s.colors, 'trialsToOverlay', s.trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'plotObs', false)
     plotKinematics(kinDataCtl(bins,[1 3],:), flat.obsHgt(bins), ones(1,sum(bins)), ...
         'colors', s.ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', s.obsColor)
     set(gca, 'XLim', s.xLims)
 
     % plot pdfs
-    longShortRatio = nanmean(flat.isBigStep(bins));
+    longShortRatio = nanmean(flat.(s.outcome)(bins));
     kdCtl = ksdensity(kinDataCtl(bins,1,end), xGrid);
-    kdLong = ksdensity(kinData(bins & flat.isBigStep==1,1,end), xGrid) * longShortRatio;
-    kdShort = ksdensity(kinData(bins & flat.isBigStep~=1,1,end), xGrid) * (1-longShortRatio);
+    kdLong = ksdensity(kinData(bins & flat.(s.outcome)==1,1,end), xGrid) * longShortRatio;
+    kdShort = ksdensity(kinData(bins & flat.(s.outcome)~=1,1,end), xGrid) * (1-longShortRatio);
 
     % scale y axis to fit in same subplot as kinematics
     kdCtl = -kdCtl * (s.histoHgt/max(kdCtl)) - s.histoOffset;
