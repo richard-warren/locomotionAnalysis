@@ -21,7 +21,7 @@ clusterInfo = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysF
 unit_ids = [];
 for i = 1:size(clusterGroups.group, 1)
     if strcmp(clusterGroups.group(i, 1:4), 'good')
-        unit_ids = [unit_ids, clusterGroups.cluster_id(i)];        
+        unit_ids = [unit_ids; clusterGroups.cluster_id(i)];        
     end
 end
 
@@ -33,7 +33,7 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile
 channelNum_OpenEphys = channelNum_OpenEphys - 1;
 
 
-bestChannels = nan(1, length(unit_ids));
+bestChannels = nan(length(unit_ids),1);
 for i = 1:length(unit_ids)
     ind = find(clusterInfo.id == unit_ids(i));
     bestChannels(i) = clusterInfo.channel(ind)+1;   

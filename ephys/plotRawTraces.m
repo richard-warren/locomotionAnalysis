@@ -147,7 +147,7 @@ for i = 1:length(rewardTimeBinsSelected)
     yyaxis right
     plot(x2, velocity, '-', 'Color', s.velocityColor, 'LineWidth', 1);
     box off
-    ylim([0 0.5]);
+    ylim([0 max(velocity)+0.1]);
     ax = gca;
     ax.YColor = s.velocityColor;
     % title(['trail ' num2str(i)]);

@@ -13,7 +13,7 @@ s.xWiskPos = [];
 s.wiskScaling = [];
 s.wiskContrast = [.5 1];
 s.runContrast = [0 1];
-s.isPaddingWhite = true;  % otherwise padding is black
+s.isPaddingWhite = false;  % otherwise padding is black
 s.edgeFading = 50;  % (pixels) how much to fade out left and right side of frade
 
 

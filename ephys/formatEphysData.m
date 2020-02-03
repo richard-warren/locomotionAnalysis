@@ -120,7 +120,7 @@ end
 
 
 % get spike times for good units
-[spkInds, unit_ids] = getGoodSpkInds(session);
+[spkInds, unit_ids, ~] = getGoodSpkInds(session);
 cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
 if ~all(cellData.unit_id==unit_ids); disp('WARNING: callData.csv unit_ids do not match those in ephysFolder'); keyboard; end
 ephysInfo = getSessionEphysInfo(session);

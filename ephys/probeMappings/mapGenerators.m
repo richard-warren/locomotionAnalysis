@@ -44,13 +44,13 @@ kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
 
-% probe BDFD // original mapping
-save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+% % probe BDFD // original mapping
+% save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
+%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 % probe BDFD // after right most shank broken
 connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
-save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
+save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 

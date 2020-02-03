@@ -12,18 +12,21 @@ files = dir(fullfile(folder, '*.tif'));
 % Left Side
 LeftInt = reformatTiffStack(fullfile(folder, 'InterpositusLeft.tif'));
 LeftDentate = reformatTiffStack(fullfile(folder, 'DentateLeft.tif'));
+LeftFastigial = reformatTiffStack(fullfile(folder, 'FastigialLeft.tif'));
 
-LeftProbe_1L = reformatTiffStack(fullfile(folder, 'ProbeLeft_1_1L.tif'));
-LeftProbe_1R = reformatTiffStack(fullfile(folder, 'ProbeLeft_1_1R.tif'));
+% LeftProbe_1L = reformatTiffStack(fullfile(folder, 'ProbeLeft_1_1L.tif'));
+% LeftProbe_1R = reformatTiffStack(fullfile(folder, 'ProbeLeft_1_1R.tif'));
 % LeftProbe_2 = reformatTiffStack(fullfile(folder, 'ProbeLeft_2.tif'));
 % LeftProbe_3 = reformatTiffStack(fullfile(folder, 'ProbeLeft_3.tif'));
+% 
+% LeftPCLayer = reformatTiffStack(fullfile(folder, 'PCLayerLeft.tif'));
 
-LeftPCLayer = reformatTiffStack(fullfile(folder, 'PCLayerLeft.tif'));
-
-LeftBrainSurface = reformatTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'));
+% LeftBrainSurface = reformatTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'));
 
 
 %% Get xyzCoords 
+
+thickness = 60;
 % 
 % RDCoords = getCoordinates(RightDentate);
 % RICoords = getCoordinates(RightInt);
@@ -31,38 +34,43 @@ LeftBrainSurface = reformatTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'));
 % RPCLCoords = getCoordinates(RightPCLayer);
 % RBSCoords = getCoordinates(RightBrainSurface);
 
-LICoords = getCoordinates(LeftInt);
-LDCoords = getCoordinates(LeftDentate);
-LPCoords_1L = getCoordinates(LeftProbe_1L);
-LPCoords_1R = getCoordinates(LeftProbe_1R);
+LICoords = getCoordinates(LeftInt, thickness);
+LDCoords = getCoordinates(LeftDentate, thickness);
+LFCoords = getCoordinates(LeftFastigial, thickness);
+% LPCoords_1L = getCoordinates(LeftProbe_1L);
+% LPCoords_1R = getCoordinates(LeftProbe_1R);
 % LPCoords_2 = getCoordinates(LeftProbe_2);
 % LPCoords_3 = getCoordinates(LeftProbe_3);
-LPCLCoords = getCoordinates(LeftPCLayer);
-LBSCoords = getCoordinates(LeftBrainSurface);
+% LPCLCoords = getCoordinates(LeftPCLayer);
+% LBSCoords = getCoordinates(LeftBrainSurface);
 
 %% Plot brain regions + probe traces
 
 figure('Color', 'white', 'position', get(0,'ScreenSize'));
+box off
+axis off
 
 xrange = size(LeftDentate, 2);
 yrange = max(LDCoords(:, 3))+60; % +60 just for visualizing purposes
 % 
 PlotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
+hold on;
+PlotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange);
+hold on 
+PlotRegions3D(LFCoords, 20, [0.39, 0.83, 0.075], xrange, yrange);
+
 % hold on;
-% PlotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange);
+% PlotRegions3D(LPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange);
+% hold on;
+% PlotRegions3D(LBSCoords, 10, [0.8 0.8 0.8], xrange, yrange);
 
-hold on;
-PlotRegions3D(LPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange);
-hold on;
-PlotRegions3D(LBSCoords, 10, [0.8 0.8 0.8], xrange, yrange);
-
-hold on;
-PlotRegions3D(LPCoords_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-hold on;
-PlotRegions3D(LPCoords_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
+% hold on;
+% PlotRegions3D(LPCoords_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
+% hold on;
+% PlotRegions3D(LPCoords_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
 
 title('3D Plot of Traced Features');
-legend('Dentate Nucleus', 'Purkinje Cell Layer', 'Brain Surface', 'Probe Traces', 'Location' , 'northeast');
+legend('Dentate', 'Interpositus', 'Fastigial');
 
 % hold on;
 % PlotRegions3D(LPCoords_2, 10, [1.0, 0.43, 0.54], xrange, yrange);

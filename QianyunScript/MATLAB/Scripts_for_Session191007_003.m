@@ -21,3 +21,4 @@ randomTrials = randsample(LFpaw_leadingBigStepTrials, 10)
 inds = find([flat.firstModPaw] == 3 & [flat.paw] == 3 & [flat.isBigStep] == 0); % 3 is the right front paw
 RFpaw_leadingTwoStepTrials = trials(inds);
 randomTrials = randsample(RFpaw_leadingTwoStepTrials, 10)
+

@@ -164,7 +164,7 @@ for cellNum = 1:length(unit_ids)
     
     
     % ventral paw contacts
-    minTouchInds = 1; % paw must be touching for at least this many inds for trial to be included
+    minTouchInds = 5; % paw must be touching for at least this many inds for trial to be included
     contactsToInclude = {'fore_ventral', 'hind_ventral_low'};
 %     contactsToInclude = {'hind_ventral_low'};
     classInds = find(ismember(touchClassNames, contactsToInclude));
@@ -172,13 +172,17 @@ for cellNum = 1:length(unit_ids)
     for paw = 1:4
         plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
         times = [];
+        touchTrials = [];
         
         % get first contact for paw on each trial
         for i = 1:length(obsOnTimes)
             trialBins = frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i);
             pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
             pawTouchInd = find(pawTouchBins, 1, 'first');
-            if sum(pawTouchBins)>=minTouchInds; times(end+1) = frameTimeStamps(pawTouchInd); end
+            if sum(pawTouchBins)>=minTouchInds
+                times(end+1) = frameTimeStamps(pawTouchInd); 
+                touchTrials = [touchTrials, i] 
+            end
         end
         
         plotPSTH2(session, cellNum, times, {'colors', s.pawColors(paw,:)});
