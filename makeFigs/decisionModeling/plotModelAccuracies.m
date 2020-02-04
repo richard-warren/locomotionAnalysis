@@ -15,10 +15,11 @@ s.condition = '';  % name of field in 'data' that contains different experimenta
 s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
 s.model = 'glm';  % 'glm' or 'ann'
+s.modelTransfers = [];  % nX2 matrix describing which models trained under one condition (left column) to test on another condition (right column)
 
 s.kFolds = 4;  % for k folds cross validation
 s.balanceClasses = false;  % whether to balance classes by subsampling
-s.shuffledConditions = [1];  % 'shuffled' condition is the average performance of models trained on shuffled data within these conditions
+s.weightClasses = false;  % whether to balance classes by applying weights (only applies when model is 'glm')
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
@@ -65,7 +66,7 @@ else
     condition = ones(1, height(flat));
 end
 models = cell(length(s.levels), length(mice));  % (condition) X (mice)
-[accuracies, f1Scores] = deal(nan(length(s.levels), length(mice), 2));  % (condition) X (mice) X (non-shuffled vs. shuffled)
+[accuracies, f1Scores] = deal(nan(length(s.levels), 2, length(mice)));  % (condition) X (shuffled vs. non-shuffled) X (mice)
 
 
 % loop over mice
@@ -93,11 +94,11 @@ for i = 1:length(mice)
         
         if ~isempty(y_sub)
             % train model
-            [models{j,i}, accuracies(j,i,1), f1Scores(j,i,1)] = ...
+            [models{j,i}, accuracies(j,2,i), f1Scores(j,2,i)] = ...
                 computeModel(X_sub, y_sub, s.kFolds);  % mouse model for this condition
             
             % train model on shuffled data
-            [~, accuracies(j,i,2), f1Scores(j,i,2)] = ...
+            [~, accuracies(j,1,i), f1Scores(j,1,i)] = ...
                 computeModel(X_sub, y_sub(randperm(length(y_sub))), s.kFolds);  % mouse model for this condition
         end
     end
@@ -118,8 +119,17 @@ function [model, accuracy, f1] = computeModel(X, y, kFolds)
         % train model
         switch s.model
             case 'glm'
+                
+                if s.weightClasses
+                    w_f = sum(y) / length(y);
+                    weights = ones(length(y), 1) * w_f;
+                    weights(y) = 1 - w_f;
+                else
+                    weights = ones(length(y), 1);
+                end
+                
                 model = fitglm(X(partitions.training(k),:), y(partitions.training(k)), ...
-                    'Distribution', 'binomial');
+                    'Distribution', 'binomial', 'Weights', weights(partitions.training(k)));
                 yhat = predict(model, X(partitions.test(k),:)) > .5;
                 
             case 'ann'
@@ -144,26 +154,18 @@ function [model, accuracy, f1] = computeModel(X, y, kFolds)
 end
 
 
-% average shuffled condition to accuracies and f1Scores
-accuraciesShuffled = nanmean(accuracies(s.shuffledConditions,:,2),1);
-f1ScoresShuffled = nanmean(f1Scores(s.shuffledConditions,:,2),1);
-% accuracies = cat(1, accuracies(:,:,1), accuraciesShuffled);
-% f1Scores = cat(1, f1Scores(:,:,1), f1ScoresShuffled);
-
-
 % plot everything
-figure('name', sprintf('%s, %i predictors, max accuracy %.2f, accuracy above chance %.2f', ...
-    s.model, length(predictors), max(mean(accuracies,2)), max(mean(accuracies,2))-mean(accuracies(end,:))), ...
-    'position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
-fprintf('min accuracy: %.2f\n', min(mean(accuracies,2)))
+figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
+colors = repelem(s.colors, 2, 1);
+colors = colors .* repmat([.5;1],length(s.levels),1);
 
 % accuracies
 subplot(1,2,1)
-barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors, s.barProps{:})
+barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
 
 % f1 scores
 subplot(1,2,2)
-barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', s.colors, s.barProps{:})
+barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
 
 
 % save
