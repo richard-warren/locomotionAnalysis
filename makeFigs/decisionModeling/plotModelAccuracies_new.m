@@ -1,4 +1,4 @@
-function [accuracies, f1Scores] = plotModelAccuracies(flat, predictors, target, varargin)
+function [accuracies, f1Scores] = plotModelAccuracies_new(flat, predictors, target, varargin)
 
 % train models to predict big vs. little step for different experimental
 % conditions to see whether behavioral determinants are affected by
@@ -37,6 +37,7 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 if isempty(s.colors); s.colors = jet(length(s.levels)+1); end
 if isstruct(flat); flat = struct2table(flat); end
 if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end
+cNum = length(s.levels) + size(s.modelTransfers,1);
 
 
 % restrict to desired trials
@@ -63,21 +64,32 @@ mice = unique(flat.mouse);
 if ~isempty(s.condition)
     [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
 else
-    condition = ones(1, height(flat));
+    condition = ones(height(flat), 1);
 end
 models = cell(length(s.levels), length(mice));  % (condition) X (mice)
-[accuracies, f1Scores] = deal(nan(length(s.levels), 2, length(mice)));  % (condition) X (shuffled vs. non-shuffled) X (mice)
+[accuracies, f1Scores] = deal(nan(cNum, 2, length(mice)));  % (condition) X (shuffled vs. non-shuffled) X (mice)
 
 
 % loop over mice
 for i = 1:length(mice)
-    mouseBins = strcmp(flat.mouse, mice{i})';
+    mouseBins = strcmp(flat.mouse, mice{i});
     
     % models per condition
-    for j = 1:length(s.levels)
-        conditionBins = condition==j;
-        X_sub = X(mouseBins(:) & conditionBins(:),:);
-        y_sub = y(mouseBins(:) & conditionBins(:));
+    for j = 1:cNum
+        
+        % for normal conditions
+        if j<=length(s.levels)  
+            conditionBins = condition==j;
+            model = {};
+            
+        % when transfering model from one condition to another
+        else  
+            conditionBins = condition==s.modelTransfers(j-length(s.levels),2);
+            model = {models{s.modelTransfers(j-length(s.levels),1), i}};
+        end
+        
+        X_sub = X(mouseBins & conditionBins,:);
+        y_sub = y(mouseBins & conditionBins);
         
         if s.balanceClasses
             n = min(sum(y_sub), sum(~y_sub));
@@ -93,13 +105,14 @@ for i = 1:length(mice)
         end
         
         if ~isempty(y_sub)
+            
             % train model
             [models{j,i}, accuracies(j,2,i), f1Scores(j,2,i)] = ...
-                computeModel(X_sub, y_sub, s.kFolds);  % mouse model for this condition
+                computeModel(X_sub, y_sub, s.kFolds, model{:});  % mouse model for this condition
             
             % train model on shuffled data
             [~, accuracies(j,1,i), f1Scores(j,1,i)] = ...
-                computeModel(X_sub, y_sub(randperm(length(y_sub))), s.kFolds);  % mouse model for this condition
+                computeModel(X_sub, y_sub(randperm(length(y_sub))), s.kFolds, model{:});  % mouse model for this condition
         end
     end
 end
@@ -107,7 +120,7 @@ end
 
 
 
-function [model, accuracy, f1] = computeModel(X, y, kFolds)
+function [model, accuracy, f1] = computeModel(X, y, kFolds, prevModel)
     % compute model accuracies and f1 score // accuracy and f1 score are
     % average of kFold partitions // model is created across all trials
     
@@ -128,14 +141,22 @@ function [model, accuracy, f1] = computeModel(X, y, kFolds)
                     weights = ones(length(y), 1);
                 end
                 
-                model = fitglm(X(partitions.training(k),:), y(partitions.training(k)), ...
-                    'Distribution', 'binomial', 'Weights', weights(partitions.training(k)));
+                if exist('prevModel', 'var')
+                    model = prevModel;
+                else
+                    model = fitglm(X(partitions.training(k),:), y(partitions.training(k)), ...
+                        'Distribution', 'binomial', 'Weights', weights(partitions.training(k)));
+                end
                 yhat = predict(model, X(partitions.test(k),:)) > .5;
                 
             case 'ann'
-                net = patternnet(s.hiddenUnits);
-                net = train(net, X(partitions.training(k),:)', y(partitions.training(k))');
-                yhat = net(X(partitions.test(k),:)')' > .5;
+                if exist('prevModel', 'var')
+                    model = prevModel;
+                else 
+                    model = patternnet(s.hiddenUnits);
+                    model = train(model, X(partitions.training(k),:)', y(partitions.training(k))');
+                end
+                yhat = model(X(partitions.test(k),:)')' > .5;
         end
         
         % accuracy
@@ -153,6 +174,13 @@ function [model, accuracy, f1] = computeModel(X, y, kFolds)
     f1 = nanmean(f1s);
 end
 
+
+% add model transfers to condition names and colors
+for i = 1:size(s.modelTransfers,1)
+    name = [s.levels{s.modelTransfers(i,1)} ' -> ' s.levels{s.modelTransfers(i,2)}];
+    s.levels{end+1} = name;
+    s.colors(end+1,:) = s.colors(s.modelTransfers(i,1),:);
+end
 
 % plot everything
 figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
@@ -172,4 +200,3 @@ barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']},
 if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
 
 end
-
