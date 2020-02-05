@@ -19,13 +19,13 @@ clear all
 clear all;  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_muscimol';
+dataset = 'senLesion';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 3];  % min and max sessions to include in 'early' lesion sessions
 lateSessions = [5 7];  % min and max sessions to include in 'late' lesion sessions
 
-matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
+matchTrials = false;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 25;  % take manipPercent percent of best matched manip trials
 
@@ -452,10 +452,10 @@ plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.leve
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionKin' suffix1 suffix2]));
 
 %% model accuracies
-accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
-    'condition', 'condition', 'levels', vars.condition.levels, ...
+accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [1 2], ...
+    'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', [sensColors; .2 .2 .2], 'barProps', barProperties, ...
+    'colors', colors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_models' suffix1 suffix2]));
 
 %% decision threshold

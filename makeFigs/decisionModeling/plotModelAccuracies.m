@@ -1,4 +1,4 @@
-function [accuracies, f1Scores] = plotModelAccuracies_new(flat, predictors, target, varargin)
+function [accuracies, f1Scores] = plotModelAccuracies(flat, predictors, target, varargin)
 
 % train models to predict big vs. little step for different experimental
 % conditions to see whether behavioral determinants are affected by
@@ -17,7 +17,7 @@ s.colors = [];
 s.model = 'glm';  % 'glm' or 'ann'
 s.modelTransfers = [];  % nX2 matrix describing which models trained under one condition (left column) to test on another condition (right column)
 
-s.kFolds = 4;  % for k folds cross validation
+s.kFolds = 10;  % for k folds cross validation
 s.balanceClasses = false;  % whether to balance classes by subsampling
 s.weightClasses = false;  % whether to balance classes by applying weights (only applies when model is 'glm')
 
@@ -26,6 +26,7 @@ s.modPawOnlySwing = false;  % if true, only include trials where the modified pa
 s.lightOffOnly = false;  % whether to restrict to light on trials
 s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
 
+s.plot = true;  % whether to generate plot
 s.barProps = {};  % properties to pass to barFancy
 s.saveLocation = '';  % if provided, save figure automatically to this location
 
@@ -34,7 +35,7 @@ s.hiddenUnits = 100;  % if ann is used, this defines number of hidden units in 3
 
 % initialization
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
-if isempty(s.colors); s.colors = jet(length(s.levels)+1); end
+if isempty(s.colors); s.colors = jet(length(s.levels)); end
 if isstruct(flat); flat = struct2table(flat); end
 if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end
 cNum = length(s.levels) + size(s.modelTransfers,1);
@@ -182,21 +183,23 @@ for i = 1:size(s.modelTransfers,1)
     s.colors(end+1,:) = s.colors(s.modelTransfers(i,1),:);
 end
 
-% plot everything
-figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
-colors = repelem(s.colors, 2, 1);
-colors = colors .* repmat([.5;1],length(s.levels),1);
+if s.plot
+    % plot everything
+    figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
+    colors = repelem(s.colors, 2, 1);
+    colors = colors .* repmat([.5;1],length(s.levels),1);
 
-% accuracies
-subplot(1,2,1)
-barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
+    % accuracies
+    subplot(1,2,1)
+    barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
 
-% f1 scores
-subplot(1,2,2)
-barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
+    % f1 scores
+    subplot(1,2,2)
+    barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
 
 
-% save
-if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
+    % save
+    if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
+end
 
 end

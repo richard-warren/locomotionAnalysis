@@ -11,6 +11,10 @@ predictors = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPo
 
 global_config;
 
+flat = flattenData(data, ...
+    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw'}]);
+flat_sub = ;
+
 
 %% schematic imgs for step type decision
 
@@ -80,11 +84,6 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 
 
 
-%% decision making
-
-flat = flattenData(data, ...
-    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw'}]);
-
 %% heatmaps
 plotDecisionHeatmaps(flat, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
@@ -100,7 +99,7 @@ plotDecisionTrials(flat, 'outcome', 'isBigStep', ...
 %% model accuracies
 plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', [sensColors; .2 .2 .2], 'barProps', barProperties, ...
+    'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
 
 %% decision threshold
@@ -111,85 +110,110 @@ plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
 
 
 
-%% !!! forward feature selection
+%% forward feature selection
+
+bestPredictors = {};
+remainingPredictors = m.predictors;
+accuracies = nan(1, length(m.predictors));
+
+for i = 1:length(m.predictors)
+    
+    fprintf('predictor %i: ', i)
+    a = nan(1, length(remainingPredictors));
+    
+    for j = 1:length(remainingPredictors)
+        fprintf('%i/%i ', j, length(remainingPredictors))
+        a_sub = plotModelAccuracies(flat, [bestPredictors, remainingPredictors{j}], 'isModPawLengthened', ...
+            'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+            'weightClasses', true, 'plot', false, 'kFolds', 10);
+        a(j) = mean(a_sub(1,2,:));
+    end
+    fprintf('\n')
+    
+    % store best predictor
+    [accuracies(i), ind] = max(a);
+    bestPredictors{end+1} = remainingPredictors{ind};
+    remainingPredictors = remainingPredictors(~strcmp(remainingPredictors, remainingPredictors{ind}));
+end
+
 
 
 
 %% !!! predictor scatters and histograms
 
-% f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778.00 587.00]);
-% f2 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750 554.00 523.00 464.00]);
-% set(0, 'CurrentFigure', f1)
-% scatSz = 8;
-% scatAlpha = .4;
-% maxScatters = 1000;  % only plot this many per condition to avoid large vector images
-% percentileLims = [1 99];
-% binNum = 15;
-% maxPlots = 8;
-% 
-% 
-% sz = min(maxPlots, length(predictors));
-% randInds = randsample(size(X,1), min(maxScatters, size(X,1)));
-% X_sub = X(randInds,:);
-% y_sub = y(randInds,:);
-% lims = prctile(X, percentileLims, 1)';
-% 
-% for r = 1:sz
-%     for c = 1:sz
-%         
-%         subplot(sz, sz, (r-1)*sz + c); hold on
-%         r_X = sortInds(r);
-%         c_X = sortInds(c);
-%         
-%         % if along diagonal, plot histogram
-%         if r==c
-%             edges = linspace(lims(r_X,1), lims(r_X,2), binNum+1);
-%             histogram(X(~logical(y),r_X), edges, ...
-%                 'FaceColor', decisionColors(1,:));
-%             histogram(X(logical(y),r_X), edges, ...
-%                 'FaceColor', decisionColors(2,:))
-%             
-%             % add to second figure that has only histograms, no scatters
-%             set(0, 'CurrentFigure', f2)
-%             subplot(2,2,r); hold on
-%             histogram(X(~logical(y),r_X), edges, ...
-%                 'FaceColor', decisionColors(1,:));
-%             histogram(X(logical(y),r_X), edges, ...
-%                 'FaceColor', decisionColors(2,:))
-%             title(predictorNames{r_X}, 'Color', predictorColors(r,:), 'Interpreter', 'none');
-%             set(gca, 'XLim', lims(r_X,:), 'Box', 'off', 'XTick', [], 'YTick', [])
-%             set(0, 'CurrentFigure', f1)
-% 
-% 
-%         
-%         % otherwise scatter
-%         elseif r>c
-%             scatter(X_sub(~logical(y_sub),c_X), X_sub(~logical(y_sub),r_X), ...
-%                 scatSz, decisionColors(1,:), 'filled', 'MarkerFaceAlpha', scatAlpha);
-%             scatter(X_sub(logical(y_sub),c_X), X_sub(logical(y_sub),r_X), ...
-%                 scatSz, decisionColors(2,:), 'filled', 'MarkerFaceAlpha', scatAlpha);
-%             set(gca, 'XLim', lims(c_X,:), 'YLim', lims(r_X,:))
-%         else
-%             set(gca, 'Visible', 'off')
-%         end
-%         
-%         % pimp fig
-%         set(gca, 'XTick', [], 'YTick', [])
-%         if c==1
-%             ylabel(predictorNames{r_X}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
-%         end
-%         if r==sz
-%             xlabel(predictorNames{c_X}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
-%         end
-%     end
-%     pause(.001)
-% end
-% 
-% % save
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors');
-% saveas(f1, file, 'svg');
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
-% saveas(f2, file, 'svg');
+f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778.00 587.00]);
+f2 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750 554.00 523.00 464.00]);
+set(0, 'CurrentFigure', f1)
+scatSz = 8;
+scatAlpha = .4;
+maxScatters = 1000;  % only plot this many per condition to avoid large vector images
+percentileLims = [1 99];
+binNum = 15;
+maxPlots = 4;
+
+
+sz = min(maxPlots, length(predictors));
+randInds = randsample(size(X,1), min(maxScatters, size(X,1)));
+X_sub = X(randInds,:);
+y_sub = y(randInds,:);
+lims = prctile(X, percentileLims, 1)';
+
+for r = 1:sz
+    for c = 1:sz
+        
+        subplot(sz, sz, (r-1)*sz + c); hold on
+        r_X = sortInds(r);
+        c_X = sortInds(c);
+        
+        % if along diagonal, plot histogram
+        if r==c
+            edges = linspace(lims(r_X,1), lims(r_X,2), binNum+1);
+            histogram(X(~logical(y),r_X), edges, ...
+                'FaceColor', decisionColors(1,:));
+            histogram(X(logical(y),r_X), edges, ...
+                'FaceColor', decisionColors(2,:))
+            
+            % add to second figure that has only histograms, no scatters
+            set(0, 'CurrentFigure', f2)
+            subplot(2,2,r); hold on
+            histogram(X(~logical(y),r_X), edges, ...
+                'FaceColor', decisionColors(1,:));
+            histogram(X(logical(y),r_X), edges, ...
+                'FaceColor', decisionColors(2,:))
+            title(predictorNames{r_X}, 'Color', predictorColors(r,:), 'Interpreter', 'none');
+            set(gca, 'XLim', lims(r_X,:), 'Box', 'off', 'XTick', [], 'YTick', [])
+            set(0, 'CurrentFigure', f1)
+
+
+        
+        % otherwise scatter
+        elseif r>c
+            scatter(X_sub(~logical(y_sub),c_X), X_sub(~logical(y_sub),r_X), ...
+                scatSz, decisionColors(1,:), 'filled', 'MarkerFaceAlpha', scatAlpha);
+            scatter(X_sub(logical(y_sub),c_X), X_sub(logical(y_sub),r_X), ...
+                scatSz, decisionColors(2,:), 'filled', 'MarkerFaceAlpha', scatAlpha);
+            set(gca, 'XLim', lims(c_X,:), 'YLim', lims(r_X,:))
+        else
+            set(gca, 'Visible', 'off')
+        end
+        
+        % pimp fig
+        set(gca, 'XTick', [], 'YTick', [])
+        if c==1
+            ylabel(predictorNames{r_X}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
+        end
+        if r==sz
+            xlabel(predictorNames{c_X}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
+        end
+    end
+    pause(.001)
+end
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors');
+saveas(f1, file, 'svg');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
+saveas(f2, file, 'svg');
 
 
 
