@@ -1,11 +1,13 @@
-function [accuracies, f1Scores] = plotModelAccuracies(flat, predictors, target, varargin)
+function [accuracies, f1Scores, flat] = plotModelAccuracies(flat, predictors, target, varargin)
 
 % train models to predict big vs. little step for different experimental
 % conditions to see whether behavioral determinants are affected by
 % manipulations // models are trained per mouse // 'flat' is data struct with
 % 'mouse' fields, and optional field for 'condition' // shold have fields
 % for all 'predictors' listed, which will be used to construct predictors
-% matrix X
+% matrix X // flat_sub is a version of flat with rows removed that violate
+% trial restrictions, and with a [s.outcome '_predicted'] column containing
+% the predictions for each row
 
 % todo: add class balancing option?
 
@@ -37,14 +39,14 @@ s.hiddenUnits = 100;  % if ann is used, this defines number of hidden units in 3
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if isempty(s.colors); s.colors = jet(length(s.levels)); end
 if isstruct(flat); flat = struct2table(flat); end
-if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end
-cNum = length(s.levels) + size(s.modelTransfers,1);
+cNum = length(s.levels) + size(s.modelTransfers,1);  % total number of conditions
 
 
 % restrict to desired trials
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
+if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end
 
 
 % prepare predictor and target
@@ -69,6 +71,7 @@ else
 end
 models = cell(length(s.levels), length(mice));  % (condition) X (mice)
 [accuracies, f1Scores] = deal(nan(cNum, 2, length(mice)));  % (condition) X (shuffled vs. non-shuffled) X (mice)
+flat.([target '_predicted']) = nan(height(flat),1);
 
 
 % loop over mice
@@ -108,8 +111,11 @@ for i = 1:length(mice)
         if ~isempty(y_sub)
             
             % train model
-            [models{j,i}, accuracies(j,2,i), f1Scores(j,2,i)] = ...
+            [models{j,i}, accuracies(j,2,i), f1Scores(j,2,i), predictions] = ...
                 computeModel(X_sub, y_sub, s.kFolds, model{:});  % mouse model for this condition
+            
+            % store model predictions
+            flat.([target '_predicted'])(mouseBins & conditionBins) = predictions;
             
             % train model on shuffled data
             [~, accuracies(j,1,i), f1Scores(j,1,i)] = ...
@@ -121,7 +127,7 @@ end
 
 
 
-function [model, accuracy, f1] = computeModel(X, y, kFolds, prevModel)
+function [model, accuracy, f1, predictions] = computeModel(X, y, kFolds, prevModel)
     % compute model accuracies and f1 score // accuracy and f1 score are
     % average of kFold partitions // model is created across all trials
     
@@ -170,9 +176,13 @@ function [model, accuracy, f1] = computeModel(X, y, kFolds, prevModel)
         f1s(k) = harmmean([precision, recall]);
     end
     
-    model = fitglm(X, y, 'Distribution', 'binomial');  % fit model on all data
+    % compuate accuracy and f1 across partitions
     accuracy = nanmean(acc);
     f1 = nanmean(f1s);
+    
+    % train model on on samples
+    model = fitglm(X, y, 'Distribution', 'binomial');  % fit model on all data
+    predictions = predict(model, X);
 end
 
 
@@ -201,5 +211,7 @@ if s.plot
     % save
     if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
 end
+
+flat = table2struct(flat)';
 
 end
