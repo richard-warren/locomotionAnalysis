@@ -351,44 +351,44 @@ figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 
 barFancy(mat, barProperties{:}, ...
     'levelNames', {{'full model', 'noWisk'}});
 
-%% distance and time to contact
-
-
-% settings
-xLims = [15 50];
-yLims = [0 150];
-scatSize = 4;
-scatAlpha = .3;
-mouseColors = true;
-scatPlotSize = .7;
-border = .15;
-
-
-% initializations
-d = flat.distances;
-t = flat.times;
-[~,~,mouseIds] = unique(flat.mouse);
-
-% plot that shit
-figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
-scatterHistoRick(d,t, ...
-    'groupId', mouseIds, 'colors', 'jet', 'groupFcn', @nanmedian, ...
-    'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
-    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', true, 'scatSize', scatSize, 'scatAlpha', scatAlpha);
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
-% get median distances and times for all mice
-[distances, times] = deal(nan(1,length(mice)));
-for i = 1:length(mice)
-    mouseBins = strcmp(flat.mouse, mice{i});
-    distances(i) = median(flat.distances(mouseBins));
-    times(i) = median(flat.times(mouseBins));
-end
-
-fprintf('\ndistance to contact:   %.1f +- %.1f SEM\n', mean(distances), std(distances)/sqrt(length(distances)))
-fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
-
+% %% distance and time to contact
+% 
+% 
+% % settings
+% xLims = [15 50];
+% yLims = [0 150];
+% scatSize = 4;
+% scatAlpha = .3;
+% mouseColors = true;
+% scatPlotSize = .7;
+% border = .15;
+% 
+% 
+% % initializations
+% d = flat.distances;
+% t = flat.times;
+% [~,~,mouseIds] = unique(flat.mouse);
+% 
+% % plot that shit
+% figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
+% scatterHistoRick(d,t, ...
+%     'groupId', mouseIds, 'colors', 'jet', 'groupFcn', @nanmedian, ...
+%     'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
+%     'xLims', xLims, 'yLims', yLims, 'showCrossHairs', true, 'scatSize', scatSize, 'scatAlpha', scatAlpha);
+% 
+% % save
+% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact');
+% fprintf('writing %s to disk...\n', file)
+% saveas(gcf, file, 'svg');
+% 
+% % get median distances and times for all mice
+% [distances, times] = deal(nan(1,length(mice)));
+% for i = 1:length(mice)
+%     mouseBins = strcmp(flat.mouse, mice{i});
+%     distances(i) = median(flat.distances(mouseBins));
+%     times(i) = median(flat.times(mouseBins));
+% end
+% 
+% fprintf('\ndistance to contact:   %.1f +- %.1f SEM\n', mean(distances), std(distances)/sqrt(length(distances)))
+% fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
+% 
