@@ -16,8 +16,9 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 
 % settings
 metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};  % these parameters will be stored as experiment metadata
-g.touchThresh = 1;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
+g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
+g.pawSpeedTime = .05;  % (s) compute paw velocity over this interval
 g.preObsLim = .008;  % (m) compute paw height this many meters before it reaches obstacle x postion
 g.clearanceBuffer = .001;  % (m) trials are excluded in which paw height is less that obsHeight - pawClearnceBuffer at the moment it reaches the x position of the obstacle // positive numbers are more inclusive (excluding few trials) //could probably get away with .0015
 
@@ -38,6 +39,7 @@ sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInf
 g.sessionInfo = sessionInfo;
 g.velVsPositionX = linspace(g.velVsPositionPrePost(1), g.velVsPositionPrePost(2), g.velVsPositionRes);
 g.velContinuousAtContactX = linspace(g.velContinuousAtContactPrePost(1), g.velContinuousAtContactPrePost(2), g.velContinuousAtContactRes);
+g.speedSmps = 0;
 
 
 mouseVars = {};
@@ -48,7 +50,8 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
-             'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing'};
+             'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing', ...
+             'isModPawLengthened', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
@@ -123,6 +126,9 @@ for mouse = 1:length(g.mice)
             g.sesSpikeData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'run.mat'), 'breaks', 'stimulus');
             g.wheelVel = getVelocity(g.sesData.wheelPositions, g.speedTime, g.sesData.targetFs);
             g.isValidZ = getSessionValidZ(g.sesKinData, g.sesData.obsHeights/g.sesData.targetFs);
+            g.secondsPerFrame = nanmedian(diff(g.sesData.frameTimeStamps));
+            g.velSmps = round(g.pawSpeedTime / g.secondsPerFrame);  % compute paw velocity across this many frames (smps)
+            
 
             % get size of kin data entries
             g.locationsSmps = size(g.sesKinData(g.sesKinInds(1)).modifiedLocations{1}, 3);
@@ -473,6 +479,42 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
             var([g.sesKinData.isTrialAnalyzed]) = ...
                 xor([g.sesKinData.isRightSwingAtContact], [g.sesKinData.isLeftSwingAtContact]);
             var = num2cell(var);
+            
+        case 'isModPawLengthened'  % whether the first modified paw is lengthened relative to predicted length
+            var = num2cell(false(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                predictedLength = g.sesKinData(i).modPredictedLengths(1,g.sesKinData(i).firstModPaw);
+                actualLength = g.sesKinData(i).modifiedSwingLengths(1,g.sesKinData(i).firstModPaw);
+                var{i} = actualLength  > predictedLength;
+            end
+            
+        case 'modPawX'
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                var{i} = g.sesKinData(i).locations(g.sesKinData(i).contactInd, 1, g.sesKinData(i).firstModPaw);
+            end
+            
+        case 'modPawXVel'
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                cInd = g.sesKinData(i).contactInd;
+                x = g.sesKinData(i).locations([cInd-g.velSmps+1, cInd], 1, g.sesKinData(i).firstModPaw);
+                var{i} = diff(x) / (g.velSmps*g.secondsPerFrame);
+            end
+            
+        case 'modPawZ'
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                var{i} = g.sesKinData(i).locations(g.sesKinData(i).contactInd, 3, g.sesKinData(i).firstModPaw);
+            end
+            
+        case 'modPawZVel'
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                cInd = g.sesKinData(i).contactInd;
+                x = g.sesKinData(i).locations([cInd-g.velSmps+1, cInd], 3, g.sesKinData(i).firstModPaw);
+                var{i} = diff(x) / (g.velSmps*g.secondsPerFrame);
+            end
             
             
             

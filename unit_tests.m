@@ -207,7 +207,7 @@ problemSessions = {};
 for i = 1:length(sessions)
     fprintf('\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
     try 
-        analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
+%         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
         getKinematicData(sessions{i});
     catch
         fprintf('WARNING: %s failed to analyze...\n', sessions{i});

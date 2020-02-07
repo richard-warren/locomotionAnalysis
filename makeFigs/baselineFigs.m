@@ -103,7 +103,7 @@ showLeadingLaggingImg('190318_000', 44, ...
 
 flat = flattenData(data, {'obsHgt', 'touchFrames'});
 
-%% settings
+% settings
 hgtBinNum = 4;
 hgtLims = [4 10];
 xCenters = 0:4:20;
@@ -178,7 +178,7 @@ ylabel('velocity (m/s)')
 text(x(1), yLims(2), 'obstace engaged', 'VerticalAlignment', 'bottom')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', ...
         'baselineVel');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
@@ -191,6 +191,7 @@ obsOnVels = squeeze(velData(:,obsOnInd));
 
 fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
 fprintf('obs on:      %.2f +- %.2f SEM\n', mean(obsOnVels), std(obsOnVels)/sqrt(length(obsOnVels)))
+fprintf('overal:      %.2f +- %.2f SEM\n', mean(nanmean(velData,2)), std(nanmean(velData,2))/sqrt(length(obsOnVels)))
 
 
 %% speed triggered at obs on and wisk contact

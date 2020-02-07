@@ -1,5 +1,4 @@
-function [kinData, stanceBins, models] = getKinematicData(session)
-
+function [kinData, stanceBins, models] = getKinematicData(session, varargin)
 
 % after analyzeSession computes low level information for each session,
 % getKinematicData is used to extract more processed kinematic information,
@@ -15,10 +14,11 @@ swingMaxSmps = 50;       % when averaging swing locations without interpolating 
 noObsSteps = 3;          % how many steps per trial per paw to take before the obstacle becomes engaged
 controlSteps = 2;        % needs to be at least 2 // how many steps per trial per paw to take before the first modified step
 timeOperations = false;  % whether to report time it takes to compute differnt parts of this script
-showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
+s.showStepLengthFits = false;  % whether to show linear first for step lengths for each paw
 
 
 % load session data
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 fprintf('%s: getting kinematic data\n', session);
 if timeOperations; tic; end
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'))
@@ -58,21 +58,22 @@ locationsTail(:,1:2,:) = locations(:,:,botTailBins);
 locationsTail(:,3,:) = locations(:,2,topTailBins);
 locationsTail(:,2,:) = locationsTail(:,2,:) - nosePos(2); % subtract midline from all y values
 locationsTail(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsTail(:,3,:); % flip z and set s.t. top of wheel is zero
-
-% unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
-% this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
-prevInd = 1;
-for j = 1:length(obsOnTimes)
-    finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
-    if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
-    
-    locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-    locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-    prevInd = finalInd+1;
-end
-locationsPaws = locationsPaws / pixelsPerM; % convert to meters
-locationsTail = locationsTail / pixelsPerM; % convert to meters
 if timeOperations; fprintf('getting xyz coords: %i seconds\n', round(toc)); end
+
+% % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+% % this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
+% prevInd = 1;
+% for j = 1:length(obsOnTimes)
+%     finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
+%     if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
+%     
+%     locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
+%     locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
+%     prevInd = finalInd+1;
+% end
+% locationsPaws = locationsPaws / pixelsPerM; % convert to meters
+% locationsTail = locationsTail / pixelsPerM; % convert to meters
+
 
 
 
@@ -83,20 +84,30 @@ isTrialAnalyzed = true(1,length(kinData)); % keeps track of whereh kinematic dat
 
 for j = 1:length(obsOnTimes)
         
-    % first get trial specific data because 'find' function works much quicker on the smaller data slices
+    % find trial indices
     if j==length(obsOnTimes); maxTime=frameTimeStamps(end); else; maxTime = obsOnTimes(j+1); end
     endInd = find(frameTimeStamps>obsOffTimes(j) & ...  % after obs is off
                   frameTimeStamps<maxTime & ...         % before next obs is on
                   ~any(controlStepIdentities==1 | noObsStepIdentities==1, 2), 1, 'last');  % before subsequent trial steps apear
     trialInds = trialStartInds(j):endInd;
+    
+    % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
+    % this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
+    trialLocations = locationsPaws(trialInds,:,:);
+    trialLocationsTail = locationsTail(trialInds,:,:);
 
-    % get trial data
+    trialLocations(:,1,:) = trialLocations(:,1,:) - obsPixPositionsContinuous(j, trialInds)';
+    trialLocationsTail(:,1,:) = trialLocationsTail(:,1,:) - obsPixPositionsContinuous(j, trialInds)';
+    
+    trialLocations = trialLocations / pixelsPerM; % convert to meters
+    trialLocationsTail = trialLocationsTail / pixelsPerM; % convert to meters
+
+
+    % first get trial specific data because 'find' function works much quicker on the smaller data slices
     trialTimes = frameTimeStamps(trialInds);
     trialControlStepIds = controlStepIdentities(trialInds,:);
     trialModStepIds = modifiedStepIdentities(trialInds,:);
     trialNoObsStepIds = noObsStepIdentities(trialInds,:);
-    trialLocations = locationsPaws(trialInds,:,:);
-    trialLocationsTail = locationsTail(trialInds,:,:);
     trialWheelVel = interp1(wheelTimes, wheelVel, frameTimeStamps(trialInds));
     trialObsPixPos = obsPixPositionsContinuous(j, trialInds);
 
@@ -117,14 +128,26 @@ for j = 1:length(obsOnTimes)
 
 
         % determine 'first modified paw' (forepaws only)
-        %
-        % if one in swing and one in stance at contact, first mod step is 
-        % one in swing // otherwise first mod paw is first paw to land on
-        % the other side
+        
+        % if one swing, one stance: pick the one in swing
         if xor(isLeftSwingAtContact, isRightSwingAtContact)
             if isLeftSwingAtContact; firstModPaw = 2; else; firstModPaw = 3; end
+        
+        % if both in swing: pick the paw closest to the hurdle
+        elseif (isLeftSwingAtContact && isRightSwingAtContact)
+            if trialLocations(contactInd,1,2) > trialLocations(contactInd,1,3)
+                firstModPaw = 2;
+            else
+                firstModPaw = 3;
+            end
+            
+        % if both in stance: pick first paw to enter swing
         else
-            firstModPaw = pawOverSequence(1);
+            if find(~isnan(trialModStepIds(:,2)), 1, 'first') < find(~isnan(trialModStepIds(:,3)), 1, 'first')
+                firstModPaw = 2;
+            else
+                firstModPaw = 3;
+            end
         end
 
 
@@ -261,8 +284,13 @@ try
 
     % generate models
     models = cell(1,4);
+    
     controlVels = cat(1, kinData.controlWheelVels);
     controlLengths = cat(1,kinData.controlSwingLengths);
+    controlVels = controlVels(2:2:end, :);  % take only second control step vels
+    controlLengths = controlLengths(2:2:end, :);  % predict second control step length
+    
+    
     for paw = 1:4
         validInds = ~isnan(controlVels(:,paw)) & ~isnan(controlLengths(:,paw));
         models{paw} = fitlm(controlVels(validInds,paw), controlLengths(validInds,paw), 'Linear', 'RobustOpts', 'on');
@@ -279,7 +307,7 @@ try
     end
 
     % show model fits
-    if showStepLengthFits
+    if s.showStepLengthFits
         figure('name', [session ' paw length fits'], 'Position', [2000 300 700 600], 'color', 'white')
         colors = hsv(4);
         for i = 1:4
@@ -298,7 +326,7 @@ catch
     fprintf('%s: failed to make swing length model!\n', session)
 end
 
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData', 'stanceBins', 'models', '-v7.3')
-
+save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), ...
+    'kinData', 'stanceBins', 'models', '-v7.3')
 
 

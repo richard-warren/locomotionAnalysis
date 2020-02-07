@@ -1,138 +1,65 @@
-% load experiment data
+%% compute experiment data from scratch
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'whiskerTrimNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove not included sessions and empty lines
+mice = unique(sessionInfo.mouse);
+
+data = cell(1,length(mice));
+parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
+data{1}.data = cellfun(@(x) x.data, data); data = data{1};
+fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrim_data.mat'), 'data'); disp('data saved!')
+
+
+%% initializations
+
+global_config;
 fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrim_data.mat'), 'data'); disp('whiskerTrim data loaded!')
+% data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
 
-% global settings
-miceToExclude = {'sen1'};
-colorWisk = [51 204 255]/255; %[255 204 51];
-
-
-% initializations
-data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
-% vars.condition = struct('name', 'condition', ...
-%     'levels', {{'bilateral full', 'unilateral full', 'unilateral int1', 'unilateral int2', 'unilateral int3', 'unilateral deltaOnly'}}, ...
-%     'levelNames', {{'biFull', 'unFull', 'un1', 'un2', 'un3', 'delta'}});
 vars.condition = struct('name', 'condition', ...
-    'levels', {{'bilateral full', 'unilateral int3', 'unilateral deltaOnly'}}, ...
-    'levelNames', {{'biFull', 'uniPartial', 'deltaOnly'}});
-colors = repmat(colorWisk, length(vars.condition.levels), 1) .* fliplr(linspace(0,1,length(vars.condition.levels)))';
+    'levels', {{'bilateral full', 'unilateral full', 'unilateral int1', 'unilateral int2', 'unilateral int3', 'unilateral deltaOnly'}}, ...
+    'levelNames', {{'biFull', 'unFull', 'un1', 'un2', 'un3', 'delta'}});
+% vars.condition = struct('name', 'condition', ...
+%     'levels', {{'bilateral full', 'unilateral int3', 'unilateral deltaOnly'}}, ...
+%     'levelNames', {{'biFull', 'uniPartial', 'deltaOnly'}});
 
-%% HEIGHT SHAPING
+colors = repmat([51 204 255]/255, length(vars.condition.levels), 1) .* fliplr(linspace(0,1,length(vars.condition.levels)))';
 
-
-
-
-% settings
-xLims = [3 10];
-isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
-
-% initializations
-flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', ...
-    'obsHgt', 'preObsHgt', 'isFore', 'isLeading', 'stepOverMaxHgt', 'condition'});
-flat = flat(~isnan([flat.obsHgt]) & ...
-            ~isnan([flat.stepOverMaxHgt]) & ...
-            ~isnan([flat.preObsHgt]) & ...
-            [flat.isLeading] & ...
-            [flat.isFore]); % add conditionals here
-[~, conditions] = ismember({flat.condition}, vars.condition.levels);
-
-
-% SCATTERS BINNED BY ANIMAL, SPEED
+%% decision making
 
 % settings
-binNum = 40;
-scatAlpha = .1;
-scatSize = 50;
-
-% initializations
-mice = unique({flat.mouse});
-binEdges = linspace(xLims(1), xLims(2), binNum+1);
-binCenters = binEdges(1:end-1) + .5*diff(binEdges(1:2));
-binIds = discretize([flat.obsHgt]*1000, binEdges);
-
-% collect data
-binnedHgts = nan(max(conditions), length(mice), binNum); % contains the median paw height for each conditino, mouse, and paw height
-for c = 1:max(conditions)
-    disp(c)
-    for m = 1:length(mice)
-        for b = 1:binNum
-            bins = (conditions==c) & strcmp({flat.mouse}, mice{m}) & (binIds==b);
-            binnedHgts(c,m,b) = nanmean([flat(bins).preObsHgt]);
-        end
-    end
-end
-
-%% plot condition data
-figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 50 500 400])
-plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3) % add unity line
-xlabel('obstacle height (mm)')
-ylabel('paw height (mm)')
-scatterPlotRick(repelem(binCenters,length(mice)*max(conditions)), binnedHgts(:), repmat(1:max(conditions),1,binNum*length(mice)), ...
-    {'colors', colors, 'maxScatterPoints', 5000, 'lineAlpha', 1, 'scatAlpha', .2, 'scatSize', 40, ...
-    'conditionNames', vars.condition.levelNames});
-set(gca, 'XLim', xLims)
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'whiskerTrim_heightShapingScatters');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+modPawOnlySwing = true;  % if true, only include trials where the modified paw is the only one in swing
+lightOffOnly = false;  % whether to restrict to light on trials
+successOnly = false;  % whether to only include successful trials
 
 
-% HEIGHT SHAPING BARS
-[corrs, slopes] = deal(nan(max(conditions),length(mice))); % isFore(10) X isLeading(10) X mouse
-foreSequence = [true false];
-leadingSequence = [true false];
+% heatmaps
+plotDecisionHeatmaps(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
+    'avgMice', true, 'plotMice', true, 'colors', colors, 'binNum', 50, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_heatmaps'));
 
-for i = 1:max(conditions)
-    for k = 1:length(mice)
-        bins = conditions==i & ...
-               strcmp({flat.mouse}, mice{k});
-        x = [flat(bins).obsHgt];
-        y = [flat(bins).preObsHgt];
-        fit = polyfit(x, y, 1);
-        corrs(i,k) = corr(x', y');
-        slopes(i,k) = fit(1);
-    end
-end
+% trials scatters
+plotDecisionTrials(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
+    'colors', decisionColors, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_decisionKin'));
 
+% model accuracies
+plotModelAccuracies(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
+    'colors', [colors; .2 .2 .2], 'barProps', barProperties, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_models'));
 
-figure('position', [2000 400 600 200], 'color', 'white', 'menubar', 'none');
-
-% correlations
-subplot(1,2,1)
-barPlotRick(corrs, {'conditionNames', {vars.condition.levelNames}, 'ylabel', 'paw/obstacle height correlation', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [-.2 .6], 'ytick', -.2:.4:.6, ...
-    'compareToFirstOnly', true})
-line(get(gca, 'XLim'), [0 0], 'color', [.4 .4 .4]) % add horizontal line at y=0
-
-% slopes
-subplot(1,2,2)
-barPlotRick(slopes, {'conditionNames', {vars.condition.levelNames}, 'ylabel', 'paw/obstacle height slope', ...
-    'showViolins', false, 'lineThickness', 2, 'conditionColors', colors, 'addBars', true, ...
-    'violinAlpha', .1, 'scatColors', 'lines', 'scatAlpha', .3, 'showStats', false, 'ylim', [-.2 .8], 'ytick', -.2:.5:.8, ...
-    'compareToFirstOnly', true})
-line(get(gca, 'XLim'), [0 0], 'color', [.4 .4 .4]) % add horizontal line at y=0 % add line at zero
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'whiskerTrim_heightShapingBars');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+% decision threshold
+plotDecisionThresholds(data, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'successOnly', successOnly, 'modPawOnlySwing', modPawOnlySwing, 'lightOffOnly', lightOffOnly, ...
+    'colors', colors, 'barProps', barProperties, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_thresholds'));
 
 
 
-% PAW HEIGHT BY OBS HGT RUNNING AVERAGE
-figure('Color', 'white', 'Position', [2000 400 500 400], 'MenuBar', 'none');
-plot([0 xLims(2)], [0 xLims(2)], 'Color', [1 1 1]*.6, 'LineWidth', 3) % add unity line
-logPlotRick([flat.obsHgt]*1000, [flat.preObsHgt]*1000, ...
-    {'colors', colors, 'conditions', conditions, 'xlabel', 'obstacle height', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
-    'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
-    'errorFcn', @(x) std(x)/sqrt(size(x,1))})
-set(gca, 'xlim', [4 10])
 
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'whiskerTrim_heightShapingMovingAvgs');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+
+
+

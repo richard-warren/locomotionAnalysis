@@ -1,5 +1,51 @@
-%% check out which trials are being excluded based on paw height
+%% check obs tracking confidence
 
+session = '191120_000';
+
+data = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
+
+
+
+%% compare whisker trim videos in old and new experiments
+
+% settings
+vids = 5;
+
+info = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'sensoryDependenceNotes');
+oldSessions = info.session(strcmp(info.whiskers, 'none'));
+
+info = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'senLesionNotes');
+newSessions = info.session(strcmp(info.condition, 'noWisk') & [info.include]==1);
+
+
+fullfile(getenv('OBSDATADIR'), 'editedVid', 'whiskerTrimComparison', seesions{i})
+makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProportion, trialLabels, trialInds)
+
+
+
+
+%% summarize step lengths vs speed
+
+fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+flat = flattenData(data, {'mouse', 'session', 'trial', 'paw', 'controlStepLength'});
+
+figure('color', 'white'); hold on
+for paws = [1,4; 2 3]'
+    histogram([flat(ismember([flat.paw], paws)).controlStepLength] * 1000, 'Normalization', 'probability')
+end
+set(gca, 'YTick', [], 'xlim', [0 160])
+xlabel('step length (mm)')
+
+%% single session analysis
+
+session = '180715_004';
+% load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'));
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'kinData.mat'), 'kinData');
+
+
+
+
+%% check out which trials are being excluded based on paw height
 
 fprintf('loading data... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', ['mtc_muscimol_data.mat']), 'data'); fprintf('data loaded!\n')
 flat = flattenData(data, {'mouse', 'session', 'trial', 'paw', 'isValidZ', 'stepOverMaxHgt', 'obsHgt', 'modPawKin'});
