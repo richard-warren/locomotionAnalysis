@@ -18,7 +18,9 @@ flat = flattenData(data, ...
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
-
+[~, ~, flat_subWithFails] = plotModelAccuracies(flat, m.predictors, outcome, ...
+    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'plot', false, 'kFolds', 10);
 
 
 %% schematic imgs for step type decision
@@ -89,7 +91,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 
 
 %% heatmaps
-plotDecisionHeatmaps(flat, ...
+plotDecisionHeatmaps(flat, 'normalize', 'col', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', true, 'plotMice', false, 'colors', sensColors, 'outcome', 'isModPawLengthened', ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeatmaps'));
@@ -101,10 +103,17 @@ plotDecisionTrials(flat, 'outcome', 'isBigStep', ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDecisionKin'));
 
 %% model accuracies
-plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
+plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+
+%% model accuracies (predicted distance only)
+acc = plotModelAccuracies(flat, {'modPawPredictedDistanceToObs'}, 'isModPawLengthened', 'model', 'glm', ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'barProps', barProperties, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+fprintf('predicted distance only model accuracy: %.3f\n', mean(acc(1,2,:)));
 
 %% decision threshold
 plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
@@ -120,11 +129,11 @@ kFolds = 10;
 
 % initializations
 bestPredictors = {};
-remainingPredictors = m.predictors;
-accuracies = nan(1, length(m.predictors));
-predictorColors = lines(length(m.predictors));
+remainingPredictors = m.predictorsAll;
+accuracies = nan(1, length(m.predictorsAll));
+predictorColors = lines(length(m.predictorsAll));
 
-for i = 1:length(m.predictors)
+for i = 1:length(m.predictorsAll)
     
     fprintf('predictor %i: ', i)
     a = nan(1, length(remainingPredictors));
@@ -146,12 +155,12 @@ end
 
 % plot
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [2375.00 747.00 297.00 232.00]); hold on
-plot(1:length(m.predictors), accuracies, ...
+plot(1:length(m.predictorsAll), accuracies, ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
-scatter(1:length(m.predictors), accuracies, 60, predictorColors, 'filled');
+scatter(1:length(m.predictorsAll), accuracies, 60, predictorColors, 'filled');
 xlabel('number of features')
 ylabel('cross-validation accuracy')
-set(gca, 'XLim', [1, length(m.predictors)])
+set(gca, 'XLim', [1, length(m.predictorsAll)])
 fprintf('max accuracy: %.2f\n', max(accuracies))
 fprintf('PREDICTORS: '); fprintf('%s ', bestPredictors{:}); fprintf('\n')
 
@@ -259,6 +268,7 @@ kinCtl = permute(cat(3,flat_sub.preModPawKinInterp), [3,1,2]);
 
 % choose binning variable
 binVar = [flat_sub.([outcome '_predicted'])];
+% binVar = [flat_sub.modPawX];
 
 % perctentile bins    
 if pctileBins
@@ -288,28 +298,28 @@ saveas(gcf, file, 'svg');
 confidenceLims = [.4 .6];  % only include trials where model is very confident
 
 % compute overall success rate
-predictions = [flat_sub.isModPawLengthened_predicted];
+predictions = [flat_subWithFails.isModPawLengthened_predicted];
 confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-isModelCorrect = round(predictions) == [flat_sub.(outcome)];  % bins where decision agrees with model prediction
+isModelCorrect = round(predictions) == [flat_subWithFails.(outcome)];  % bins where decision agrees with model prediction
 fprintf('POOLED MODEL\n')
 fprintf('correct prediction success:   %.3f (n=%i)\n', ...
-    mean([flat_sub(isModelCorrect & confidentBins).isTrialSuccess]), sum(isModelCorrect & confidentBins))
+    mean([flat_subWithFails(isModelCorrect & confidentBins).isTrialSuccess]), sum(isModelCorrect & confidentBins))
 fprintf('incorrect prediction success: %.3f (n=%i)\n\n', ...
-    mean([flat_sub(~isModelCorrect & confidentBins).isTrialSuccess]), sum(~isModelCorrect & confidentBins))
+    mean([flat_subWithFails(~isModelCorrect & confidentBins).isTrialSuccess]), sum(~isModelCorrect & confidentBins))
 
 
 % individual mouse rates
-mice = unique({flat_sub.mouse});
+mice = unique({flat_subWithFails.mouse});
 successRates = nan(2, length(mice));  % (correct, incorrect model predictions) X mouse
 accuracies = nan(1,length(mice));
 
 for i = 1:length(mice)
-    mouseBins = strcmp({flat_sub.mouse}, mice{i});
+    mouseBins = strcmp({flat_subWithFails.mouse}, mice{i});
     
-    predictions = flat_sub(mouseBins).([outcome '_predicted']);
+    predictions = flat_subWithFails(mouseBins).([outcome '_predicted']);
     confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-    isModelCorrect = round(predictions) == [flat_sub(mouseBins).(outcome)];
-    mouseSuccess = [flat_sub(mouseBins).isTrialSuccess];
+    isModelCorrect = round(predictions) == [flat_subWithFails(mouseBins).(outcome)];
+    mouseSuccess = [flat_subWithFails(mouseBins).isTrialSuccess];
     
     successRates(1,i) = mean(mouseSuccess(confidentBins & isModelCorrect));
     successRates(2,i) = mean(mouseSuccess(confidentBins & ~isModelCorrect));
