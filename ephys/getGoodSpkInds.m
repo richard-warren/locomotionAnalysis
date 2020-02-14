@@ -36,7 +36,7 @@ channelNum_OpenEphys = channelNum_OpenEphys - 1;
 bestChannels = nan(length(unit_ids),1);
 for i = 1:length(unit_ids)
     ind = find(clusterInfo.id == unit_ids(i));
-    bestChannels(i) = clusterInfo.channel(ind)+1;   
+    bestChannels(i) = clusterInfo.ch(ind)+1;   
 end
 
 % get spike times for individual units

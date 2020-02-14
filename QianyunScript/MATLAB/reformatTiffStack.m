@@ -17,18 +17,22 @@ if ~exist('downsampleRate', 'var'); downsampleRate = 0.3; end
 
 % import the mask tiff stack file
 tiff_info = imfinfo(filePath);
-tiff = imread(filePath, 1); % read in first image
-tiff_binary = tiff>0; % convert into binary 
+tiff = imread(filePath, 1);
+tiff_binary = tiff>0;
 clear tiff
-tiff_downsample = imresize(tiff_binary, downsampleRate); % downsample the binary tiff
+tiff_downsample = imresize(tiff_binary, downsampleRate);
+clear tiff_binary
 tiff_stack = false(size(tiff_downsample, 1), size(tiff_downsample, 2), length(tiff_info)); % initialization for the tiff stack
+tiff_stack(:, :, 1) = tiff_downsample;
+clear tiff_downsample
 
-for i = 2 : length(tiff_info) 
+for i = 1 : length(tiff_info) 
     temp = imread(filePath, i);
-    temp_binary = temp>0;
+    temp_binary = temp>0; % tuen the image into binary 
     clear temp
     temp_downsample = imresize(temp_binary, downsampleRate); 
-    tiff_stack(:, :, i) = temp_downsample;    
+    tiff_stack(:, :, i) = temp_downsample; 
+    clear temp_downsample
 end
 
 

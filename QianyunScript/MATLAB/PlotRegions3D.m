@@ -1,4 +1,4 @@
-function PlotRegions3D(xyzCoords, size, color, xrange, yrange)
+function plotRegions3D(xyzCoords, size, color, xrange, yrange, transparency)
 
 % This function is to plot the 3-dimension logical matrix (created by
 % reformatTiffStack function and getCoordinates function) in 3-d space.
@@ -9,17 +9,20 @@ function PlotRegions3D(xyzCoords, size, color, xrange, yrange)
 
 if ~exist('size', 'var'); size = 10; end
 %if ~exist('c', 'var'); color = 'b'; end
-if ~exist('xrange', 'var'); xrange = 2000; end
-if ~exist('yrange', 'var'); yrange = 1000; end
+if ~exist('xrange', 'var'); xrange = 4000; end
+if ~exist('yrange', 'var'); yrange = 4000; end
+if ~exist('transparency', 'var'); transparency = 1; end
 
-scatter3(xyzCoords(:, 1), xyzCoords(:, 3), xyzCoords(:, 2), size, color, 'filled');
+h = scatter3(xyzCoords(:, 1), xyzCoords(:, 3), xyzCoords(:, 2), size, color, 'filled');
+set(h, 'MarkerEdgeAlpha', transparency, 'MarkerFaceAlpha', transparency);
+
 xlim([0, xrange]);
 ylim([0, yrange]);
 set( gca, 'ZDir', 'reverse' );
 set(gca, 'XDir', 'normal');
 set(gca, 'YDir', 'normal');
-xlabel('ML axis (in pixel)')
-ylabel('AP axis (in pixel)')
-zlabel('DV axis (in pixel)')
+xlabel('ML axis (in micron)')
+ylabel('AP axis (in micron)')
+zlabel('DV axis (in micron)')
 
 end

@@ -50,13 +50,9 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile
 % only for visualizatoon purpose (the spike on probe plot)
 xcoords(33:64) = 21;
 
+
 [allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
 % bestChannels = getBestChannels(session, ephysInfo);
-
-
-
-
-
 
 % function to extract voltage from binary file
 getVoltage = @(data, channel, inds) ...

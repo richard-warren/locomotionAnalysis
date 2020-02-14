@@ -15,7 +15,7 @@ resolution = 2; % The resolution of the tiff stack is 2um/pixel.
 inds = find(tiff>0);
 s = size(tiff);
 [rows, cols, z] = ind2sub(s, inds);
-xyzCoords = [cols, rows, (z-1)*thickness*(1/resolution)*downsampleRate]; % covert pixel location into xyz coordinates
+xyzCoords = [cols*resolution/downsampleRate, rows*resolution/downsampleRate, (z-1)*thickness]; % covert pixel location into xyz coordinates (unit in microns)
 
 
 end

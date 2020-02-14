@@ -7,9 +7,10 @@
 
 kiloSortInds = [6 8 10 12 14 16 4 2 1 3 15 13 11 9 7 5 22 24 26 28 30 32 20 18 17 19 31 29 27 25 23 21 38 40 42 44 46 48 36 34 33 35 47 45 43 41 39 37 54 56 58 60 62 64 52 50 49 51 63 61 59 57 55 53];
 intanInds = [47 43 42 39 38 37 45 34 41 32 36 49 35 51 33 53 48 55 50 57 52 60 54 62 56 58 63 61 59 44 46 40 22 16 18 5 3 1 4 6 0 8 2 10 7 12 9 14 11 31 13 29 15 26 30 23 28 19 27 24 25 20 21 17] + 1;
+channelNum_OpenEphys = [42 35 33 46 54 48 34 44 52 43 36 40 50 39 37 38 57 63 59 55 41 49 47 56 45 51 60 58 62 53 64 61 1 7 9 5 15 23 10 17 13 19 8 6 11 4 3 2 29 24 20 31 18 12 22 32 21 14 26 30 25 16 28 27];
 
 % get desired site locations map
-shankSeparation = 100;
+shankSeparation = 80;
 siteLocations = nan(16, 2); % start with one shank, then replicate after
 siteLocations(2:2:16,:) = cat(2, zeros(8,1), (0:46:46*7)'+23); % first column of leftmost shank
 siteLocations(1:2:15,:) = cat(2, ones(8,1)*30, (0:46:46*7)'); % second column of leftmost shank
@@ -40,7 +41,12 @@ chanMap   = 1:Nchannels;
 chanMap0ind = chanMap - 1;
 xcoords   = siteLocationsRemapped(:,1);
 ycoords   = siteLocationsRemapped(:,2);
-kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
+kcoords_1   = repmat(1, 16, 1);
+kcoords_2   = repmat(2, 16, 1);
+kcoords_3   = repmat(3, 16, 1);
+kcoords_4   = repmat(4, 16, 1);
+kcoords = [kcoords_1; kcoords_2; kcoords_3; kcoords_4]; % grouping of channels (i.e. tetrode groups)
+% grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
 
@@ -51,7 +57,7 @@ save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
 % probe BDFD // after right most shank broken
 connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
 save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'channelNum_OpenEphys', 'fs')
 
 
 %% NeuronexusA1x32Poly3, intan
