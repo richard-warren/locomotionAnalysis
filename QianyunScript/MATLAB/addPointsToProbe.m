@@ -70,16 +70,25 @@ end
 MLCoord = avg(1, 1);
 inds = find(LBSCoords(:, 1) == MLCood);
 avgDVCoord = mean(LBSCoords(inds, 2));
-tempDistance = (avg(1, 3) - avgDVCoord)/dirV(1, 3); % a hacky way of moving the avg point to where near the brain surface
+tempDistance = (avg(1, 2) - avgDVCoord)/dirV(1, 2); % a hacky way of moving the avg point to where near the brain surface
 tempBS_crossPoint = avg + dirV * tempDistance;
 
 APCoord = tempBS_crossPoint(1, 2);
-adjacentAPCoord = [LBSCood(find(LBSCoord(:, 3) < APCoord, 'last'), 3), LBSCood(find(LBSCoord(:, 3) > APCoord, 'first'), 3)];
+adjacentAPCoord = [LBSCoords(find(LBSCoord(:, 3) < APCoord, 'last'), 3), LBSCoords(find(LBSCoords(:, 3) > APCoord, 'first'), 3)];
 MLCoord =  tempBS_crossPoint(1, 1);
-DVCoord = mean(LBSCoord(find(LBSCoord(:, 1) == MLCoord) , 2));
-distance = (avg(1, 3) - DVCoord)/dirV(1, 3);
-BS_corssPoint = avg + dirV * distance;
+DVCoords1 = LBSCoords(find((LBSCoords(:, 1) == MLCoord) & (LBSCoords(:, 3) == adjacentAPCoord(1))), 2);
+DVCoords2 = LBSCoords(find((LBSCoords(:, 1) == MLCoord) & (LBSCoords(:, 3) == adjacentAPCoord(2))), 2);
+DVCoords = cat(1, DVCoords1, DVCoords2);
+DVCoord = mean(DVCoords);
+clear DVCoords
+distance = (avg(1, 2) - DVCoord)/dirV(1, 2);
+BS_crossPoint = avg + dirV * distance;
 
+APCoord = BS_crossPoint(1, 3);
+weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2)/abs(diff(adjacentAPCoord))];
+DVCoord = mean(DVCoords1)*weights(1) + mean(DVCoords2)*weights(2);   
+distance = (avg(1, 2) - DVCoord)/dirV(1, 2);
+BS_crossPoint = avg + dirV * distance;
 
 % plot brain surface cross point
 hold on
