@@ -1,7 +1,15 @@
+%% test hildebrand plots
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove not included sessions and empty lines
+sessionInfo = sessionInfo(1:6,:);  % only analyze a handful of sessions for testing purposes
+
+plotHildebrands(sessionInfo, 'colors', stepColors, 'stepPercentiles', [5 95], 'plotMice', false)
+
+
 %% check obs tracking confidence
 
 session = '191120_000';
-
 data = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
 
 

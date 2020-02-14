@@ -28,6 +28,16 @@ figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
 % PLOT THINGS
 %  ----------
 
+%% hildebrand plots
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove not included sessions and empty lines
+
+plotHildebrands(sessionInfo, 'colors', stepColors, 'stepPercentiles', [1 99], 'plotMice', false)
+set(gcf, 'Position', [1965.00 821.00 632.00 155.00])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_hildebrand'), 'svg');
+
+
 %% show multiple frames with overlaid tracking
 
 % settings
@@ -431,10 +441,10 @@ logPlotRick([flat.obsHgt]*1000, [flat.isPawSuccess], ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'ylim', [0 1]})
 set(gca, 'xlim', [3.4 10])
+legend({'leading fore', 'trailing fore', 'leading hind', 'trailing hind'}, 'Location', 'southeast', 'box', 'off')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baseline_succesByObsHgt');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_succesByObsHgt');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
