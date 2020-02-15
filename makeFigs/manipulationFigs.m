@@ -19,13 +19,13 @@ clear all
 clear all;  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_muscimol';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 3];  % min and max sessions to include in 'early' lesion sessions
 lateSessions = [5 7];  % min and max sessions to include in 'late' lesion sessions
 
-matchTrials = false;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
+matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 25;  % take manipPercent percent of best matched manip trials
 
@@ -177,6 +177,7 @@ if matchTrials
         isSessionUsed = ismember({data_matched.data(i).sessions.session}, unique(matchedTrials.session));
         data_matched.data(i).sessions = data_matched.data(i).sessions(isSessionUsed);
     end
+    data_unmatched = data;
     data = data_matched; clear data_matched;
 end
 
@@ -192,6 +193,61 @@ conditionals.isContra = struct('name', 'isContra', 'condition', @(x) x==1);
 
 fprintf('data loaded!\n');
 
+
+%% plot propensity score matching
+
+% settings
+binNum = 100;  % resolution of x axis
+percentileLims = [1 99];  % x axis limits
+mouseAlpha = .25;
+
+flat = flattenData(data_unmatched, [{'mouse', 'condition'} varsToMatch]);
+flat_matched = flattenData(data, [{'mouse', 'condition'} varsToMatch]);
+
+% pdfs
+close all
+figure('color', 'white', 'menubar', 'none', 'position', [1997.00 595.00 600.00 345.00]);
+
+for i = 1:length(varsToMatch)
+    xLims = prctile([flat.(varsToMatch{i})], percentileLims);
+    xLims = xLims + [-1 1]*diff(xLims)*.15;
+    x = linspace(xLims(1), xLims(2), binNum);
+    conditionMeans = nan(length(mice), 2);  % mouse means for two conditions
+    
+    [pdfs, pdfs_matched] = deal(nan(length(mice), binNum));
+    for k = 1:length(matchConditions)
+        for j = 1:length(mice)
+            
+            % unmatched
+            subplot(length(varsToMatch),2,(i-1)*2+1); hold on
+            bins = strcmp({flat.mouse}, mice{j}) & strcmp({flat.condition}, matchConditions{k});
+            pdfs(j,:) = ksdensity([flat(bins).(varsToMatch{i})], x);
+            plot(x, pdfs(j,:), 'Color', [colors(k,:) mouseAlpha])
+            
+            % matched
+            subplot(length(varsToMatch),2,(i-1)*2+2); hold on
+            bins = strcmp({flat_matched.mouse}, mice{j}) & strcmp({flat_matched.condition}, matchConditions{k});
+            pdfs_matched(j,:) = ksdensity([flat_matched(bins).(varsToMatch{i})], x);
+            plot(x, pdfs_matched(j,:), 'Color', [colors(k,:) mouseAlpha])
+        end
+        
+        % means
+        subplot(length(varsToMatch),2,(i-1)*2+1); hold on
+        if i==1; title('all trials'); end
+        plot(x, mean(pdfs,1), 'Color', colors(k,:), 'LineWidth', 3)
+        fill([x(1) x x(end)], [0 mean(pdfs,1) 0], colors(k,:), 'FaceAlpha', .2, 'EdgeColor', 'none')
+        set(gca, 'XLim', xLims, 'YTick', [], 'TickDir', 'out', 'YColor', 'none')
+        xlabel(varsToMatch{i})
+        
+        subplot(length(varsToMatch),2,(i-1)*2+2); hold on
+        if i==1; title('matched trials'); end
+        plot(x, mean(pdfs_matched,1), 'Color', colors(k,:), 'LineWidth', 3)
+        fill([x(1) x x(end)], [0 mean(pdfs_matched,1) 0], colors(k,:), 'FaceAlpha', .2, 'EdgeColor', 'none')
+        set(gca, 'XLim', xLims, 'YTick', [], 'TickDir', 'out', 'YColor', 'none')
+    end
+end
+
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_matchedHistos' suffix1 suffix2]), 'svg');
 
 %% bars
 
