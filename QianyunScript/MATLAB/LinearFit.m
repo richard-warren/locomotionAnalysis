@@ -36,7 +36,7 @@ Xb=(x_max+0.05*dx)*R(:,1)' + avg;
 X_end=[Xa;Xb];
 
 hold on
-plot3(X_end(:,1),X_end(:,3),X_end(:,2),'-g','LineWidth',3) % best fit line
+plot3(X_end(:,1),X_end(:,2),X_end(:,3),'-g','LineWidth',3) % best fit line
 
 
 end

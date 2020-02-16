@@ -1,4 +1,4 @@
-function tiff_stack = reformatTiffStack(filePath, downsampleRate)
+function xyzCoords = importTiffStack(filePath, downsampleRate, thickness)
 
 % This function takes a mask tiff stack file and reformats it into a
 % 3-dimension logical matrix which MATLAB can easily manipulate and handle.
@@ -14,6 +14,7 @@ function tiff_stack = reformatTiffStack(filePath, downsampleRate)
 
 % settings
 if ~exist('downsampleRate', 'var'); downsampleRate = 0.3; end
+if ~exist('thickness', 'var'); thickness = 50; end % thickness of the brain sections
 
 % import the mask tiff stack file
 tiff_info = imfinfo(filePath);
@@ -34,6 +35,18 @@ for i = 1 : length(tiff_info)
     tiff_stack(:, :, i) = temp_downsample; 
     clear temp_downsample
 end
+
+
+xyzCoords = [];
+
+resolution = 2; % The resolution of the tiff stack is 2um/pixel.
+
+inds = find(tiff_stack>0);
+s = size(tiff_stack);
+[rows, cols, z] = ind2sub(s, inds);
+xyzCoords = [cols*resolution/downsampleRate, (z-1)*thickness, rows*resolution/downsampleRate]; % covert pixel location into xyz coordinates (unit in microns)
+
+clear tiff_stack
 
 
 end

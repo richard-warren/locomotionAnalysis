@@ -13,7 +13,7 @@ if ~exist('xrange', 'var'); xrange = 4000; end
 if ~exist('yrange', 'var'); yrange = 4000; end
 if ~exist('transparency', 'var'); transparency = 1; end
 
-h = scatter3(xyzCoords(:, 1), xyzCoords(:, 3), xyzCoords(:, 2), size, color, 'filled');
+h = scatter3(xyzCoords(:, 1), xyzCoords(:, 2), xyzCoords(:, 3), size, color, 'filled');
 set(h, 'MarkerEdgeAlpha', transparency, 'MarkerFaceAlpha', transparency);
 
 xlim([0, xrange]);

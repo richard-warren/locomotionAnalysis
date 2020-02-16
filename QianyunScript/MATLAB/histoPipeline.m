@@ -2,56 +2,37 @@
 folder = uigetdir();
 files = dir(fullfile(folder, '*.tif'));
 
-% Right Side
-display('Reformatting right side...');
-RightDentate = reformatTiffStack(fullfile(folder, 'DentateRight.tif'));
-RightInt = reformatTiffStack(fullfile(folder, 'InterpositusRight.tif'));
-
-RightPCLayer = reformatTiffStack(fullfile(folder, 'PCLayerRight.tif'));
-RightBrainSurface = reformatTiffStack(fullfile(folder, 'BrainSurfaceRight.tif'));
-
-% Left Side
-display('Reformatting left side...');
-LeftInt = reformatTiffStack(fullfile(folder, 'InterpositusLeft.tif'));
-LeftDentate = reformatTiffStack(fullfile(folder, 'DentateLeft.tif'));
-% LeftFastigial = reformatTiffStack(fullfile(folder, 'FastigialLeft.tif'));
-LeftPCLayer = reformatTiffStack(fullfile(folder, 'PCLayerLeftLess.tif'));
-LeftBrainSurface = reformatTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'));
-
-% probes
-display('Reformatting probe traces...');
-LeftProbe_1L = reformatTiffStack(fullfile(folder, 'ProbeLeft_1_LeftShank.tif'));
-LeftProbe_1R = reformatTiffStack(fullfile(folder, 'ProbeLeft_1_RightShank.tif'));
-LeftProbe_2L = reformatTiffStack(fullfile(folder, 'ProbeLeft_2_LeftShank.tif'));
-LeftProbe_2R = reformatTiffStack(fullfile(folder, 'ProbeLeft_2_RightShank.tif'));
-
-RightProbe_1L = reformatTiffStack(fullfile(folder, 'ProbeRight_1_LeftShank.tif'));
-RightProbe_1R = reformatTiffStack(fullfile(folder, 'ProbeRight_1_RightShank.tif'));
-
-display('All Done!');
-
-%% Get xyzCoords 
-
+downsampleRate = 0.3;
 thickness = 60;
 
-RDCoords = getCoordinates(RightDentate, thickness);
-RICoords = getCoordinates(RightInt, thickness);
-RPCLCoords = getCoordinates(RightPCLayer, thickness);
-RBSCoords = getCoordinates(RightBrainSurface, thickness);
+% Right Side
+disp('Reformatting right side...');
+RDCoords = importTiffStack(fullfile(folder, 'DentateRight.tif'), downsampleRate, thickness);
+RICoords = importTiffStack(fullfile(folder, 'InterpositusRight.tif'), downsampleRate, thickness);
 
-RPCoords_1L = getCoordinates(RightProbe_1L, thickness);
-RPCoords_1R = getCoordinates(RightProbe_1R, thickness);
+RPCLCoords = importTiffStack(fullfile(folder, 'PCLayerRight.tif'), downsampleRate, thickness);
+RBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceRight.tif'), downsampleRate, thickness);
 
-LICoords = getCoordinates(LeftInt, thickness);
-LDCoords = getCoordinates(LeftDentate, thickness);
-% LFCoords = getCoordinates(LeftFastigial, thickness, thickness);
-LPCLCoords = getCoordinates(LeftPCLayer, thickness);
-LBSCoords = getCoordinates(LeftBrainSurface, thickness);
+% Left Side
+disp('Reformatting left side...');
+LICoords = importTiffStack(fullfile(folder, 'InterpositusLeft.tif'), downsampleRate, thickness);
+LDCoords = importTiffStack(fullfile(folder, 'DentateLeft.tif'), downsampleRate, thickness);
+% LeftFastigial = importTiffStack(fullfile(folder, 'FastigialLeft.tif'), downsampleRate, thickness);
+LPCLCoords = importTiffStack(fullfile(folder, 'PCLayerLeftLess.tif'), downsampleRate, thickness);
+LBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'), downsampleRate, thickness);
 
-LPCoords_1L = getCoordinates(LeftProbe_1L, thickness);
-LPCoords_1R = getCoordinates(LeftProbe_1R, thickness);
-LPCoords_2L = getCoordinates(LeftProbe_2L, thickness);
-LPCoords_2R = getCoordinates(LeftProbe_2R, thickness);
+% probes
+disp('Reformatting probe traces...');
+LeftProbe_1L = importTiffStack(fullfile(folder, 'ProbeLeft_1_LeftShank.tif'), downsampleRate, thickness);
+LeftProbe_1R = importTiffStack(fullfile(folder, 'ProbeLeft_1_RightShank.tif'), downsampleRate, thickness);
+LeftProbe_2L = importTiffStack(fullfile(folder, 'ProbeLeft_2_LeftShank.tif'), downsampleRate, thickness);
+LeftProbe_2R = importTiffStack(fullfile(folder, 'ProbeLeft_2_RightShank.tif'), downsampleRate, thickness);
+
+RightProbe_1L = importTiffStack(fullfile(folder, 'ProbeRight_1_LeftShank.tif'), downsampleRate, thickness);
+RightProbe_1R = importTiffStack(fullfile(folder, 'ProbeRight_1_RightShank.tif'), downsampleRate, thickness);
+
+disp('All Done!');
+
 
 
 %% Plot brain regions + probe traces
@@ -61,7 +42,7 @@ box off
 axis off
 
 xrange = max(LICoords(:, 1))*2;
-yrange = max(LDCoords(:, 3))+500; % +60 just for visualizing purposes
+yrange = max(LDCoords(:, 2))+500; % +60 just for visualizing purposes
 
 % Left side 
 plotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
@@ -76,13 +57,13 @@ hold on;
 plotRegions3D(LBSCoords, 10, [0.8 0.8 0.8], xrange, yrange, 0.1);
 
 hold on;
-plotRegions3D(LPCoords_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
+plotRegions3D(LeftProbe_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
 hold on;
-plotRegions3D(LPCoords_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
+plotRegions3D(LeftProbe_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
 hold on;
-plotRegions3D(LPCoords_2L, 10, [1.0, 0.43, 0.54], xrange, yrange);
+plotRegions3D(LeftProbe_2L, 10, [1.0, 0.43, 0.54], xrange, yrange);
 hold on;
-plotRegions3D(LPCoords_2R, 10, [1.0, 0.43, 0.54], xrange, yrange);
+plotRegions3D(LeftProbe_2R, 10, [1.0, 0.43, 0.54], xrange, yrange);
 
 % Right side
 plotRegions3D(RDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
@@ -93,21 +74,21 @@ plotRegions3D(RPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange, 0.1);
 hold on;
 plotRegions3D(RBSCoords, 10, [0.8 0.8 0.8], xrange, yrange, 0.1);
 hold on;
-plotRegions3D(RPCoords_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
+plotRegions3D(RightProbe_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
 hold on;
-plotRegions3D(RPCoords_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
+plotRegions3D(RightProbe_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
 
 
 title('3D Plot of Traced Features');
 % legend('Dentate', 'Interpositus', 'Fastigial');
 %% fit a line for the probe 
 
-LM_Left_1L = LinearFit(LPCoords_1L);
-LM_Left_1R = LinearFit(LPCoords_1R);
-LM_Left_2L = LinearFit(LPCoords_2L);
-LM_Left_2R = LinearFit(LPCoords_2R);
-LM_Right_1L = LinearFit(RPCoords_1L);
-LM_Right_1R = LinearFit(RPCoords_1R);
+LM_Left_1L = LinearFit(LeftProbe_1L);
+LM_Left_1R = LinearFit(LeftProbe_1R);
+LM_Left_2L = LinearFit(LeftProbe_2L);
+LM_Left_2R = LinearFit(LeftProbe_2R);
+LM_Right_1L = LinearFit(RightProbe_1L);
+LM_Right_1R = LinearFit(RightProbe_1R);
 % legend('Dentate Nucleus', 'Purkinje Cell Layer', 'Brain Surface', ' ','Probe Traces', 'Fitted Probe Tracks', 'Location' , 'northeast');
 % title('3D Plot of Traced Features with Fitted Probe Tracks'); 
 
