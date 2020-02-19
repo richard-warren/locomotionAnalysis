@@ -1,4 +1,4 @@
-function addPointsToProbe(session, LM, BSCoord, offset, shankNum, opts)
+function [BS_crossPoint, BS_distance] = addPointsToProbe(session, LM, BSCoords, offset, shankNum, opts)
 
 
 if ~exist('offset', 'var'); offset = 0; end
@@ -7,12 +7,14 @@ if ~exist('shankNum', 'var'); shankNum = 1; end
 % settings
 s.showPCPoints = true;
 s.showGCPoints = true;
+s.noDiIMode = false;
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 
 % get probe mapping file
+disp('getting probe mapping...');
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
@@ -30,6 +32,8 @@ end
 
 
 % get channel info of the recording session
+disp('getting ephys channel info...');
+
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysChannelsInfo.xlsx'), 'Sheet', 'EphysChannelsInfo');
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
@@ -51,7 +55,7 @@ GCProbeDepth = GCProbeDepth(~isnan(GCProbeDepth));
 GCChannels = GCChannels(~isnan(GCChannels));
 
 
-% calculate the actual depth for Perkinje cell layer and channels that have
+% calculate the actual depth for where I got Perkinje cell signals and for channels that have
 % good signals on.
 PCDepth = zeros(size(PCProbeDepth, 1), 1);
 for i = 1:length(PCProbeDepth)
@@ -64,81 +68,128 @@ for i = 1:length(GCProbeDepth)
 end
 
 
-% getting parameters from the linear model
-avg = LM.avg;
-dirV = LM.dirVect;
-if dirV(1, 3) < 0
-    dirV = -dirV; % make sure that the direction vector is pointing downward
+% plot brain surface cross point
+disp('adding points...');
+if ~s.noDiIMode
+    
+    % the code below deals with the reconstruction of dii-coated probe traces
+    
+    % get avg point and direction vector from the linear model
+    avg = LM.avg;
+    dirV = LM.dirVect;
+    if dirV(1, 3) < 0
+        dirV = -dirV; % make sure that the direction vector is pointing downward
+    end
+    
+%     % (optional) plotting the avg point
+%     hold on
+%     plot3(avg(:, 1), avg(:, 2), avg(:, 3), '.b', 'MarkerSize', 30)
+    
+    
+    % coarsely determine the location of the brain surface cross point
+    disp('adding brain surface cross point...');
+    MLCoord = avg(1, 1);
+    MLCoord = BSCoords(find(BSCoords(:, 1) > round(MLCoord), 1));
+    inds = find(BSCoords(:, 1) == MLCoord);
+    avgDVCoord = mean(BSCoords(inds, 3));
+    tempDistance = (avg(1, 3) - avgDVCoord)/dirV(1, 3); % a hacky way of moving the avg point to where near the brain surface
+    if tempDistance > 0; tempDistance = -tempDistance; end
+    tempBS_crossPoint = avg + dirV * tempDistance;
+    
+%     % (optional) plot the tempBS_crossPoint, just for quality checking
+%     hold on
+%     plot3(tempBS_crossPoint(:, 1), tempBS_crossPoint(:, 2), tempBS_crossPoint(:, 3), '.k', 'MarkerSize', 30)
+%     points = [tempBS_crossPoint ; avg];
+%     plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+%     
+    
+    % fine tune the DV coordinates for the brain surface cross point by
+    % using the info from only the adjacent brain sections
+    APCoord = tempBS_crossPoint(1, 2);
+    if APCoord < 0;
+        adjacentAPCoord = 0;
+    else
+        adjacentAPCoord = [BSCoords(find(BSCoords(:, 2) < APCoord, 1, 'last'), 2), BSCoords(find(BSCoords(:, 2) > APCoord, 1, 'first'), 2)];
+    end
+    
+    MLCoord =  tempBS_crossPoint(1, 1);
+    MLCoord = BSCoords(find(BSCoords(:, 1) > round(MLCoord), 1));
+    
+    % dealing with the situation if there is only one adjacent brain section (most anterior or posterior)
+    if length(adjacentAPCoord) == 1 
+        DVCoords = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord)), 3);
+    else
+        DVCoords1 = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
+        DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
+        DVCoords = cat(1, DVCoords1, DVCoords2);
+    end
+    
+    DVCoord = mean(DVCoords);
+    BS_distance = (avg(1, 3) - DVCoord)/dirV(1, 3);
+    if BS_distance > 0; BS_distance = -BS_distance; end
+    BS_crossPoint = avg + dirV * BS_distance;
+    clear DVCoords MLCoord
+    
+    if length(adjacentAPCoord) ~= 1
+        APCoord = BS_crossPoint(1, 2);
+        adjacentAPCoord = [BSCoords(find(BSCoords(:, 2) < APCoord, 1, 'last'), 2), BSCoords(find(BSCoords(:, 2) > APCoord, 1, 'first'), 2)];
+        weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2))/abs(diff(adjacentAPCoord)) ];
+        DVCoord = mean(DVCoords1)*weights(2) + mean(DVCoords2)*weights(1);
+        BS_distance = (avg(1, 3) - DVCoord)/dirV(1, 3);
+        if BS_distance > 0; BS_distance = -BS_distance; end
+        BS_crossPoint = avg + dirV * BS_distance;
+        clear weights APCoord DVCoord distance DVCoords1 DVCoords2 DVCoord
+    end
+    
+else
+    
+    % the code below applies for reconstructing no dii traces only
+    tempBS_crossPoint = LM.BS_crossPoint;
+    dirV = LM.dirV;
+    if dirV(1, 3)<0; dirV = -dirV; end
+    
+    APCoord = tempBS_crossPoint(1, 2);
+    adjacentAPCoord = [BSCoords(find(BSCoords(:, 2) < APCoord, 1, 'last'), 2), BSCoords(find(BSCoords(:, 2) > APCoord, 1, 'first'), 2)];
+    MLCoord = tempBS_crossPoint(1, 1);
+    MLCoord = BSCoords(find(BSCoords(:, 1) > round(MLCoord), 1));
+    DVCoords1 = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
+    DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
+    weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2))/abs(diff(adjacentAPCoord)) ];
+    DVCoord = mean(DVCoords1)*weights(2) + mean(DVCoords2)*weights(1);
+    BS_crossPoint = [tempBS_crossPoint(1, :), DVCoord];
+    BS_distance = 0;   
+
 end
-
-hold on 
-plot3(avg(:, 1), avg(:, 2), avg(:, 3), '.b', 'MarkerSize', 30)
-
-
-% determine the location of the brain surface cross point
-MLCoord = avg(1, 1);
-MLCoord = BSCoords(find(LBSCoords(:, 1) > round(MLCoord), 1));
-inds = find(BSCoords(:, 1) == MLCoord);
-avgDVCoord = mean(BSCoords(inds, 3));
-tempDistance = (avg(1, 3) - avgDVCoord)/dirV(1, 3); % a hacky way of moving the avg point to where near the brain surface
-if tempDistance > 0; tempDistance = -tempDistance; end
-tempBS_crossPoint = avg + dirV * tempDistance;
-hold on
-plot3(tempBS_crossPoint(:, 1), tempBS_crossPoint(:, 2), tempBS_crossPoint(:, 3), '.k', 'MarkerSize', 30)
-points = [tempBS_crossPoint ; avg];
-plot3(points(:,1),points(:,2),points(:,3),'-k','LineWidth',3) 
-
-APCoord = tempBS_crossPoint(1, 2);
-adjacentAPCoord = [BSCoords(find(LBSCoords(:, 2) < APCoord, 1, 'last'), 2), BSCoords(find(LBSCoords(:, 2) > APCoord, 1, 'first'), 2)];
-MLCoord =  tempBS_crossPoint(1, 1);
-clear tempBS_crossPoint inds avgDVCoord tempDistance
-MLCoord = LBSCoords(find(LBSCoords(:, 1) > round(MLCoord), 1));
-DVCoords1 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
-DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
-DVCoords = cat(1, DVCoords1, DVCoords2);
-DVCoord = mean(DVCoords);
-distance = (avg(1, 3) - DVCoord)/dirV(1, 3);
-if distance > 0; distance = -distance; end
-BS_crossPoint = avg + dirV * distance;
-clear DVCoords MLCoord
-
-APCoord = BS_crossPoint(1, 2);
-weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2))/abs(diff(adjacentAPCoord)) ];
-DVCoord = mean(DVCoords1)*weights(2) + mean(DVCoords2)*weights(1);   
-distance = (avg(1, 3) - DVCoord)/dirV(1, 3);
-if distance > 0; distance = -distance; end
-BS_crossPoint = avg + dirV * distance;
-clear weights APCoord DVCoord distance DVCoords1 DVCoords2 DVCoord
 
 % plot brain surface cross point
 plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.k', 'MarkerSize', 30)
-points = [BS_crossPoint ; avg];
-plot3(points(:,1),points(:,2),points(:,3),'-k','LineWidth',3) 
-
-
+if ~s.noDiIMode; points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2), points(:,3),'-g','LineWidth',3); end
 
 
 
 % plot PC layer cross points
-if showPCPoints
+if s.showPCPoints
     disp('plotting PC cross points...');
     PC_inds = find(PCShankNum == shankNum);
     PCChannels = PCChannels(PC_inds, :);
     PCDepth = PCDepth(PC_inds, :);
+    if dirV(1, 3) < 0; dirV = -dirV; end
 
     for i = 1:length(PCDepth)
         
         PC_crossPoint = (PCDepth(i) + offset)*dirV + BS_crossPoint;
         hold on
-        plot3(PC_crossPoint(:, 1), PC_crossPoint(:, 2), PC_crossPoint(:, 3), '.r', 'MarkerSize', 30)        
+        plot3(PC_crossPoint(:, 1), PC_crossPoint(:, 2), PC_crossPoint(:, 3), '.r', 'MarkerSize', 30)   
+        points = [PC_crossPoint; BS_crossPoint];
+        plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
     end
-    
+
     disp('Done');    
 end
 
 
 % plot good channel points
-if showGCPoints
+if s.showGCPoints
     disp('plotting GC points...');
     
     inds = find(GCShankNum == shankNum);
@@ -149,9 +200,9 @@ if showGCPoints
         
         goodChannel = (GCDepth(i) + offset)*dirV + BS_crossPoint;
         hold on
-        plot3(goodChannel(:, 1), goodChannel(:, 3), goodChannel(:, 2), '.c', 'Markersize', 30);
-        points = [goodChannel; avg];
-        plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3)
+        plot3(goodChannel(:, 1), goodChannel(:, 2), goodChannel(:, 3), '.c', 'Markersize', 30);
+        points = [goodChannel; BS_crossPoint];
+        plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
         
     end    
     disp('Done');

@@ -3,11 +3,11 @@ folder = uigetdir();
 files = dir(fullfile(folder, '*.tif'));
 
 downsampleRate = 0.3;
-thickness = 60;
+thickness = 50;
 
 % Right Side
 disp('Reformatting right side...');
-RDCoords = importTiffStack(fullfile(folder, 'DentateRight.tif'), downsampleRate, thickness);
+% RDCoords = importTiffStack(fullfile(folder, 'DentateRight.tif'), downsampleRate, thickness);
 RICoords = importTiffStack(fullfile(folder, 'InterpositusRight.tif'), downsampleRate, thickness);
 
 RPCLCoords = importTiffStack(fullfile(folder, 'PCLayerRight.tif'), downsampleRate, thickness);
@@ -16,20 +16,23 @@ RBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceRight.tif'), downsampl
 % Left Side
 disp('Reformatting left side...');
 LICoords = importTiffStack(fullfile(folder, 'InterpositusLeft.tif'), downsampleRate, thickness);
-LDCoords = importTiffStack(fullfile(folder, 'DentateLeft.tif'), downsampleRate, thickness);
+% LDCoords = importTiffStack(fullfile(folder, 'DentateLeft.tif'), downsampleRate, thickness);
 % LeftFastigial = importTiffStack(fullfile(folder, 'FastigialLeft.tif'), downsampleRate, thickness);
-LPCLCoords = importTiffStack(fullfile(folder, 'PCLayerLeftLess.tif'), downsampleRate, thickness);
+LPCLCoords = importTiffStack(fullfile(folder, 'PCLayerLeft.tif'), downsampleRate, thickness);
 LBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'), downsampleRate, thickness);
 
 % probes
 disp('Reformatting probe traces...');
-LeftProbe_1L = importTiffStack(fullfile(folder, 'ProbeLeft_1_LeftShank.tif'), downsampleRate, thickness);
-LeftProbe_1R = importTiffStack(fullfile(folder, 'ProbeLeft_1_RightShank.tif'), downsampleRate, thickness);
-LeftProbe_2L = importTiffStack(fullfile(folder, 'ProbeLeft_2_LeftShank.tif'), downsampleRate, thickness);
-LeftProbe_2R = importTiffStack(fullfile(folder, 'ProbeLeft_2_RightShank.tif'), downsampleRate, thickness);
+LeftProbe_1L = importTiffStack(fullfile(folder, 'ProbeLeft_1L.tif'), downsampleRate, thickness);
+% LeftProbe_1M = importTiffStack(fullfile(folder, 'ProbeLeft_1M.tif'), downsampleRate, thickness);
+LeftProbe_1R = importTiffStack(fullfile(folder, 'ProbeLeft_1R.tif'), downsampleRate, thickness);
+LeftProbe_2L = importTiffStack(fullfile(folder, 'ProbeLeft_2L.tif'), downsampleRate, thickness);
+% LeftProbe_2M = importTiffStack(fullfile(folder, 'ProbeLeft_2M.tif'), downsampleRate, thickness);
+LeftProbe_2R = importTiffStack(fullfile(folder, 'ProbeLeft_2R.tif'), downsampleRate, thickness);
 
-RightProbe_1L = importTiffStack(fullfile(folder, 'ProbeRight_1_LeftShank.tif'), downsampleRate, thickness);
-RightProbe_1R = importTiffStack(fullfile(folder, 'ProbeRight_1_RightShank.tif'), downsampleRate, thickness);
+RightProbe_1L = importTiffStack(fullfile(folder, 'ProbeRight_1L.tif'), downsampleRate, thickness);
+% RightProbe_1M = importTiffStack(fullfile(folder, 'ProbeRight_1M.tif'), downsampleRate, thickness);
+RightProbe_1R = importTiffStack(fullfile(folder, 'ProbeRight_1R.tif'), downsampleRate, thickness);
 
 disp('All Done!');
 
@@ -42,41 +45,35 @@ box off
 axis off
 
 xrange = max(LICoords(:, 1))*2;
-yrange = max(LDCoords(:, 2))+500; % +60 just for visualizing purposes
+yrange = max(LICoords(:, 2))+500; % +60 just for visualizing purposes
 
 % Left side 
-plotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
-hold on;
-plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange);
+% plotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
+plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
 % hold on 
 % plotRegions3D(LFCoords, 20, [0.39, 0.83, 0.075], xrange, yrange);
 
 hold on;
 plotRegions3D(LPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange, 0.1);
-hold on;
 plotRegions3D(LBSCoords, 10, [0.8 0.8 0.8], xrange, yrange, 0.1);
 
-hold on;
 plotRegions3D(LeftProbe_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-hold on;
 plotRegions3D(LeftProbe_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
-hold on;
 plotRegions3D(LeftProbe_2L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-hold on;
 plotRegions3D(LeftProbe_2R, 10, [1.0, 0.43, 0.54], xrange, yrange);
+% plotRegions3D(LeftProbe_2M, 10, [1.0, 0.43, 0.54], xrange, yrange);
+% plotRegions3D(LeftProbe_1M, 10, [1.0, 0.43, 0.54], xrange, yrange);
 
 % Right side
-plotRegions3D(RDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
+% plotRegions3D(RDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange);
 hold on;
-plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange);
-hold on;
+plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
 plotRegions3D(RPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange, 0.1);
-hold on;
 plotRegions3D(RBSCoords, 10, [0.8 0.8 0.8], xrange, yrange, 0.1);
-hold on;
+
 plotRegions3D(RightProbe_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-hold on;
 plotRegions3D(RightProbe_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
+% plotRegions3D(RightProbe_1M, 10, [1.0, 0.43, 0.54], xrange, yrange);
 
 
 title('3D Plot of Traced Features');
@@ -87,303 +84,120 @@ LM_Left_1L = LinearFit(LeftProbe_1L);
 LM_Left_1R = LinearFit(LeftProbe_1R);
 LM_Left_2L = LinearFit(LeftProbe_2L);
 LM_Left_2R = LinearFit(LeftProbe_2R);
+% LM_Left_1M = LinearFit(LeftProbe_1M);
+% LM_Left_2M = LinearFit(LeftProbe_2M);
+
+
 LM_Right_1L = LinearFit(RightProbe_1L);
 LM_Right_1R = LinearFit(RightProbe_1R);
+% LM_Right_1M = LinearFit(RightProbe_1M);
 % legend('Dentate Nucleus', 'Purkinje Cell Layer', 'Brain Surface', ' ','Probe Traces', 'Fitted Probe Tracks', 'Location' , 'northeast');
 % title('3D Plot of Traced Features with Fitted Probe Tracks'); 
 
+%% For probes with DiI
 
 
-%% For Probes with DiI
+[BS_crossPoint_left1L, BS_distance_left1L] = addPointsToProbe('200116_000', LM_Left_1L, LBSCoords, 70, 1);
+[BS_crossPoint_left1R, BS_distance_left1R] = addPointsToProbe('200116_000', LM_Left_1R, LBSCoords, 70, 3);
+% [BS_crossPoint_left1M, BS_distance_left1M] = addPointsToProbe('200201_000', LM_Left_1M, LBSCoords, 50, 2);
 
-% probe Left 1L 
-% BS crossPoint
-avg = LM_Left_1L.avg;
-dirV = LM_Left_1L.dirVect;
-dirV = -dirV;
-plot3(avg(:, 1), avg(:, 3), avg(:, 2), '.b', 'MarkerSize', 30)
+[BS_crossPoint_left2L, BS_distance_left2L] = addPointsToProbe('200117_000', LM_Left_2L, LBSCoords, 310, 1);
+[BS_crossPoint_left2R, BS_distance_left2R] = addPointsToProbe('200117_000', LM_Left_2R, LBSCoords, 310, 3);
+% [BS_crossPoint_left2M, BS_distance_left2M] = addPointsToProbe('200202_000', LM_Left_2M, LBSCoords, 50, 2);
 
-d_BS = -1033; % Has to be manual determined!!
-BS_crossPoint_left1L = (d_BS)*dirV + avg;
+[BS_crossPoint_right1L, BS_distance_right1L] = addPointsToProbe('200118_001', LM_Right_1L, RBSCoords, 150, 1);
+[BS_crossPoint_right1R, BS_distance_right1R] = addPointsToProbe('200118_001', LM_Right_1R, RBSCoords, 150, 3);
+% [BS_crossPoint_right1M, BS_distance_right1M] = addPointsToProbe('200131_000', LM_Right_1M, RBSCoords, -200, 2);
+
+%% for no dii tracks, building linear models for locating the entry points
+
+histoCoords = [BS_crossPoint_left1R; BS_crossPoint_left2R; BS_crossPoint_right1L];
+histoCoords = [histoCoords(:, 1) histoCoords(:, 2)];
+% BS_crossPoint_left1L; BS_crossPoint_left1M; BS_crossPoint_left1R; 
+
+
+mouseID = 'cer11';
+
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+
+diiMLCoords = ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) );
+diiAPCoords = ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) );
+
+nodiiMLCoords = ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) );
+nodiiAPCoords = ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) );
+
+% enter these info manually!!
+manipuCoords = [diiMLCoords, diiAPCoords];
+manipuCoords_noDiI = [nodiiMLCoords, nodiiAPCoords];
+
+
+% plot to verify the histo info
+figure;
+plot(manipuCoords(:, 1), manipuCoords(:, 2), '.r', 'MarkerSize', 10);
 hold on
-plot3(BS_crossPoint_left1L(:, 1), BS_crossPoint_left1L(:, 3), BS_crossPoint_left1L(:, 2), '.k', 'MarkerSize', 30)
-% points = [BS_crossPoint_left1L ; avg];
-% plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3) 
+plot(manipuCoords_noDiI(:, 1), manipuCoords_noDiI(:, 2), '.m', 'MarkerSize', 10);
+plot(histoCoords(:, 1), histoCoords(:, 2), '.b', 'MarkerSize', 20);
 
+mdlML_test = fitlm([manipuCoords(:, 1) manipuCoords(:, 2)], histoCoords(:, 1))
+mdlAP_test = fitlm([manipuCoords(:, 1) manipuCoords(:, 2)], histoCoords(:, 2))
 
-% PC cross point
-offset = 70; % Has to be manual determined!!
+% fit the LM
+fittedML_nodii = predict(mdlML_test, [manipuCoords_noDiI(:, 1), manipuCoords_noDiI(:, 2)])
+fittedAP_nodii = predict(mdlAP_test, [manipuCoords_noDiI(:, 1), manipuCoords_noDiI(:, 2)])
 
-% all the distance has to be manually calculated
-d_PC1 = 545 + offset;
-PC_crossPoint1_left1L = (d_PC1)*dirV + BS_crossPoint_left1L;
+% plot the fitted entry points for ni dii tracks
 hold on
-plot3(PC_crossPoint1_left1L(:, 1), PC_crossPoint1_left1L(:, 3), PC_crossPoint1_left1L(:, 2), '.r', 'MarkerSize', 30)
-
-d_PC2 = 1604 + offset;
-PC_crossPoint2_left1L = (d_PC2)*dirV + BS_crossPoint_left1L;
-hold on
-plot3(PC_crossPoint2_left1L(:, 1), PC_crossPoint2_left1L(:, 3), PC_crossPoint2_left1L(:, 2), '.r', 'MarkerSize', 30)
-
-
-
-% Good Channels
-% all the distance has to be manually calculated
-d_GC1 = 1954.5 + offset;
-goodChannel_Left1L_1 = (d_GC1)*dirV + BS_crossPoint_left1L;
-hold on
-plot3(goodChannel_Left1L_1(:, 1), goodChannel_Left1L_1(:, 3), goodChannel_Left1L_1(:, 2), '.c', 'Markersize', 30);
-
-d_GC2 = 1854.5 + offset;
-goodChannel_Left1L_2 = (d_GC2)*dirV + BS_crossPoint_left1L;
-hold on
-plot3(goodChannel_Left1L_2(:, 1), goodChannel_Left1L_2(:, 3), goodChannel_Left1L_2(:, 2), '.c', 'Markersize', 30);
-
-
-d_GC3 = 1879.5 + offset;
-goodChannel_Left1L_3 = (d_GC3)*dirV + BS_crossPoint_left1L;
-hold on
-plot3(goodChannel_Left1L_3(:, 1), goodChannel_Left1L_3(:, 3), goodChannel_Left1L_3(:, 2), '.c', 'Markersize', 30);
-
-
-% Probe Left iR
-% BS cross point
-avg = LM_Left_1R.avg;
-dirV = LM_Left_1R.dirVect;
-dirV = -dirV;
-plot3(avg(:, 1), avg(:, 3), avg(:, 2), '.b', 'MarkerSize', 30)
-
-d_BS = -933.33; % Has to be manually determined!!
-BS_crossPoint_left1R = (d_BS)*dirV + avg;
-hold on
-plot3(BS_crossPoint_left1R(:, 1), BS_crossPoint_left1R(:, 3), BS_crossPoint_left1R(:, 2), '.k', 'MarkerSize', 30)
-% points = [BS_crossPoint_left1R ; avg];
-% plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3) 
-
-
-d_PC1 = 1360 + offset;
-PC_crossPoint1_left1R = (d_PC1)*dirV + BS_crossPoint_left1R;
-hold on
-plot3(PC_crossPoint1_left1R(:, 1), PC_crossPoint1_left1R(:, 3), PC_crossPoint1_left1R(:, 2), '.r', 'MarkerSize', 30)
-
-% d_PC2 = distanceConverter(1074.9 + offset, 0.9, 0.3);
-% PC_crossPoint2_left1R = (d_PC2)*dirV + BS_crossPoint_left1R;
-% hold on
-% plot3(PC_crossPoint2_left1R(:, 1), PC_crossPoint2_left1R(:, 3), PC_crossPoint2_left1R(:, 2), '.r', 'MarkerSize', 30)
-% 
-
-
-% % Good Channels
-% d_GC1 = distanceConverter(1954.5 + offset, 0.9, 0.3);
-% goodChannel_Left1R_1 = (d_GC1)*dirV + BS_crossPoint_left1R;
-% hold on
-% plot3(goodChannel_Left1R_1(:, 1), goodChannel_Left1R_1(:, 3), goodChannel_Left1R_1(:, 2), '.c', 'Markersize', 30);
-% 
-% d_GC2 = distanceConverter(1854.5 + offset, 0.9, 0.3);
-% goodChannel_Left1R_2 = (d_GC2)*dirV + BS_crossPoint_left1R;
-% hold on
-% plot3(goodChannel_Left1R_2(:, 1), goodChannel_Left1R_2(:, 3), goodChannel_Left1R_2(:, 2), '.c', 'Markersize', 30);
-% 
-% d_GC3 = distanceConverter(1879.5 + offset, 0.9, 0.3);
-% goodChannel_Left1R_3 = (d_GC3)*dirV + BS_crossPoint_left1R;
-% hold on
-% plot3(goodChannel_Left1R_3(:, 1), goodChannel_Left1R_3(:, 3), goodChannel_Left1R_3(:, 2), '.c', 'Markersize', 30);
-% 
-% 
-% points = [goodChannel_Left1R_1 ; avg];
-% plot3(points(:,1),points(:,3),points(:,2),'-g','LineWidth',3) 
-
-
-%% Probe Left 2
-
-% probe left 2L
-% BS cross point
-
-
-avg = LM_Left_2L.avg;
-dirV = LM_Left_2L.dirVect;
-dirV = -dirV;
-plot3(avg(:, 1), avg(:, 3), avg(:, 2), '.b', 'MarkerSize', 30)
-
-d_BS = -1220; % Has to be manually determined!!
-BS_crossPoint_left2L = (d_BS)*dirV + avg;
-hold on
-plot3(BS_crossPoint_left2L(:, 1), BS_crossPoint_left2L(:, 3), BS_crossPoint_left2L(:, 2), '.k', 'MarkerSize', 30)
-points = [BS_crossPoint_left2L ; avg];
-plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3) 
-
-
-% PC cross point
-offset = 350; % Has to be manual determined!!
-
-% all the distance has to be manually calculated
-d_PC1 = 1550 + offset;
-PC_crossPoint1_left2L = (d_PC1)*dirV + BS_crossPoint_left2L;
-hold on
-plot3(PC_crossPoint1_left2L(:, 1), PC_crossPoint1_left2L(:, 3), PC_crossPoint1_left2L(:, 2), '.r', 'MarkerSize', 30)
-
-% d_PC2 = distanceConverter(665 + offset, 0.9, 0.3);
-% PC_crossPoint2_left2L = (d_PC2)*dirV + BS_crossPoint_left2L;
-% hold on
-% plot3(PC_crossPoint2_left2L(:, 1), PC_crossPoint2_left2L(:, 3), PC_crossPoint2_left2L(:, 2), '.r', 'MarkerSize', 30)
-
-% Good Channels
-% all the distance has to be manually calculated
-d_GC1 = 1824.4 + offset;
-goodChannel_Left2L_1 = (d_GC1)*dirV + BS_crossPoint_left2L;
-hold on
-plot3(goodChannel_Left2L_1(:, 1), goodChannel_Left2L_1(:, 3), goodChannel_Left2L_1(:, 2), '.c', 'Markersize', 30);
-
-d_GC2 = 2174.4 + offset;
-goodChannel_Left2L_2 = (d_GC2)*dirV + BS_crossPoint_left2L;
-hold on
-plot3(goodChannel_Left2L_2(:, 1), goodChannel_Left2L_2(:, 3), goodChannel_Left2L_2(:, 2), '.c', 'Markersize', 30);
-
-
-
-% Probe Left iR
-% BS cross point
-avg = LM_Left_2R.avg;
-dirV = LM_Left_2R.dirVect;
-plot3(avg(:, 1), avg(:, 3), avg(:, 2), '.b', 'MarkerSize', 30)
-
-d_BS = -1366.67; % Has to be manually determined!!
-BS_crossPoint_left2R = (d_BS)*dirV + avg;
-hold on
-plot3(BS_crossPoint_left2R(:, 1), BS_crossPoint_left2R(:, 3), BS_crossPoint_left2R(:, 2), '.k', 'MarkerSize', 30)
-points = [BS_crossPoint_left2R ; avg];
-plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3) 
-
-
-d_PC1 = 665 + offset;
-PC_crossPoint1_left2R = (d_PC1)*dirV + BS_crossPoint_left2R;
-hold on
-plot3(PC_crossPoint1_left2R(:, 1), PC_crossPoint1_left2R(:, 3), PC_crossPoint1_left2R(:, 2), '.r', 'MarkerSize', 30)
+plot(fittedML_nodii, fittedAP_nodii, '.', 'MarkerSize', 20, 'Color', [1 0.74 0.35])
 
-d_PC2 = 1315 + offset;
-PC_crossPoint2_left2R = (d_PC2)*dirV + BS_crossPoint_left2R;
-hold on
-plot3(PC_crossPoint2_left2R(:, 1), PC_crossPoint2_left2R(:, 3), PC_crossPoint2_left2R(:, 2), '.r', 'MarkerSize', 30)
-
 
-% Good Channels
-d_GC1 = 1874.4 + offset;
-goodChannel_Left2R_1 = (d_GC1)*dirV + BS_crossPoint_left2R;
-hold on
-plot3(goodChannel_Left2R_1(:, 1), goodChannel_Left2R_1(:, 3), goodChannel_Left2R_1(:, 2), '.c', 'Markersize', 30);
-
-% d_GC2 = distanceConverter(2149.4 + offset, 0.9, 0.3);
-% goodChannel_Left2L_2 = (d_GC2)*dirV + BS_crossPoint_left2L;
-% hold on
-% plot3(goodChannel_Left2L_2(:, 1), goodChannel_Left2L_2(:, 3), goodChannel_Left2L_2(:, 2), '.c', 'Markersize', 30);
+%% for ni dii tracks, reconstructing no-dii probe traces in 3d view
 
-%% Add points for Probe Right 1
+dirV = nan(6, 3);
+dirV(1, :) = LM_Left_1L.dirVect;
+dirV(2, :) = LM_Left_1R.dirVect;
+dirV(3, :) = LM_Left_2L.dirVect;
+dirV(4, :) = -LM_Left_2R.dirVect;
+dirV(5, :) = LM_Right_1L.dirVect;
+dirV(6, :) = LM_Right_1R.dirVect;
+meandirV = mean(dirV);
 
-% Probe right 1L
-% BS crossPoint
-avg = LM_Right_1L.avg;
-dirV = LM_Right_1L.dirVect;
-dirV = -dirV;
-plot3(avg(:, 1), avg(:, 3), avg(:, 2), '.b', 'MarkerSize', 30)
-
-d_BS = -686.67;
-BS_crossPoint_right1L = (d_BS)*dirV + avg;
-hold on
-plot3(BS_crossPoint_right1L(:, 1), BS_crossPoint_right1L(:, 3), BS_crossPoint_right1L(:, 2), '.k', 'MarkerSize', 30)
-points = [BS_crossPoint_right1L ; avg];
-plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3) 
-
-
-
-% PC crossPoint
-offset = 150; % Has to be manual determined!!
-
-% all the distance has to be manually calculated
-d_PC1 = 1154.3 + offset;
-PC_crossPoint1_right1L = (d_PC1)*dirV + BS_crossPoint_right1L;
-hold on
-plot3(PC_crossPoint1_right1L(:, 1), PC_crossPoint1_right1L(:, 3), PC_crossPoint1_right1L(:, 2), '.r', 'MarkerSize', 30)
-
-d_PC2 = 205 + offset;
-PC_crossPoint2_right1L = (d_PC2)*dirV + BS_crossPoint_right1L;
-hold on
-plot3(PC_crossPoint2_right1L(:, 1), PC_crossPoint2_right1L(:, 3), PC_crossPoint2_right1L(:, 2), '.r', 'MarkerSize', 30)
-
-
-% Good Channels
-d_GC1 = 2016.8 + offset;
-goodChannel_right1L_1 = (d_GC1)*dirV + BS_crossPoint_right1L;
-hold on
-plot3(goodChannel_right1L_1(:, 1), goodChannel_right1L_1(:, 3), goodChannel_right1L_1(:, 2), '.c', 'Markersize', 30);
-points = [goodChannel_right1L_1 ; avg];
-plot3(points(:,1),points(:,3),points(:,2),'-g','LineWidth',3) 
-
-d_GC2 = 1566.8 + offset;
-goodChannel_right1L_2 = (d_GC2)*dirV + BS_crossPoint_right1L;
-hold on
-plot3(goodChannel_right1L_2(:, 1), goodChannel_right1L_2(:, 3), goodChannel_right1L_2(:, 2), '.c', 'Markersize', 30);
-points = [goodChannel_right1L_2 ; avg];
-plot3(points(:,1),points(:,3),points(:,2),'-g','LineWidth',3) 
-
-
-
-% Probe right 1R
-% BS crossPoint 
-avg = LM_Right_1R.avg;
-dirV = LM_Right_1R.dirVect;
-dirV = -dirV;
-plot3(avg(:, 1), avg(:, 3), avg(:, 2), '.b', 'MarkerSize', 30)
-
-d_BS = -800;
-BS_crossPoint_right1R = (d_BS)*dirV + avg;
-hold on
-plot3(BS_crossPoint_right1R(:, 1), BS_crossPoint_right1R(:, 3), BS_crossPoint_right1R(:, 2), '.k', 'MarkerSize', 30)
-points = [BS_crossPoint_right1R ; avg];
-plot3(points(:,1),points(:,3),points(:,2),'-k','LineWidth',3) 
-
-
-% all the distance has to be manually calculated
-d_PC1 = 969.6 + offset;
-PC_crossPoint1_right1R = (d_PC1)*dirV + BS_crossPoint_right1R;
-hold on
-plot3(PC_crossPoint1_right1R(:, 1), PC_crossPoint1_right1R(:, 3), PC_crossPoint1_right1R(:, 2), '.r', 'MarkerSize', 30)
-
-% d_PC2 = distanceConverter(1247.1 + offset, 1, 0.3);
-% PC_crossPoint2_right1R = (d_PC2)*dirV + BS_crossPoint_right1R;
-% hold on
-% plot3(PC_crossPoint2_right1R(:, 1), PC_crossPoint2_right1R(:, 3), PC_crossPoint2_right1R(:, 2), '.r', 'MarkerSize', 30)
-% 
-
-
-
-
-%% Backup codes
-
-% Start Channel Point
-d_startPoint = distanceConverter(140, 1, 0.3);
-startPoint = (d_startPoint+d_PC)*dirV + avg;
-hold on
-plot3(startPoint(:, 1), startPoint(:, 3), startPoint(:, 2), '.m', 'MarkerSize', 20)
-
-
-% End Channel Point
-d_endPoint = distanceConverter(790, 1, 0.3);
-endPoint = (d_PC + d_startPoint + d_endPoint) * dirV + avg;
-hold on
-points = [startPoint ; endPoint];
-plot3(points(:,1),points(:,3),points(:,2),'-m','LineWidth',3) 
-plot3(endPoint(:, 1), endPoint(:, 3), endPoint(:, 2), '.m', 'MarkerSize', 20)
-
-
-% Good Channel Point
-goodChannelNum = [63, 58, 61, 49, 47];
-d_channels =  (goodChannelNum-32).*25;
-d_channels = distanceConverter(d_channels, 1, 0.3);
-for i = 1:length(goodChannelNum)
-    channelPoint = (d_channels(i) + d_PC + d_startPoint)*dirV + avg; 
-    hold on
-    plot3(channelPoint(:, 1), channelPoint(:, 3), channelPoint(:, 2), '.c', 'Markersize', 30);
-end
+nodiiLM.BS_crossPoint = [fittedML_nodii, fittedAP_nodii];
+nodiiLM.dirV = meandirV;
+
+nodiiLM.BS_crossPoint = [fittedML_nodii(1), fittedAP_nodii(1)];
+[BS_crossPoint_right2L, ~] = addPointsToProbe('200113_000', nodiiLM, RBSCoords, 0, 1, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
+
+nodiiLM.BS_crossPoint = [fittedML_nodii(2), fittedAP_nodii(2)];
+[BS_crossPoint_right2R, ~] = addPointsToProbe('200113_000', nodiiLM, RBSCoords, 0, 2, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
+
+nodiiLM.BS_crossPoint = [fittedML_nodii(3), fittedAP_nodii(3)];
+[BS_crossPoint_right3L, ~] = addPointsToProbe('200114_000', nodiiLM, RBSCoords, 0, 1, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
+
+nodiiLM.BS_crossPoint = [fittedML_nodii(4), fittedAP_nodii(4)];
+[BS_crossPoint_right3R, ~] = addPointsToProbe('200114_000', nodiiLM, RBSCoords, 0, 2, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
