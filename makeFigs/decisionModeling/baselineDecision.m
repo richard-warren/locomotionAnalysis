@@ -3,18 +3,13 @@ fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'basel
 
 % settings
 outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
-modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
-lightOffOnly = true;  % whether to restrict to light on trials
-successOnly  = false;  % whether to restrict to successful trials
-deltaMin = .5;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
-predictors = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
 
 global_config;
 
 flat = flattenData(data, ...
-    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp'}]);
+    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp'}]);
 
-% get version of flat with trial restrictions applied, and with predictions of model stored as a colum
+% get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
@@ -93,33 +88,34 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 %% heatmaps
 plotDecisionHeatmaps(flat, 'normalize', 'col', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'avgMice', true, 'plotMice', false, 'colors', sensColors, 'outcome', 'isModPawLengthened', ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeatmaps'));
+    'avgMice', false, 'plotMice', false, 'colors', decisionColors(1,:), 'outcome', 'isModPawLengthened', 'xLims', [-20 15], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeatmaps'));
+set(gcf, 'position', [2111.00 10.00 489.00 237.00])
 
 %% trials scatters
 plotDecisionTrials(flat, 'outcome', 'isBigStep', ...
-    'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
     'colors', decisionColors, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDecisionKin'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
 %% model accuracies
 plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
 %% model accuracies (predicted distance only)
 acc = plotModelAccuracies(flat, {'modPawPredictedDistanceToObs'}, 'isModPawLengthened', 'model', 'glm', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelsPredDistOnly'));
 fprintf('predicted distance only model accuracy: %.3f\n', mean(acc(1,2,:)));
 
 %% decision threshold
 plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', sensColors, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceThresholds'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineThresholds'));
 
 %% forward feature selection
 
@@ -172,11 +168,10 @@ saveas(gcf, file, 'svg');
 %% predictor scatters and histograms
 
 % settings
-% bestPredictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawZ', 'modPawZVel', 'modPawXVel', 'angleAtWiskContact'}
-binNum = 15;
-maxPlots = 5;
+binNum = 15;  % number of histogram bins
+maxPlots = length(m.predictors);
 scatAlpha = .4;
-maxScatters = 2000;  % only plot this many per condition to avoid large vector images
+maxScatters = 1000;  % only plot this many per condition to avoid large vector images
 percentileLims = [1 99];
 scatSz = 8;
 
@@ -185,7 +180,7 @@ f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778
 f2 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750.00 900.00 160*maxPlots 118.00]);
 set(0, 'CurrentFigure', f1)
 
-sz = min(maxPlots, length(predictors));
+sz = min(maxPlots, length(m.predictors));
 randInds = randsample(length(flat_sub), min(maxScatters, length(flat_sub)));
 randBins = false(1, length(flat_sub));
 randBins(randInds) = true;
@@ -245,10 +240,8 @@ for r = 1:sz
 end
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors');
-saveas(f1, file, 'svg');
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
-saveas(f2, file, 'svg');
+saveas(f1, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'), 'svg');
+saveas(f2, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly'), 'svg');
 
 
 
@@ -357,11 +350,15 @@ predictorsNoWisk = m.predictors(~ismember(m.predictors, excludeVars));
     'weightClasses', true, 'plot', false, 'kFolds', 10);
 
 mat = [squeeze(acc_full(1,2,:))'; squeeze(acc_noWisk(1,2,:))'];  % (full vs. noWisk) X (mouse)
+
 figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 'none');
 barFancy(mat, barProperties{:}, ...
-    'levelNames', {{'full model', 'noWisk'}});
+    'levelNames', {{'full model', 'noWisk'}}, 'YLim', [.5 1], 'showBars', false);
 
-% %% distance and time to contact
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelNoWiskPredModels'), 'svg');
+
+
+%% distance and time to contact
 % 
 % 
 % % settings

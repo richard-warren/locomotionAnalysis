@@ -191,6 +191,9 @@ conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 conditionals.isContra = struct('name', 'isContra', 'condition', @(x) x==1);
 
+colorsRaw = colors;  % keep original colors before applying following transformation
+if strcmp(dataset, 'mtc_muscimol') && matchTrials; colors(2,:) = mean(colors,1); end  % if matching trials, split difference btwn control and manipulated colors
+
 fprintf('data loaded!\n');
 
 
@@ -203,6 +206,9 @@ mouseAlpha = .25;
 
 flat = flattenData(data_unmatched, [{'mouse', 'condition'} varsToMatch]);
 flat_matched = flattenData(data, [{'mouse', 'condition'} varsToMatch]);
+
+colors_unmatched = colorsRaw;
+colors_matched = [colorsRaw(1,:); mean(colorsRaw,1)];
 
 % pdfs
 close all
@@ -222,27 +228,28 @@ for i = 1:length(varsToMatch)
             subplot(length(varsToMatch),2,(i-1)*2+1); hold on
             bins = strcmp({flat.mouse}, mice{j}) & strcmp({flat.condition}, matchConditions{k});
             pdfs(j,:) = ksdensity([flat(bins).(varsToMatch{i})], x);
-            plot(x, pdfs(j,:), 'Color', [colors(k,:) mouseAlpha])
+            plot(x, pdfs(j,:), 'Color', [colors_unmatched(k,:) mouseAlpha])
             
             % matched
             subplot(length(varsToMatch),2,(i-1)*2+2); hold on
             bins = strcmp({flat_matched.mouse}, mice{j}) & strcmp({flat_matched.condition}, matchConditions{k});
             pdfs_matched(j,:) = ksdensity([flat_matched(bins).(varsToMatch{i})], x);
-            plot(x, pdfs_matched(j,:), 'Color', [colors(k,:) mouseAlpha])
+            plot(x, pdfs_matched(j,:), 'Color', [colors_matched(k,:) mouseAlpha])
         end
         
-        % means
+        % unmatched means
         subplot(length(varsToMatch),2,(i-1)*2+1); hold on
         if i==1; title('all trials'); end
-        plot(x, mean(pdfs,1), 'Color', colors(k,:), 'LineWidth', 3)
-        fill([x(1) x x(end)], [0 mean(pdfs,1) 0], colors(k,:), 'FaceAlpha', .2, 'EdgeColor', 'none')
+        plot(x, mean(pdfs,1), 'Color', colors_unmatched(k,:), 'LineWidth', 3)
+        fill([x(1) x x(end)], [0 mean(pdfs,1) 0], colors_unmatched(k,:), 'FaceAlpha', .2, 'EdgeColor', 'none')
         set(gca, 'XLim', xLims, 'YTick', [], 'TickDir', 'out', 'YColor', 'none')
         xlabel(varsToMatch{i})
         
+        % matched means
         subplot(length(varsToMatch),2,(i-1)*2+2); hold on
         if i==1; title('matched trials'); end
-        plot(x, mean(pdfs_matched,1), 'Color', colors(k,:), 'LineWidth', 3)
-        fill([x(1) x x(end)], [0 mean(pdfs_matched,1) 0], colors(k,:), 'FaceAlpha', .2, 'EdgeColor', 'none')
+        plot(x, mean(pdfs_matched,1), 'Color', colors_matched(k,:), 'LineWidth', 3)
+        fill([x(1) x x(end)], [0 mean(pdfs_matched,1) 0], colors_unmatched(k,:), 'FaceAlpha', .2, 'EdgeColor', 'none')
         set(gca, 'XLim', xLims, 'YTick', [], 'TickDir', 'out', 'YColor', 'none')
     end
 end
@@ -470,11 +477,19 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 % settings
 xLims = [-.05 0];
+earlyLate = 'early';  % 'early' or 'late'
 
 flat = flattenData(data, {'mouse', 'session', 'trial', ...
     'preObsKin', 'conditionNum', 'condition', 'obsHgt', 'isLeading', 'isFore', 'isContra'});
 if contains(dataset, {'lesion', 'Lesion'})
-    flat = flat([flat.conditionNum]>=earlySessions(1) & [flat.conditionNum]<=earlySessions(2));
+    if strcmp(earlyLate, 'early')
+        flat = flat([flat.conditionNum]>=earlySessions(1) & [flat.conditionNum]<=earlySessions(2));  % for early sessions
+        colors_temp = colors;
+    elseif strcmp(earlyLate, 'late')
+        postBins = (strcmp({flat.condition}, 'post') & [flat.conditionNum]>=lateSessions(1) & [flat.conditionNum]<=lateSessions(2));
+        flat = flat(postBins | strcmp({flat.condition}, 'pre'));  % for late sessions
+        colors_temp = [ctlStepColor; mean([ctlStepColor; lesionColor],1)];
+    end
 end
 flat = flat([flat.isLeading] & [flat.isFore]);  % add conditionals as required
 [~,condition] = ismember({flat.condition}, matchConditions);
@@ -482,12 +497,12 @@ kinData = permute(cat(3, flat.preObsKin), [3,1,2]);
 
 figure('position', [2018.00 700 521.00 239.00], 'color', 'white', 'menubar', 'none')
 plotKinematics(kinData(:,[1,3],:), [flat.obsHgt], condition, ...
-        'colors', colors(1:2,:), 'obsAlpha', 1, 'lineAlpha', .8, ...
+        'colors', colors_temp, 'obsAlpha', 1, 'lineAlpha', .8, ...
         'obsColors', repelem(obsColor,2,1), 'mouseNames', {flat.mouse}, ...
         'lineWidth', 3, 'errorFcn', @std) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
 set(gca, 'XLim', xLims)
 
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_kinematics' suffix1 suffix2]), 'svg');
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_kinematics' suffix1 suffix2 '_' earlyLate]), 'svg');
 
 
 %% decision making

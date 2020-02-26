@@ -72,9 +72,10 @@ for i = 1:length(s.levels)
     kdShort = ksdensity(kinData(bins & flat.(s.outcome)~=1,1,end), xGrid) * (1-longShortRatio);
 
     % scale y axis to fit in same subplot as kinematics
-    kdCtl = -kdCtl * (s.histoHgt/max(kdCtl)) - s.histoOffset;
-    kdLong = -kdLong * (s.histoHgt/max(kdLong)) - s.histoOffset;
-    kdShort = -kdShort * (s.histoHgt/max(kdShort)) - s.histoOffset;
+    pdfMax = max([kdLong kdCtl kdShort]);
+    kdCtl = -kdCtl * (s.histoHgt/pdfMax) - s.histoOffset;
+    kdLong = -kdLong * (s.histoHgt/pdfMax) - s.histoOffset;
+    kdShort = -kdShort * (s.histoHgt/pdfMax) - s.histoOffset;
 
 
     % plot that shit

@@ -566,3 +566,39 @@ saveas(gcf, file, 'svg');
 
 
 
+%% light on vs light off speed
+
+
+% settings
+yLims = [.3 .7];
+plotSequence = [4 3 2 1]; % determine which lines on plotted on top of which
+
+% initializations
+flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
+    'velVsPosition', 'velVsPositionX', 'velContinuousAtContact', 'velContinuousAtContactX', 'isWheelBreak', 'wiskContactPosition'});
+colorsTemp = [sensColors(1:end-1,:); .6 .6 .6]; % the no vision no whisker condition can be a little lighter here
+
+% speed vs position
+figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off')
+x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
+rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
+    'FaceColor', [obsColor obsAlpha], 'EdgeColor', 'none');
+line([0 0], yLims, 'linewidth', 2, 'color', get(gca, 'XColor'))
+velData = plotDvPsth(flat, 'velVsPosition', 'isLightOn', ...
+    {'showLegend', false, 'conditionColors', colorsTemp, 'xlim', [-.5 .2], ... 
+     'errorAlpha', .1, 'lineWidth', 4});
+set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
+xlabel('position relative to nose (m)')
+ylabel('velocity (m/s)')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineVelLightOnVsLightOff');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+% get vel at moment obstacle is under nose
+atNoseInd = find(flat(1).velVsPositionX>=0,1,'first');
+noseVels = squeeze(velData(:,:,atNoseInd));
+
+fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))

@@ -51,7 +51,9 @@ if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & fl
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);
+try
 X = table2array(flat(:, predictorInds));
+catch; keyboard; end
 y = flat.(target);
 
 

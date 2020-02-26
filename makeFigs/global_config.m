@@ -6,7 +6,7 @@ axisColor = [.15 .15 .15];  % use this for black
 obsColor = [188 125 181] / 255;
 obsAlpha = .15;
 waterColor = [48 135 227]*.75 / 255;
-ctlStepColor = [.5 .5 .5];
+ctlStepColor = [1 1 1] * .4;
 barProperties = {'scatterAlpha', .5, 'barAlpha', .4, 'labelSizePerFactor', .1, ...
                  'lineThickness', 2, 'scatterColors', 'lines', 'connectDots', true, ...
                  'lineAlpha', .05, 'showBars', true};
@@ -35,9 +35,9 @@ sensColors = [both; colorWisk; colorVision; colorNone];
 m.deltaMin =.5;
 m.lightOffOnly = false;
 m.modPawOnlySwing = true;
-m.successOnly = true;
+m.successOnly = true;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
 m.predictorsAll = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
-m.predictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawXVel'};
+m.predictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawXVel'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
 m.heatmapNormalize = 'col';  % normalize row or colum to sum to 1
 decisionColors = flipud(colorme(2, 'offset', .2, 'showSamples', false)); % first entry is small step, second is big step
 preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));
