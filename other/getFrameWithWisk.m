@@ -31,7 +31,7 @@ end
 frameRun = imadjust(frameRun, s.runContrast, [0 1]);
 
 % find wisk cam alignment if not provided
-if isempty(s.yWiskPos) || isempty(s.yWiskPos) || isempty(s.yWiskPos)
+if isempty(s.yWiskPos) || isempty(s.xWiskPos) || isempty(s.wiskScaling)
     [s.yWiskPos, s.xWiskPos, s.wiskScaling] = getSubFramePosition(frameRun(:,:), frameWisk(:,:), .35:.005:.45);
 end
 yWiskPos = s.yWiskPos;
@@ -52,8 +52,13 @@ frameWisk(:, [1:s.border, end-s.border:end]) = 255;
 rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
 frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * s.isPaddingWhite);
 
+
 xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
 yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
 frame(yInds, xInds) =  frameWisk;
+
+
+
+end
 
 

@@ -16,8 +16,8 @@ if ~exist('transparency', 'var'); transparency = 1; end
 h = scatter3(xyzCoords(:, 1), xyzCoords(:, 2), xyzCoords(:, 3), size, color, 'filled');
 set(h, 'MarkerEdgeAlpha', transparency, 'MarkerFaceAlpha', transparency);
 
-xlim([0, xrange]);
-ylim([0, yrange]);
+xlim([xrange(1), xrange(2)]);
+ylim([yrange(1), yrange(2)]);
 set( gca, 'ZDir', 'reverse' );
 set(gca, 'XDir', 'normal');
 set(gca, 'YDir', 'normal');

@@ -1,4 +1,4 @@
-function [BS_crossPoint, BS_distance] = addPointsToProbe(session, LM, BSCoords, offset, shankNum, opts)
+function [BS_crossPoint, PC_crossPoint, goodChannelPoint, isStepModulated] = addPointsToProbe(session, LM, BSCoords, offset, shankNum, opts)
 
 
 if ~exist('offset', 'var'); offset = 0; end
@@ -46,6 +46,9 @@ GCShankNum = ephysChannelsInfo.GCShankNum(strcmp(session, ephysChannelsInfo.sess
 GCProbeDepth = ephysChannelsInfo.GCProbeDepth(strcmp(session, ephysChannelsInfo.session));
 GCChannels = ephysChannelsInfo.GCChannels(strcmp(session, ephysChannelsInfo.session));
 
+isStepModulated = ephysChannelsInfo.stepModulated(strcmp(session, ephysChannelsInfo.session));
+
+
 % get rid of nans 
 PCShankNum = PCShankNum(~isnan(PCShankNum));
 PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth));
@@ -53,10 +56,10 @@ PCChannels = PCChannels(~isnan(PCChannels));
 GCShankNum = GCShankNum(~isnan(GCShankNum));
 GCProbeDepth = GCProbeDepth(~isnan(GCProbeDepth));
 GCChannels = GCChannels(~isnan(GCChannels));
-
+isStepModulated = isStepModulated(~isnan(isStepModulated));
 
 % calculate the actual depth for where I got Perkinje cell signals and for channels that have
-% good signals on.
+% good signals.
 PCDepth = zeros(size(PCProbeDepth, 1), 1);
 for i = 1:length(PCProbeDepth)
     PCDepth(i, 1) = PCProbeDepth(i, 1) - probeDepth(PCChannels(i, 1), 2); 
@@ -72,8 +75,7 @@ end
 disp('adding points...');
 if ~s.noDiIMode
     
-    % the code below deals with the reconstruction of dii-coated probe traces
-    
+    % the code below deals with the reconstruction of dii-coated probe traces    
     % get avg point and direction vector from the linear model
     avg = LM.avg;
     dirV = LM.dirVect;
@@ -89,7 +91,8 @@ if ~s.noDiIMode
     % coarsely determine the location of the brain surface cross point
     disp('adding brain surface cross point...');
     MLCoord = avg(1, 1);
-    MLCoord = BSCoords(find(BSCoords(:, 1) > round(MLCoord), 1));
+    BS_MLCoords = unique(BSCoords(:, 1));
+    MLCoord = BS_MLCoords(knnsearch(BS_MLCoords, MLCoord), 1);
     inds = find(BSCoords(:, 1) == MLCoord);
     avgDVCoord = mean(BSCoords(inds, 3));
     tempDistance = (avg(1, 3) - avgDVCoord)/dirV(1, 3); % a hacky way of moving the avg point to where near the brain surface
@@ -174,13 +177,13 @@ if s.showPCPoints
     PCChannels = PCChannels(PC_inds, :);
     PCDepth = PCDepth(PC_inds, :);
     if dirV(1, 3) < 0; dirV = -dirV; end
-
+     
+    PC_crossPoint = nan(length(PCDepth), 3);
     for i = 1:length(PCDepth)
-        
-        PC_crossPoint = (PCDepth(i) + offset)*dirV + BS_crossPoint;
+        PC_crossPoint(i, :) = (PCDepth(i) + offset)*dirV + BS_crossPoint;
         hold on
-        plot3(PC_crossPoint(:, 1), PC_crossPoint(:, 2), PC_crossPoint(:, 3), '.r', 'MarkerSize', 30)   
-        points = [PC_crossPoint; BS_crossPoint];
+        plot3(PC_crossPoint(i, 1), PC_crossPoint(i, 2), PC_crossPoint(i, 3), '.r', 'MarkerSize', 30)   
+        points = [PC_crossPoint(i, :); BS_crossPoint];
         plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
     end
 
@@ -195,13 +198,15 @@ if s.showGCPoints
     inds = find(GCShankNum == shankNum);
     GCChannels = GCChannels(inds, :);
     GCDepth = GCDepth(inds, :);
+    isStepModulated = isStepModulated(inds, :);
     
+    goodChannelPoint = nan(length(GCDepth), 3);
     for i = 1:length(GCDepth)
         
-        goodChannel = (GCDepth(i) + offset)*dirV + BS_crossPoint;
+        goodChannelPoint(i, :) = (GCDepth(i) + offset)*dirV + BS_crossPoint;
         hold on
-        plot3(goodChannel(:, 1), goodChannel(:, 2), goodChannel(:, 3), '.c', 'Markersize', 30);
-        points = [goodChannel; BS_crossPoint];
+        plot3(goodChannelPoint(i, 1), goodChannelPoint(i, 2), goodChannelPoint(i, 3), '.c', 'Markersize', 30);
+        points = [goodChannelPoint(i, :); BS_crossPoint];
         plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
         
     end    

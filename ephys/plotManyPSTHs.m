@@ -32,6 +32,7 @@ end
 load(fullfile(sessionFolder, 'neuralData.mat'), 'unit_ids');
 
 for cellNum = 1:length(unit_ids)
+
     
     % !!! load cell firing rate and times
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(unit_ids))
@@ -181,7 +182,7 @@ for cellNum = 1:length(unit_ids)
             pawTouchInd = find(pawTouchBins, 1, 'first');
             if sum(pawTouchBins)>=minTouchInds
                 times(end+1) = frameTimeStamps(pawTouchInd); 
-                touchTrials = [touchTrials, i] 
+                touchTrials = [touchTrials, i]
             end
         end
         

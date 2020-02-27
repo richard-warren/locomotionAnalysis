@@ -1,4 +1,8 @@
-function linearModel = LinearFit(probeCoords)
+function linearModel = LinearFit(probeCoords, plotLines)
+
+
+if ~exist('plotLines', 'var'); plotLines = true; end
+
 
 % 3D Orthogonal Distance Regression (ODR) line, using SVD
 N = size(probeCoords, 1);
@@ -35,8 +39,9 @@ Xa=(x_min-0.05*dx)*R(:,1)' + avg;
 Xb=(x_max+0.05*dx)*R(:,1)' + avg;
 X_end=[Xa;Xb];
 
-hold on
-plot3(X_end(:,1),X_end(:,2),X_end(:,3),'-g','LineWidth',3) % best fit line
-
+if plotLines
+    hold on
+    plot3(X_end(:,1),X_end(:,2),X_end(:,3),'-g','LineWidth',3) % best fit line    
+end
 
 end

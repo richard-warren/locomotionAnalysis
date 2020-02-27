@@ -9,7 +9,7 @@ kiloSortInds = [6 8 10 12 14 16 4 2 1 3 15 13 11 9 7 5 22 24 26 28 30 32 20 18 1
 intanInds = [47 43 42 39 38 37 45 34 41 32 36 49 35 51 33 53 48 55 50 57 52 60 54 62 56 58 63 61 59 44 46 40 22 16 18 5 3 1 4 6 0 8 2 10 7 12 9 14 11 31 13 29 15 26 30 23 28 19 27 24 25 20 21 17] + 1;
 
 % get desired site locations map
-shankSeparation = 100;
+shankSeparation = 150;
 siteLocations = nan(16, 2); % start with one shank, then replicate after
 siteLocations(2:2:16,:) = cat(2, zeros(8,1), (0:46:46*7)'+23); % first column of leftmost shank
 siteLocations(1:2:15,:) = cat(2, ones(8,1)*30, (0:46:46*7)'); % second column of leftmost shank
@@ -26,12 +26,7 @@ for i = 1:64
 end
 
 % visualize final mapping results
-close all; figure('Position', [134 119 1595 807]);
-scatter(siteLocations(:,1), siteLocations(:,2))
-for i = 1:size(siteLocations,1)
-    text(siteLocations(i,1), siteLocations(i,2), [num2str(i) ' (' num2str(intanInds(kiloSortInds==i)) ')'])
-end
-daspect([1 1 1])
+
 
 
 Nchannels = 64;
@@ -52,6 +47,16 @@ fs = 30000; % sampling frequency
 connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
 save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+
+
+close all; figure('Position', [134 119 1595 807]);
+scatter(siteLocations(:,1)*0.1, siteLocations(:,2)*0.1)
+for i = 1:size(siteLocations,1)
+    text(siteLocations(i,1)*0.1, siteLocations(i,2)*0.1, [num2str(i) ' (' num2str(intanInds(kiloSortInds==i)) ')'])
+end
+daspect([1 1 1])
+
 
 
 %% NeuronexusA1x32Poly3, intan

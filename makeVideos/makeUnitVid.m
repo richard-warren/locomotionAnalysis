@@ -41,7 +41,7 @@ if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end;
 
 % set up video readers / writer
 disp('initializing...')
-vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4');
+vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run_originalDimensions.mp4');
 if ~exist(vidName, 'file'); concatTopBotVids(session); end
 vid = VideoReader(vidName);
 
@@ -206,10 +206,38 @@ for i = 1:length(trialsToShow)
     
     % get frames for trials
     for j = trialInds'
-
+        
         % get run frame with wisk frame matched to it
-        [frame, ~, ~, ~] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
-            'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false);
+%         [frame, ~, ~, ~] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
+%             'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false);
+        frameNumWisk = knnsearch(frameTimeStampsWisk, frameTimeStamps(j));
+        frameWisk = rgb2gray(read(vidWisk, frameNumWisk));
+        frameRun = rgb2gray(read(vid, j));
+%         edgeFading = 50;
+%         fade = repmat([linspace(0,1,edgeFading) ones(1,vid.Width-2*edgeFading) linspace(1,0,edgeFading)], vid.Height, 1);
+%         frameRun = uint8(double(frameRun) .* fade);
+        runContrast = [0 1];
+        frameRun = imadjust(frameRun, runContrast, [0 1]);
+        
+        frameWisk = imresize(frameWisk, wiskScaling);
+        wiskContrast = [.5 1];
+        frameWisk = imadjust(frameWisk, wiskContrast, [0 1]);
+        frameWisk = 255 - frameWisk;
+        
+        % add border to frame
+        border = 5;
+        frameWisk([1:border, end-border:end], :) = 255;
+        frameWisk(:, [1:border, end-border:end]) = 255;
+        
+        % add to run frame (currently assumes padding is not necessary on the top)
+        isPaddingWhite = false;
+        rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
+        frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * isPaddingWhite);
+        
+        
+        xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
+        yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
+        frame(yInds, xInds) =  frameWisk;
         
         
         % add trial number onto frames
@@ -217,11 +245,11 @@ for i = 1:length(trialsToShow)
         if s.vidType == 'showObsEvents'
             textString = ['trial ', num2str(trialsToShow(i))];
             RGB = insertText(frame, position, textString, 'TextColor','white');
-            frame = rgb2gray(RGB); 
+            frame = rgb2gray(RGB);
         elseif s.vidType == 'showRewardEvents'
             textString = ['Reward Trial ', num2str(trialsToShow(i))];
             RGB = insertText(frame, position, textString, 'TextColor','white');
-            frame = rgb2gray(RGB);            
+            frame = rgb2gray(RGB);
         end
      
         

@@ -45,10 +45,12 @@ ephysInfo = getSessionEphysInfo(session);
 for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
 spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
-    'xcoords', 'ycoords')
+    'xcoords', 'ycoords', 'channelNum_OpenEphys')
 
-% only for visualizatoon purpose (the spike on probe plot)
-xcoords(33:64) = 21;
+% only for visualizatoon purpose (the waveform plot)
+% xcoords(33:64) = 21;
+xcoords = xcoords*0.15;
+ycoords = ycoords*0.15;
 
 
 [allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
@@ -109,14 +111,14 @@ for c = 1:length(unit_ids)
             if firingRate>minFiringRate % don't plot average trace if rate of spikes in bin is too low, which happens when the unit is lost
                 trace = squeeze(mean(allWaveforms(timeBins==i,j,:),1));
                 plot(xcoords(j)*xSpacing + double(spkWindowInds), ...
-                    ycoords(j)*ySpacing + trace, ...
+                    ycoords(j)*ySpacing + trace*0.3, ...
                     'Color', colors(i,:), 'LineWidth', 2)
             end
         end
         if j==bestChannels(c); textColor='red'; else; textColor='black'; end
         text(double(xcoords(j)*xSpacing+spkWindowInds(1)), ...
                 ycoords(j)*ySpacing, ...
-                num2str(j), 'Color', textColor)
+                num2str(find(channelNum_OpenEphys == j)), 'Color', textColor)
     end
     set(gca, 'visible', 'off')
 
