@@ -10,13 +10,22 @@ intanInds = [47 43 42 39 38 37 45 34 41 32 36 49 35 51 33 53 48 55 50 57 52 60 5
 channelNum_OpenEphys = [42 35 33 46 54 48 34 44 52 43 36 40 50 39 37 38 57 63 59 55 41 49 47 56 45 51 60 58 62 53 64 61 1 7 9 5 15 23 10 17 13 19 8 6 11 4 3 2 29 24 20 31 18 12 22 32 21 14 26 30 25 16 28 27];
 
 % get desired site locations map
-shankSeparation = 80;
+shankSeparation = 1000;
 siteLocations = nan(16, 2); % start with one shank, then replicate after
 siteLocations(2:2:16,:) = cat(2, zeros(8,1), (0:46:46*7)'+23); % first column of leftmost shank
 siteLocations(1:2:15,:) = cat(2, ones(8,1)*30, (0:46:46*7)'); % second column of leftmost shank
 
 siteLocations = repmat(siteLocations,4,1);
-siteLocations(:,1) = siteLocations(:,1) + repelem(1:4,16)'.*shankSeparation;
+siteLocations(:,1) = siteLocations(:,1) + repelem(0:3,16)'.*shankSeparation;
+
+
+siteLocations(17:32, 2) = siteLocations(17:32, 2) - 370; 
+siteLocations(33:48, 2) = siteLocations(33:48, 2) - 370*2;
+siteLocations(49:64, 2) = siteLocations(49:64, 2) - 370*3;
+
+
+
+
 
 
 % apply channel mapping to site locations
@@ -46,7 +55,7 @@ fs = 30000; % sampling frequency
 save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
-% probe BDFD // after right most shank broken
+% probe BDFD2 // after right most shank broken
 connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
 save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'channelNum_OpenEphys', 'fs')
@@ -56,10 +65,10 @@ save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
 
 scale = 1;
 
-close all; figure('Position', [134 119 1595 807]);
+close all; figure('Color', 'white', 'Position', get(0,'ScreenSize'));
 scatter(siteLocations(:,1)*scale, siteLocations(:,2)*scale)
 for i = 1:size(siteLocations,1)
-    text(siteLocations(i,1)*scale, siteLocations(i,2)*scale, [num2str(i) ' (' num2str(intanInds(kiloSortInds==i)) ')'])
+    text(siteLocations(i,1)*scale, siteLocations(i,2)*scale, [num2str(i) ' (' num2str(intanInds(kiloSortInds==i)-1) ')'])
 end
 daspect([1 1 1])
 
@@ -134,17 +143,17 @@ channelNum_OpenEphys_shank2 = [63 61 60 58 56 54 52 50 47 51 53 55 57 59 62 64 3
 
 y = [775:-25:0]'; % y coordinates for both shanks.
 x_shank1 = repmat(1, 32, 1); % x coordinates for shankA.
-x_shank2 = repmat(251, 32, 1); % x coordinates for shankB.
+x_shank2 = repmat(1000, 32, 1); % x coordinates for shankB.
 x = [x_shank1 x_shank2]; % x coordinates for both shanks.
 sitaLocation_shank1 = [x_shank1 y];
-siteLocation_shank2 = [x_shank2 y];
+siteLocation_shank2 = [x_shank2 y-800];
 siteLocation = [sitaLocation_shank1; siteLocation_shank2]; % xy coordinates for both shanks.
 
 % plot the probe channel map
 figure;
 scatter(siteLocation(:,1), siteLocation(:,2))
 for i = 1:size(siteLocation,1)
-    text(siteLocation(i,1), siteLocation(i,2), [num2str(i) ' (' num2str(channelNum_OpenEphys(i)) ')']) 
+    text(siteLocation(i,1), siteLocation(i,2), [num2str(i) ' (' num2str(channelNum_OpenEphys(i)-1) ')']) 
 end
 
 % save the channel map for kilosort

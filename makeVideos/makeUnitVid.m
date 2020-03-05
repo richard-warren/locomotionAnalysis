@@ -18,6 +18,7 @@ s.trialsToShow = 5; % how many random trials to show if specific trial numbers a
 s.vidType = 'showObsEvents'; % choose from 'showObsEvents' and 'showRewardEvents'.
 s.specificObsTrials = []; % pick specific trials to show. Time is from obsOn to obsOff. Trial number refers to obsOn and obsOff times.
 s.specificRewardTrials = []; % pick specific trials to show. Time is reward delivery +- timeBuffer. Trial number refers to reward times.
+s.specificTimeWindows = []; % put in specific start times and end times for generating videos.
 s.timeBuffer = [2, 2]; % how many seconds before and after reward delivery to show. Default is 2s before and 2s after.
 
 s.contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
@@ -164,9 +165,24 @@ switch s.vidType
             trialsToShow = trialNum(ismember(trialNum, validTrials));
             timeEpochs = timeEpochs(trialsToShow, :);
         end
+        
+    case 'showSpecificTimeWindows'
+        timeEpochs = [];
+        timeWindows = s.specificTimeWindows;
+
+        minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
+        maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
+        for i = 1:size(timeWindows, 1)
+            if timeWindows(i, 1) < minTime || timeWindows(i, 2) > maxTime
+                disp(['WARNING: time windows ' num2str(i) ' you selected have exceeded the min/max unit time!!']);
+            else
+                timeEpochs = [timeEpochs; timeWindows(i, :)];       
+            end            
+        end
+        trialsToShow = 1:size(timeEpochs, 1);        
 end
-            
-            
+
+           
 
 
 % create video
@@ -190,72 +206,77 @@ for i = 1:length(trialsToShow)
     
     
     % update obstacle and whisker contact lines
-    if s.vidType == 'showObsEvents'
+
+    if strcmp(s.vidType, 'showObsEvents');
         if isLightOn(trialsToShow(i)); obsOnString = 'obstacle (light on)'; else; obsOnString = 'obstacle (light off)'; end
         updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
         updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
         updateTextAndLine(rewardText, rewardLine, rewardTimes)
-    else
-        updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
-        updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
+    elseif strcmp(s.vidType, 'showRewardEvents')
         updateTextAndLine(rewardText, rewardLine, rewardTimes)
     end
-    
- 
-        
+   
     
     % get frames for trials
     for j = trialInds'
         
         % get run frame with wisk frame matched to it
-%         [frame, ~, ~, ~] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
-%             'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false);
-        frameNumWisk = knnsearch(frameTimeStampsWisk, frameTimeStamps(j));
-        frameWisk = rgb2gray(read(vidWisk, frameNumWisk));
-        frameRun = rgb2gray(read(vid, j));
-%         edgeFading = 50;
-%         fade = repmat([linspace(0,1,edgeFading) ones(1,vid.Width-2*edgeFading) linspace(1,0,edgeFading)], vid.Height, 1);
-%         frameRun = uint8(double(frameRun) .* fade);
-        runContrast = [0 1];
-        frameRun = imadjust(frameRun, runContrast, [0 1]);
-        
-        frameWisk = imresize(frameWisk, wiskScaling);
-        wiskContrast = [.5 1];
-        frameWisk = imadjust(frameWisk, wiskContrast, [0 1]);
-        frameWisk = 255 - frameWisk;
-        
-        % add border to frame
-        border = 5;
-        frameWisk([1:border, end-border:end], :) = 255;
-        frameWisk(:, [1:border, end-border:end]) = 255;
-        
-        % add to run frame (currently assumes padding is not necessary on the top)
-        isPaddingWhite = false;
-        rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
-        frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * isPaddingWhite);
-        
-        
-        xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
-        yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
-        frame(yInds, xInds) =  frameWisk;
-        
+        %         [frame, ~, ~, ~] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
+        %             'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false);
+%         tic
+%         frameNumWisk = knnsearch(frameTimeStampsWisk, frameTimeStamps(j));
+%         toc
+      
+        frameNumWisk = find(frameTimeStampsWisk==frameTimeStamps(j), 1, 'first');
+        if ~isempty(frameNumWisk)
+            frameWisk = rgb2gray(read(vidWisk, frameNumWisk));
+            frameRun = rgb2gray(read(vid, j));
+            
+            edgeFading = 50;
+            fade = repmat([linspace(0,1,edgeFading) ones(1,vid.Width-2*edgeFading) linspace(1,0,edgeFading)], vid.Height, 1);
+            frameRun = uint8(double(frameRun) .* fade);
+            
+            runContrast = [0 1];
+            frameRun = imadjust(frameRun, runContrast, [0 1]);
+            
+            frameWisk = imresize(frameWisk, wiskScaling);
+            wiskContrast = [.5 1];
+            frameWisk = imadjust(frameWisk, wiskContrast, [0 1]);
+            frameWisk = 255 - frameWisk;
+            
+            % add border to frame
+            border = 5;
+            frameWisk([1:border, end-border:end], :) = 255;
+            frameWisk(:, [1:border, end-border:end]) = 255;
+            
+            % add to run frame (currently assumes padding is not necessary on the top)
+            isPaddingWhite = false;
+            rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
+            frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * isPaddingWhite);
+            
+            
+            xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
+            yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
+            frame(yInds, xInds) =  frameWisk;
+        end
+     
         
         % add trial number onto frames
         position = [10, 10];
-        if s.vidType == 'showObsEvents'
+        if strcmp(s.vidType, 'showObsEvents')
             textString = ['trial ', num2str(trialsToShow(i))];
             RGB = insertText(frame, position, textString, 'TextColor','white');
             frame = rgb2gray(RGB);
-        elseif s.vidType == 'showRewardEvents'
+        elseif strcmp(s.vidType, 'showRewardEvents')
             textString = ['Reward Trial ', num2str(trialsToShow(i))];
             RGB = insertText(frame, position, textString, 'TextColor','white');
             frame = rgb2gray(RGB);
         end
-     
+        
         
         % update frame
         set(im, 'CData', frame);
-
+        
         % get voltage
         traceStartInd = find(timeStampsSub>(frameTimeStamps(j)-s.voltageWindow), 1, 'first');
         traceInds = traceStartInd:traceStartInd+traceLength-1;
@@ -263,7 +284,7 @@ for i = 1:length(trialsToShow)
         times = timeStampsSub(traceInds)';
         set(tracePlot, 'xdata', times, 'ydata', trace);
         set(gca, 'xlim', [times(1) times(end)])
-
+        
         % get audio
         audioStartInd = find(timeStampsSub>=frameTimeStamps(j), 1, 'first');
         audio = voltageRaw(audioStartInd:audioStartInd+audioSmpsPerFrame-1)';
@@ -275,11 +296,13 @@ for i = 1:length(trialsToShow)
         elseif i==length(trialsToShow) && j==trialInds(end)
             audio = int16(double(audio) .* linspace(1,0,length(audio))'); % fade out on last sample
         end
-            
-
+        
+        
         % write to file
+   
         frame = getframe(fig);
         vidWriter(frame.cdata, audio);
+
     end
 end
 release(vidWriter);

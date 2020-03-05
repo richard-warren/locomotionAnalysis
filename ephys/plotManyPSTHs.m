@@ -178,7 +178,11 @@ for cellNum = 1:length(unit_ids)
         % get first contact for paw on each trial
         for i = 1:length(obsOnTimes)
             trialBins = frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i);
-            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
+            if size(ismember(touches, classInds), 1) == 1
+                pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds)';
+            else
+                pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
+            end
             pawTouchInd = find(pawTouchBins, 1, 'first');
             if sum(pawTouchBins)>=minTouchInds
                 times(end+1) = frameTimeStamps(pawTouchInd); 
