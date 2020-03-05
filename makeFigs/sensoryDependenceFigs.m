@@ -308,6 +308,18 @@ plotDecisionThresholds(flat, 'condition', 'sensoryCondition', 'levels', vars.sen
     'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceThresholds'));
 
+%% entropy
+heatmaps = plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'normalize', 'col', ...
+    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', true, 'plotMice', false, 'colors', sensColors, 'outcome', 'isModPawLengthened', 'xLims', [-20 15], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeatmaps'));
+ent = cellfun(@entropy, heatmaps);
+
+figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+barFancy(ent, 'levelNames', {vars.sensoryCondition.levelNames}, 'ylabel', 'landing position entropy', ...
+    'colors', sensColors, barProperties{:}, 'showBars', false, 'lineThickness', 4)
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceEntropy'), 'svg');
+
 %% lagging forepaw planting distance variability
 
 flat = flattenData(data, {'mouse', 'session', 'trial', 'sensoryCondition', 'laggingPenultKin'});
@@ -323,12 +335,10 @@ for i = 1:4
     end
 end
 
-close all
 figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 barFancy(distVar, 'levelNames', {vars.sensoryCondition.levelNames}, 'ylabel', 'planting distance variability', ...
     'colors', sensColors, barProperties{:})
 set(gca, 'YTick', 0:.5:1, 'TickDir', 'out')
-
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependencePlantingVariability'), 'svg');
 
 %% distribution of planting landing positions

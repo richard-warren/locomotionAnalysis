@@ -151,12 +151,12 @@ end
 
 % plot
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [2375.00 747.00 297.00 232.00]); hold on
-plot(1:length(m.predictorsAll), accuracies, ...
+plot(0:length(m.predictorsAll), [.5 accuracies], ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
 scatter(1:length(m.predictorsAll), accuracies, 60, predictorColors, 'filled');
 xlabel('number of features')
 ylabel('cross-validation accuracy')
-set(gca, 'XLim', [1, length(m.predictorsAll)])
+set(gca, 'XLim', [0, length(m.predictorsAll)], 'ylim', [.5 .9])
 fprintf('max accuracy: %.2f\n', max(accuracies))
 fprintf('PREDICTORS: '); fprintf('%s ', bestPredictors{:}); fprintf('\n')
 

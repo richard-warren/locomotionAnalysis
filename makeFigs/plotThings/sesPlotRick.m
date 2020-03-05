@@ -13,6 +13,7 @@ s.xvals = [];
 s.xlabel = [];
 s.ylabel = [];
 s.lineWidth = 4;
+s.compareTo = [];  % run significance tests comparing all sessions to averaged session numbers in 'compareTo'
 
 
 % initializations
@@ -40,4 +41,16 @@ if ~isempty(s.ylabel); ylabel(s.ylabel); end
 set(gca, 'TickDir', 'out')
 
 pause(.001)
+
+
+if ~isempty(s.compareTo)
+    bl = mean(data(:, s.compareTo),2);
+    for i = s.compareTo(end)+1:size(data,2)
+        [~, p] = ttest(bl, data(:,i));
+        fprintf('session %i, p: %.5f\n', i, p);
+    end
+    fprintf('\n');
+end
+
+
 

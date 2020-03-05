@@ -16,7 +16,7 @@ clear all
 
 
 %% initializations
-clear all;  % best to clear workspace before loading these super large datasets
+clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
 dataset = 'mtc_muscimol';
@@ -27,7 +27,9 @@ lateSessions = [5 7];  % min and max sessions to include in 'late' lesion sessio
 
 matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
-manipPercent = 25;  % take manipPercent percent of best matched manip trials
+manipPercent = 20;  % take manipPercent percent of best matched manip trials
+miceToExclude = {'sen11'};
+
 
 
 
@@ -92,6 +94,7 @@ end
 % load data
 fprintf(['loading ' dataset ' data... ']);
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data');
+data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
 mice = {data.data.mouse};
 
 
@@ -189,6 +192,7 @@ vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 
 vars.isContra = struct('name', 'isContra', 'levels', [0 1], 'levelNames', {{'ipsi', 'contra'}});
 conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
+conditionals.isHind = struct('name', 'isFore', 'condition', @(x) x==0);
 conditionals.isContra = struct('name', 'isContra', 'condition', @(x) x==1);
 
 colorsRaw = colors;  % keep original colors before applying following transformation
@@ -255,6 +259,8 @@ for i = 1:length(varsToMatch)
 end
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_matchedHistos' suffix1 suffix2]), 'svg');
+fprintf('%.3f of trials used in matched sub-population\n', size(flat_matched) / size(flat))
+
 
 %% bars
 
@@ -262,7 +268,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 figure('position', [2000.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, [figConditionals]);
 barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
-% set(gca, 'YTick', 0:.5:1)
+set(gca, 'YTick', 0:.5:1, 'YLim', [0,1])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_success' suffix1 suffix2]), 'svg');
 
 % velocity
@@ -294,7 +300,6 @@ dv = getDvMatrix(data, 'preObsHgt', figVars, {'mouse'}, [figConditionals]) * 100
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
 barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {figVars(1:end).levelNames}, ...
     'colors', repmat(colors,colorRepeats,1), barProperties{:}, 'showBars', false, 'lineThickness', 4)
-% set(gca, 'YTick', 0:7:14)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawHeight' suffix1 suffix2]), 'svg');
 
 % paw correlations
@@ -305,7 +310,7 @@ dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, figVars, {'mouse'}, {'session
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
 barFancy(dv, 'ylabel', 'paw-hurdle correlation', 'levelNames', {figVars.levelNames}, ...
     'colors', repmat(colors,colorRepeats,1), barProperties{:}, 'textRotation', 0)
-% set(gca, 'YTick', 0:7:14)
+set(gca, 'YTick', 0:.35:.7, 'YLim', [0,.7])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_correlations' suffix1 suffix2]), 'svg');
 
 % paw contacts
@@ -328,6 +333,16 @@ barFancy(dv, 'ylabel', 'control step height (mm)', 'levelNames', {figVars(1:end-
     'colors', repmat(colors,colorRepeats,1), barProperties{:})
 % set(gca, 'YTick', 0:7:14)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_baselineHeights' suffix1 suffix2]), 'svg');
+
+% forepaw height
+figure('position', [2000.00 100 320 328.00], 'color', 'white', 'menubar', 'none');
+figVars = [vars.isContra; vars.condition];
+if strcmp(dataset, 'senLesion'); figVars = [vars.condition]; end
+dv = getDvMatrix(data, 'preObsHgt', figVars, {'mouse'}, [figConditionals; conditionals.isFore]) * 1000;
+colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
+barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {figVars(1:end).levelNames}, ...
+    'colors', repmat(colors,colorRepeats,1), barProperties{:})
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_forepawHeight' suffix1 suffix2]), 'svg');
 
 if matchTrials
     figure('name', 'matched variables', 'position', [1997.00 838.00 659.00 195.00], 'color', 'white', 'menubar', 'none');
@@ -367,80 +382,73 @@ end
 % success
 figure('position', [2018.00 100 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'isTrialSuccess', vars.sessionsPostLesion, {'mouse'});
-if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'success rate', 'xlabel', 'sessions post lesion', ...
-    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
 set(gca, 'YLim', [0 1], 'YTick', 0:.5:1, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
 ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_succesOverSessions' suffix1 suffix2]), 'svg');
 
-% success stats
-fprintf('\nSUCCESS VS. BASELINE\n')
-bl = mean(dv(1:manipInd-1,:),1);
-for i = 1:sessionsToShow(end)+1
-    [sig, p] = ttest(bl, dv(manipInd+i-1,:));
-    fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
-end
+% body angle
+figure('position', [2018.00 200 521.00 239.00], 'color', 'white', 'menubar', 'none')
+dv = getDvMatrix(data, 'trialAngleContra', vars.sessionsPostLesion, {'mouse'});
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'body angle', 'xlabel', 'sessions post lesion', ...
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
+set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
+ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_angleOverSessions' suffix1 suffix2]), 'svg');
 
+% tail height
+figure('position', [2018.00 300 521.00 239.00], 'color', 'white', 'menubar', 'none')
+dv = getDvMatrix(data, 'tailHgt', vars.sessionsPostLesion, {'mouse'});
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'tail height', 'xlabel', 'sessions post lesion', ...
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
+set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
+ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_tailHgtOverSessions' suffix1 suffix2]), 'svg');
 
 % velocity
 figure('position', [2018.00 400 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'velAtWiskContact', vars.sessionsPostLesion, {'mouse'});
-if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'velocity (m/s)', 'xlabel', 'sessions post lesion', ...
-    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
 set(gca, 'YTick', [.2 .35 .5], 'XLim', [sessionsToShow(1) sessionsToShow(end)])
 ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_velOverSessions' suffix1 suffix2]), 'svg');
 
-% stats
-fprintf('\nVELOCITY VS. BASELINE\n')
-bl = mean(dv(1:manipInd-1,:),1);
-for i = 1:sessionsToShow(end)+1
-    [sig, p] = ttest(bl, dv(manipInd+i-1,:));
-    fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
-end
-
-
-% %% paw height
-% figure('position', [2018.00 400 521.00 239.00], 'color', 'white', 'menubar', 'none')
-% dv = getDvMatrix(data, 'preObsHgt', vars.sessionsPostLesion, {'mouse'}) * 1000;
+% forepaw height
+figure('position', [2018.00 500 521.00 239.00], 'color', 'white', 'menubar', 'none')
+dv = getDvMatrix(data, 'preObsHgt', vars.sessionsPostLesion, {'mouse'}, conditionals.isFore) * 1000;
 % if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
-% sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'average paw height (mm)', 'xlabel', 'sessions post lesion', ...
-%     'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
-% % set(gca, 'YTick', [.2 .35 .5], 'XLim', [sessionsToShow(1) sessionsToShow(end)])
-% ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
-% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawHgtOverSessions' suffix1 suffix2]), 'svg');
-% 
-% % stats
-% fprintf('\nPAW HEIGHT VS. BASELINE\n')
-% bl = mean(dv(1:manipInd-1,:),1);
-% for i = 1:sessionsToShow(end)+1
-%     [sig, p] = ttest(bl, dv(manipInd+i-1,:));
-%     fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
-% end
+sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'forepaw height (mm)', 'xlabel', 'sessions post lesion', ...
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
+set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
+ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_forepawHgtOverSessions' suffix1 suffix2]), 'svg');
 
+% hindpaw height
+figure('position', [2018.00 500 521.00 239.00], 'color', 'white', 'menubar', 'none')
+dv = getDvMatrix(data, 'preObsHgt', vars.sessionsPostLesion, {'mouse'}, conditionals.isHind) * 1000;
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'hindpaw height (mm)', 'xlabel', 'sessions post lesion', ...
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
+set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
+ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_hindpawHgtOverSessions' suffix1 suffix2]), 'svg');
 
 % correlations
-figure('position', [2018.00 700 521.00 239.00], 'color', 'white', 'menubar', 'none')
+figure('position', [2018.00 600 521.00 239.00], 'color', 'white', 'menubar', 'none')
 tempConditionals = [figConditionals; conditionals.isLeading; conditionals.isFore];
 dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.sessionsPostLesion, {'mouse'}, {'session'}, tempConditionals, 'corr'); % perform regression for each session, then average slopes across sessions for each mouse
-if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
+% if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'correlation', 'xlabel', 'sessions post lesion', ...
-    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5);
-yLims = get(gca, 'yLim');
+    'meanColor', axisColor, 'colors', 'lines', 'alpha', .5, 'compareTo', 1:manipInd);
 ln = line([.5 .5], [0 1], 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
-set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)], 'YLim', yLims)
+set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)], 'ylim', [0 .8])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_corrOverSessions' suffix1 suffix2]), 'svg');
-
-% stats
-fprintf('\nCORRS VS. BASELINE\n')
-bl = mean(dv(1:manipInd-1,:),1);
-for i = 1:sessionsToShow(end)+1
-    [sig, p] = ttest(bl, dv(manipInd+i-1,:));
-    fprintf('session %i p: %.5f\n', sessionsToShow(manipInd+i-1), p);
-end
-
 
 %% success over days post wisk trim
 

@@ -27,7 +27,8 @@ distances = abs(repmat(p(isManip),1,length(ctlInds)) - p(~isManip)');  % rows ar
 
 % greedy search for matched pairs (would be better to replace with hungarian algorithm...)
 distancesTemp = distances;
-pairNum = floor(s.percentileThresh/100*length(manipInds));  % find the most closely matched pairNum pairs
+% pairNum = floor(s.percentileThresh/100*length(manipInds));  % find the most closely matched pairNum pairs
+pairNum = floor(size(X,1)*s.percentileThresh/100/2);
 pairs = nan(pairNum, 2); % numPairs X 2, where columns are control and manip inds
 
 for i = 1:pairNum

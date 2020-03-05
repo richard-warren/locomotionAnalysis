@@ -1,4 +1,4 @@
-function plotDecisionHeatmaps(flat, varargin)
+function heatmaps = plotDecisionHeatmaps(flat, varargin)
 
 
 % settings
