@@ -1,4 +1,4 @@
-function logPlotRick(x, y, opts)
+function logPlotRick(x, y, varargin)
 
 % plots probability of logical variable being true (y axis) as function of
 % scalar (x axis) // x and y are the scalar and logical variable,
@@ -32,8 +32,8 @@ s.computeVariance = false; % if true, computes variance of y instead of y
 
 
 % reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
-% keyboard
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end
+
 
 % initializations
 if ischar(s.colors); s.colors = eval([s.colors '(max(s.conditions))']); end % set colorspace if color is specified as a string

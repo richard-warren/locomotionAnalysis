@@ -120,8 +120,8 @@ plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
 %% forward feature selection
 
 % settings
-kFolds = 10;
-
+rng(0);  % set initialization seed
+kFolds = 15;
 
 % initializations
 bestPredictors = {};
@@ -186,11 +186,11 @@ randBins = false(1, length(flat_sub));
 randBins(randInds) = true;
 
 for r = 1:sz
-    x_row = [flat_sub.(bestPredictors{r})];
+    x_row = [flat_sub.(m.predictors{r})];
     lims_row = prctile(x_row, percentileLims);
     
     for c = 1:sz
-        x_col = [flat_sub.(bestPredictors{c})];
+        x_col = [flat_sub.(m.predictors{c})];
         lims_col = prctile(x_col, percentileLims);
         
         subplot(sz, sz, (r-1)*sz + c); hold on
@@ -206,12 +206,15 @@ for r = 1:sz
             % add to second figure that has only histograms, no scatters
             set(0, 'CurrentFigure', f2)
             subplot(1,maxPlots,r); hold on
-            histogram(x_row([flat_sub.(outcome)]~=1), edges, ...
-                'FaceColor', decisionColors(1,:));
-            histogram(x_row([flat_sub.(outcome)]==1), edges, ...
-                'FaceColor', decisionColors(2,:));
-            title(bestPredictors{r}, 'Color', predictorColors(r,:), 'Interpreter', 'none');
-            set(gca, 'XLim', lims_col, 'Box', 'off', 'XTick', [], 'YTick', [])
+%             histogram(x_row([flat_sub.(outcome)]~=1), edges, ...
+%                 'FaceColor', decisionColors(1,:));
+%             histogram(x_row([flat_sub.(outcome)]==1), edges, ...
+%                 'FaceColor', decisionColors(2,:));
+            logPlotRick(x_row, [flat_sub.(outcome)], ...
+                'binWidth', .1*diff(lims_col), 'colors', predictorColors(r,:), 'xlim', lims_col);
+            set(gca, 'XLim', lims_col, 'Box', 'off', 'XTick', [], 'YLim', [0,1], 'YTick', 0:.5:1)
+            if c==1; ylabel('lengthen probability'); end
+            xlabel(m.predictors{r});
             set(0, 'CurrentFigure', f1)
 
         
@@ -230,10 +233,10 @@ for r = 1:sz
         % pimp fig
         set(gca, 'XTick', [], 'YTick', [])
         if c==1
-            ylabel(bestPredictors{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
+            ylabel(m.predictors{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
         end
         if r==sz
-            xlabel(bestPredictors{c}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
+            xlabel(m.predictors{c}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
         end
     end
     pause(.001)

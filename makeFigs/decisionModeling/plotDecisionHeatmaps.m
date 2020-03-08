@@ -89,7 +89,7 @@ end
 
     
 % make plots
-if s.plotMice; rows = 1+length(mice); else; rows = 1; end
+if (s.plotMice && s.avgMice); rows = 1+length(mice); else; rows = 1; end
 figure('Color', 'white', 'Position', [2000 10 300*(length(s.levels)+1) 150*rows], 'MenuBar', 'none');
 colormap(s.colormap)
 
@@ -133,7 +133,7 @@ end
 
 
 % mouse plots
-if s.plotMice    
+if (s.plotMice && s.avgMice)
     for m = 1:length(mice)
 
         % heatmaps

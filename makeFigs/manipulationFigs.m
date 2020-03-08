@@ -19,13 +19,13 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_muscimol';
+dataset = 'senLesion';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 3];  % min and max sessions to include in 'early' lesion sessions
 lateSessions = [5 7];  % min and max sessions to include in 'late' lesion sessions
 
-matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
+matchTrials = false;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 20;  % take manipPercent percent of best matched manip trials
 miceToExclude = {'sen11'};
@@ -514,25 +514,35 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 
 %% decision making
-
 flat = flattenData(data, ...
     [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw'}]);
 
 %% heatmaps
-plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'avgMice', true, 'plotMice', true, 'colors', sensColors, 'outcome', 'isModPawLengthened', ...
+plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
+    'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', false, 'plotMice', false, 'colors', colors, 'outcome', 'isModPawLengthened', ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heatMaps' suffix1 suffix2]));
+
+%% entropy
+heatmaps = plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
+    'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', true, 'plotMice', false, 'colors', colors, 'outcome', 'isModPawLengthened');
+ent = cellfun(@entropy, heatmaps);
+
+figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+barFancy(ent, 'levelNames', {vars.condition.levelNames}, 'ylabel', 'landing position entropy', ...
+    'colors', sensColors, barProperties{:}, 'showBars', false, 'lineThickness', 4)
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceEntropy'), 'svg');
 
 %% trials scatters
 plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
     'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', decisionColors, ...
+    'rowColors', colors, 'xLims', [-.11 .06], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionKin' suffix1 suffix2]));
 
 %% model accuracies
 accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [1 2], ...
-    'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, 'kFolds', 5, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', colors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_models' suffix1 suffix2]));
@@ -543,8 +553,31 @@ plotDecisionThresholds(flat, 'condition', 'condition', 'levels', vars.condition.
     'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_thresholds' suffix1 suffix2]));
 
+%% show predictor variables
+
+plotDims = [2,2];  % dimensions of subplot grid
+maxPlots = 4;  % only show top maxPlots of all predictors
 
 
+% get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
+[~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'plot', false, 'kFolds', 10);
+predictorColors = hsv(length(m.predictorsAll));
 
+figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750.00 200.00 160*plotDims(2) 160*plotDims(1)*.9]);
+conditions = strcmp({flat_sub.condition}, vars.condition.levels{2})+1;  % 1 is control, 2 is manipulated
+
+for i = 1:maxPlots
+    subplot(plotDims(1), plotDims(2), i); hold on
+    xLims = prctile([flat_sub.(m.predictors{i})], [5 95]);
+    logPlotRick([flat_sub.(m.predictors{i})], [flat_sub.isModPawLengthened], ...
+        'binWidth', .1*diff(xLims), 'colors', colors, 'xlim', xLims, 'conditions', conditions);
+    set(gca, 'XLim', xLims, 'Box', 'off', 'XTick', [], 'YLim', [0,1], 'YTick', 0:.5:1)
+    if i==1; ylabel('lengthen probability'); end
+    xlabel(m.predictors{i});
+end
+
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_predictors' suffix1 suffix2]), 'svg');
 
 
