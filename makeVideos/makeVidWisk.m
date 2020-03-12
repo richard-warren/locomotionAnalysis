@@ -1,6 +1,4 @@
-function makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProportion, trialLabels, trialInds)
-
-% !!! need to document
+function makeVidWisk(vidName, session, varargin)
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
 % kept and everything else is edited out. obsPosRange is in m and defines
@@ -10,83 +8,55 @@ function makeVidWisk(vidName, session, obsPosRange, playBackSpeed, trialProporti
 
 
 % settings
-maxTrialTime = 10; % trials exceeding maxTrialTime will be trimmed to this duration (s)
-border = 4; % thickness (pixels) to draw around the wisk frame
-scalings = .35 : .005 : .45; % the whisker vid is scaled by all of these values, and the scale that maximizes the correlation between the images is kept
-contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
+s.maxTrialTime = 10;  % (s) trials exceeding maxTrialTime will be trimmed to this duration
+s.border = 4;  % (pidels) thickness of border surrounding whisker frame
+s.contrastLims = [.1 .9];  % (0->1) contrast limits for video
 
-includeWiskCam = true;
-includeWebCam = false;
-showPawTouches = true;
-showTrialInfo = false;
-showWiskTouches = true;
-showObsOn = false;
+s.includeWiskCam = true;  % whether to add whisker camera
+s.showPawTouches = true;  % whether to color the frame when a paw contact occurs
+s.showTrialInfo = false;  % whether to show trial metadata as text
+s.showWiskTouches = true;  % whether to highlight when whisker contact occurs
+s.showObsOn = false;  % whether to add text showing when obs turns on
+
+s.obsPosRange = [-.05 .1];  % (m) for each trial, show when obs is within this range of the mouse's nose
+s.playBackSpeed = .15;  % fraction of real time speed for playback
+s.trialLabels = {};  % cell array of trial labels - can be useful for distinguishing different trial types // if providing trialLabels, you also need to provide 'trials', a list of the trial numbers you would like to show
+
+s.trialNum = 10;  % number of trials (evenly spaced throughout session) to show
+s.trials = [];  % array of specific trials to show // if provided, s.trialNum is ignored
+
 
 
 % initializations
-vidTop = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runTop.mp4']);
-vidBot = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runBot.mp4']);
-if includeWiskCam; vidWisk = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\runWisk.mp4']); end
-if includeWebCam; vidWeb = VideoReader([getenv('OBSDATADIR') 'sessions\' session '\webCam.avi']); end
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
+vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
+if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
 
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'obsPositionsFixed', 'obsTimes', 'obsPixPositions',...
-                                            'wheelPositions', 'wheelTimes', 'isLightOn', ...
-                                            'obsOnTimes', 'obsOffTimes',...
-                                            'frameTimeStamps', 'frameTimeStampsWisk', 'webCamTimeStamps', 'nosePos');
-obsPositions = obsPositionsFixed;
-if showPawTouches
-    load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
-        'touches', 'touchClassNames', 'touchesPerPaw')
-%     ventralClassBins = find(contains(touchClassNames, 'ventral'));
-%     isTouchingVentral = ismember(touches, ventralClassBins);
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+    'obsPositionsFixed', 'obsTimes', 'obsPixPositions', 'wheelPositions', 'wheelTimes', 'isLightOn', ...
+    'obsOnTimes', 'frameTimeStamps', 'frameTimeStampsWisk');
+
+if s.showPawTouches
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'touchesPerPaw')
     isTouching = any(touchesPerPaw,2);
 end
-if showWiskTouches; load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], 'wiskContactFrames'); end
-% if ~exist('obsPixPositions', 'var')
-%     obsPositions = fixObsPositionsHacky(obsPositions);
-% else
-%     obsPositions = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
-% end
+
+if s.showWiskTouches; load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'wiskContactFrames'); end
 
 
 % get position where wisk frame should overlap with runTop frame
-if includeWiskCam
-    
-    obsInWiskCamInds = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width);
-    
-    % find first time point at which both wisk and run cams have a frame and obs is in wisk cam
-    for i = obsInWiskCamInds
-        wiskInd = find(frameTimeStampsWisk==frameTimeStamps(i));
-        if ~isempty(wiskInd)
-            topInd = i;
-            break;
-        end
-    end
-
-    frameTop = rgb2gray(read(vidTop, topInd));
-    frameWisk = rgb2gray(read(vidWisk, wiskInd));
-    
-    [yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, scalings);
-    smpWiskFrame = imresize(frameWisk, wiskScaling);
-end
-
-
-
-
-if includeWebCam
-    frameDim = round([vidTop.Height + vidBot.Height, ...
-        vidBot.Width + (vidWeb.Width * ((vidBot.Height+vidTop.Height)/vidWeb.Height)), 3]);
-    webDim = [vidBot.Height+vidTop.Height, frameDim(2) - vidBot.Width];
-elseif includeWiskCam
-    frameDim = round([vidTop.Height + vidBot.Height, ...
-        xWiskPos+size(smpWiskFrame,2), 3]);
+if s.includeWiskCam
+    [frame, yWiskPos, xWiskPos, wiskScaling] = ...
+        getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, find(frameTimeStamps>obsOnTimes(1), 1, 'first'));  % use first frame where obstacle is on to ensure mouse is on the wheel when the whisker cam position is determined
 else
-    frameDim = [vidTop.Height + vidBot.Height, vidBot.Width, 3];
+    frame = read(vid, 1);
 end
+frameDim = [size(frame,1) size(frame,2) 3];
 
+
+% determine video settings
 vidSetting = 'MPEG-4';
-
-fps = round(vidTop.FrameRate * playBackSpeed);
+fps = round(vid.FrameRate * s.playBackSpeed);
 maxFps = 150; % fps > 150 can be accomplished using 'Motion JPEG AVI' as second argument to VideoWriter, but quality of video is worse
 
 if fps>maxFps
@@ -100,147 +70,85 @@ if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
 
 
+% determine trials to include
+textprogressbar([session ': editing video...']);
+
+if isempty(s.trials)
+    s.trials = floor(linspace(1, length(obsOnTimes), min(s.trialNum, length(obsOnTimes))));
+end
+
 
 
 
 % edit video
-textprogressbar([session ': editing video...']);
-if trialProportion<=1
-    trials = 1 : round(1/trialProportion) : length(obsOnTimes);
-else
-    trials = trialProportion; % if trialProportion is a vector, just use these as the trials to use!
-end
-
-
-for i = trials
+for i = s.trials
     
-    % find trial indices
-%     keyboard
-%     startInd = find(obsTimes>obsOnTimes(i)  & obsPositions>=obsPosRange(1), 1, 'first');
-%     endInd   = find(obsTimes<obsOffTimes(i) & obsPositions<=obsPosRange(2), 1, 'last');
-    
-    obsAtNoseTime = obsTimes(find(obsPositions>=0 & obsTimes>obsOnTimes(i), 1, 'first'));
+    % find trial inds
+    obsAtNoseTime = obsTimes(find(obsPositionsFixed>=0 & obsTimes>obsOnTimes(i), 1, 'first'));
     obsAtNosePos = wheelPositions(find(wheelTimes>=obsAtNoseTime,1,'first'));
-    inds = find((wheelPositions > obsAtNosePos+obsPosRange(1)) & (wheelPositions < obsAtNosePos+obsPosRange(2)));
+    inds = find((wheelPositions > obsAtNosePos+s.obsPosRange(1)) & (wheelPositions < obsAtNosePos+s.obsPosRange(2)));
     startInd = inds(1);
     endInd = inds(end);
+    endTime = min(wheelTimes(startInd)+s.maxTrialTime, wheelTimes(endInd));
+    trialInds = find(frameTimeStamps>wheelTimes(startInd) & frameTimeStamps<endTime);
     
-%     trialPos = g.sesData.wheelPositions(trialBins) - obsAtNosePos; % normalize s.t. 0 corresponds to the position at which the obstacle is at the mouse's nose
-%     trialVel = g.wheelVel(trialBins); % wheel vel for trial
     
-    % get frame indices
-    endTime = min(wheelTimes(startInd)+maxTrialTime, wheelTimes(endInd));
-    frameInds = find(frameTimeStamps>wheelTimes(startInd) & frameTimeStamps<endTime);
-    
-    if isempty(frameInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
+    if isempty(trialInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
         fprintf('skipping trial %i\n', i)
     else
         
-        % get webCame frame indices
-        if includeWebCam
-            webFrameInds = find(webCamTimeStamps>wheelTimes(startInd) & webCamTimeStamps<endTime);
-            webFrames = read(vidWeb, [webFrameInds(1) webFrameInds(end)]);
-            webFrames = squeeze(webFrames(:,:,1,:)); % collapse color dimension
-
-            % interpolate webFrames to number of inds in frameInds
-            webFramesInterp = interp1(webCamTimeStamps(webFrameInds), 1:length(webFrameInds), frameTimeStamps(frameInds), 'nearest', 'extrap');
-        end
-
-        for j = 1:length(frameInds)
+        for j = trialInds'
             
-            frame = uint8(zeros(frameDim));
-            
-            % top
-            frameTop = rgb2gray(read(vidTop, frameInds(j)));
-            frameTop = imadjust(frameTop, contrastLims, [0 1]);
-            frame(1:vidTop.Height, 1:vidTop.Width, :) = repmat(frameTop,1,1,3);
-            
-            % bot
-            frameBot = rgb2gray(read(vidBot, frameInds(j)));
-            frameBot = imadjust(frameBot, contrastLims, [0 1]);
-            frame(vidTop.Height+1:end, 1:vidBot.Width, :) = repmat(frameBot,1,1,3);
+            if s.includeWiskCam
+                frame = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
+                    'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, ...
+                    'runContrast', s.contrastLims);
+                frame = repmat(frame, 1, 1, 3);  % add color dimension
+            else
+                frame = read(vid, j);
+            end
             
             % change color of frame if touching
-            if showPawTouches
-                if isTouching(frameInds(j))
+            if s.showPawTouches
+                if isTouching(j)
                 	frame(:,:,3) = frame(:,:,3)*.2;
                 end
             end
             
-            % wisk
-            if includeWiskCam
-                wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
-
-                if ~isempty(wiskFrameInd) % timeDif < .01 % only write wisk frame if it is temporally close to run frame
-
-                    % get wisk frame
-                    frameWisk = rgb2gray(read(vidWisk, wiskFrameInd));
-
-                    % resize, adjust contrast, and draw border
-                    frameWisk = imresize(frameWisk, wiskScaling);
-                    frameWisk = imadjust(frameWisk, [.5 1], [0 1]);
-                    frameWisk = 255 - frameWisk;
-                    frameWisk([1:border, end-border:end], :) = 255;
-                    frameWisk(:, [1:border, end-border:end]) = 255;
-
-                    frameWisk = repmat(frameWisk,1,1,3);
-                    if showWiskTouches
-                        if wiskFrameInd>=wiskContactFrames(i) && ...
-                                obsPixPositions(frameInds(j))>=xWiskPos && ...
-                                wiskContactFrames(i)>0 % make sure it doesn't stay yellow after the obstacle is out of the wisk cam
-                            frameWisk(:,:,3) = frameWisk(:,:,3) * .2;
-                        end
-                    end
-
-                    % incorporate into frame
-                    frame(yWiskPos:yWiskPos+size(frameWisk,1)-1, xWiskPos:xWiskPos+size(frameWisk,2)-1, :) = frameWisk;
-                end
-            end
-            
-            % webCam
-            if includeWebCam
-                frameWeb = webFrames(:,:,webFramesInterp(j));
-                frameWeb = imresize(frameWeb, webDim);
-                frame(:, vidBot.Width+1:end, :) = repmat(frameWeb,1,1,3);
-            end
-            
-                        
             % add trial info text
-            if showTrialInfo
+            if s.showTrialInfo
                 if isLightOn(i); lightText = 'light on'; else; lightText = 'light off'; end
-                wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(frameInds(j)), 1, 'first');
+                wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(j), 1, 'first');
                 framesFromContact = nan;
                 if ~isempty(wiskFrameInd); framesFromContact = wiskFrameInd - wiskContactFrames(i); end
-                wiskFrameInd>=wiskContactFrames(i);
                 text = sprintf('%s, trial %i, touch frames %i, %s, %i', ...
-                    session, i, sum(isTouching(frameInds)), lightText, framesFromContact);
+                    session, i, sum(isTouching(trialInds)), lightText, framesFromContact);
                 frame = insertText(frame, [size(frame,2) size(frame,1)], text,...
                                    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
             end
             
-            % add trial condition info
-            if exist('trialLabels', 'var')
-                if trialInds(i)==1
-                    boxColor = 'yellow';
-                    textColor = 'white';
-                else
-                    boxColor = 'blue';
-                    textColor = 'white';
-                end
-                frame = insertText(frame, [size(frame,2), 0], trialLabels{trialInds(i)},...
-                                   'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
-                frame = insertText(frame, [size(frame,2), size(frameTop,1)+size(frameBot,1)], trialLabels{trialInds(i)},...
-                                   'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
-            end
+%             % add trial condition info
+%             if ~isempty(s.trialLabels)
+%                 if trialInds(i)==1
+%                     boxColor = 'yellow';
+%                     textColor = 'white';
+%                 else
+%                     boxColor = 'blue';
+%                     textColor = 'white';
+%                 end
+%                 frame = insertText(frame, [size(frame,2), 0], trialLabels{trialInds(i)},...
+%                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
+%                 frame = insertText(frame, [size(frame,2), size(frameTop,1)+size(frameBot,1)], trialLabels{trialInds(i)},...
+%                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
+%             end
             
             % show when obstacle turns on
-            if showObsOn
-                if frameTimeStamps(frameInds(j))>=obsOnTimes(i)
+            if s.showObsOn
+                if frameTimeStamps(j)>=obsOnTimes(i)
                     frame = insertText(frame, [0 size(frame,1)], 'OBSTACLE ON', 'BoxOpacity', 1, ...
                                    'BoxColor', 'white', 'anchorpoint', 'LeftBottom', 'textcolor', 'black');
                 end
             end
-                        
 
             % write frame to video
             writeVideo(vidWriter, frame);
