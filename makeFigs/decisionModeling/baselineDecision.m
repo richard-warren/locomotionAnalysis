@@ -1,5 +1,5 @@
 %% load experiment data
-fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+tic; fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!'); toc
 
 % settings
 outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened

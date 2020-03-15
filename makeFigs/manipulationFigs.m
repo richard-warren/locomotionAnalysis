@@ -93,7 +93,7 @@ end
 
 % load data
 fprintf(['loading ' dataset ' data... ']);
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data');
+tic; load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data'); toc
 data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
 mice = {data.data.mouse};
 
