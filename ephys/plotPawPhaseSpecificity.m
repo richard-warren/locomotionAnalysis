@@ -4,6 +4,7 @@ function plotPawPhaseSpecificity(session, unit_id, paw_id, opts)
 s.folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'pawPhaseSpecificity');  % folder in which the plots will be saved
 s.phaseMode = 'stance'; % indicate the plot should focus on swing start time points or stance start time points
 s.stepPercentiles = [30 70]; % only include steps with durations in between these percentile limits
+s.plotStepWindow = 0.2; % unit in second. 
 s.pawNames = {'LH', 'LF', 'RF', 'RH'};
 s.pawColors = hsv(4);
 s.mainColor = [.8 .4 1];
@@ -60,84 +61,176 @@ end
 
 % get swing start and end times for targer paw
 swingStartInds = find(diff(~stanceBins(:,targetPaw))==1);
-swingStartTimes = frameTimeStamps(swingStartInds(1:end-1));
-stanceStartTimes = frameTimeStamps(swingStartInds(2:end)-1);
-swingStanceTimes = cat(2, swingStartTimes, stanceStartTimes);
-swingStanceTimes = swingStanceTimes(~isnan(sum(swingStanceTimes,2)),:); % remove nan entries
+swingStartTimes = frameTimeStamps(swingStartInds);
+validBins = find(swingStartTimes > unit_startTime & swingStartTimes < unit_endTime);
+validSwingTimes = swingStartTimes(validBins);
 
-% only take steps in middle of duration distribution
-durations = swingStanceTimes(:, 2) - swingStanceTimes(:, 1);
-durationLimits = prctile(durations, s.stepPercentiles);
-validInds = find(durations>durationLimits(1) & durations<durationLimits(2));
-validSwingStartTimes = swingStartTimes(validInds, :);
-validStanceStartTimes = stanceStartTimes(validInds, :);
-validSwingStanceTimes = swingStanceTimes(validInds, :);
 
-% bin steps by unit spk time
-validInds = find(validSwingStartTimes >= unit_startTime & validStanceStartTimes <= unit_endTime);
-validSwingStartTimes = swingStartTimes(validInds, :);
-validStanceStartTimes = stanceStartTimes(validInds, :);
-validSwingStanceTimes = swingStanceTimes(validInds, :);
+
+stanceStartInds = find(diff(stanceBins(:,targetPaw))== 1);
+stanceStartTimes = frameTimeStamps(stanceStartInds);
+validBins = find(stanceStartTimes > unit_startTime & stanceStartTimes < unit_endTime);
+validStanceTimes = stanceStartTimes(validBins);
+
+
+if validSwingTimes(1) < validStanceTimes(1)   
+    if length(validSwingTimes) ~= length(validStanceTimes)
+        validSwingTimes(end) = [];
+    end    
+    
+else 
+    validStanceTimes(1) = [];
+    
+    if length(validSwingTimes) ~= length(validStanceTimes)
+        validSwingTimes(end) = [];
+    end
+end  
+     
+
+validSwingStanceTimes = cat(2, validSwingTimes, validStanceTimes);
+validSwingStanceTimes = validSwingStanceTimes(~isnan(sum(validSwingStanceTimes,2)),:); % remove nan entries
+
+
+
+
 
 % bin steps by velocity
 validInds = [];
-for i = 1:length(validSwingStartTimes)-1
-    avgVel = mean(vel(velTimeStamps >= validSwingStartTimes(i) & velTimeStamps <= validSwingStartTimes(i+1)));
+for i = 1:length(validSwingTimes)-1
+    avgVel = mean(vel(velTimeStamps >= validSwingTimes(i) & velTimeStamps <= validSwingTimes(i+1)));
     if avgVel >= 0.3
         validInds = [validInds; i];
     end
 end
 
-validSwingStartTimes = swingStartTimes(validInds, :);
-validStanceStartTimes = stanceStartTimes(validInds, :);
-validSwingStanceTimes = swingStanceTimes(validInds, :);
+validSwingStanceTimes = validSwingStanceTimes(validInds, :);
 
 
 
 
+% only take steps in middle of duration distribution
+durations = validSwingStanceTimes(:, 2) - validSwingStanceTimes(:, 1);
+durationLimits = prctile(durations, s.stepPercentiles);
+validInds = find(durations>durationLimits(1) & durations<durationLimits(2));
+validSwingStanceTimes = validSwingStanceTimes(validInds, :);
 
-% get swing start and end times for the diagnal paw, which is in phase with
-% the target paw
+
+% only take durations that are less than 0.5s
+durations = validSwingStanceTimes(:, 2) - validSwingStanceTimes(:, 1);
+validInds = find(durations < 0.5);
+validSwingStanceTimes = validSwingStanceTimes(validInds, :);
+
+
+ % get swing start and end times for the diagnal paw, which is in phase with the target paw
+
 swingStartInds_d = find(diff(~stanceBins(:,diagPaw))==1);
-swingStartTimes_d = frameTimeStamps(swingStartInds_d(1:end-1));
-stanceStartTimes_d = frameTimeStamps(swingStartInds_d(2:end)-1);
-swingStanceTimes_d = cat(2, swingStartTimes_d, stanceStartTimes_d);
-swingStanceTimes_d = swingStanceTimes_d(~isnan(sum(swingStanceTimes_d,2)),:); % remove nan entries
+swingStartTimes_d = frameTimeStamps(swingStartInds_d);
+validBins = find(swingStartTimes_d > unit_startTime & swingStartTimes_d < unit_endTime);
+validSwingTimes_d = swingStartTimes_d(validBins);
 
-validInds_d = knnsearch(swingStanceTimes_d(:, 1), validSwingStanceTimes(:, 1));
-validSwingStanceTimes_d = swingStanceTimes_d(validInds_d, :);
+stanceStartInds_d = find(diff(stanceBins(:,diagPaw))== 1);
+stanceStartTimes_d = frameTimeStamps(stanceStartInds_d);
+validBins = find(stanceStartTimes_d > unit_startTime & stanceStartTimes_d < unit_endTime);
+validStanceTimes_d = stanceStartTimes_d(validBins);
 
+if validSwingTimes_d(1) < validStanceTimes_d(1)   
+    if length(validSwingTimes_d) ~= length(validStanceTimes_d)
+        validSwingTimes_d(end) = [];
+    end    
+    
+else 
+    validStanceTimes_d(1) = [];
+    
+    if length(validSwingTimes_d) ~= length(validStanceTimes_d)
+        validSwingTimes_d(end) = [];
+    end
+end 
+
+validSwingStanceTimes_d = cat(2, validSwingTimes_d, validStanceTimes_d);
+validSwingStanceTimes_d = validSwingStanceTimes_d(~isnan(sum(validSwingStanceTimes_d,2)),:); % remove nan entries
+
+
+
+
+
+% Plot the raster!
 
 switch s.phaseMode
-    case 'stance'
-        % get the phase offset b/w target limb and its diagnal limb
-        phaseOffset = validSwingStanceTimes(:, 2) - validSwingStanceTimes_d(:, 2);
-        phaseOffset = phaseOffset(1:end-1);
-        [stepPhaseOffset, stepID] = sort(phaseOffset);
-        temp = [validSwingStartTimes(1:end-1), validStanceStartTimes(1:end-1), validSwingStartTimes(2:end)];
-        temp = temp - validStanceStartTimes(1:end-1);
+    case 'stance'       
         
-        % get the spike times for every valid swing stance cycle
-        % and PLOT!!!
+        % get matched steps for the diagnal paw
+        validInds_d = knnsearch(validSwingStanceTimes_d(:, 2), validSwingStanceTimes(:, 2));
+        validSwingStanceTimes_d = validSwingStanceTimes_d(validInds_d, :);
         
+        
+        % exclude steps that diagnal paw duration is bigger than 0.5s
+        durations_d = validSwingStanceTimes_d(:, 2) - validSwingStanceTimes_d(:, 1);
+        validInds = find(durations_d < 0.5);
+        validSwingStanceTimes = validSwingStanceTimes(validInds, :);
+        validSwingStanceTimes_d = validSwingStanceTimes_d(validInds, :);
+               
+        
+        % plot #1: focus on the target paw
         fprintf('%s: plotting unit %i', session, unit_id)
         figure('name', sprintf('%s - unit %i', session, unit_id), ...
-        'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', get(0,'ScreenSize')); hold on
+            'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', get(0,'ScreenSize')); hold on
+               
+        % get the phase offset b/w target limb and its diagnal limb
+        phaseOffset = validSwingStanceTimes(:, 2) - validSwingStanceTimes_d(:, 2);
+        % get times for plotting spikes        
+        times = [validSwingStanceTimes(:, 2) - s.plotStepWindow, validSwingStanceTimes(:, 2) + s.plotStepWindow];
         
-        for i = 1:length(validSwingStartTimes)-1
-            stepSpikeTimes = unit_spkTimes(unit_spkTimes > validSwingStanceTimes(i, 1) & unit_spkTimes < validSwingStanceTimes(i+1, 1));
+        
+        for i = 1:length(validSwingStanceTimes)
+            stepSpikeTimes = unit_spkTimes(unit_spkTimes > times(i, 1) & unit_spkTimes < times(i, 2));
             xValue = stepSpikeTimes - validSwingStanceTimes(i, 2);
-            y = stepPhaseOffset(find(stepID == i)); % unit:second
+            y = phaseOffset(i); % unit:second
             yValue = repmat(y, size(xValue, 1), 1);
             
             scatter(xValue, yValue, s.markerSize, '.k');
-       
-%             xlabel('stance start');
-%             ylabel('diagonal paw phase offset');
             
-            
+%             s.XLabel = 'target paw stance start time';
+%             s.YLabel = 'diagonal paw stance time offset';
+                      
         end
-
+        % save
+        fileName = fullfile(s.folder, strcat(session, '_unit', num2str(unit_id), '_paw_', s.pawNames{paw_id}));
+        % savefig(fileName)      
+        saveas(gcf, strcat(fileName, '.png'))
+        disp('file saved');
+        
+        
+        
+         % plot #2: focus on the diagnal paw
+        fprintf('%s: plotting unit %i', session, unit_id)
+        figure('name', sprintf('%s - unit %i - diagnal paw', session, unit_id), ...
+            'color', 'white', 'MenuBar', 'none', 'units', 'pixels', 'position', get(0,'ScreenSize')); hold on
+               
+        % get the phase offset b/w target limb and its diagnal limb
+        phaseOffset = validSwingStanceTimes_d(:, 2) -  validSwingStanceTimes(:, 2);
+        % get times for plotting spikes        
+        times = [validSwingStanceTimes_d(:, 2) - s.plotStepWindow, validSwingStanceTimes_d(:, 2) + s.plotStepWindow];
+        
+        
+        for i = 1:length(validSwingStanceTimes)
+            stepSpikeTimes = unit_spkTimes(unit_spkTimes > times(i, 1) & unit_spkTimes < times(i, 2));
+            xValue = stepSpikeTimes - validSwingStanceTimes_d(i, 2);
+            y = phaseOffset(i); % unit:second
+            yValue = repmat(y, size(xValue, 1), 1);
+            
+            scatter(xValue, yValue, s.markerSize, '.k');
+            
+%             s.XLabel = 'diagnal paw stance start time';
+%             s.YLabel = 'target paw stance time offset';
+                      
+        end
+        % save
+        fileName = fullfile(s.folder, strcat(session, '_unit', num2str(unit_id), '_paw_', s.pawNames{diagPaw}));
+        % savefig(fileName)
+        saveas(gcf, strcat(fileName, '.png'))
+        disp('file saved');
+        
+        
 end
 
 

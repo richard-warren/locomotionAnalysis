@@ -49,8 +49,8 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile
 
 % only for visualizatoon purpose (the waveform plot)
 % xcoords(33:64) = 21;
-xcoords = xcoords*0.15;
-ycoords = ycoords*0.15;
+xcoords = xcoords*0.25;
+ycoords = ycoords*0.25;
 
 
 [allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
@@ -105,7 +105,7 @@ for c = 1:length(unit_ids)
     colors = getColors(timeBinNum, cellColors(c,:));
     sameShankInds = find(abs(xcoords - xcoords(bestChannels(c)))<50);
     
-    for j = 1:64
+    for j = 1:length(xcoords)
         for i = 1:timeBinNum
             firingRate = sum(timeBins==i) / (range(timeStamps)/timeBinNum);
             if firingRate>minFiringRate % don't plot average trace if rate of spikes in bin is too low, which happens when the unit is lost

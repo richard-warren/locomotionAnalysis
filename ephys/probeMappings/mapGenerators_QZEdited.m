@@ -185,17 +185,54 @@ save('Z:\obstacleData\ephys\channelMaps\kilosort\ASSY77.mat', ...
 
 
 
+%% NeuroNexus A1x32-Ploy2 C585
+
+channelNum_OpenEphys = [8, 24, 2, 29, 7, 26, 15, 21, 11, 23, 12, 28, 6, 18, 13, 22, 5, 27, 4, 31, 10, 20, 9, 25, 14, 30, 3, 19, 16, 32, 1, 17];
+
+y1 = [850:-50:100]';
+y2 = [825:-50:75]';
+x2 = repmat(0, 16, 1);
+x1 = repmat(43.3, 16, 1);
+
+x = [];
+y = [];
+for i = 1:16
+   x = [x; x1(i); x2(i)];
+   y = [y; y1(i); y2(i)];
+    
+end
+siteLocation = [x, y];
+clear x1 x2 y1 y2
 
 
+Nchannels = 32; 
+connected = true(Nchannels, 1); 
+chanMap = 1:Nchannels; 
+chanMap0ind = chanMap - 1; 
+
+for i = 1:32
+    temp = find(channelNum_OpenEphys == i);
+    xcoords(i) = siteLocation(temp, 1);
+    ycoords(i) = siteLocation(temp, 2);
+end
+
+xcoords = xcoords';
+ycoords = ycoords';
+kcoords = ones(Nchannels,1);
+
+fs = 30000; % sampling frequency
+
+% plot the probe channel map
+figure;
+scatter(siteLocation(:,1), siteLocation(:,2))
+for i = 1:size(siteLocation,1)
+    text(siteLocation(i,1), siteLocation(i,2), [num2str(i) ' (' num2str(channelNum_OpenEphys(i)-1) ')']) 
+end
 
 
-
-
-
-
-
-
-
+% probe C858
+save('Z:\obstacleData\ephys\channelMaps\kilosort\C858.mat', ...
+    'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 
 

@@ -24,7 +24,7 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile
     'xcoords', 'ycoords', 'channelNum_OpenEphys', 'connected');
 
 probeDepth = [];
-for i = 1:64
+for i = 1:length(ycoords)
     ind = find(channelNum_OpenEphys == i);
     probeDepth(ind, 1) = ind;
     probeDepth(ind, 2) = ycoords(i);
