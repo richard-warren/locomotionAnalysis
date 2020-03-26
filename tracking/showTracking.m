@@ -38,10 +38,10 @@ if ~exist(vidName, 'file'); concatTopBotVids(session); end  % old sessions were 
 vid = VideoReader(vidName);
 
 % get locations data and convert to 3d matrix
-load([getenv('OBSDATADIR') 'sessions\' session '\runAnalyzed.mat'], ...
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'pixelsPerM', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn');
-locationsTable = readtable([getenv('OBSDATADIR') 'sessions\' session '\trackedFeaturesRaw.csv']); % get raw tracking data
+locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
 locations = locations / scaling; % bring back to original resolution
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));

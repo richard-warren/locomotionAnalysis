@@ -49,7 +49,7 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
-             'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'modPawDeltaLength', 'preModPawDeltaLength', ...
+             'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'laggingPenultKin', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing', ...
              'isModPawLengthened', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
@@ -428,6 +428,19 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var{i} = squeeze(g.sesKinData(i).controlLocationsInterp{g.sesKinData(i).firstModPaw}(end,:,:));
             end
             
+        case 'laggingPenultKin'  % kinematics of step before step over obs for lagging forepaw
+            var = repmat({nan(3,g.locationsSmps)},1,length(g.sesKinData));
+            for i = g.sesKinInds
+                p = g.sesKinData(i).pawOverSequence(2);  % index of lagging forepaw
+                if ismember(p, [2,3])  % if the second paw over is a forepaw
+                    if size(g.sesKinData(i).modifiedLocations{p},1)==1  % if only one mod step, take last control step
+                        var{i} = squeeze(g.sesKinData(i).controlLocations{p}(end,:,:));
+                    else  % if multiple mod steps, take second to last mod step
+                        var{i} = squeeze(g.sesKinData(i).modifiedLocations{p}(end-1,:,:));
+                    end
+                end
+            end
+            
         case 'modPawDeltaLength'  % change in length of first modified step of first modified paw (relative to what we predict would have happened if there were no behavioral modifications)
             var = num2cell(false(1,length(g.sesKinData)));
             for i = g.sesKinInds
@@ -682,14 +695,12 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
             var = num2cell(sum(g.sesData.touchesPerPaw(g.sesKinData(g.trial).trialInds,:)~=0,1));
             
         case 'stepType'  % 1: leading fore // 2: trailing fore // 3: leading hind // 4: trailing hind
-            try
             stepTypeSequence = [true false true false;   % leading/trailing
                                 true true false false];  % fore/hind
             isLeadingIsLagging = [[g.expData(mouse).sessions(session).trials(trial).paws.isLeading]; ...
                                   [g.expData(mouse).sessions(session).trials(trial).paws.isFore]];  % 2x4 matrix where each column is a paw, and each row is [isLeading, isFore]
             [~, var] = ismember(isLeadingIsLagging', stepTypeSequence', 'rows');
             var = num2cell(var);
-            catch; keyboard; end
             
         case 'distanceToObs'  % linear distance of paw to top of obstacle at zenith of paw trajectory
             var = num2cell(nan(1,4));

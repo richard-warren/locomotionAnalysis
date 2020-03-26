@@ -28,6 +28,16 @@ figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
 % PLOT THINGS
 %  ----------
 
+%% hildebrand plots
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove not included sessions and empty lines
+
+plotHildebrands(sessionInfo, 'colors', stepColors, 'stepPercentiles', [1 99], 'plotMice', false)
+set(gcf, 'Position', [1965.00 821.00 632.00 155.00])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_hildebrand'), 'svg');
+
+
 %% show multiple frames with overlaid tracking
 
 % settings
@@ -404,7 +414,7 @@ figure('Color', 'white', 'Position', [2000 400 500 400], 'MenuBar', 'none');
 plot([0 xLims(2)], [0 xLims(2)], 'Color', obsColor, 'LineWidth', 3) % add unity line
 
 logPlotRick(obsHgts, pawHgts, ...
-    {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'obstacle height', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
+    {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1))})
 
@@ -427,14 +437,14 @@ saveas(gcf, file, 'svg');
 
 figure('Color', 'white', 'Position', [2000 400 400 300], 'MenuBar', 'none');
 logPlotRick([flat.obsHgt]*1000, [flat.isPawSuccess], ...
-    {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'obstacle height', 'ylabel', 'success rate', 'plotMice', false, ...
+    {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height', 'ylabel', 'success rate', 'plotMice', false, ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'ylim', [0 1]})
 set(gca, 'xlim', [3.4 10])
+legend({'leading fore', 'trailing fore', 'leading hind', 'trailing hind'}, 'Location', 'southeast', 'box', 'off')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baseline_succesByObsHgt');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_succesByObsHgt');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -556,3 +566,39 @@ saveas(gcf, file, 'svg');
 
 
 
+%% light on vs light off speed
+
+
+% settings
+yLims = [.3 .7];
+plotSequence = [4 3 2 1]; % determine which lines on plotted on top of which
+
+% initializations
+flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOn', 'obsOnPositions', 'obsOffPositions', ...
+    'velVsPosition', 'velVsPositionX', 'velContinuousAtContact', 'velContinuousAtContactX', 'isWheelBreak', 'wiskContactPosition'});
+colorsTemp = [sensColors(1:end-1,:); .6 .6 .6]; % the no vision no whisker condition can be a little lighter here
+
+% speed vs position
+figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off')
+x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
+rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
+    'FaceColor', [obsColor obsAlpha], 'EdgeColor', 'none');
+line([0 0], yLims, 'linewidth', 2, 'color', get(gca, 'XColor'))
+velData = plotDvPsth(flat, 'velVsPosition', 'isLightOn', ...
+    {'showLegend', false, 'conditionColors', colorsTemp, 'xlim', [-.5 .2], ... 
+     'errorAlpha', .1, 'lineWidth', 4});
+set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
+xlabel('position relative to nose (m)')
+ylabel('velocity (m/s)')
+
+% save
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineVelLightOnVsLightOff');
+fprintf('writing %s to disk...\n', file)
+saveas(gcf, file, 'svg');
+
+
+% get vel at moment obstacle is under nose
+atNoseInd = find(flat(1).velVsPositionX>=0,1,'first');
+noseVels = squeeze(velData(:,:,atNoseInd));
+
+fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))

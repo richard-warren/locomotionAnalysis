@@ -131,6 +131,7 @@ function [model, accuracy, f1, predictions] = computeModel(X, y, kFolds, prevMod
     % compute model accuracies and f1 score // accuracy and f1 score are
     % average of kFold partitions // model is created across all trials
     
+%     disp(size(X,1));
     partitions = cvpartition(length(y), 'kfold', kFolds);  % cross validation splits
     [acc, f1s] = deal(nan(1, kFolds));
     
@@ -151,8 +152,10 @@ function [model, accuracy, f1, predictions] = computeModel(X, y, kFolds, prevMod
                 if exist('prevModel', 'var')
                     model = prevModel;
                 else
+                    try
                     model = fitglm(X(partitions.training(k),:), y(partitions.training(k)), ...
                         'Distribution', 'binomial', 'Weights', weights(partitions.training(k)));
+                    catch; keyboard; end
                 end
                 yhat = predict(model, X(partitions.test(k),:)) > .5;
                 

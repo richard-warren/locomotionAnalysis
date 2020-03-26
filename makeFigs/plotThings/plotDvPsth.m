@@ -1,4 +1,4 @@
-function mouseAvgs = plotDvPsth(data, dv, plotVar, opts)
+function [mouseAvgs, conditions] = plotDvPsth(data, dv, plotVar, opts)
 
 
 % used to plot PSTHs of continuous data signals stored in data struct //
@@ -115,7 +115,7 @@ if s.showLegend
 end
 
 mouseAvgs = squeeze(mouseAvgs);
-
+conditions = s.plotConditions;
 
 
 

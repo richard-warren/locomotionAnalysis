@@ -1,3 +1,13 @@
+%% make video for session
+
+% settings
+% sessions = {'200309_000', '200310_001'};
+sessions = {'200309_000'};
+
+for i = 1:length(sessions)
+    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', sessions{i}), sessions{i});
+end
+
 %% make wide view setup example view (shows obs coming into view from far off on the right side of the screen)
 
 session = '180913_003';

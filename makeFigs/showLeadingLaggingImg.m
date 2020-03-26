@@ -22,7 +22,7 @@ s.overlayAlpha = .5;
 s.overlayWidth = 2;
 s.mainWidth = 2;
 s.mainAlpha = .5;
-s.randSeed = 1;  % for selecting the same random trials to show
+s.randSeed = [];  % for selecting the same random trials to show
 s.scatter = false;  % whether to scatter rather than plot kinematic overlays
 
 
@@ -58,7 +58,7 @@ else
     
     % select overlay trials
     trials = trials(trials~=trial); % ensure that imgTrial is not represented in the population of background trials
-    rng(s.randSeed);  % initialize random seed for reproduceibility
+    if ~isempty(s.randSeed); rng(s.randSeed); end  % initialize random seed for reproduceibility
     trials = trials(randperm(length(trials), s.overlays));
 
 

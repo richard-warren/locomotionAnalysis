@@ -11,7 +11,7 @@ s.percentileLims = [5 95]; % exclude x values outside these percentile limits
 s.binNum = 100;
 s.colormap = 'hot';
 s.showPlot = true;  % whether to plot heatmap (otherwise you can just use the returned heatmap)
-s.normalize = 'col';  % 'row' or 'col' normalize the sum of each row or column to 1
+s.normalize = '';  % 'row' or 'col' normalize the sum of each row or column to 1
 
 
 % initializations

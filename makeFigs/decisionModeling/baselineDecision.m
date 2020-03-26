@@ -1,24 +1,21 @@
 %% load experiment data
-fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+tic; fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!'); toc
 
 % settings
 outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
-modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
-lightOffOnly = true;  % whether to restrict to light on trials
-successOnly  = false;  % whether to restrict to successful trials
-deltaMin = .5;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
-predictors = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
 
 global_config;
 
 flat = flattenData(data, ...
-    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp'}]);
+    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp'}]);
 
-% get version of flat with trial restrictions applied, and with predictions of model stored as a colum
+% get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
-
+[~, ~, flat_subWithFails] = plotModelAccuracies(flat, m.predictors, outcome, ...
+    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'plot', false, 'kFolds', 10);
 
 
 %% schematic imgs for step type decision
@@ -89,42 +86,50 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 
 
 %% heatmaps
-plotDecisionHeatmaps(flat, ...
+plotDecisionHeatmaps(flat, 'normalize', 'col', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'avgMice', true, 'plotMice', false, 'colors', sensColors, 'outcome', 'isModPawLengthened', ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeatmaps'));
+    'avgMice', false, 'plotMice', false, 'colors', decisionColors(1,:), 'outcome', 'isModPawLengthened', 'xLims', [-20 15], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeatmaps'));
+set(gcf, 'position', [2111.00 10.00 489.00 237.00])
 
 %% trials scatters
 plotDecisionTrials(flat, 'outcome', 'isBigStep', ...
-    'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
     'colors', decisionColors, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDecisionKin'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
 %% model accuracies
-plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
+plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
+
+%% model accuracies (predicted distance only)
+acc = plotModelAccuracies(flat, {'modPawPredictedDistanceToObs'}, 'isModPawLengthened', 'model', 'glm', ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'barProps', barProperties, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelsPredDistOnly'));
+fprintf('predicted distance only model accuracy: %.3f\n', mean(acc(1,2,:)));
 
 %% decision threshold
 plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', sensColors, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceThresholds'));
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineThresholds'));
 
 %% forward feature selection
 
 % settings
-kFolds = 10;
-
+rng(0);  % set initialization seed
+kFolds = 15;
 
 % initializations
 bestPredictors = {};
-remainingPredictors = m.predictors;
-accuracies = nan(1, length(m.predictors));
-predictorColors = lines(length(m.predictors));
+remainingPredictors = m.predictorsAll;
+accuracies = nan(1, length(m.predictorsAll));
+predictorColors = lines(length(m.predictorsAll));
 
-for i = 1:length(m.predictors)
+for i = 1:length(m.predictorsAll)
     
     fprintf('predictor %i: ', i)
     a = nan(1, length(remainingPredictors));
@@ -146,12 +151,12 @@ end
 
 % plot
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [2375.00 747.00 297.00 232.00]); hold on
-plot(1:length(m.predictors), accuracies, ...
+plot(0:length(m.predictorsAll), [.5 accuracies], ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
-scatter(1:length(m.predictors), accuracies, 60, predictorColors, 'filled');
+scatter(1:length(m.predictorsAll), accuracies, 60, predictorColors, 'filled');
 xlabel('number of features')
 ylabel('cross-validation accuracy')
-set(gca, 'XLim', [1, length(m.predictors)])
+set(gca, 'XLim', [0, length(m.predictorsAll)], 'ylim', [.5 .9])
 fprintf('max accuracy: %.2f\n', max(accuracies))
 fprintf('PREDICTORS: '); fprintf('%s ', bestPredictors{:}); fprintf('\n')
 
@@ -163,11 +168,10 @@ saveas(gcf, file, 'svg');
 %% predictor scatters and histograms
 
 % settings
-% bestPredictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawZ', 'modPawZVel', 'modPawXVel', 'angleAtWiskContact'}
-binNum = 15;
-maxPlots = 5;
+binNum = 15;  % number of histogram bins
+maxPlots = length(m.predictors);
 scatAlpha = .4;
-maxScatters = 2000;  % only plot this many per condition to avoid large vector images
+maxScatters = 1000;  % only plot this many per condition to avoid large vector images
 percentileLims = [1 99];
 scatSz = 8;
 
@@ -176,17 +180,17 @@ f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778
 f2 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750.00 900.00 160*maxPlots 118.00]);
 set(0, 'CurrentFigure', f1)
 
-sz = min(maxPlots, length(predictors));
+sz = min(maxPlots, length(m.predictors));
 randInds = randsample(length(flat_sub), min(maxScatters, length(flat_sub)));
 randBins = false(1, length(flat_sub));
 randBins(randInds) = true;
 
 for r = 1:sz
-    x_row = [flat_sub.(bestPredictors{r})];
+    x_row = [flat_sub.(m.predictors{r})];
     lims_row = prctile(x_row, percentileLims);
     
     for c = 1:sz
-        x_col = [flat_sub.(bestPredictors{c})];
+        x_col = [flat_sub.(m.predictors{c})];
         lims_col = prctile(x_col, percentileLims);
         
         subplot(sz, sz, (r-1)*sz + c); hold on
@@ -202,12 +206,15 @@ for r = 1:sz
             % add to second figure that has only histograms, no scatters
             set(0, 'CurrentFigure', f2)
             subplot(1,maxPlots,r); hold on
-            histogram(x_row([flat_sub.(outcome)]~=1), edges, ...
-                'FaceColor', decisionColors(1,:));
-            histogram(x_row([flat_sub.(outcome)]==1), edges, ...
-                'FaceColor', decisionColors(2,:));
-            title(bestPredictors{r}, 'Color', predictorColors(r,:), 'Interpreter', 'none');
-            set(gca, 'XLim', lims_col, 'Box', 'off', 'XTick', [], 'YTick', [])
+%             histogram(x_row([flat_sub.(outcome)]~=1), edges, ...
+%                 'FaceColor', decisionColors(1,:));
+%             histogram(x_row([flat_sub.(outcome)]==1), edges, ...
+%                 'FaceColor', decisionColors(2,:));
+            logPlotRick(x_row, [flat_sub.(outcome)], ...
+                'binWidth', .1*diff(lims_col), 'colors', predictorColors(r,:), 'xlim', lims_col);
+            set(gca, 'XLim', lims_col, 'Box', 'off', 'XTick', [], 'YLim', [0,1], 'YTick', 0:.5:1)
+            if c==1; ylabel('lengthen probability'); end
+            xlabel(m.predictors{r});
             set(0, 'CurrentFigure', f1)
 
         
@@ -226,20 +233,18 @@ for r = 1:sz
         % pimp fig
         set(gca, 'XTick', [], 'YTick', [])
         if c==1
-            ylabel(bestPredictors{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
+            ylabel(m.predictors{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
         end
         if r==sz
-            xlabel(bestPredictors{c}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
+            xlabel(m.predictors{c}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
         end
     end
     pause(.001)
 end
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors');
-saveas(f1, file, 'svg');
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly');
-saveas(f2, file, 'svg');
+saveas(f1, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'), 'svg');
+saveas(f2, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly'), 'svg');
 
 
 
@@ -259,6 +264,7 @@ kinCtl = permute(cat(3,flat_sub.preModPawKinInterp), [3,1,2]);
 
 % choose binning variable
 binVar = [flat_sub.([outcome '_predicted'])];
+% binVar = [flat_sub.modPawX];
 
 % perctentile bins    
 if pctileBins
@@ -288,28 +294,28 @@ saveas(gcf, file, 'svg');
 confidenceLims = [.4 .6];  % only include trials where model is very confident
 
 % compute overall success rate
-predictions = [flat_sub.isModPawLengthened_predicted];
+predictions = [flat_subWithFails.isModPawLengthened_predicted];
 confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-isModelCorrect = round(predictions) == [flat_sub.(outcome)];  % bins where decision agrees with model prediction
+isModelCorrect = round(predictions) == [flat_subWithFails.(outcome)];  % bins where decision agrees with model prediction
 fprintf('POOLED MODEL\n')
 fprintf('correct prediction success:   %.3f (n=%i)\n', ...
-    mean([flat_sub(isModelCorrect & confidentBins).isTrialSuccess]), sum(isModelCorrect & confidentBins))
+    mean([flat_subWithFails(isModelCorrect & confidentBins).isTrialSuccess]), sum(isModelCorrect & confidentBins))
 fprintf('incorrect prediction success: %.3f (n=%i)\n\n', ...
-    mean([flat_sub(~isModelCorrect & confidentBins).isTrialSuccess]), sum(~isModelCorrect & confidentBins))
+    mean([flat_subWithFails(~isModelCorrect & confidentBins).isTrialSuccess]), sum(~isModelCorrect & confidentBins))
 
 
 % individual mouse rates
-mice = unique({flat_sub.mouse});
+mice = unique({flat_subWithFails.mouse});
 successRates = nan(2, length(mice));  % (correct, incorrect model predictions) X mouse
 accuracies = nan(1,length(mice));
 
 for i = 1:length(mice)
-    mouseBins = strcmp({flat_sub.mouse}, mice{i});
+    mouseBins = strcmp({flat_subWithFails.mouse}, mice{i});
     
-    predictions = flat_sub(mouseBins).([outcome '_predicted']);
+    predictions = flat_subWithFails(mouseBins).([outcome '_predicted']);
     confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-    isModelCorrect = round(predictions) == [flat_sub(mouseBins).(outcome)];
-    mouseSuccess = [flat_sub(mouseBins).isTrialSuccess];
+    isModelCorrect = round(predictions) == [flat_subWithFails(mouseBins).(outcome)];
+    mouseSuccess = [flat_subWithFails(mouseBins).isTrialSuccess];
     
     successRates(1,i) = mean(mouseSuccess(confidentBins & isModelCorrect));
     successRates(2,i) = mean(mouseSuccess(confidentBins & ~isModelCorrect));
@@ -347,48 +353,52 @@ predictorsNoWisk = m.predictors(~ismember(m.predictors, excludeVars));
     'weightClasses', true, 'plot', false, 'kFolds', 10);
 
 mat = [squeeze(acc_full(1,2,:))'; squeeze(acc_noWisk(1,2,:))'];  % (full vs. noWisk) X (mouse)
+
 figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 'none');
 barFancy(mat, barProperties{:}, ...
-    'levelNames', {{'full model', 'noWisk'}});
+    'levelNames', {{'full model', 'noWisk'}}, 'YLim', [.5 1], 'showBars', false);
+
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelNoWiskPredModels'), 'svg');
+
 
 %% distance and time to contact
-
-
-% settings
-xLims = [15 50];
-yLims = [0 150];
-scatSize = 4;
-scatAlpha = .3;
-mouseColors = true;
-scatPlotSize = .7;
-border = .15;
-
-
-% initializations
-d = flat.distances;
-t = flat.times;
-[~,~,mouseIds] = unique(flat.mouse);
-
-% plot that shit
-figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
-scatterHistoRick(d,t, ...
-    'groupId', mouseIds, 'colors', 'jet', 'groupFcn', @nanmedian, ...
-    'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
-    'xLims', xLims, 'yLims', yLims, 'showCrossHairs', true, 'scatSize', scatSize, 'scatAlpha', scatAlpha);
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
-% get median distances and times for all mice
-[distances, times] = deal(nan(1,length(mice)));
-for i = 1:length(mice)
-    mouseBins = strcmp(flat.mouse, mice{i});
-    distances(i) = median(flat.distances(mouseBins));
-    times(i) = median(flat.times(mouseBins));
-end
-
-fprintf('\ndistance to contact:   %.1f +- %.1f SEM\n', mean(distances), std(distances)/sqrt(length(distances)))
-fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
-
+% 
+% 
+% % settings
+% xLims = [15 50];
+% yLims = [0 150];
+% scatSize = 4;
+% scatAlpha = .3;
+% mouseColors = true;
+% scatPlotSize = .7;
+% border = .15;
+% 
+% 
+% % initializations
+% d = flat.distances;
+% t = flat.times;
+% [~,~,mouseIds] = unique(flat.mouse);
+% 
+% % plot that shit
+% figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
+% scatterHistoRick(d,t, ...
+%     'groupId', mouseIds, 'colors', 'jet', 'groupFcn', @nanmedian, ...
+%     'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
+%     'xLims', xLims, 'yLims', yLims, 'showCrossHairs', true, 'scatSize', scatSize, 'scatAlpha', scatAlpha);
+% 
+% % save
+% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact');
+% fprintf('writing %s to disk...\n', file)
+% saveas(gcf, file, 'svg');
+% 
+% % get median distances and times for all mice
+% [distances, times] = deal(nan(1,length(mice)));
+% for i = 1:length(mice)
+%     mouseBins = strcmp(flat.mouse, mice{i});
+%     distances(i) = median(flat.distances(mouseBins));
+%     times(i) = median(flat.times(mouseBins));
+% end
+% 
+% fprintf('\ndistance to contact:   %.1f +- %.1f SEM\n', mean(distances), std(distances)/sqrt(length(distances)))
+% fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
+% 

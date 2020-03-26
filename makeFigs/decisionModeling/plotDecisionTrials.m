@@ -16,6 +16,7 @@ s.lightOffOnly = false;  % whether to restrict to light on trials
 s.colors = flipud(colorme(2, 'offset', .2, 'showSamples', false));  % colors for little and big steps
 s.ctlStepColor = [.5 .5 .5];
 s.obsColor = [188 125 181] / 255;
+s.rowColors = [];  % if provided, overwrites s.colors and plots all traces in the same color per row
 
 s.trialsToShow = 50;
 s.histoFillAlpha = .2;
@@ -58,6 +59,10 @@ for i = 1:length(s.levels)
     subplot(length(s.levels), 1, i)
     bins = condition == i;
     
+    if ~isempty(s.rowColors)
+        s.colors = repmat(s.rowColors(i,:),2,1);
+    end
+    
     % plot kinematics
     plotKinematics(kinData(bins,[1 3],:), flat.obsHgt(bins), flat.(s.outcome)(bins) + 1, ...
         'colors', s.colors, 'trialsToOverlay', s.trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'plotObs', false)
@@ -72,9 +77,10 @@ for i = 1:length(s.levels)
     kdShort = ksdensity(kinData(bins & flat.(s.outcome)~=1,1,end), xGrid) * (1-longShortRatio);
 
     % scale y axis to fit in same subplot as kinematics
-    kdCtl = -kdCtl * (s.histoHgt/max(kdCtl)) - s.histoOffset;
-    kdLong = -kdLong * (s.histoHgt/max(kdLong)) - s.histoOffset;
-    kdShort = -kdShort * (s.histoHgt/max(kdShort)) - s.histoOffset;
+    pdfMax = max([kdLong kdCtl kdShort]);
+    kdCtl = -kdCtl * (s.histoHgt/pdfMax) - s.histoOffset;
+    kdLong = -kdLong * (s.histoHgt/pdfMax) - s.histoOffset;
+    kdShort = -kdShort * (s.histoHgt/pdfMax) - s.histoOffset;
 
 
     % plot that shit
