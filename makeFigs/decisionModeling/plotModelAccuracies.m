@@ -26,7 +26,7 @@ s.weightClasses = false;  % whether to balance classes by applying weights (only
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
-s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
+s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations (standard deviations computed wrt preModPawDeltaLength, which gives a sense of the deltas associated with non-modified steps, which should reflect prediction error more or less...)
 
 s.plot = true;  % whether to generate plot
 s.barProps = {};  % properties to pass to barFancy
@@ -46,8 +46,12 @@ cNum = length(s.levels) + size(s.modelTransfers,1);  % total number of condition
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
-if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end
-
+if s.deltaMin
+    minDif = std(flat.preModPawDeltaLength)*s.deltaMin;
+    flat = flat(~(abs(flat.modPawDeltaLength)<minDif & flat.isBigStep==0), :);  % remove little steps where there is no change in the step length (why don't i do this for big steps as well?)
+%     flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :);
+end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
+% if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin), :); end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);

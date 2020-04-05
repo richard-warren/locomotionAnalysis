@@ -12,6 +12,7 @@ s.outcome = 'isBigStep';  % variable used to color trials // isBigStep or isModP
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
+s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
 
 s.colors = flipud(colorme(2, 'offset', .2, 'showSamples', false));  % colors for little and big steps
 s.ctlStepColor = [.5 .5 .5];
@@ -38,6 +39,7 @@ if isstruct(flat); flat = struct2table(flat); end
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
+if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
 
 xGrid = linspace(s.xLims(1), s.xLims(2), 500);  % grid for histograms
 

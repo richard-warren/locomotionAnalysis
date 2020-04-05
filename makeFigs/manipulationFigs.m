@@ -93,7 +93,8 @@ end
 
 % load data
 fprintf(['loading ' dataset ' data... ']);
-tic; load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data'); toc
+% tic; load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data'); toc
+tic; load(fullfile('C:\Users\richa\Desktop\', 'matlabData', [dataset '_data.mat']), 'data'); toc  % when working on home computer
 data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
 mice = {data.data.mouse};
 
@@ -515,7 +516,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 %% decision making
 flat = flattenData(data, ...
-    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw'}]);
+    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength'}]);
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
@@ -550,8 +551,13 @@ accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'mode
 %% decision threshold
 plotDecisionThresholds(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', sensColors, 'barProps', barProperties, ...
+    'colors', colors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_thresholds' suffix1 suffix2]));
+
+%% model predictors
+plotPredictors(flat, m.predictors, 'isModPawLengthenedshj', 'colors', colors, 'avgMice', true, ...
+    'condition', 'condition', 'levels', vars.condition.levels, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', true, 'lightOffOnly', false);
 
 %% show predictor variables
 

@@ -1,4 +1,4 @@
-function sesPlotRick(data, varargin)
+ed ifunction sesPlotRick(data, varargin)
 
 % given matrix where first dim is mouse number, and second dim is session
 % number, plots variavle for all mice as function of session number, eg to

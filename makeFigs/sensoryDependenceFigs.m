@@ -12,7 +12,8 @@ fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensory
 
 
 %% load experiment data
-fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!')
+% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!')
+fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
 
 % global settings
 global_config;
@@ -281,7 +282,7 @@ saveas(gcf, file, 'svg');
 %% decision making
 
 flat = flattenData(data, ...
-    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw'}]);
+    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength'}]);
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'normalize', 'col', ...
@@ -301,6 +302,18 @@ accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'mode
     'weightClasses', true, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'shuffledConditions', [1 2], 'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+
+%% (temp, for playing around with settings) model accuracies
+[~,~,flat_temp] = plotModelAccuracies(flat, m.predictors, 'isBigStep', 'modelTransfers', [], ...
+    'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
+    'weightClasses', true, 'deltaMin', .5, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'shuffledConditions', [1 2], 'colors', sensColors, 'barProps', barProperties, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+
+%% model predictors
+plotPredictors(flat, m.predictors, 'isBigStep', 'colors', sensColors, 'avgMice', true, ...
+    'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
+    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', true, 'lightOffOnly', false);
 
 %% decision threshold
 plotDecisionThresholds(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...

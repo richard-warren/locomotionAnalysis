@@ -1,5 +1,6 @@
 %% load experiment data
-tic; fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!'); toc
+% tic; fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!'); toc
+fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
 
 % settings
 outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
@@ -11,12 +12,13 @@ flat = flattenData(data, ...
 
 % get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'weightClasses', true, 'plot', false, 'kFolds', 10);
-[~, ~, flat_subWithFails] = plotModelAccuracies(flat, m.predictors, outcome, ...
     'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
+[~, ~, flat_subWithFails] = plotModelAccuracies(flat, m.predictors, outcome, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'plot', false, 'kFolds', 10);
 
+predictorColors = lines(length(m.predictorsAll));
 
 %% schematic imgs for step type decision
 
@@ -93,8 +95,8 @@ plotDecisionHeatmaps(flat, 'normalize', 'col', ...
 set(gcf, 'position', [2111.00 10.00 489.00 237.00])
 
 %% trials scatters
-plotDecisionTrials(flat, 'outcome', 'isBigStep', ...
-    'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
+plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
+    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
     'colors', decisionColors, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
@@ -103,6 +105,10 @@ plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ..
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
+
+%% model predictors
+plotPredictors(flat, m.predictors, 'isBigStep', 'avgMice', true, 'colors', predictorColors,...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', true, 'lightOffOnly', false);
 
 %% model accuracies (predicted distance only)
 acc = plotModelAccuracies(flat, {'modPawPredictedDistanceToObs'}, 'isModPawLengthened', 'model', 'glm', ...
@@ -127,7 +133,6 @@ kFolds = 15;
 bestPredictors = {};
 remainingPredictors = m.predictorsAll;
 accuracies = nan(1, length(m.predictorsAll));
-predictorColors = lines(length(m.predictorsAll));
 
 for i = 1:length(m.predictorsAll)
     
