@@ -36,7 +36,10 @@ cNum = length(s.levels);  % total number of conditions
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
-if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
+if s.deltaMin
+    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
+    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+end
 
 if ~s.avgMice; flat.mouse = repmat({'temp'}, height(flat), 1); end  % if pooling across mice, rename all mice with dummy string
 mice = unique(flat.mouse);

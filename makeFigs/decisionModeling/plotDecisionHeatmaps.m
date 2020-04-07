@@ -36,7 +36,11 @@ y = linspace(s.yLims(1), s.yLims(2), s.binNum);
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
-if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end
+if s.deltaMin
+    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
+    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+end
+
 
 
 if ~isempty(s.condition)  % if no condition provided, create dummy variable

@@ -39,7 +39,11 @@ if isstruct(flat); flat = struct2table(flat); end
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
-if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :); end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
+if s.deltaMin
+    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
+    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+end
+
 
 xGrid = linspace(s.xLims(1), s.xLims(2), 500);  % grid for histograms
 

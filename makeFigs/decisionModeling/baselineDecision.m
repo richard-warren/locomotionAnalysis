@@ -8,14 +8,14 @@ outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
 global_config;
 
 flat = flattenData(data, ...
-    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp'}]);
+    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength'}]);
 
 % get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
-    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
 [~, ~, flat_subWithFails] = plotModelAccuracies(flat, m.predictors, outcome, ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
 
 predictorColors = lines(length(m.predictorsAll));
@@ -108,7 +108,7 @@ plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ..
 
 %% model predictors
 plotPredictors(flat, m.predictors, 'isBigStep', 'avgMice', true, 'colors', predictorColors,...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', true, 'lightOffOnly', false);
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly);
 
 %% model accuracies (predicted distance only)
 acc = plotModelAccuracies(flat, {'modPawPredictedDistanceToObs'}, 'isModPawLengthened', 'model', 'glm', ...
@@ -122,6 +122,18 @@ plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineThresholds'));
+
+%% distribution of step modifications
+close all
+xLims = prctile([flat_sub.modPawDeltaLength flat_sub.preModPawDeltaLength], [1 99]);
+binEdges = linspace(xLims(1), xLims(2), 50);
+
+figure('position', [354 706 595 373], 'color', 'white', 'menubar', 'none')
+histogram([flat().modPawDeltaLength], binEdges); hold on
+histogram([flat().preModPawDeltaLength], binEdges); hold on
+
+set(gca, 'box', 'off', 'YColor', 'none')
+xlabel('\delta length')
 
 %% forward feature selection
 

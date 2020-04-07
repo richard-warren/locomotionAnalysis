@@ -32,7 +32,7 @@ sensColors = [both; colorWisk; colorVision; colorNone];
 
 
 % decision making
-m.deltaMin =.5;
+m.deltaMin = 1;
 m.lightOffOnly = false;
 m.modPawOnlySwing = true;
 m.successOnly = true;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light

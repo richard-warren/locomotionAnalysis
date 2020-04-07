@@ -47,11 +47,9 @@ if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
 if s.deltaMin
-    minDif = std(flat.preModPawDeltaLength)*s.deltaMin;
-    flat = flat(~(abs(flat.modPawDeltaLength)<minDif & flat.isBigStep==0), :);  % remove little steps where there is no change in the step length (why don't i do this for big steps as well?)
-%     flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & flat.isBigStep==0), :);
-end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
-% if s.deltaMin; flat = flat(~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin), :); end  % should this be done within rather than across mice? and should this be expressed in real world units and not standard deviations?
+    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
+    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+end
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);
@@ -208,11 +206,11 @@ if s.plot
 
     % accuracies
     subplot(1,2,1)
-    barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
+    barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:}, 'YLim', [0 1])
 
     % f1 scores
     subplot(1,2,2)
-    barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
+    barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:}, 'YLim', [0 1])
 
 
     % save
