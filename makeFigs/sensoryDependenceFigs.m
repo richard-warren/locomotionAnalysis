@@ -43,58 +43,48 @@ conditionals.none = struct('name', '', 'condition', @(x) x);
 %% bar plots
 
 % success
-figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.sensoryCondition];
 mat = getDvMatrix(data, 'isTrialSuccess', conditions, varsToAvg);
-barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
-    'colors', sensColors, barProperties{:}, 'YLim', [0 1])
-set(gca, 'YTick', 0:.5:1, 'TickDir', 'out')
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceSuccessBars');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+barFancy(mat, 'levelNames', {{'whiskers + vision', 'whiskers', 'vision', 'neither'}}, 'ylabel', 'success rate', ...
+    'colors', sensColors, barProperties{:}, 'YLim', [0 1], 'YTick', [0 .5 1], ...
+    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceSuccessBars'), 'svg');
 
 
-% velocity at whisker contact
-figure('position', [2200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+%% velocity at whisker contact
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.sensoryCondition];
 mat = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
 barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'velocity at whisker contact (m/s)', ...
-    'colors', sensColors, barProperties{:})
-set(gca, 'YTick', 0:.2:.8, 'TickDir', 'out')
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceVelBars');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+    'colors', sensColors, barProperties{:}, 'YTick', [.3 .5 .7], ...
+    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceVelBars'), 'svg');
 
 
-% step over height for all paws (measured before paw reaches obstacle)
-figure('position', [2400 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
+%% step over height for all paws (measured before paw reaches obstacle)
+
+figure('position', [200 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
 mat = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg) * 1000;
 barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'step over height (mm)', ...
-    'colors', repmat(sensColors,4,1), barProperties{:})
-set(gca, 'YTick', 0:4:16, 'TickDir', 'out')
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceStepHgts');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+    'colors', repmat(sensColors,4,1), barProperties{:}, 'YTick', [4 10 16], ...
+    'summaryFunction', @nanmean, 'constantEdgeColor', [.15 .15 .15], ...
+    'comparisons', repmat([1 2; 1 3; 1 4],4,1) + repelem([0,4,8,12],3)', 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceStepHgts'), 'svg');
 
 
-% success of each paw
-figure('position', [2400 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
+%% success of each paw
+figure('position', [200 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
 mat = 1-getDvMatrix(data, 'anyTouchFrames', conditions, varsToAvg);
-barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'success rate', ...
-    'colors', repmat(sensColors,4,1), barProperties{:})
-set(gca, 'YTick', 0:.5:1, 'TickDir', 'out')
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependencePawSuccess');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'success rate', 'YTick', [0 .5 1], ...
+    'colors', repmat(sensColors,4,1), barProperties{:}, 'summaryFunction', @nanmean, 'constantEdgeColor', [.15 .15 .15], ...
+    'comparisons', repmat([1 2; 1 3; 1 4],4,1) + repelem([0,4,8,12],3)', 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependencePawSuccess'), 'svg');
 
 
-% baseline step heights
+%% baseline step heights
 figure('position', [2800.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
 figVars = [vars.isFore; vars.sensoryCondition];
 dv = getDvMatrix(data, 'controlStepHgt', figVars, varsToAvg)*1000;
@@ -115,21 +105,20 @@ flat = flattenData(data, {'mouse', 'session', 'trial', 'sensoryCondition', 'obsO
 colorsTemp = [sensColors(1:end-1,:); .6 .6 .6]; % the no vision no whisker condition can be a little lighter here
 
 % speed vs position
-figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [2000 50 600 300], 'inverthardcopy', 'off')
+figure('name', 'baseline', 'Color', 'white', 'MenuBar', 'none', 'Position', [200 50 600 300], 'inverthardcopy', 'off')
 x = [nanmean([flat.obsOnPositions]) nanmean([flat.obsOffPositions])];
 rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
     'FaceColor', [obsColor obsAlpha], 'EdgeColor', 'none');
 line([0 0], yLims, 'linewidth', 2, 'color', get(gca, 'XColor'))
 velData = plotDvPsth(flat, 'velVsPosition', 'sensoryCondition', ...
     {'showLegend', false, 'conditionColors', colorsTemp(plotSequence,:), 'xlim', [-.5 .2], ... 
-     'plotConditions', vars.sensoryCondition.levels(plotSequence), 'errorAlpha', .1, 'lineWidth', 4});
+     'plotConditions', vars.sensoryCondition.levels(plotSequence), 'errorAlpha', .1, 'lineWidth', 4, 'flipx', true});
 set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
 xlabel('position relative to nose (m)')
 ylabel('velocity (m/s)')
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceVel');
-fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
@@ -145,7 +134,6 @@ fprintf('\n')
 
 
 %% height shaping
-
 
 % settings
 xLims = [3 10];
@@ -187,40 +175,37 @@ for i = 1:2  % isFore
 end
 
 
+
 %% plot things
 
 % all paws
-figure('position', [2000.00 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
+figure('position', [200.00 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
 temp = [vars.isFore; vars.isLeading; vars.sensoryCondition];
-barFancy(corrs, 'levelNames', {temp.levelNames}, 'ylabel', 'paw obstacle correlation', ...
-    'colors', repmat(sensColors,4,1), 'YLim', [], barProperties{:})
-set(gca, 'YTick', -.2:.2:.8, 'TickDir', 'out', 'position', [.15 .0 .8 .9])
+barFancy(corrs, 'levelNames', {temp.levelNames}, 'ylabel', 'paw:hurdle correlation', 'YTick', [0 .4 .8], ...
+    'colors', repmat(sensColors,4,1), 'YLim', [], barProperties{:}, 'constantEdgeColor', [.15 .15 .15], ...
+    'comparisons', repmat([1 2; 1 3; 1 4],4,1) + repelem([0,4,8,12],3)', 'test', 'ttest')
 
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrsAllPaws');
-fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-% leading forepaw only
-figure('position', [2600.00 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-barFancy(squeeze(corrs(1,1,:,:)), 'levelNames', {vars.sensoryCondition.levelNames}, 'ylabel', 'leading forepaw obstacle correlation', ...
-    'colors', repmat(sensColors,4,1), 'YLim', [-.2 .6], barProperties{:})
-set(gca, 'YTick', -.2:.2:1, 'TickDir', 'out', 'position', [.15 .0 .8 .9])
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrs');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
+%% leading forepaw only
+figure('position', [200.00 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+barFancy(squeeze(corrs(1,1,:,:)), 'levelNames', {vars.sensoryCondition.levelNames}, 'ylabel', 'paw:hurdle correlation', ...
+    'colors', repmat(sensColors,4,1), 'YLim', [-.2 .6], barProperties{:}, 'YTick', -.2:.2:.6, ...
+    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceCorrs'), 'svg');
 
 
-% moving averages
-figure('Color', 'white', 'Position', [2800 400 500 400], 'MenuBar', 'none');
-plot([0 xLims(2)], [0 xLims(2)], 'Color', obsColor, 'LineWidth', 3) % add unity line
+%% moving averages
+figure('Color', 'white', 'Position', [200 400 500 400], 'MenuBar', 'none');
+plot([0 xLims(2)], [0 xLims(2)], 'Color', [obsColor .4], 'LineWidth', 3) % add unity line
 lfBins = [flat.isLeading] & [flat.isFore];% leading forepaw bins
 logPlotRick(obsHgts(lfBins), pawHgts(lfBins), ...
-    {'colors', sensColors, 'conditions', conditions(lfBins), 'xlabel', 'obstacle height', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
-    'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat(lfBins).mouse}, ...
-    'errorFcn', @(x) std(x)/sqrt(size(x,1))})
-set(gca, 'xlim', [4 10], 'YTick', 4:2:12, 'TickDir', 'out')
+    'colors', sensColors, 'conditions', conditions(lfBins), 'xlabel', 'hurdle height (mm)', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
+    'xlim', [4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat(lfBins).mouse}, ...
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)))
+set(gca, 'xlim', [4 10], 'YTick', 4:2:12, 'YLim', [4 12])
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeightShapingMovingAvgs');
@@ -275,8 +260,7 @@ plotKinematics(kinData(:,[1,3],:), [flat.obsHgt], conditions, ...
 set(gca, 'XLim', xLims, 'YLim', yLims)
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'sensoryDependenceKinematics');
-fprintf('writing %s to disk...\n', file)
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceKinematics');
 saveas(gcf, file, 'svg');
 
 %% decision making
@@ -284,36 +268,57 @@ saveas(gcf, file, 'svg');
 flat = flattenData(data, ...
     [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength'}]);
 
+% %% replace wiskContactPostion with median value...
+% bins = strcmp({flat.sensoryCondition}, '-');
+% t = num2cell(repmat(nanmedian([flat(~bins).wiskContactPosition]), 1, sum(bins)));
+% [flat(bins).wiskContactPosition] = t{:};
+
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'normalize', 'col', ...
-    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', sensColors, 'outcome', 'isModPawLengthened', 'xLims', [-20 15], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeatmaps'));
 
 %% trials scatters
 plotDecisionTrials(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isBigStep', ...
-    'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', decisionColors, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDecisionKin'));
 
 %% model accuracies
-accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [], ...
-    'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
-    'weightClasses', true, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', sensColors, 'barProps', barProperties, ...
+plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [], ...
+    'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'weightClasses', true, ...
+    'deltaMin', .5, 'successOnly', m.successOnly, 'modPawOnlySwing', true, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', sensColors, 'barProps', barProperties, 'kFolds', 10, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
 
 %% (temp, for playing around with settings) model accuracies
-[~,~,flat_temp] = plotModelAccuracies(flat, m.predictors, 'isBigStep', 'modelTransfers', [], ...
+[accuracies, ~, flat_temp, models] = plotModelAccuracies(flat, m.predictors, 'isBigStep', ...
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
-    'weightClasses', true, 'deltaMin', 0, 'successOnly', true, 'modPawOnlySwing', true, 'lightOffOnly', false, ...
-    'colors', sensColors, 'barProps', barProperties, 'kFolds', 10);
-
+    'weightClasses', true, 'balanceClasses', false, ...
+    'deltaMin', 0, 'successOnly', true, 'modPawOnlySwing', true, 'lightOffOnly', false, ...
+    'colors', sensColors, 'barProps', barProperties, 'kFolds', 5);
 
 %% (temp, for playing around with settings) model predictors
-plotPredictors(flat, m.predictors, 'isModPawLengthened', 'colors', sensColors, 'avgMice', true, ...
+plotPredictors(flat, m.predictors, 'isBigStep', 'colors', sensColors, 'avgMice', true, ...
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
     'deltaMin', 0, 'successOnly', true, 'modPawOnlySwing', true, 'lightOffOnly', false);
+
+%% (temp, plot model coefficients)
+
+coeffs = nan(4, length(m.predictors)+1, length(data.data));
+
+for i = 1:4
+    for j = 1:length(m.predictors)
+        for k = 1:length(data.data)
+            coeffs(i,:,k) = models{i,k}.Coefficients.tStat(1:end);
+        end
+    end
+end
+
+figure;
+barFancy((coeffs), 'colors', repelem(sensColors, length(m.predictors)+1, 1), ...
+    'levelNames', {vars.sensoryCondition.levelNames, ['constant', m.predictors]})
 
 %% model predictors
 plotPredictors(flat, m.predictors, 'isModPawLengthened', 'colors', sensColors, 'avgMice', true, ...
@@ -353,10 +358,10 @@ for i = 1:4
     end
 end
 
-figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-barFancy(distVar, 'levelNames', {vars.sensoryCondition.levelNames}, 'ylabel', 'planting distance variability', ...
-    'colors', sensColors, barProperties{:})
-set(gca, 'YTick', 0:.5:1, 'TickDir', 'out')
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+barFancy(distVar*1000, 'levelNames', {vars.sensoryCondition.levelNames}, 'ylabel', 'planting distance variability (mm)', ...
+    'colors', sensColors, barProperties{:}, 'YTick', 6:4:22, ...
+    'comparisons', [2 3], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependencePlantingVariability'), 'svg');
 
 %% distribution of planting landing positions
@@ -364,7 +369,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 flat = flattenData(data, {'mouse', 'session', 'trial', 'isLightOff', 'obsHgt', ...
     'sensoryCondition', 'laggingPenultKin'});
 plotLaggingKinematics(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'colors', sensColors, ...
-    'trialsToShow', 50, 'xLims', [-.15 .01], 'randSeed', 5, ...
+    'trialsToShow', 50, 'xLims', [-.15 .01], 'randSeed', 5, 'obsColor', obsColor, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependencePlantingKinematics'));
 
 

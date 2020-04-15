@@ -10,10 +10,12 @@ data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
 %% load experiment data
-fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
+fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')  % temp, for working from home
 
 % global settings
 global_config;  % initialize global settings
+extraBarProps = {'constantEdgeColor', [.2 .2 .2], 'scatterSize', 30};  % these data have large sample size, so some of the bar plot properties will be unique to this dataset
 isLeading = [true false true false]; % sequence of conditions for plots
 isFore = [true true false false];
 conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
@@ -58,7 +60,7 @@ imwrite(img, file)
 showObsTracking('180703_000', 'numTrials', 15, 'waterColor', waterColor, 'obsColor', obsColor, ...
     'figPos', [2000 400 500 400], 'wheelColor', [.4 .4 .4])
 
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'obsTracking');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'obsTracking');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -71,8 +73,7 @@ trialsToShow = 20;
 
 plotSingleSessionVel(session, 'waterColor', waterColor, 'obsOnAlpha', obsAlpha, 'obsOnColor', obsColor, ...
     'trialsToShow', trialsToShow, 'trialColors', jet(trialsToShow), 'meanColor', axisColor);
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'singleSessionVel');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'singleSessionVel');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -178,18 +179,19 @@ rectangle('Position', [x(1) yLims(1) diff(x) diff(yLims)], ...
 
 % plot
 velData = plotDvPsth(flat, 'velVsPosition', [], ...
-    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], 'errorFcn', @(x) nanstd(x), 'xlim', [-.5 .2]});
+    {'plotMouseAvgs', true, 'showLegend', false, 'conditionColors', [0 0 0], ...
+    'errorFcn', @(x) nanstd(x), 'xlim', [-.5 .2], 'flipx', true});
 line([0 0], yLims, 'linewidth', 2, 'color', get(gca, 'XColor'));
 
 % pimp fig
 set(gca, 'YLim', yLims);
-xlabel('position relative to nose (m)')
+xlabel('hurdle distance to nose (m)')
 ylabel('velocity (m/s)')
 text(x(1), yLims(2), 'obstace engaged', 'VerticalAlignment', 'bottom')
 
+
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', ...
-        'baselineVel');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineVel');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -201,7 +203,7 @@ obsOnVels = squeeze(velData(:,obsOnInd));
 
 fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
 fprintf('obs on:      %.2f +- %.2f SEM\n', mean(obsOnVels), std(obsOnVels)/sqrt(length(obsOnVels)))
-fprintf('overal:      %.2f +- %.2f SEM\n', mean(nanmean(velData,2)), std(nanmean(velData,2))/sqrt(length(obsOnVels)))
+fprintf('overall:     %.2f +- %.2f SEM\n', mean(nanmean(velData,2)), std(nanmean(velData,2))/sqrt(length(obsOnVels)))
 
 
 %% speed triggered at obs on and wisk contact
@@ -302,13 +304,13 @@ subplot(2,2,3);
 text(xLims(1), mean(yLims), rowNames{2}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'Rotation', 90);
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineKinematics_obsHgt');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineKinematics_obsHgt');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
 
-% bot and top view overlays
+%% bot and top view overlays
 figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [1997.00 99.00 878.00 833.00])
 
 % top view
@@ -320,8 +322,8 @@ b = [[flat.isLeading]; [flat.isFore]]';
 [~, stepTypeConditions] = ismember(b, a, 'rows');
 
 plotKinematics(kinData(:,[1,3],:), [flat.obsHgt], stepTypeConditions', ...
-    'colors', stepColors, 'obsAlpha', .25, 'lineAlpha', 1, 'mouseNames', {flat.mouse}, ...
-    'errorFcn', @nanstd, 'lineWidth', 3, 'obsColors', repmat(obsColors, 4, 1), 'yLimZero', false) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
+    'colors', stepColors, 'obsAlpha', 1, 'lineAlpha', 1, 'mouseNames', {flat.mouse}, ...
+    'errorFcn', @nanstd, 'lineWidth', 3, 'obsColors', repmat(obsColor, 4, 1), 'yLimZero', false) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
 set(gca, 'XLim', xLims)
 
 % bot view
@@ -331,11 +333,11 @@ yLimsBot = [-1 1]*.02;
 % figure('name', 'baseline', 'color', 'white', 'menubar', 'none', 'position', [2000 100 900 300])
 plotKinematics(kinData(:,[1,2],:), [flat.obsHgt], stepTypeConditions', ...
     'colors', stepColors, 'obsAlpha', .25, 'lineAlpha', 1, 'mouseNames', {flat.mouse}, ...
-    'errorFcn', @nanstd, 'lineWidth', 3, 'isBotView', true, 'obsColors', repmat(obsColors, 4, 1)) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
+    'errorFcn', @nanstd, 'lineWidth', 3, 'isBotView', true, 'obsColors', repmat(obsColor, 4, 1)) % if 'mouseNames' is provided, plotKinematics avgs within, then across mice for each condition
 set(gca, 'XLim', xLims, 'YLim', yLimsBot)
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineKinematics_overlay');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineKinematics_overlay');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -344,7 +346,6 @@ saveas(gcf, file, 'svg');
 
 % settings
 xLims = [3 10];
-yLims = [3 20];
 isHgtPreObs = true; % do you measure the height at peak (false) or before the paw reaches the obstacle (true)
 
 % obs hgt vs paw hgt (manip, ipsi/contra, leading/lagging, fore/hind)
@@ -392,31 +393,32 @@ end
 
 
 
-figure('position', [2000.00 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+%% correlations
+close all
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 
-% correlations
-colorsWithBl = repelem(ctlStepColor,8,1);
-colorsWithBl(2:2:8,:) = stepColors;
+colorsWithBl = repelem(stepColors,2,1);
+colorsWithBl(1:2:8,:) = colorsWithBl(2:2:8,:) * .25;
+
 mat = permute(cat(4, corrsControl, corrs), [1 2 4 3]);
 
-barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'paw-obstacle correlation', ...
-    'colors', colorsWithBl, 'YLim', [-.2 .8], barProperties{:})
-set(gca, 'YTick', -.2:.4:.8, 'TickDir', 'out', 'position', [.15 .0 .8 .9])
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'paw:hurdle correlation', ...
+    'colors', colorsWithBl, 'YLim', [-.2 .8], barProperties{:}, extraBarProps{:}, ...
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineHeightShapingBars');
-fprintf('writing %s to disk...\n', file)
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeightShapingBars');
 saveas(gcf, file, 'svg');
 
 
-% moving averages
-figure('Color', 'white', 'Position', [2000 400 500 400], 'MenuBar', 'none');
-plot([0 xLims(2)], [0 xLims(2)], 'Color', obsColor, 'LineWidth', 3) % add unity line
+%% moving averages
+figure('Color', 'white', 'Position', [200 400 500 400], 'MenuBar', 'none');
+plot([0 xLims(2)], [0 xLims(2)], 'Color', [obsColor .4], 'LineWidth', 3) % add unity line
 
 logPlotRick(obsHgts, pawHgts, ...
-    {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
+    'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height (mm)', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
-    'errorFcn', @(x) std(x)/sqrt(size(x,1))})
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)))
 
 % uncomment the following to show control step heights as well...
 % logPlotRick(obsHgts, pawHgtsControl, ...
@@ -424,11 +426,10 @@ logPlotRick(obsHgts, pawHgts, ...
 %     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
 %     'errorFcn', @(x) std(x)/sqrt(size(x,1))})
 
-set(gca, 'xlim', [4 10], 'ylim', [4 16], 'YTick', 4:4:16, 'TickDir', 'out')
+set(gca, 'xlim', [3.4 10], 'ylim', [3.4 15], 'YTick', 4:4:16)
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', ...
-        'baselineHeightShapingMovingAvgs');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeightShapingMovingAvgs');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -437,10 +438,13 @@ saveas(gcf, file, 'svg');
 
 figure('Color', 'white', 'Position', [2000 400 400 300], 'MenuBar', 'none');
 logPlotRick([flat.obsHgt]*1000, [flat.isPawSuccess], ...
-    {'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height', 'ylabel', 'success rate', 'plotMice', false, ...
+    'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height (mm)', 'ylabel', 'success rate', 'plotMice', false, ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
-    'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'ylim', [0 1]})
-set(gca, 'xlim', [3.4 10])
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'ylim', [0 1])
+set(gca, 'xlim', [3.4 10], 'XTick', 4:10, 'YTick', [0 .5 1])
+xLabels = get(gca, 'XTickLabel');
+xLabels(2:end-1) = {''};
+set(gca, 'XTickLabel', xLabels)
 legend({'leading fore', 'trailing fore', 'leading hind', 'trailing hind'}, 'Location', 'southeast', 'box', 'off')
 
 % save
@@ -453,20 +457,18 @@ saveas(gcf, file, 'svg');
 
 
 % step height
-figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+figure('position', [200 617 279 328], 'color', 'white', 'menubar', 'none');
 matMod = getDvMatrix(data, 'stepOverMaxHgt', figVars, {'mouse'}, figConditionals) * 1000;
 matBl = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, figConditionals) * 1000;
 mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
-colorsWithBl = repelem(ctlStepColor,8,1);
-colorsWithBl(2:2:8,:) = stepColors;
+colorsWithBl = repelem(stepColors,2,1);
+colorsWithBl(1:2:8,:) = colorsWithBl(2:2:8,:) * .25;
 barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step height (mm)', ...
-    'colors', colorsWithBl, barProperties{:})
-set(gca, 'YTick', 0:10:20, 'TickDir', 'out')
+    'colors', colorsWithBl, barProperties{:}, extraBarProps{:}, 'YTick', [2 10 18], 'scatterAlpha', .6, ...
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineStepHeight'), 'svg');
 
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepHeight');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
+% factor by which each paw increases in height
 fprintf('\nheight increase factor -> LF %.1f, TF %.1f, LH %.1f, TH %.1f, overall %.1f\n', ...
     mean(mat(1,1,2,:)) / mean(mat(1,1,1,:)), ...
     mean(mat(1,2,2,:)) / mean(mat(1,1,1,:)), ...
@@ -474,18 +476,17 @@ fprintf('\nheight increase factor -> LF %.1f, TF %.1f, LH %.1f, TH %.1f, overall
     mean(mat(2,2,2,:)) / mean(mat(1,1,1,:)), ...
     mean(reshape(mat(:,:,2,:),1,[])) / mean(reshape(mat(:,:,1,:),1,[])))
 
-
-% step length
-figure('position', [2200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+%% step length
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 matMod = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
 matBl = getDvMatrix(data, 'controlStepLength', figVars, {'mouse'}, figConditionals) * 1000;
 mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
 colorsWithBl = repelem(ctlStepColor,8,1);
 colorsWithBl(2:2:8,:) = stepColors;
 barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'step length (mm)', ...
-    'colors', colorsWithBl, barProperties{:})
+    'colors', colorsWithBl, barProperties{:}, extraBarProps{:})
 set(gca, 'YTick', 0:60:120, 'TickDir', 'out')
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineStepLength');
+file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineStepLength');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
@@ -497,11 +498,11 @@ fprintf('\nlength increase factor -> LF %.0f%%, TF %.0f%%, LH %.0f%%, TH %.0f%%,
     (mean(reshape(mat(:,:,2,:),1,[])) / mean(reshape(mat(:,:,1,:),1,[])) - 1)*100)
 
 
-% starting horizontal distance
+%% starting horizontal distance
 figure('position', [2400 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 mat = getDvMatrix(data, 'stepOverStartingDistance', figVars, {'mouse'}, figConditionals) * -1000;
 barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance at lift (mm)', ...
-    'colors', stepColors, barProperties{:})
+    'colors', stepColors, barProperties{:}, extraBarProps{:})
 set(gca, 'YTick', 0:20:80, 'TickDir', 'out')
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtLift');
 fprintf('writing %s to disk...\n', file)
@@ -512,7 +513,7 @@ saveas(gcf, file, 'svg');
 figure('position', [2600 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 mat = getDvMatrix(data, 'stepOverEndingDistance', figVars, {'mouse'}, figConditionals) * 1000;
 barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance at land (mm)', ...
-    'colors', stepColors, barProperties{:})
+    'colors', stepColors, barProperties{:}, extraBarProps{:})
 set(gca, 'YTick', 0:20:80, 'TickDir', 'out')
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtLand');
 fprintf('writing %s to disk...\n', file)
@@ -523,7 +524,7 @@ saveas(gcf, file, 'svg');
 figure('position', [2800 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 mat = getDvMatrix(data, 'distanceToObs', figVars, {'mouse'}, figConditionals) * 1000;
 barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'distance to obstalce at zenith (mm)', ...
-    'colors', stepColors, barProperties{:})
+    'colors', stepColors, barProperties{:}, extraBarProps{:})
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtZenith');
 fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
@@ -533,7 +534,7 @@ saveas(gcf, file, 'svg');
 figure('position', [3000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 mat = abs(getDvMatrix(data, 'xDistanceAtPeak', figVars, {'mouse'}, figConditionals) * 1000);
 barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'horizontal distance to obstalce at zenith (mm)', ...
-    'YLim', [0 12], 'colors', stepColors, barProperties{:})
+    'YLim', [0 12], 'colors', stepColors, barProperties{:}, extraBarProps{:})
 set(gca, 'YTick', 0:4:12)
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineHorDistAtZenith');
 fprintf('writing %s to disk...\n', file)
@@ -547,8 +548,8 @@ fprintf('\nhorizontal distance -> LF %.1f, TF %.1f, LH %.1f, TH %.1f, overall %.
     mean(reshape(mat(:,:,:),1,[])));
 
 
-% length of steps leading up to obstacle
-figure('position', [2000 100 800 328.00], 'color', 'white', 'menubar', 'none');
+%% length of steps leading up to obstacle
+figure('position', [200 292 851 447], 'color', 'white', 'menubar', 'none');
 matPrePre = getDvMatrix(data, 'prePreStepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
 matPre = getDvMatrix(data, 'preStepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
 mat = getDvMatrix(data, 'stepOverLength', figVars, {'mouse'}, figConditionals) * 1000;
@@ -557,14 +558,9 @@ mat = permute(cat(4,matPrePre,matPre,mat), [1 2 4 3]); % add baseline vs mod ste
 conditionNamesTemp = cat(2,conditionNames, {{'-2','-1','0'}});
 colorsTemp = repelem(stepColors,3,1) .* repmat([.2; .6; 1],4,1); % each color is repeated thrice, fading from black to the full color... lol
 barFancy(mat, 'levelNames', conditionNamesTemp, 'ylabel', 'step length (mm)', ...
-    'colors', colorsTemp, barProperties{:})
-
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselinePrecedingStepLengths');
-fprintf('writing %s to disk...\n', file)
-saveas(gcf, file, 'svg');
-
-
-
+    'colors', colorsTemp, barProperties{:}, extraBarProps{:}, 'YTick', 20:50:120, ...
+    'comparisons', [1 3; 4 6; 7 9; 10 12], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePrecedingStepLengths'), 'svg');
 
 %% light on vs light off speed
 

@@ -8,7 +8,9 @@ outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
 global_config;
 
 flat = flattenData(data, ...
-    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength'}]);
+    [m.predictorsAll, {'mouse', 'session', 'trial', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
+    'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', ...
+    'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd'}]);
 
 % get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
@@ -102,13 +104,15 @@ plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
 
 %% model accuracies
 plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', 0, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
 %% model predictors
-plotPredictors(flat, m.predictors, 'isBigStep', 'avgMice', true, 'colors', predictorColors,...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly);
+plotPredictors(flat, m.predictors, 'isModPawLengthened', 'avgMice', true, 'colors', predictorColors,...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'names', m.predictorsNamed, 'mouseAlpha', .2, 'subplotDims', [2 3], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'));
 
 %% model accuracies (predicted distance only)
 acc = plotModelAccuracies(flat, {'modPawPredictedDistanceToObs'}, 'isModPawLengthened', 'model', 'glm', ...
@@ -138,48 +142,57 @@ xlabel('\delta length')
 %% forward feature selection
 
 % settings
-rng(0);  % set initialization seed
-kFolds = 15;
+% rng(0);  % set initialization seed
+kFolds = 10;
 
 % initializations
 bestPredictors = {};
 remainingPredictors = m.predictorsAll;
-accuracies = nan(1, length(m.predictorsAll));
+accuracies = nan(length(mice), length(m.predictorsAll));
+mice = unique({flat.mouse});
+
 
 for i = 1:length(m.predictorsAll)
     
     fprintf('predictor %i: ', i)
-    a = nan(1, length(remainingPredictors));
+    a = nan(length(mice), length(remainingPredictors));
     
     for j = 1:length(remainingPredictors)
         fprintf('%i/%i ', j, length(remainingPredictors))
         a_sub = plotModelAccuracies(flat, [bestPredictors, remainingPredictors{j}], 'isModPawLengthened', ...
             'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
             'weightClasses', true, 'plot', false, 'kFolds', kFolds);
-        a(j) = mean(a_sub(1,2,:));
+        a(:,j) = a_sub(1,2,:);
     end
     fprintf('\n')
     
     % store best predictor
-    [accuracies(i), ind] = max(a);
+    [~, ind] = max(max(a,[],1));
+    accuracies(:,i) = a(:, ind);
     bestPredictors{end+1} = remainingPredictors{ind};
     remainingPredictors = remainingPredictors(~strcmp(remainingPredictors, remainingPredictors{ind}));
 end
 
-% plot
-figure('Color', 'white', 'MenuBar', 'none', 'Position', [2375.00 747.00 297.00 232.00]); hold on
-plot(0:length(m.predictorsAll), [.5 accuracies], ...
+%% plot
+figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 747.00 297.00 232.00]); hold on
+plot(0:length(m.predictorsAll), [.5 nanmean(accuracies,1)], ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
-scatter(1:length(m.predictorsAll), accuracies, 60, predictorColors, 'filled');
+scatter(repelem(1:length(m.predictorsAll), length(mice)), ...
+    accuracies(:), 20, [1 1 1]*.8, 'filled', 'MarkerFaceAlpha', .4);
+% plot(repmat(1:length(m.predictorsAll),length(mice),1)', ...
+%     accuracies', 20, [1 1 1]*.8, 'color', [0 0 0 .1]);
+scatter(1:length(m.predictorsAll), nanmean(accuracies,1), 60, predictorColors, 'filled');
+
+
+
 xlabel('number of features')
 ylabel('cross-validation accuracy')
-set(gca, 'XLim', [0, length(m.predictorsAll)], 'ylim', [.5 .9])
+set(gca, 'XLim', [0, length(m.predictorsAll)])
 fprintf('max accuracy: %.2f\n', max(accuracies))
-fprintf('PREDICTORS: '); fprintf('%s ', bestPredictors{:}); fprintf('\n')
+fprintf('PREDICTORS: {');fprintf('''%s'', ', bestPredictors{:}); fprintf('}\n')
 
 % save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelAccuracy');
-saveas(gcf, file, 'svg');
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelAccuracy'), 'svg');
 
 
 %% predictor scatters and histograms
@@ -379,43 +392,88 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 
 %% distance and time to contact
-% 
-% 
-% % settings
-% xLims = [15 50];
-% yLims = [0 150];
-% scatSize = 4;
-% scatAlpha = .3;
-% mouseColors = true;
-% scatPlotSize = .7;
-% border = .15;
-% 
-% 
-% % initializations
-% d = flat.distances;
-% t = flat.times;
-% [~,~,mouseIds] = unique(flat.mouse);
-% 
-% % plot that shit
-% figure('Color', 'white', 'Position', [2000 400 450 350], 'MenuBar', 'none');
-% scatterHistoRick(d,t, ...
-%     'groupId', mouseIds, 'colors', 'jet', 'groupFcn', @nanmedian, ...
-%     'xlabel', 'distance to contact (mm)', 'ylabel', 'time to contact (ms)', ...
-%     'xLims', xLims, 'yLims', yLims, 'showCrossHairs', true, 'scatSize', scatSize, 'scatAlpha', scatAlpha);
-% 
-% % save
-% file = fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact');
-% fprintf('writing %s to disk...\n', file)
-% saveas(gcf, file, 'svg');
-% 
-% % get median distances and times for all mice
-% [distances, times] = deal(nan(1,length(mice)));
-% for i = 1:length(mice)
-%     mouseBins = strcmp(flat.mouse, mice{i});
-%     distances(i) = median(flat.distances(mouseBins));
-%     times(i) = median(flat.times(mouseBins));
-% end
-% 
+
+
+% compute distance and time to contact
+trialSmps = 100;  % fit linear model of leading forepaw position over this many samples
+fps = 250;
+sessions = unique({flat.session});
+% sessions = sessions(1:6); % !!! temp
+
+% initialize new fields
+temp = num2cell(nan(1,length(flat)));
+[flat.distances] = temp{:};
+[flat.times] = temp{:};
+
+for i = 1:length(sessions)
+    
+    fprintf('%s: computing distance and time to contact\n', sessions{i})
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'kinData');
+    sessionBins = strcmp({flat.session}, sessions{i});
+    if sum(sessionBins)~=length(kinData); disp('WTF! mismatch in number of trials! fucking shit!!!'); end
+    
+    % loop over paws
+    for j = find([kinData.isTrialAnalyzed])
+        
+        flatBin = sessionBins & [flat.trial]==j;
+        
+        % find distance and time to contact
+        flat(flatBin).distances = abs(max(kinData(j).locations(kinData(j).contactInd,1,:)))*1000;  % distance of leading paw at contact
+        trialX = max(kinData(j).locations(kinData(j).contactInd-trialSmps+1:kinData(j).contactInd,1,:), [], 3);  % x position of the leading most forepaw across entire trial
+        predictedAtObsInd = polyval(polyfit(trialX', 1:trialSmps, 1), 0);  % predicted the ind at which paw would intercept obstacle
+        flat(flatBin).times = abs((predictedAtObsInd-trialSmps) / fps)*1000; % frame until contact / (frames/second)
+    end
+end
+disp('all done!')
+
+
+
+
+
+%% settings
+binNum = 100;
+mouseAlpha = .25;
+
+
+% initializations
+d = [flat.distances];
+t = [flat.times];
+[mice,~,mouseIds] = unique({flat.mouse});
+
+% plot that shit
+close all
+figure('Color', 'white', 'Position', [200 400 450 350], 'MenuBar', 'none');
+dvs = {d, t};
+labels = {'distance to contact (mm)', 'time to contact (ms)'};
+xLims = [10 60; 0 150];
+colors = lines(length(mice));
+
+for i = 1:2
+    subplot(2,1,i); hold on
+    
+    xGrid = linspace(xLims(i,1), xLims(i,2), binNum);
+    
+    mouseMedians = nan(1,length(mice));  % mouse means for two conditions
+    pdfs = nan(length(mice), binNum);
+    
+    for j = 1:length(mice)
+        bins = mouseIds==j;
+        pdfs(j,:) = ksdensity(dvs{i}(bins), xGrid);
+        plot(xGrid, pdfs(j,:), 'Color', [colors(j,:) mouseAlpha], 'LineWidth', 1)
+        mouseMedians(j) = nanmedian(dvs{i}(bins));
+    end
+    
+    plot(xGrid, nanmean(pdfs,1), 'Color', [1 1 1]*.15, 'LineWidth', 3)
+    yLims = get(gca, 'ylim');
+    plot([1 1]*mean(mouseMedians), yLims, 'Color', [.15 .15 .15])  % add line at the mean across mice :)
+    set(gca, 'YColor', 'none', 'Box', 'off', 'xlim', xLims(i,:), 'xtick', linspace(xLims(i,1), xLims(i,2), 4), 'TickDir', 'out')
+    xlabel(labels{i})
+    text(mean(mouseMedians)+.05*range(xLims(i,:)), yLims(2), sprintf('%.1f', mean(mouseMedians)), ...
+        'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
+end
+
+
 % fprintf('\ndistance to contact:   %.1f +- %.1f SEM\n', mean(distances), std(distances)/sqrt(length(distances)))
 % fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
-% 
+
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact'), 'svg');

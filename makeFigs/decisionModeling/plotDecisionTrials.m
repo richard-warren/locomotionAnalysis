@@ -53,7 +53,7 @@ kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
 kinData(flat.firstModPaw==3,2,:) = -kinData(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 kinDataCtl(flat.firstModPaw==3,2,:) = -kinDataCtl(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 
-figure('Color', 'white', 'Position', [2001.00 10 900.00 250*length(s.levels)], 'MenuBar', 'none');
+figure('Color', 'white', 'Position', [200 100 900.00 250*length(s.levels)], 'MenuBar', 'none');
 if ~isempty(s.condition)  % if no condition provided, create dummy variable
     [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
 else

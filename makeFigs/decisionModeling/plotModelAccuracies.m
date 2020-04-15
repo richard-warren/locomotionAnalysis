@@ -1,4 +1,4 @@
-function [accuracies, f1Scores, flat] = plotModelAccuracies(flat, predictors, target, varargin)
+function [accuracies, f1Scores, flat, models] = plotModelAccuracies(flat, predictors, target, varargin)
 
 % train models to predict big vs. little step for different experimental
 % conditions to see whether behavioral determinants are affected by
@@ -8,8 +8,6 @@ function [accuracies, f1Scores, flat] = plotModelAccuracies(flat, predictors, ta
 % matrix X // flat_sub is a version of flat with rows removed that violate
 % trial restrictions, and with a [s.outcome '_predicted'] column containing
 % the predictions for each row
-
-% todo: add class balancing option?
 
 
 % settings
@@ -34,6 +32,8 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 
 s.hiddenUnits = 100;  % if ann is used, this defines number of hidden units in 3 layers perceptron
 
+% debugFlag = false;  % temp
+
 
 % initialization
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
@@ -50,6 +50,7 @@ if s.deltaMin
     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
 end
+% if s.deltaMin; flat = flat(abs(zscore(flat.modPawDeltaLength))>s.deltaMin, :); end
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);
@@ -94,8 +95,9 @@ for i = 1:length(mice)
             model = {models{s.modelTransfers(j-length(s.levels),1), i}};
         end
         
-        X_sub = X(mouseBins & conditionBins,:);
-        y_sub = y(mouseBins & conditionBins);
+        inds = find(mouseBins & conditionBins);
+        X_sub = X(inds,:);
+        y_sub = y(inds);
         
         if s.balanceClasses
             n = min(sum(y_sub), sum(~y_sub));
@@ -105,19 +107,23 @@ for i = 1:length(mice)
             inds_f = find(~y_sub);
             inds_f = inds_f(randperm(length(inds_f), n));
             
-            inds = sort([inds_t; inds_f]);
-            X_sub = X_sub(inds,:);
-            y_sub = y_sub(inds);
+            inds_sub = sort([inds_t; inds_f]);
+            
+            inds = inds(inds_sub);
+            X_sub = X_sub(inds_sub,:);
+            y_sub = y_sub(inds_sub);
         end
         
         if ~isempty(y_sub)
             
             % train model
+%             if j==4; debugFlag = true; end % !!! temp
             [models{j,i}, accuracies(j,2,i), f1Scores(j,2,i), predictions] = ...
                 computeModel(X_sub, y_sub, s.kFolds, model{:});  % mouse model for this condition
+%             debugFlag = false; % !!! temp
             
             % store model predictions
-            flat.([target '_predicted'])(mouseBins & conditionBins) = predictions;
+            flat.([target '_predicted'])(inds) = predictions;
             
             % train model on shuffled data
             [~, accuracies(j,1,i), f1Scores(j,1,i)] = ...
@@ -173,6 +179,9 @@ function [model, accuracy, f1, predictions] = computeModel(X, y, kFolds, prevMod
         
         % accuracy
         acc(k) = mean(y(partitions.test(k))==yhat);
+%         if degubFlag
+%             disp([y(partitions.test(k)), yhat]')
+%         end
 
         % f1 scores
         confusion = confusionmat(y(partitions.test(k))', yhat, 'Order', [false true]);
@@ -200,18 +209,21 @@ end
 
 if s.plot
     % plot everything
-    figure('position', [2040.00 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
+    figure('position', [200 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
     colors = repelem(s.colors, 2, 1);
     colors = colors .* repmat([.5;1],length(s.levels),1);
 
     % accuracies
     subplot(1,2,1)
-    barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:}, 'YLim', [0 1])
-
+    barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
+    
+    fprintf('\naccuracies: ')
+    fprintf('%.2f ', nanmean(squeeze(accuracies(:,2,:)), (size(accuracies,1)~=1)+1))
+    fprintf('\n')
+    
     % f1 scores
     subplot(1,2,2)
-    barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:}, 'YLim', [0 1])
-
+    barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
 
     % save
     if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end

@@ -124,3 +124,15 @@ set(gca, 'box', 'off', 'XLim', [s.posLims(1) s.posLims(2)], 'YLim', [yLims(1) yL
 xlabel('distance to water reward (m)')
 ylabel('velocity (m/s)')
 line([s.posLims(1) s.posLims(1)], [yLims(2) yLims(2)+range(yLims)*s.topArea], 'color', 'white', 'linewidth', 3) % cover the extra vertical portion of the y axis with a white line - yes, this is a hack
+
+
+% the following is a hack that flips the sign of the x axis
+xLabels = get(gca, 'XTickLabel');
+for i = 1:length(xLabels)
+    if strcmp(xLabels{i}(1), '-') && ~strcmp(xLabels{i}(2:end), '0')
+        xLabels{i} = xLabels{i}(2:end);
+    else
+        xLabels{i} = ['-' xLabels{i}];
+    end
+end
+set(gca, 'XTickLabel', xLabels)

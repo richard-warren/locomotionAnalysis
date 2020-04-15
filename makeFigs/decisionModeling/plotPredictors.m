@@ -1,4 +1,4 @@
-function plotModelPredictors(flat, predictors, target, varargin)
+function plotPredictors(flat, predictors, target, varargin)
 
 % plots probability of 'target' being true as a function each 'predictor'
 % // plots one row per condition // can pool across mice or average across
@@ -10,17 +10,22 @@ function plotModelPredictors(flat, predictors, target, varargin)
 s.condition = '';  % name of field in 'data' that contains different experimental conditions
 s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
+s.names = {};  % use these names to label subplots (overwriting names in 'predictors')
 
 s.avgMice = false;
-s.percentileLims = [1 99];
+s.percentileLims = [10 99];
 s.binNum = 100;
-s.binWidth = .1;  % expressed in terms of frace of x limits
+s.binWidth = .15;  % expressed in terms of frace of x limits
 s.yLim = [0 1];  % if using this for non-binary dependent variable this may become useful
+s.mouseAlpha = .25;
+s.subplotDims = [];
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
+s.lineWidth = .05;  % expressed as fraction of y axis
+s.mouseLineWidth = .02;  % expressed as fraction of y axis
 
 s.saveLocation = '';  % if provided, save figure automatically to this location
 
@@ -31,6 +36,8 @@ if length(s.levels)==1; colorNum=length(predictors); else; colorNum=length(s.con
 if isempty(s.colors); s.colors = jet(colorNum); end
 if isstruct(flat); flat = struct2table(flat); end
 cNum = length(s.levels);  % total number of conditions
+if isempty(s.names); s.names = predictors; end
+if isempty(s.subplotDims); s.subplotDims = [cNum length(predictors)]; end
 
 % restrict to desired trials
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
@@ -49,7 +56,7 @@ else
     condition = ones(height(flat), 1);
 end
 
-figure('position', [100 400 200*length(predictors) 150*length(s.levels)], ...
+figure('position', [100 400 200*s.subplotDims(2) 150*s.subplotDims(1)], ...
     'color', 'white', 'menubar', 'none')
 
 % loop over conditions
@@ -62,7 +69,7 @@ for j = 1:length(predictors)
     
     for i = 1:cNum
         
-        subplot(cNum, length(predictors), (i-1)*length(predictors) + j); hold on
+        subplot(s.subplotDims(1), s.subplotDims(2), (i-1)*length(predictors) + j); hold on
         if length(s.levels)==1; c = s.colors(j,:); else; c=s.colors(i,:); end
         
         for k = 1:length(mice)
@@ -81,22 +88,29 @@ for j = 1:length(predictors)
             if s.avgMice
                 x = squeeze(probs(i,j,k,:));
                 t = squeeze(transparencies(i,j,k,:));
-                patch(binCenters, [x(1:end-1)' NaN], c, 'EdgeColor', c, ...
-                    'FaceVertexAlphaData', t/max(t)*.5, ...
-                    'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', 'LineWidth', 1)
+                t = t*s.mouseLineWidth/max(t);
+%                 patch(binCenters, [x(1:end-1)' NaN], c, 'EdgeColor', c, ...
+%                     'FaceVertexAlphaData', t/max(t)*s.mouseAlpha, ...
+%                     'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', 'LineWidth', 1)
+%                 plot(binCenters, x, 'Color', [c s.mouseAlpha], 'LineWidth', 1)
+                patch([binCenters fliplr(binCenters)], [x+t; flipud(x-t)], c, ...
+                    'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha)
             end
         end
         
         % plot avg across mice
         x = squeeze(nanmean(probs(i,j,:,:),3));
         t = squeeze(nanmean(transparencies(i,j,:,:),3));
-        patch(binCenters, [x(1:end-1)' NaN], c, 'EdgeColor', c, ...
-            'FaceVertexAlphaData', t/max(t), ...
-            'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', 'LineWidth', 4)
+        t = t*s.lineWidth/max(t);
+%         patch(binCenters, [x(1:end-1)' NaN], c, 'EdgeColor', c, ...
+%             'FaceVertexAlphaData', t/max(t), ...
+%             'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', 'LineWidth', 4        keyboard
+        patch([binCenters fliplr(binCenters)], ...
+            [x+t; flipud(x-t)], c, 'EdgeColor', 'none')
         
         if j==1; ylabel(s.levels{i}); end
-        if i==1; title(predictors{j}); end
-        set(gca, 'yLim', s.yLim, 'XTick', [])
+        if i==1; xlabel(s.names{j}); end
+        set(gca, 'yLim', s.yLim, 'XTick', [], 'xlim', xLims)
     end
 end
 

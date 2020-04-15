@@ -27,6 +27,7 @@ s.lineWidth = 3;
 s.mouseAlpha = .4;
 s.errorEdges = .4;
 s.showErrorBars = true;
+s.flipx = false;  % whether to reverse the sign of the x values
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
@@ -94,7 +95,7 @@ for i = 1:length(rowConditions)
     end
     
     % pimp fig
-    set(gca, 'Box', 'off', 'TickDir', 'out')
+    set(gca, 'Box', 'off')
     if ~isempty(s.xlim); set(gca, 'XLim', s.xlim); end
 end
 
@@ -117,5 +118,16 @@ end
 mouseAvgs = squeeze(mouseAvgs);
 conditions = s.plotConditions;
 
+if s.flipx
+    xLabels = get(gca, 'XTickLabel');
+    for i = 1:length(xLabels)
+        if strcmp(xLabels{i}(1), '-')
+            xLabels{i} = xLabels{i}(2:end);
+        elseif ~strcmp(xLabels{i}, '0')
+            xLabels{i} = ['-' xLabels{i}];
+        end
+    end
+    set(gca, 'XTickLabel', xLabels)
+end
 
 

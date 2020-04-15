@@ -1,4 +1,4 @@
-ed ifunction sesPlotRick(data, varargin)
+function sesPlotRick(data, varargin)
 
 % given matrix where first dim is mouse number, and second dim is session
 % number, plots variavle for all mice as function of session number, eg to
@@ -46,7 +46,8 @@ pause(.001)
 if ~isempty(s.compareTo)
     bl = mean(data(:, s.compareTo),2);
     for i = s.compareTo(end)+1:size(data,2)
-        [~, p] = ttest(bl, data(:,i));
+%         [~, p] = ttest(bl, data(:,i));
+        [p] = signrank(bl, data(:,i));
         fprintf('session %i, p: %.5f\n', i, p);
     end
     fprintf('\n');

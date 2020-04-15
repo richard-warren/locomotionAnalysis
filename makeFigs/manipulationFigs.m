@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_muscimol';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 3];  % min and max sessions to include in 'early' lesion sessions
@@ -266,13 +266,13 @@ fprintf('%.3f of trials used in matched sub-population\n', size(flat_matched) / 
 %% bars
 
 % success rate
-figure('position', [2000.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
+figure('position', [200 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, [figConditionals]);
-barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
-set(gca, 'YTick', 0:.5:1, 'YLim', [0,1])
+barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+    'YTick', [0 .5 1], 'YLim', [0 1], 'comparisons', [1 2], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_success' suffix1 suffix2]), 'svg');
 
-% velocity
+%% velocity
 figure('position', [2300.00 472.00 320 328.00], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'trialVel', vars.condition, {'mouse'}, [figConditionals]);
 barFancy(dv, 'ylabel', 'velocity (m/s)', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
@@ -390,7 +390,7 @@ set(gca, 'YLim', [0 1], 'YTick', 0:.5:1, 'XLim', [sessionsToShow(1) sessionsToSh
 ln = line([.5 .5], get(gca, 'ylim'), 'color', lesionColor, 'linewidth', 3); uistack(ln, 'bottom')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_succesOverSessions' suffix1 suffix2]), 'svg');
 
-% body angle
+%% body angle
 figure('position', [2018.00 200 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'trialAngleContra', vars.sessionsPostLesion, {'mouse'});
 % if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
