@@ -11,6 +11,7 @@ ctlStepColor = [1 1 1] * .4;
 barProperties = {'showBars', false, 'showErrorBars', false, 'lineThickness', 4, 'connectDots', true, ...
                  'lineAlpha', .1, 'showScatter', true, 'scatterColors', 'lines', 'scatterSize', 40, ...
                  'scatterAlpha', .8, 'scatterCondColor', true, 'constantEdgeColor', [], 'barWidth', .8};
+sessionPlotProperties = {'colors', 'lines', 'alpha', .3, 'scatSize', 0, 'meanColor', axisColor};
 
 
              % step type colors (leading, lagging, fore, hind)
@@ -36,7 +37,7 @@ m.modPawOnlySwing = true;
 m.successOnly = true;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
 m.predictorsAll = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
 m.predictors = {'modPawXVel', 'obsHgt', 'velAtWiskContact', 'modPawX', 'modPawZ', 'modPawZVel'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
-m.predictorsNamed = {'paw velocity (horizontal)', 'obstacle height', 'wheel velocity', 'paw position (horizontal)', 'paw position (vertical)', 'paw velocity (vertical)'};
+m.predictorsNamed = {{'paw velocity';'(horizontal)'}, {'obstacle';'height'}, {'wheel';'velocity'}, {'paw position';'(horizontal)'}, {'paw position';'(vertical)'}, {'paw velocity';'(vertical)'}};
 m.heatmapNormalize = 'col';  % normalize row or colum to sum to 1
 decisionColors = flipud(colorme(2, 'offset', .2, 'showSamples', false)); % first entry is small step, second is big step
 preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));

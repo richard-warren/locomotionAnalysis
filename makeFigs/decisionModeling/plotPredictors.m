@@ -60,7 +60,7 @@ figure('position', [100 400 200*s.subplotDims(2) 150*s.subplotDims(1)], ...
     'color', 'white', 'menubar', 'none')
 
 % loop over conditions
-[probs, transparencies] = deal(nan(cNum, length(predictors), length(mice), s.binNum));
+[probs, thicknesses] = deal(zeros(cNum, length(predictors), length(mice), s.binNum));
 
 for j = 1:length(predictors)
     xLims = prctile(flat.(predictors{j}), s.percentileLims);  % base x limits on distribution for this predictor across conditions and across mice
@@ -79,38 +79,33 @@ for j = 1:length(predictors)
             y = flat.(target)(mouseBins & condition==i);
             
             for m = 1:s.binNum
-                bins = x>binCenters(m)-binWidth*.5 & x<=binCenters(m)+binWidth*.5;
-                probs(i,j,k,m) = nanmean(y(bins));
-                transparencies(i,j,k,m) = sum(bins) / length(y);
+                bins = x>(binCenters(m)-binWidth*.5) & x<=(binCenters(m)+binWidth*.5);
+                if sum(bins)>0
+                    probs(i,j,k,m) = nanmean(y(bins));
+                    thicknesses(i,j,k,m) = sum(bins) / length(x);
+                end
             end
             
             % plot mouse
             if s.avgMice
-                x = squeeze(probs(i,j,k,:));
-                t = squeeze(transparencies(i,j,k,:));
+                p = squeeze(probs(i,j,k,:));
+                t = squeeze(thicknesses(i,j,k,:));
                 t = t*s.mouseLineWidth/max(t);
-%                 patch(binCenters, [x(1:end-1)' NaN], c, 'EdgeColor', c, ...
-%                     'FaceVertexAlphaData', t/max(t)*s.mouseAlpha, ...
-%                     'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', 'LineWidth', 1)
-%                 plot(binCenters, x, 'Color', [c s.mouseAlpha], 'LineWidth', 1)
-                patch([binCenters fliplr(binCenters)], [x+t; flipud(x-t)], c, ...
-                    'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha)
+                patch([binCenters fliplr(binCenters)]', [p+t; flipud(p-t)], c, 'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha)
             end
         end
         
         % plot avg across mice
-        x = squeeze(nanmean(probs(i,j,:,:),3));
-        t = squeeze(nanmean(transparencies(i,j,:,:),3));
+        p = squeeze(nanmean(probs(i,j,:,:),3));
+        t = squeeze(nanmean(thicknesses(i,j,:,:),3));
         t = t*s.lineWidth/max(t);
-%         patch(binCenters, [x(1:end-1)' NaN], c, 'EdgeColor', c, ...
-%             'FaceVertexAlphaData', t/max(t), ...
-%             'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', 'LineWidth', 4        keyboard
         patch([binCenters fliplr(binCenters)], ...
-            [x+t; flipud(x-t)], c, 'EdgeColor', 'none')
+            [p+t; flipud(p-t)], c, 'EdgeColor', 'none')
         
         if j==1; ylabel(s.levels{i}); end
-        if i==1; xlabel(s.names{j}); end
+        if i==cNum; xlabel(s.names{j}); end
         set(gca, 'yLim', s.yLim, 'XTick', [], 'xlim', xLims)
+%         if i==cNum; set(gca, 'XTick', [xLims(1) xLims(2)]); end
     end
 end
 

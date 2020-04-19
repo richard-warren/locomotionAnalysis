@@ -50,7 +50,7 @@ if s.deltaMin
     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
 end
-% if s.deltaMin; flat = flat(abs(zscore(flat.modPawDeltaLength))>s.deltaMin, :); end
+% if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<1 & [flat.isBigStep]==0), :); end
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);
@@ -194,8 +194,8 @@ function [model, accuracy, f1, predictions] = computeModel(X, y, kFolds, prevMod
     accuracy = nanmean(acc);
     f1 = nanmean(f1s);
     
-    % train model on on samples
-    model = fitglm(X, y, 'Distribution', 'binomial');  % fit model on all data
+    % train model on all samples
+    model = fitglm(X, y, 'Distribution', 'binomial', 'Weights', weights);  % fit model on all data
     predictions = predict(model, X);
 end
 
@@ -218,7 +218,7 @@ if s.plot
     barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
     
     fprintf('\naccuracies: ')
-    fprintf('%.2f ', nanmean(squeeze(accuracies(:,2,:)), (size(accuracies,1)~=1)+1))
+    fprintf('%.3f ', nanmean(squeeze(accuracies(:,2,:)), (size(accuracies,1)~=1)+1))
     fprintf('\n')
     
     % f1 scores

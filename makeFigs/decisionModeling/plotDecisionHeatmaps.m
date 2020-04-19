@@ -16,6 +16,10 @@ s.binNum = 100;  % number of bins for sliding average of big step probability
 s.saveLocation = '';  % if provided, save figure automatically to this location
 s.outcome = 'isBigStep';  % plot the probability of 'outcome' as a function of 'modPawPredictedDistanceToObs'
 s.normalize = '';  % 'row' or 'col' normalize the sum of each row or column to 1
+s.lineThickness = .05;  % expressed as fraction of y axis range
+s.lineAlhpa = .8;
+s.plotProbs = true;  % whether to plot probability of outcome being true
+s.subplotDims = [];  % user can overwrite the dimensions of the subplots, although this should only not wreak havock under certain conditions (e.g. when there is only one row or column)
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
@@ -57,7 +61,7 @@ mice = unique(flat.mouse);
 
 % compute heatmaps and big step probabilities
 binCenters = linspace(s.xLims(1), s.xLims(2), s.binNum);
-[heatmaps, bigStepProbs, xMarginals] = deal(cell(length(s.levels), length(mice)));
+[heatmaps, probs, thicknesses] = deal(cell(length(s.levels), length(mice)));
 
 for i = 1:length(s.levels)
     conditionBins = condition==i;
@@ -72,36 +76,36 @@ for i = 1:length(s.levels)
                 'xLims', s.xLims, 'yLims', s.yLims, 'showPlot', false, 'binNum', s.binNum, 'normalize', s.normalize);
 
             % compute moving average for big step probability
-            bigStepProbs{i,j} = nan(1, length(binCenters));
+            probs{i,j} = zeros(1, length(binCenters));
             for k = 1:length(binCenters)
                 binLims = binCenters(k) + [-s.binWidth/2 s.binWidth/2];
                 binsSub = bins & ...
                        flat.modPawPredictedDistanceToObs*1000 > binLims(1) & ...
                        flat.modPawPredictedDistanceToObs*1000 <= binLims(2);
-                bigStepProbs{i,j}(k) = nanmean(flat.(s.outcome)(binsSub));
+                if any(binsSub); probs{i,j}(k) = nanmean(flat.(s.outcome)(binsSub)); end
             end
-            
-            % compute marginals for x
-            xMarginals{i,j} = ksdensity(flat.modPawPredictedDistanceToObs*1000, x);
+            thicknesses{i,j} = ksdensity(flat.modPawPredictedDistanceToObs*1000, x);  % compute marginals for x
         else
-            heatmaps{i,j} = nan(s.binNum, s.binNum);  % !!! this will fail if the first heatmap is unsuccessfull
-            bigStepProbs{i,j} = nan(1, length(binCenters));
+            heatmaps{i,j} = zeros(s.binNum, s.binNum);
+            probs{i,j} = zeros(1, length(binCenters));
         end
     end
     fprintf('\n')
 end
 
     
-% make plots
+% MAKE PLOTS
 if (s.plotMice && s.avgMice); rows = 1+length(mice); else; rows = 1; end
-figure('Color', 'white', 'Position', [2000 10 300*(length(s.levels)+1) 150*rows], 'MenuBar', 'none');
+if isempty(s.subplotDims); s.subplotDims = [rows, length(s.levels)+s.plotProbs]; end
+figure('Color', 'white', 'Position', [200 10 200*s.subplotDims(2) 150*s.subplotDims(1)], 'MenuBar', 'none');
 colormap(s.colormap)
+
 
 % average heatmaps
 for i = 1:length(s.levels)
     
     % heatmap
-    subplot(rows, length(s.levels)+1, i); hold on
+    subplot(s.subplotDims(1), s.subplotDims(2), i); hold on
     imagesc(x, y, nanmean(cat(3, heatmaps{i,:}), 3))
     set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
     line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)
@@ -109,30 +113,30 @@ for i = 1:length(s.levels)
     set(gca, 'XLim', s.xLims, 'YLim', s.yLims)
     
     % probabilities
-    yyaxis right;
-    meanMarginals = mean(cat(1,xMarginals{i,:}),1);
-    meanProbs = nanmean(cat(1, bigStepProbs{i,:}), 1);
+    if s.plotProbs
+        yyaxis right; hold on
+        t = mean(cat(1,thicknesses{i,:}),1);  % line thickness
+        t = t*s.lineThickness / max(t);
+        p = nanmean(cat(1, probs{i,:}), 1);
+        patch([x fliplr(x)], [p+t, fliplr(p-t)], s.colors(i,:), 'EdgeColor', 'none', 'FaceAlpha', s.lineAlhpa)
+        set(gca, 'YColor', s.colors(i,:), 'ytick', [0 1], 'ylim', [0 1])
+    end
     
-    patch(x, [meanProbs(1:end-1) NaN], s.colors(i,:), 'EdgeColor', s.colors(i,:), ...
-        'FaceVertexAlphaData', meanMarginals'/max(meanMarginals), 'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', ...
-        'LineWidth', 4)
-    
-%     set(gca, 'YColor', s.colors(i,:), 'YTick', 0:.5:1, 'box', 'off', 'ylim', [0 1])
-    set(gca, 'YColor', s.colors(i,:))
     title(s.levels{i})
 end
 
 % average log plots
-subplot(rows, length(s.levels)+1, length(s.levels)+1); hold on
-for i = 1:length(s.levels)
-    meanMarginals = mean(cat(1,xMarginals{i,:}),1);
-    meanProbs = nanmean(cat(1, bigStepProbs{i,:}), 1);
-    
-    patch(x, [meanProbs(1:end-1) NaN], s.colors(i,:), 'EdgeColor', s.colors(i,:), ...
-        'FaceVertexAlphaData', meanMarginals'/max(meanMarginals), 'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', ...
-        'LineWidth', 4)
-    
-    title([s.outcome ' probability'])
+if s.plotProbs
+    subplot(s.subplotDims(1), s.subplotDims(2), length(s.levels)+s.plotProbs); hold on
+    for i = 1:length(s.levels)
+        t = mean(cat(1,thicknesses{i,:}),1);
+        t = t*s.lineThickness / max(t);
+        p = nanmean(cat(1, probs{i,:}), 1);
+
+        patch([x fliplr(x)], [p+t, fliplr(p-t)], s.colors(i,:), 'EdgeColor', 'none', 'FaceAlpha', s.lineAlhpa)
+        set(gca, 'YColor', s.colors(i,:), 'ytick', [0 1], 'ylim', [0 1])
+        title([s.outcome ' probability'])
+    end
 end
 
 
@@ -142,28 +146,34 @@ if (s.plotMice && s.avgMice)
 
         % heatmaps
         for i = 1:length(s.levels)
-            subplot(rows, length(s.levels)+1, i + m*(length(s.levels)+1))
+            subplot(s.subplotDims(1), s.subplotDims(2), i + m*(length(s.levels)+s.plotProbs))
             imagesc(x, y, heatmaps{i,m})
             set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
             line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)
             if i==1; ylabel(mice{m}); end
 
-            yyaxis right
-            meanMarginals = mean(cat(1,xMarginals{i,:}),1);
-            meanProbs = nanmean(cat(1, bigStepProbs{i,:}), 1);
+            if s.plotProbs
+                yyaxis right
+                t = thicknesses{i,m};
+                t = t*s.lineThickness / max(t);
+                p = probs{i,m};
 
-            patch(x, [bigStepProbs{i,m}(1:end-1) NaN], s.colors(i,:), 'EdgeColor', s.colors(i,:), ...
-                'FaceVertexAlphaData', xMarginals{i,m}'/max(xMarginals{i,m}), 'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', ...
-                'LineWidth', 4)
-            set(gca, 'YColor', s.colors(i,:), 'YTick', 0:.5:1, 'box', 'off', 'ylim', [0 1])
+                patch([x fliplr(x)], [p+t, fliplr(p-t)], s.colors(i,:), 'EdgeColor', 'none', 'FaceAlpha', s.lineAlhpa)
+                set(gca, 'YColor', s.colors(i,:), 'ytick', [0 1], 'ylim', [0 1])
+            end
         end
 
         % log plot
-        subplot(rows, length(s.levels)+1, (m+1)*(length(s.levels)+1)); hold on
-        for i = 1:length(s.levels)
-            patch(x, [bigStepProbs{i,m}(1:end-1) NaN], s.colors(i,:), 'EdgeColor', s.colors(i,:), ...
-                'FaceVertexAlphaData', xMarginals{i,m}'/max(xMarginals{i,m}), 'AlphaDataMapping', 'none', 'EdgeAlpha', 'interp', ...
-                'LineWidth', 4)
+        if s.plotProbs
+            subplot(s.subplotDims(1), s.subplotDims(2), (m+1)*(length(s.levels)+s.plotProbs)); hold on
+            for i = 1:length(s.levels)
+                t = thicknesses{i,m};
+                t = t*s.lineThickness / max(t);
+                p = probs{i,m};
+
+                patch([x fliplr(x)], [p+t, fliplr(p-t)], s.colors(i,:), 'EdgeColor', 'none', 'FaceAlpha', s.lineAlhpa)
+                set(gca, 'YColor', s.colors(i,:), 'ytick', [0 1], 'ylim', [0 1])
+            end
         end
     end
 end

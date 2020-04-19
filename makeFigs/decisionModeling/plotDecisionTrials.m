@@ -8,6 +8,7 @@ function plotDecisionTrials(flat, varargin)
 s.condition = '';  % name of field in 'data' that contains different experimental conditions
 s.levels = {''};  % levels of s.condition to plot
 s.outcome = 'isBigStep';  % variable used to color trials // isBigStep or isModPawLengthened
+s.view = 'top';  % 'top' or 'bot'
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
@@ -22,6 +23,7 @@ s.rowColors = [];  % if provided, overwrites s.colors and plots all traces in th
 s.trialsToShow = 50;
 s.histoFillAlpha = .2;
 s.xLims = [-.11 .08];
+s.showTitles = true;
 
 s.histoOffset = .005;  % (m)
 s.histoHgt = .015;  % (m)
@@ -34,6 +36,18 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if isstruct(flat); flat = struct2table(flat); end
+
+% set view specific parameters
+switch s.view
+    case 'top'
+        isBotView = false;
+        dims = [1 3];
+        yLims = [-s.histoOffset .02];
+    case 'bot'
+        isBotView = true;
+        dims = [1 2];
+        yLims = [-.02 .02];
+end
 
 % restrict to desired trials
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
@@ -65,15 +79,16 @@ for i = 1:length(s.levels)
     subplot(length(s.levels), 1, i)
     bins = condition == i;
     
-    if ~isempty(s.rowColors)
-        s.colors = repmat(s.rowColors(i,:),2,1);
-    end
+%     if ~isempty(s.rowColors); s.ctlStepColor = s.rowColors(i,:); end
+    if ~isempty(s.rowColors); s.colors = repmat(s.rowColors(i,:),2,1); end
     
     % plot kinematics
-    plotKinematics(kinData(bins,[1 3],:), flat.obsHgt(bins), flat.(s.outcome)(bins) + 1, ...
-        'colors', s.colors, 'trialsToOverlay', s.trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, 'yLimZero', false, 'plotObs', false)
-    plotKinematics(kinDataCtl(bins,[1 3],:), flat.obsHgt(bins), ones(1,sum(bins)), ...
-        'colors', s.ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', s.obsColor)
+    plotKinematics(kinData(bins,dims,:), flat.obsHgt(bins), flat.(s.outcome)(bins) + 1, ...
+        'colors', s.colors, 'trialsToOverlay', s.trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, ...
+        'yLimZero', false, 'plotObs', false, 'isBotView', isBotView)
+    plotKinematics(kinDataCtl(bins,dims,:), flat.obsHgt(bins), ones(1,sum(bins)), ...
+        'colors', s.ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', s.obsColor, ...
+        'isBotView', isBotView)
     set(gca, 'XLim', s.xLims)
 
     % plot pdfs
@@ -84,9 +99,9 @@ for i = 1:length(s.levels)
 
     % scale y axis to fit in same subplot as kinematics
     pdfMax = max([kdLong kdCtl kdShort]);
-    kdCtl = -kdCtl * (s.histoHgt/pdfMax) - s.histoOffset;
-    kdLong = -kdLong * (s.histoHgt/pdfMax) - s.histoOffset;
-    kdShort = -kdShort * (s.histoHgt/pdfMax) - s.histoOffset;
+    kdCtl = yLims(1) - kdCtl * (s.histoHgt/pdfMax);
+    kdLong = yLims(1) - kdLong * (s.histoHgt/pdfMax);
+    kdShort = yLims(1) - kdShort * (s.histoHgt/pdfMax);
 
 
     % plot that shit
@@ -99,7 +114,9 @@ for i = 1:length(s.levels)
     fill([xGrid xGrid(1)], [kdShort kdShort(1)], s.colors(1,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
     plot(xGrid, kdShort, 'Color', s.colors(1,:), 'LineWidth', 2)
     
-    title(s.levels{i})
+    if s.showTitles; title(s.levels{i}); end
+    
+    set(gca, 'ylim', [yLims(1)-s.histoHgt yLims(2)])
 end
 
 

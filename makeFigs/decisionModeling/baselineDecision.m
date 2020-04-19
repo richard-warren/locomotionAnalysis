@@ -90,20 +90,23 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 
 
 %% heatmaps
-plotDecisionHeatmaps(flat, 'normalize', 'col', ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'avgMice', false, 'plotMice', false, 'colors', decisionColors(1,:), 'outcome', 'isModPawLengthened', 'xLims', [-20 15], ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeatmaps'));
-set(gcf, 'position', [2111.00 10.00 489.00 237.00])
+plotDecisionHeatmaps(flat, 'normalize', 'col', 'outcome', 'isModPawLengthened', ...
+    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', false, 'plotMice', false, 'colors', decisionColors(1,:), 'xLims', [-20 15], 'plotProbs', false);
+set(gcf, 'position', [200 379 295 362])
+xlabel('predicted landing distance (mm)')
+ylabel('landing distance (mm)')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeatmaps'), 'svg');
 
 %% trials scatters
+rng(1)
 plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
-    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
-    'colors', decisionColors, ...
+    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
+    'colors', decisionColors, 'view', 'top', 'xLims', [-.11 .06], 'obsColor', obsColor, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
 %% model accuracies
-plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
+plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'ann', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', 0, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
@@ -142,8 +145,8 @@ xlabel('\delta length')
 %% forward feature selection
 
 % settings
-% rng(0);  % set initialization seed
-kFolds = 10;
+kFolds = 15;
+rng(0);  % random seed initialization
 
 % initializations
 bestPredictors = {};
@@ -159,21 +162,21 @@ for i = 1:length(m.predictorsAll)
     
     for j = 1:length(remainingPredictors)
         fprintf('%i/%i ', j, length(remainingPredictors))
-        a_sub = plotModelAccuracies(flat, [bestPredictors, remainingPredictors{j}], 'isModPawLengthened', ...
+        temp = plotModelAccuracies(flat, [bestPredictors, remainingPredictors{j}], 'isModPawLengthened', ...
             'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
             'weightClasses', true, 'plot', false, 'kFolds', kFolds);
-        a(:,j) = a_sub(1,2,:);
+        a(:,j) = temp(1,2,:);
     end
     fprintf('\n')
     
     % store best predictor
-    [~, ind] = max(max(a,[],1));
+    [~, ind] = max(nanmean(a,1));
     accuracies(:,i) = a(:, ind);
     bestPredictors{end+1} = remainingPredictors{ind};
     remainingPredictors = remainingPredictors(~strcmp(remainingPredictors, remainingPredictors{ind}));
 end
 
-%% plot
+%% plot forward feature selection
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 747.00 297.00 232.00]); hold on
 plot(0:length(m.predictorsAll), [.5 nanmean(accuracies,1)], ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
@@ -188,7 +191,7 @@ scatter(1:length(m.predictorsAll), nanmean(accuracies,1), 60, predictorColors, '
 xlabel('number of features')
 ylabel('cross-validation accuracy')
 set(gca, 'XLim', [0, length(m.predictorsAll)])
-fprintf('max accuracy: %.2f\n', max(accuracies))
+fprintf('max accuracy: %.2f\n', max(mean(accuracies,1)))
 fprintf('PREDICTORS: {');fprintf('''%s'', ', bestPredictors{:}); fprintf('}\n')
 
 % save
@@ -201,13 +204,12 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 binNum = 15;  % number of histogram bins
 maxPlots = length(m.predictors);
 scatAlpha = .4;
-maxScatters = 1000;  % only plot this many per condition to avoid large vector images
+maxScatters = 800;  % only plot this many per condition to avoid large vector images
 percentileLims = [1 99];
 scatSz = 8;
 
 
-f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [1939.00 431.00 778.00 587.00]);
-f2 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [2750.00 900.00 160*maxPlots 118.00]);
+f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 431.00 778.00 587.00]);
 set(0, 'CurrentFigure', f1)
 
 sz = min(maxPlots, length(m.predictors));
@@ -232,21 +234,6 @@ for r = 1:sz
                 'FaceColor', decisionColors(1,:));
             histogram(x_row([flat_sub.(outcome)]==1), edges, ...
                 'FaceColor', decisionColors(2,:));
-            
-            % add to second figure that has only histograms, no scatters
-            set(0, 'CurrentFigure', f2)
-            subplot(1,maxPlots,r); hold on
-%             histogram(x_row([flat_sub.(outcome)]~=1), edges, ...
-%                 'FaceColor', decisionColors(1,:));
-%             histogram(x_row([flat_sub.(outcome)]==1), edges, ...
-%                 'FaceColor', decisionColors(2,:));
-            logPlotRick(x_row, [flat_sub.(outcome)], ...
-                'binWidth', .1*diff(lims_col), 'colors', predictorColors(r,:), 'xlim', lims_col);
-            set(gca, 'XLim', lims_col, 'Box', 'off', 'XTick', [], 'YLim', [0,1], 'YTick', 0:.5:1)
-            if c==1; ylabel('lengthen probability'); end
-            xlabel(m.predictors{r});
-            set(0, 'CurrentFigure', f1)
-
         
         % otherwise scatter
         elseif r>c
@@ -263,34 +250,29 @@ for r = 1:sz
         % pimp fig
         set(gca, 'XTick', [], 'YTick', [])
         if c==1
-            ylabel(m.predictors{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
+            ylabel(m.predictorsNamed{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
         end
         if r==sz
-            xlabel(m.predictors{c}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
+            xlabel(m.predictorsNamed{c}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(c,:));
         end
     end
     pause(.001)
 end
 
 % save
-saveas(f1, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'), 'svg');
-saveas(f2, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorsHistosOnly'), 'svg');
-
-
+saveas(f1, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorScatters'), 'svg');
 
 
 %% binned kinematics
 
 % settings
 binNum = 5;
-pctileBins = false;
+pctileBins = true;
 xLims = [-.08 .03];
-
 
 % initializations
 kin = permute(cat(3,flat_sub.modPawKinInterp), [3,1,2]);
 kinCtl = permute(cat(3,flat_sub.preModPawKinInterp), [3,1,2]);
-
 
 % choose binning variable
 binVar = [flat_sub.([outcome '_predicted'])];
@@ -305,16 +287,11 @@ else
 end
 condition = discretize(binVar, binEdges);
 
-
-figure('color', 'white', 'menubar', 'none', 'position', [2000.00 100.00 750.00 707.00], 'InvertHardcopy', 'off');
-plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), [flat_sub.obsHgt], condition, [flat_sub.(outcome)], ...
+figure('color', 'white', 'menubar', 'none', 'position', [200 100.00 750.00 707.00], 'InvertHardcopy', 'off');
+plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), [flat_sub.obsHgt], condition, [flat_sub.isBigStep]==1, ...
     'colors', decisionColors, 'xLims', xLims, 'addHistos', false, 'lineWid', 3, ...
     'contactInds', [flat_sub.contactIndInterp], 'histoHgt', .5, 'showSmpNum', false, 'obsColor', obsColor)
-
-% save
-file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', ...
-        'baseline_decision_kinematics');
-saveas(gcf, file, 'svg');
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_decision_kinematics'), 'svg');
 
 
 
@@ -373,6 +350,7 @@ saveas(gcf, file, 'svg');
 
 %% see how model accuracy suffers without whisker info
 
+rng(0)
 excludeVars = {'obsHgt', 'wiskContactPosition'};
 predictorsNoWisk = m.predictors(~ismember(m.predictors, excludeVars));
 [acc_full] = plotModelAccuracies(flat, m.predictors, outcome, ...
@@ -384,10 +362,12 @@ predictorsNoWisk = m.predictors(~ismember(m.predictors, excludeVars));
 
 mat = [squeeze(acc_full(1,2,:))'; squeeze(acc_noWisk(1,2,:))'];  % (full vs. noWisk) X (mouse)
 
-figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 'none');
+%%
+figure('Color', 'white', 'Position', [200 448.00 300.00 291.00], 'MenuBar', 'none');
 barFancy(mat, barProperties{:}, ...
-    'levelNames', {{'full model', 'noWisk'}}, 'YLim', [.5 1], 'showBars', false);
-
+    'levelNames', {{'full model', 'no whisker predictors'}}, barProperties{:}, ...
+    'comparisons', [1 2], 'test', 'ttest', 'scatterColors', 'lines', 'scatterCondColor', false, ...
+    'ylabel', 'cross-validation accuracy', 'scatterAlpha', .6);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelNoWiskPredModels'), 'svg');
 
 
