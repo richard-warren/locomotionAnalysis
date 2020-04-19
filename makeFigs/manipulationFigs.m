@@ -20,8 +20,8 @@ clear all; close all  % best to clear workspace before loading these super large
 
 % settings
 dataset = 'senLesion';
-poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
-splitEarlyLate = true;  % whether to split early and late post-lesion sessions
+poolSenLesionConditions = false;  % whether to use all conditions or pool postBi and postContra
+splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 earlySessions = [1 1];  % min and max sessions to include in 'early' lesion sessions
 lateSessions = [4 4];  % min and max sessions to include in 'late' lesion sessions
 preSessions = 2;  % only include the most recent 'preSessions' in the 'pre' condition
@@ -98,9 +98,10 @@ fprintf(['loading ' dataset ' data... ']);
 tic; load(fullfile('C:\Users\richa\Desktop\', 'matlabData', [dataset '_data.mat']), 'data'); toc  % when working on home computer
 data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
 mice = {data.data.mouse};
+data_backup = data;  % store unaltered data so it doesn't need to be loaded again
 
 
-%% pool postContra and postBi for senLesion experiments
+% pool postContra and postBi for senLesion experiments
 if strcmp(dataset, 'senLesion') && poolSenLesionConditions
     fprintf('pooling postContra and postBi conditions... ');
     for i = 1:length(data.data)  % loop across mice    
@@ -121,7 +122,7 @@ if contains(dataset, 'esion')  % only do this for the lesion data
     for i = 1:length(data.data)  % loop across mice    
         firstLesSession = find(contains({data.data(i).sessions.condition}, 'post'), 1, 'first');
         firstPreSession = find(strcmp({data.data(i).sessions.condition}, 'pre'), 1, 'first');
-        [data.data(i).sessions(firstPreSession:firstLesSession-preSessions-1).condition] = deal('');
+        [data.data(i).sessions(firstPreSession:firstLesSession-preSessions-1).condition] = deal(' ');
     end
 end
 
@@ -336,13 +337,13 @@ barFancy(dv, 'ylabel', 'success rate', 'levelNames', {figVars(1:end-1).levelName
     'colors', repmat(colors,colorRepeats,1), barProperties{:})
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawContacts' suffix1 suffix2]), 'svg');
 
-% baseline step heights
-figure('position', [2800.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
-figVars = [vars.isFore; vars.condition];
-dv = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, [figConditionals])*1000;
-colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
-barFancy(dv, 'ylabel', 'control step height (mm)', 'levelNames', {figVars(1:end-1).levelNames}, ...
-    'colors', repmat(colors,colorRepeats,1), barProperties{:})
+%% baseline step heights (forepaw only)
+figure('position', [200 100 400 328.00], 'color', 'white', 'menubar', 'none');
+figVars = [vars.condition];
+dv = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, [figConditionals; conditionals.isFore])*1000;
+barFancy(dv, 'ylabel', 'forepaw control step height (mm)', 'levelNames', {figVars.levelNames}, ...
+    'colors', colors, barProperties{:}, ...
+    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_baselineHeights' suffix1 suffix2]), 'svg');
 
 %% forepaw height

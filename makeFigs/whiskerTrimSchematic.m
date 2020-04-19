@@ -110,10 +110,6 @@ function plotWhiskers(whiskers, center, bilateral, conditionColor)
             plot(-[x(w) x(w)+cos(a)*l]+center, [y(w) y(w)+sin(a)*l], ...
                 'Color', [.15 .15 .15], 'linewidth', whiskerThickness)
         end
-    end
-    
-    % text beneath face
-%     text(center, 0, sprintf('%s ', whiskers{:}), ...
-%         'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')    
+    end 
 end
 end
