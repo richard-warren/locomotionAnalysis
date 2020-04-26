@@ -14,6 +14,7 @@ s.xlabel = [];
 s.ylabel = [];
 s.lineWidth = 4;
 s.compareTo = [];  % run significance tests comparing all sessions to averaged session numbers in 'compareTo'
+s.xlim = [];
 
 
 % initializations
@@ -32,8 +33,8 @@ end
 plot(s.xvals, nanmean(data,1), 'LineWidth', s.lineWidth, 'Color', s.meanColor);
 for i = 1:size(data,2)
 %     std = nanstd(data(:,i)) / sqrt(length(data(:,i)));
-    std = nanstd(data(:,i));
-    line([s.xvals(i) s.xvals(i)], [-std std]+nanmean(data(:,i)), 'Color', s.meanColor, 'lineWidth', s.lineWidth/3)
+    stdev = nanstd(data(:,i));
+    line([s.xvals(i) s.xvals(i)], [-stdev stdev]+nanmean(data(:,i)), 'Color', s.meanColor, 'lineWidth', s.lineWidth/3)
 end
 
 % pimp fig
@@ -48,10 +49,13 @@ if ~isempty(s.compareTo)
     for i = s.compareTo(end)+1:size(data,2)
         [~, p] = ttest(bl, data(:,i));
 %         [p] = signrank(bl, data(:,i));
-        fprintf('session %i, p: %.5f\n', i, p);
+        cohensD = sqrt((std(bl)^2 + std(data(:,i))^2) / 2);
+        fprintf('session %i -> cohens d: %.2f, p: %.5f\n', i, cohensD, p);
     end
     fprintf('\n');
 end
+
+if ~isempty(s.xlim); set(gca, 'xlim', s.xlim); end
 
 % remove x tick labels expect leftmost, 0, and rightmost
 xlabels = get(gca, 'XTickLabel');

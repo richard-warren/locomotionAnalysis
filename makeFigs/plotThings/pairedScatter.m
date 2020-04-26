@@ -4,6 +4,7 @@ function pairedScatter(data, varargin)
 % test...
 
 % settings
+s.xlabel = '';
 s.ylabel = '';
 s.colors = [.15 .15 .15; .15 .15 .15];  % colors associated with each axis
 s.axisProps = {};  % properties that get applied to axix
@@ -16,6 +17,7 @@ s.test = 'ttest';                 % 'ttest' or 'signrank'
 s.pThresh = [.05 .01 .001];       % !!! CURRENTLY MUST BE ORDERED FROM LARGEST TO SMALLEST!
 s.symbols = {'*', '**', '***'};   % symbols associated with the pThresh values above (they will appear above the brackets connecting the conditions to be compared)
 s.notSigText = 'n.s.';            % text to appear above brackets for not groups that do not significanctly differ
+s.sigColor = [1 .2 .2]*.9;           % brackets become this color for a significant difference
 
 
 % reassign settings passed in varargin
@@ -63,7 +65,7 @@ isSig = ~isempty(pInd);
 % set significance dependent parameters
 if isSig
     t = s.symbols{pInd};
-    c = s.colors(2,:);
+    c = s.sigColor;
 else
     t = s.notSigText;
     c = [.15 .15 .15];
