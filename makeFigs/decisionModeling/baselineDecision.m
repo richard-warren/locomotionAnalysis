@@ -106,8 +106,8 @@ plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
 %% model accuracies
-plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'ann', ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', 0, 'lightOffOnly', m.lightOffOnly, ...
+plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
+    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
@@ -130,16 +130,41 @@ plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
     'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineThresholds'));
 
-%% distribution of step modifications
+%% distribution of step modifications (this demonstrates the effect of different deltaMin strategies)
 close all
 xLims = prctile([flat_sub.modPawDeltaLength flat_sub.preModPawDeltaLength], [1 99]);
-binEdges = linspace(xLims(1), xLims(2), 50);
+binEdges = linspace(xLims(1), xLims(2), 75);
 
-figure('position', [354 706 595 373], 'color', 'white', 'menubar', 'none')
-histogram([flat().modPawDeltaLength], binEdges); hold on
-histogram([flat().preModPawDeltaLength], binEdges); hold on
+figure('position', [63.00 403.00 836.00 782.00], 'color', 'white', 'menubar', 'none')
 
+% extraBins = [flat.isBigStep]==1;
+extraBins = true(1, length(flat));
+
+subplot(4,1,1)
+bins = extraBins;
+histogram([flat(bins).modPawDeltaLength], binEdges); hold on
+histogram([flat(bins).preModPawDeltaLength], binEdges); hold on
 set(gca, 'box', 'off', 'YColor', 'none')
+
+subplot(4,1,2)
+minDif = std([flat.preModPawDeltaLength]) * 1;
+bins = abs([flat.modPawDeltaLength])>minDif & extraBins;
+histogram([flat(bins).modPawDeltaLength], binEdges); hold on
+histogram([flat(bins).preModPawDeltaLength], binEdges); hold on
+set(gca, 'box', 'off', 'YColor', 'none')
+
+subplot(4,1,3)
+bins = ~(abs(zscore([flat.modPawDeltaLength]))<m.deltaMin) & extraBins;
+histogram([flat(bins).modPawDeltaLength], binEdges); hold on
+histogram([flat(bins).preModPawDeltaLength], binEdges); hold on
+set(gca, 'box', 'off', 'YColor', 'none')
+
+subplot(4,1,4)
+bins = ~(abs(zscore([flat.modPawDeltaLength]))<m.deltaMin & [flat.isBigStep]==0) & extraBins;
+histogram([flat(bins).modPawDeltaLength], binEdges); hold on
+histogram([flat(bins).preModPawDeltaLength], binEdges); hold on
+set(gca, 'box', 'off', 'YColor', 'none')
+
 xlabel('\delta length')
 
 %% forward feature selection
@@ -151,9 +176,8 @@ rng(0);  % random seed initialization
 % initializations
 bestPredictors = {};
 remainingPredictors = m.predictorsAll;
-accuracies = nan(length(mice), length(m.predictorsAll));
 mice = unique({flat.mouse});
-
+accuracies = nan(length(mice), length(m.predictorsAll));
 
 for i = 1:length(m.predictorsAll)
     
@@ -176,7 +200,7 @@ for i = 1:length(m.predictorsAll)
     remainingPredictors = remainingPredictors(~strcmp(remainingPredictors, remainingPredictors{ind}));
 end
 
-%% plot forward feature selection
+% plot forward feature selection
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 747.00 297.00 232.00]); hold on
 plot(0:length(m.predictorsAll), [.5 nanmean(accuracies,1)], ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
@@ -331,8 +355,8 @@ for i = 1:length(mice)
 end
 
 fprintf('INDIVIDUAL MOUSE MODELS\n')
-fprintf('correct prediction success:   %.3f\n', mean(successRates(1,:)))
-fprintf('incorrect prediction success: %.3f\n', mean(successRates(2,:)))
+fprintf('correct prediction success:   %.3f\n', nanmean(successRates(1,:)))
+fprintf('incorrect prediction success: %.3f\n', nanmean(successRates(2,:)))
 fprintf('overall accuracy: %.3f\n\n', mean(accuracies))
 [h, p] = ttest(successRates(1,:), successRates(2,:));
 fprintf('significance: %.3f\n\n', p)
@@ -362,7 +386,6 @@ predictorsNoWisk = m.predictors(~ismember(m.predictors, excludeVars));
 
 mat = [squeeze(acc_full(1,2,:))'; squeeze(acc_noWisk(1,2,:))'];  % (full vs. noWisk) X (mouse)
 
-%%
 figure('Color', 'white', 'Position', [200 448.00 300.00 291.00], 'MenuBar', 'none');
 barFancy(mat, barProperties{:}, ...
     'levelNames', {{'full model', 'no whisker predictors'}}, barProperties{:}, ...

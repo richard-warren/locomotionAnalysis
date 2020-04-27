@@ -26,10 +26,11 @@ if isstruct(flat); flat = struct2table(flat); end
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
-if s.deltaMin
-    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
-    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
-end
+% if s.deltaMin
+%     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
+%     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+% end
+if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0), :); end
 
 if ~isempty(s.condition)  % if no condition provided, create dummy variable
     [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers

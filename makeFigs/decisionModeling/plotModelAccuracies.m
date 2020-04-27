@@ -46,11 +46,11 @@ cNum = length(s.levels) + size(s.modelTransfers,1);  % total number of condition
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
-if s.deltaMin
-    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
-    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
-end
-% if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<1 & [flat.isBigStep]==0), :); end
+% if s.deltaMin
+%     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
+%     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+% end
+if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0), :); end
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);
