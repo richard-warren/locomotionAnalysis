@@ -4,10 +4,12 @@ sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experime
 sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove not included sessions and empty lines
 mice = unique(sessionInfo.mouse);
 
+% sessionInfo = sessionInfo(1:6,:);  % !!! temp
+
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
+fprintf('saving...'); save(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
 
 
 
@@ -265,7 +267,7 @@ saveas(gcf, file, 'svg');
 
 %% decision making
 flat = flattenData(data, ...
-    [m.predictors, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength'}]);
+    [m.predictors, {'mouse', 'modSwingContacts', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength'}]);
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
@@ -299,10 +301,10 @@ plotDecisionTrials(flat, 'condition', 'sensoryCondition', 'levels', vars.sensory
 
 %% model accuracies
 % rng(1)
-plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
+[~,~,temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'weightClasses', true, ...
-    'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', sensColors, 'barProps', [barProperties 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], 'kFolds', 10, ...
+    'modSwingContactsMax', 1, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', sensColors, 'barProps', [barProperties, 'YLim', [.2 1], 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], 'kFolds', 10, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
 
 %% plot predictors

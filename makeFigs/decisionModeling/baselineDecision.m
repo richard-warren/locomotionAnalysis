@@ -107,7 +107,7 @@ plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
 
 %% model accuracies
 plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', 1, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
@@ -137,8 +137,8 @@ binEdges = linspace(xLims(1), xLims(2), 75);
 
 figure('position', [63.00 403.00 836.00 782.00], 'color', 'white', 'menubar', 'none')
 
-% extraBins = [flat.isBigStep]==1;
-extraBins = true(1, length(flat));
+extraBins = [flat.isBigStep]==0;
+% extraBins = true(1, length(flat));
 
 subplot(4,1,1)
 bins = extraBins;
@@ -166,6 +166,7 @@ histogram([flat(bins).preModPawDeltaLength], binEdges); hold on
 set(gca, 'box', 'off', 'YColor', 'none')
 
 xlabel('\delta length')
+print -clipboard -dbitmap
 
 %% forward feature selection
 
