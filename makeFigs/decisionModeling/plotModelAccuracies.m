@@ -79,9 +79,10 @@ if s.deltaMin
 %         if s.verbose; fprintf('%s: minDif %.1f mm\n', mice{i}, minDif*1000); end
 %         bins(mouseBins & abs(flat.modPawDeltaLength)<minDif & flat.isBigStep==0) = false;
 %     end
+    
+    if s.verbose; fprintf('%.2f of trials removed with deltaMin criterion\n', 1-mean(bins)); end
+    flat = flat(bins,:);
 end
-if s.verbose; fprintf('%.2f of trials removed with deltaMin criterion\n', 1-mean(bins)); end
-flat = flat(bins,:);
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);

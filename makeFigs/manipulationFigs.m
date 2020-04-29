@@ -219,6 +219,7 @@ end
 
 
 % define variables and conditionals to be used in bar plots
+vars.isBigStep = struct('name', 'isBigStep', 'levels', [0 1], 'levelNames', {{'little step', 'big step'}});
 vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'no light', 'light'}});
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
 vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
@@ -319,12 +320,6 @@ end
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_matchedHistos' suffix1 suffix2]), 'svg');
 fprintf('%.3f of trials used in matched sub-population\n', size(flat_matched) / size(flat))
 
-%% mod paw distance to obs at end of first modified step
-figure('position', [200 472.00 300 328.00], 'color', 'white', 'menubar', 'none');
-dv = getDvMatrix(data, 'modPawDistanceToObs', vars.condition, {'mouse'}, [figConditionals]);
-barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
-    'comparisons', [ones(length(vars.condition.levels)-1,1), [2:length(vars.condition.levels)]'], 'test', 'ttest', props{:})
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_success' suffix1 suffix2]), 'svg');
 
 %% success rate
 if strcmp(dataset, 'senLesion'); props = {'YLim', [.2 1], 'YTick', [.2 .6 1]}; else; props = {}; end
@@ -603,16 +598,10 @@ plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.le
     'avgMice', false, 'plotMice', false, 'colors', colors, 'outcome', 'isModPawLengthened', 'plotProbs', false, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heatMaps' suffix1 suffix2]));
 
-%% entropy
-heatmaps = plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
-    'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'avgMice', true, 'plotMice', false, 'colors', colors, 'outcome', 'isModPawLengthened');
-ent = cellfun(@entropy, heatmaps);
-
-figure('position', [2000 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
-barFancy(ent, 'levelNames', {vars.condition.levelNames}, 'ylabel', 'landing position entropy', ...
-    'colors', sensColors, barProperties{:}, 'showBars', false, 'lineThickness', 4)
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceEntropy'), 'svg');
+%% landing position entropy
+plotEntropies(flat, 'condition', 'condition', 'levels', vars.condition.levels, ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', colors, 'barProps', [barProperties, {'comparisons', [1 2]}]);
 
 %% trials scatters
 plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
@@ -635,11 +624,10 @@ plotModelAccuracies(flat, m.predictorsAll, 'isModPawLengthened', 'modelTransfers
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', .005, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'barProps', [barProperties {'YLim', [.2 1], 'comparisons', [2 4; 2 6], 'constantEdgeColor', [.15 .15 .15]}]);
 
-%% decision threshold
-plotDecisionThresholds(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
+%% landing position entropy
+pltEntropies(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'modSwingContactsMax', m.modSwingContactsMax, 'colors', colors, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_thresholds' suffix1 suffix2]));
+    'modSwingContactsMax', m.modSwingContactsMax, 'colors', colors, 'barProps', barProperties);
 
 %% model predictors
 % predictorsToShow = m.predictors;
@@ -764,7 +752,14 @@ ln = line([.5 .5], get(gca, 'ylim'), 'color', [lesionColor .9], 'linewidth', 2);
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_successAndVelOverSessions' suffix1 suffix2]), 'svg');
 
+%% landing distance bar plots
 
+% landing distance
+figure('position', [200 472.00 300 328.00], 'color', 'white', 'menubar', 'none');
+dv = getDvMatrix(data, 'modPawDistanceToObsAbs', [vars.isBigStep; vars.condition], {'mouse'}, [figConditionals])*1000;
+barFancy(dv, 'ylabel', 'landing distance (mm)', 'levelNames', {vars.isBigStep.levelNames}, 'colors', repmat(colors,2,1), barProperties{:}, ...
+    'comparisons', [1 2; 3 4], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_landingDistance' suffix1 suffix2]), 'svg');
 
 
 

@@ -40,7 +40,7 @@ y = linspace(s.yLims(1), s.yLims(2), s.binNum);
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
-if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
+% if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
 % if s.deltaMin
 %     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
 %     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);

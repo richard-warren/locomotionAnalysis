@@ -25,6 +25,7 @@ s.histoFillAlpha = .2;
 s.xLims = [-.11 .08];
 s.showTitles = true;
 
+s.showHistos = true;
 s.poolHistos = false;  % whether to pool the big step and little step histos
 s.histoOffset = .005;  % (m)
 s.histoHgt = .015;  % (m)
@@ -70,7 +71,7 @@ kinDataCtl(:,1,:) = kinDataCtl(:,1,:) - kinDataCtl(:,1,1) + kinData(:,1,1);
 kinData(flat.firstModPaw==3,2,:) = -kinData(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 kinDataCtl(flat.firstModPaw==3,2,:) = -kinDataCtl(flat.firstModPaw==3,2,:); % flip st mod paw is always paw 2
 
-figure('Color', 'white', 'Position', [200 100 900.00 250*length(s.levels)], 'MenuBar', 'none');
+figure('Color', 'white', 'Position', [200 0 900.00 250*length(s.levels)], 'MenuBar', 'none');
 if ~isempty(s.condition)  % if no condition provided, create dummy variable
     [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
 else
@@ -92,52 +93,54 @@ for i = 1:length(s.levels)
     plotKinematics(kinDataCtl(bins,dims,:), flat.obsHgt(bins), ones(1,sum(bins)), ...
         'colors', s.ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', s.obsColor, ...
         'isBotView', isBotView)
-    set(gca, 'XLim', s.xLims)
+    set(gca, 'XLim', s.xLims, 'YLim', yLims)
 
     % plot pdfs
-    longShortRatio = nanmean(flat.(s.outcome)(bins));
-    kdCtl = ksdensity(kinDataCtl(bins,1,end), xGrid);
-    if ~s.poolHistos
-        kdLong = ksdensity(kinData(bins & flat.(s.outcome)==1,1,end), xGrid) * longShortRatio;
-        kdShort = ksdensity(kinData(bins & flat.(s.outcome)~=1,1,end), xGrid) * (1-longShortRatio);
-    else
-        kd = ksdensity(kinData(bins,1,end), xGrid);
+    if s.showHistos
+        longShortRatio = nanmean(flat.(s.outcome)(bins));
+        kdCtl = ksdensity(kinDataCtl(bins,1,end), xGrid);
+        if ~s.poolHistos
+            kdLong = ksdensity(kinData(bins & flat.(s.outcome)==1,1,end), xGrid) * longShortRatio;
+            kdShort = ksdensity(kinData(bins & flat.(s.outcome)~=1,1,end), xGrid) * (1-longShortRatio);
+        else
+            kd = ksdensity(kinData(bins,1,end), xGrid);
+        end
+
+        % scale y axis to fit in same subplot as kinematics
+        if ~s.poolHistos
+            pdfMax = max([kdLong kdCtl kdShort]);
+        else
+            pdfMax = max([kd kdCtl]);
+        end
+
+        kdCtl = yLims(1) - kdCtl * (s.histoHgt/pdfMax);
+        if ~s.poolHistos
+            kdLong = yLims(1) - kdLong * (s.histoHgt/pdfMax);
+            kdShort = yLims(1) - kdShort * (s.histoHgt/pdfMax);
+        else
+            kd = yLims(1) - kd * (s.histoHgt/pdfMax);
+        end
+
+
+        % plot that shit
+        fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], s.ctlStepColor, 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
+        plot(xGrid, kdCtl, 'Color', s.ctlStepColor, 'LineWidth', 2)
+
+        if ~s.poolHistos
+            fill([xGrid xGrid(1)], [kdLong kdLong(1)], s.colors(2,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
+            plot(xGrid, kdLong, 'Color', s.colors(2,:), 'LineWidth', 2)
+
+            fill([xGrid xGrid(1)], [kdShort kdShort(1)], s.colors(1,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
+            plot(xGrid, kdShort, 'Color', s.colors(1,:), 'LineWidth', 2)
+        else
+            fill([xGrid xGrid(1)], [kd kd(1)], s.colors(1,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
+            plot(xGrid, kd, 'Color', s.colors(1,:), 'LineWidth', 2)
+        end
+
+        if s.showTitles; title(s.levels{i}); end
+
+        set(gca, 'ylim', [yLims(1)-s.histoHgt yLims(2)])
     end
-
-    % scale y axis to fit in same subplot as kinematics
-    if ~s.poolHistos
-        pdfMax = max([kdLong kdCtl kdShort]);
-    else
-        pdfMax = max([kd kdCtl]);
-    end
-    
-    kdCtl = yLims(1) - kdCtl * (s.histoHgt/pdfMax);
-    if ~s.poolHistos
-        kdLong = yLims(1) - kdLong * (s.histoHgt/pdfMax);
-        kdShort = yLims(1) - kdShort * (s.histoHgt/pdfMax);
-    else
-        kd = yLims(1) - kd * (s.histoHgt/pdfMax);
-    end
-
-
-    % plot that shit
-    fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], s.ctlStepColor, 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
-    plot(xGrid, kdCtl, 'Color', s.ctlStepColor, 'LineWidth', 2)
-
-    if ~s.poolHistos
-        fill([xGrid xGrid(1)], [kdLong kdLong(1)], s.colors(2,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
-        plot(xGrid, kdLong, 'Color', s.colors(2,:), 'LineWidth', 2)
-
-        fill([xGrid xGrid(1)], [kdShort kdShort(1)], s.colors(1,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
-        plot(xGrid, kdShort, 'Color', s.colors(1,:), 'LineWidth', 2)
-    else
-        fill([xGrid xGrid(1)], [kd kd(1)], s.colors(1,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
-        plot(xGrid, kd, 'Color', s.colors(1,:), 'LineWidth', 2)
-    end
-    
-    if s.showTitles; title(s.levels{i}); end
-    
-    set(gca, 'ylim', [yLims(1)-s.histoHgt yLims(2)])
 end
 
 
