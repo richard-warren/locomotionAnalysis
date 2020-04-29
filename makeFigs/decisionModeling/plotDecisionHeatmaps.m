@@ -40,6 +40,7 @@ y = linspace(s.yLims(1), s.yLims(2), s.binNum);
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
+if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
 % if s.deltaMin
 %     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
 %     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
@@ -98,7 +99,7 @@ end
 % MAKE PLOTS
 if (s.plotMice && s.avgMice); rows = 1+length(mice); else; rows = 1; end
 if isempty(s.subplotDims); s.subplotDims = [rows, length(s.levels)+s.plotProbs]; end
-figure('Color', 'white', 'Position', [200 10 200*s.subplotDims(2) 150*s.subplotDims(1)], 'MenuBar', 'none');
+figure('Color', 'white', 'Position', [200 10 200*s.subplotDims(2) 200*s.subplotDims(1)], 'MenuBar', 'none');
 colormap(s.colormap)
 
 

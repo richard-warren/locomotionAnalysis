@@ -26,6 +26,7 @@ s.lightOffOnly = false;  % whether to restrict to light on trials
 s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
 s.lineWidth = .05;  % expressed as fraction of y axis
 s.mouseLineWidth = .02;  % expressed as fraction of y axis
+s.verbose = true;
 
 s.saveLocation = '';  % if provided, save figure automatically to this location
 
@@ -40,13 +41,37 @@ if isempty(s.names); s.names = predictors; end
 if isempty(s.subplotDims); s.subplotDims = [cNum length(predictors)]; end
 
 % restrict to desired trials
+if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); end % keep only trials within condition
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
+
 if s.deltaMin
-    minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
-    flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
+    % 1) control distribution, std, all steps
+%     minDif = std(flat.preModPawDeltaLength) * 1;
+%     bins = abs(flat.modPawDeltaLength)>minDif;
+    
+    % 2) mod distribution, std, all steps
+%     bins = ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin);
+    
+    % 3) mod distribution, std, little steps only (old version)
+%     bins = ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0);
+
+    % 4) mod distribution, meters, little steps only
+    bins = ~(abs(flat.modPawDeltaLength)<s.deltaMin & [flat.isBigStep]==0);
+    
+    % 5) control distribution, std, little steps only per mouse
+%     bins = true(1,height(flat));
+%     for i = 1:length(mice)
+%         mouseBins = strcmp(flat.mouse, mice{i});
+%         minDif = std(flat(mouseBins,:).preModPawDeltaLength) * s.deltaMin;
+%         if s.verbose; fprintf('%s: minDif %.1f mm\n', mice{i}, minDif*1000); end
+%         bins(mouseBins & abs(flat.modPawDeltaLength)<minDif & flat.isBigStep==0) = false;
+%     end
 end
+if s.verbose; fprintf('%.2f of trials removed with deltaMin criterion\n', 1-mean(bins)); end
+flat = flat(bins,:);
+
 
 if ~s.avgMice; flat.mouse = repmat({'temp'}, height(flat), 1); end  % if pooling across mice, rename all mice with dummy string
 mice = unique(flat.mouse);

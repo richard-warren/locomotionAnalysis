@@ -26,6 +26,7 @@ if isstruct(flat); flat = struct2table(flat); end
 if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
 if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
+if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
 % if s.deltaMin
 %     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
 %     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);

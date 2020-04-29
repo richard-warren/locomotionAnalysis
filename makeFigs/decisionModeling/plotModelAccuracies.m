@@ -32,6 +32,7 @@ s.barProps = {};  % properties to pass to barFancy
 s.saveLocation = '';  % if provided, save figure automatically to this location
 
 s.hiddenUnits = 100;  % if ann is used, this defines number of hidden units in 3 layers perceptron
+s.verbose = true;
 
 % debugFlag = false;  % temp
 
@@ -41,19 +42,41 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 if isempty(s.colors); s.colors = jet(length(s.levels)); end
 if isstruct(flat); flat = struct2table(flat); end
 cNum = length(s.levels) + size(s.modelTransfers,1);  % total number of conditions
+mice = unique(flat.mouse);
 
 
 % restrict to desired trials
+if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); end % keep only trials within condition
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
 if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
-% if s.deltaMin
+
+if s.deltaMin
+    % 1) control distribution, std, all steps
 %     minDif = std(flat.preModPawDeltaLength) * 1;
-%     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
-% end
-% if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin), :); end
-if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0), :); end
+%     bins = abs(flat.modPawDeltaLength)>minDif;
+    
+    % 2) mod distribution, std, all steps
+%     bins = ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin);
+    
+    % 3) mod distribution, std, little steps only (old version)
+%     bins = ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0);
+
+    % 4) mod distribution, meters, little steps only
+    bins = ~(abs(flat.modPawDeltaLength)<s.deltaMin & [flat.isBigStep]==0);
+    
+    % 5) control distribution, std, little steps only per mouse
+%     bins = true(1,height(flat));
+%     for i = 1:length(mice)
+%         mouseBins = strcmp(flat.mouse, mice{i});
+%         minDif = std(flat(mouseBins,:).preModPawDeltaLength) * s.deltaMin;
+%         if s.verbose; fprintf('%s: minDif %.1f mm\n', mice{i}, minDif*1000); end
+%         bins(mouseBins & abs(flat.modPawDeltaLength)<minDif & flat.isBigStep==0) = false;
+%     end
+end
+if s.verbose; fprintf('%.2f of trials removed with deltaMin criterion\n', 1-mean(bins)); end
+flat = flat(bins,:);
 
 % prepare predictor and target
 [~, predictorInds] = ismember(predictors, flat.Properties.VariableNames);
@@ -69,7 +92,7 @@ y = y(validBins);
 y = logical(y);
 
 
-mice = unique(flat.mouse);
+
 if ~isempty(s.condition)
     [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
 else

@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_muscimol';
+dataset = 'senLesion';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
@@ -79,6 +79,7 @@ elseif strcmp(dataset, 'senLesion')
         else 
             colors = [ctlStepColor; lesionColor; lesionColor*.5];
             vars.condition = struct('name', 'condition', 'levels', {{'pre', 'post', 'noWisk'}}, 'levelNames', {{'pre', 'post', 'no whiskers'}});
+%             vars.condition = struct('name', 'condition', 'levels', {{'preTrim', 'pre', 'post', 'noWisk'}}, 'levelNames', {{'preTrim', 'pre', 'post', 'no whiskers'}});
             matchConditions = {'pre' 'post'};  % for propensity score matching, math these two conditions
             figConditionals = struct('name', '', 'condition', @(x) x); % no conditionals
         end
@@ -104,7 +105,7 @@ fprintf(['loading ' dataset ' data... ']);
 tic; load(fullfile('C:\Users\richa\Desktop\', 'matlabData', [dataset '_data.mat']), 'data'); toc  % when working on home computer
 data.data = data.data(~ismember({data.data.mouse}, miceToExclude));
 mice = {data.data.mouse};
-% data_backup = data;  % store unaltered data so it doesn't need to be loaded again
+data_backup = data;  % store unaltered data so it doesn't need to be loaded again
 
 
 % pool postContra and postBi for senLesion experiments
@@ -133,7 +134,7 @@ if contains(dataset, 'esion')  % only do this for the lesion data
 end
 
 % restrict to early lesion sessions
-if contains(dataset, 'esion')  % only do this for the lesion data
+if contains(dataset, 'esion') && ~splitEarlyLate  % only do this for the lesion data
     fprintf('restricting to %i post lesion sessions... ', preSessions);
     for i = 1:length(data.data)  % loop across mice
         bins = contains({data.data(i).sessions.condition}, 'post') & ...  % if a lesion session
@@ -587,11 +588,11 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 flat = flattenData(data, ...
     [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
     'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', ...
-    'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength'}]);
+    'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modSwingContacts', 'session'}]);
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
-    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', colors, 'outcome', 'isModPawLengthened', 'plotProbs', false, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heatMaps' suffix1 suffix2]));
 
@@ -608,17 +609,24 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 %% trials scatters
 plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
-    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'rowColors', colors, 'xLims', [-.11 .06], ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'rowColors', colors, 'xLims', [-.11 .06], 'obsColor', obsColor, 'poolHistos', true, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionKin' suffix1 suffix2]));
 
 %% model accuracies
-if strcmp(dataset, 'senLesion'); comparisons = [2 4; 2 6; 2 8]; else; comparisons = [2 4; 2 6]; end
-accuracies = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [1 2], ...
-    'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, 'kFolds', 5, ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+rng(1)
+if strcmp(dataset, 'senLesion'); comparisons = [2 4; 2 6; 4 8]; else; comparisons = [2 4; 4 6]; end
+[accuracies, ~, temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [1 2], ...
+    'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, 'kFolds', 15, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', .005, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', colors, 'barProps', [barProperties {'YLim', [.2 1], 'comparisons', comparisons, 'constantEdgeColor', [.15 .15 .15]}], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_models' suffix1 suffix2]));
+
+%% (temp, for including preTrim condition) model accuracies
+plotModelAccuracies(flat, m.predictorsAll, 'isModPawLengthened', 'modelTransfers', [], ...
+    'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, 'kFolds', 10, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', .005, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'barProps', [barProperties {'YLim', [.2 1], 'comparisons', [2 4; 2 6], 'constantEdgeColor', [.15 .15 .15]}]);
 
 %% decision threshold
 plotDecisionThresholds(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
