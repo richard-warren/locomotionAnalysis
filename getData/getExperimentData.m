@@ -386,6 +386,12 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var{i} = g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,1,end);
             end
             
+        case 'modPawDistanceToObsAbs'  % absolute value of distance of mod paw to obstacle at END of first mod step
+            var = num2cell(false(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                var{i} = abs(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,1,end));
+            end
+            
         case 'modPawPredictedDistanceToObs'  % predicted distance of mod paw to obstacle at END of first mod step (where would the paw have landed relative to the obstacle if there were no behavioral modifications?)
             var = num2cell(false(1,length(g.sesKinData)));
             for i = g.sesKinInds

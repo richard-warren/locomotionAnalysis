@@ -1,7 +1,7 @@
 %% compute experiment data from scratch (only need to do once)
 
 % settings
-dataset = 'senLesion';  % senLesion, mtc_lesion, mtc_muscimol
+dataset = 'mtc_muscimol';  % senLesion, mtc_lesion, mtc_muscimol
 
 if strcmp(dataset,'senLesion'); sheet='senLesionNotes'; elseif strcmp(dataset,'mtc_lesion'); sheet='mtcLesionNotes'; elseif strcmp(dataset,'mtc_muscimol'); sheet='muscimolNotes'; end
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', sheet);
@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_muscimol';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
@@ -318,6 +318,13 @@ end
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_matchedHistos' suffix1 suffix2]), 'svg');
 fprintf('%.3f of trials used in matched sub-population\n', size(flat_matched) / size(flat))
+
+%% mod paw distance to obs at end of first modified step
+figure('position', [200 472.00 300 328.00], 'color', 'white', 'menubar', 'none');
+dv = getDvMatrix(data, 'modPawDistanceToObs', vars.condition, {'mouse'}, [figConditionals]);
+barFancy(dv, 'ylabel', 'success rate', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+    'comparisons', [ones(length(vars.condition.levels)-1,1), [2:length(vars.condition.levels)]'], 'test', 'ttest', props{:})
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_success' suffix1 suffix2]), 'svg');
 
 %% success rate
 if strcmp(dataset, 'senLesion'); props = {'YLim', [.2 1], 'YTick', [.2 .6 1]}; else; props = {}; end
@@ -618,7 +625,7 @@ rng(1)
 if strcmp(dataset, 'senLesion'); comparisons = [2 4; 2 6; 4 8]; else; comparisons = [2 4; 4 6]; end
 [accuracies, ~, temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', [1 2], ...
     'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, 'kFolds', 15, ...
-    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', .005, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', colors, 'barProps', [barProperties {'YLim', [.2 1], 'comparisons', comparisons, 'constantEdgeColor', [.15 .15 .15]}], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_models' suffix1 suffix2]));
 
@@ -631,13 +638,18 @@ plotModelAccuracies(flat, m.predictorsAll, 'isModPawLengthened', 'modelTransfers
 %% decision threshold
 plotDecisionThresholds(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', colors, 'barProps', barProperties, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'colors', colors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_thresholds' suffix1 suffix2]));
 
 %% model predictors
-plotPredictors(flat, m.predictors, 'isModPawLengthened', 'colors', colors, 'avgMice', true, ...
-    'condition', 'condition', 'levels', vars.condition.levels, ...
-    'deltaMin', m.deltaMin, 'successOnly', true, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly);
+% predictorsToShow = m.predictors;
+predictorsToShow = m.predictors(1:4);
+
+[~, inds] = ismember(predictorsToShow, m.predictors);
+plotPredictors(flat, m.predictors(inds), 'isModPawLengthened', 'colors', colors, 'avgMice', true, ...
+    'condition', 'condition', 'levels', vars.condition.levels, 'overlayConditions', true, 'mouseAlpha', .15, 'subplotDims', [2 2], 'names', m.predictorsNamed(inds), ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', true, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_predictors' suffix1 suffix2]));
 
 %% BASELINE LOCOMOTION SCATTERS
 
@@ -751,6 +763,7 @@ sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'velocity (m
 ln = line([.5 .5], get(gca, 'ylim'), 'color', [lesionColor .9], 'linewidth', 2); uistack(ln, 'bottom')
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_successAndVelOverSessions' suffix1 suffix2]), 'svg');
+
 
 
 

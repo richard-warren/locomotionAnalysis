@@ -36,10 +36,13 @@ m.lightOffOnly = false;
 m.modPawOnlySwing = true;
 m.successOnly = false;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
 m.modSwingContactsMax = 4;  % first swing of first modified paw cannot have more than this many frames of contact with the obstacle // overall success is LESS THAN 5 frames
+
 m.predictorsAll = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
-m.predictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawZ', 'angleAtWiskContact'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
-% m.predictors = {'modPawX', 'wiskContactPosition', 'velAtWiskContact', 'modPawZ', 'angleAtWiskContact'};  % these are OLD predictors from figures that i liked...
-m.predictorsNamed = {{'paw position';'(horizontal)'}, {'obstacle';'height'}, {'wheel';'velocity'}, {'obstacle position';'(horizontal)'}, {'paw position';'(vertical)'}, {'body angle'}};
+m.predictorsNamedAll = {{'wheel velocity'}, {'body angle'}, {'obstacle height'}, {'obstacle position';'(horizontal)'}, {'paw position';'(horizontal)'}, {'paw velocity'; '(horizontal)'}, {'paw position';'(vertical)'}, {'paw velocity'; '(vertical)'}};
+m.predictors = {'wiskContactPosition', 'modPawX', 'velAtWiskContact', 'modPawXVel', 'modPawZ', 'modPawZVel', 'obsHgt', 'angleAtWiskContact'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
+[~, inds] = ismember(m.predictors, m.predictorsAll);
+m.predictorsNamed = m.predictorsNamedAll(inds);
+
 m.heatmapNormalize = 'col';  % normalize row or colum to sum to 1
 decisionColors = flipud(colorme(2, 'offset', .2, 'showSamples', false)); % first entry is small step, second is big step
 preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));

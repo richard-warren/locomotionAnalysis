@@ -11,6 +11,7 @@ s.condition = '';  % name of field in 'data' that contains different experimenta
 s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
 s.names = {};  % use these names to label subplots (overwriting names in 'predictors')
+s.overlayConditions = false;  % whether to plot different conditions on top of one another, or as different rows
 
 s.avgMice = false;
 s.percentileLims = [10 99];
@@ -38,7 +39,13 @@ if isempty(s.colors); s.colors = jet(colorNum); end
 if isstruct(flat); flat = struct2table(flat); end
 cNum = length(s.levels);  % total number of conditions
 if isempty(s.names); s.names = predictors; end
-if isempty(s.subplotDims); s.subplotDims = [cNum length(predictors)]; end
+if isempty(s.subplotDims)
+    if s.overlayConditions
+        s.subplotDims = [1 length(predictors)];
+    else
+        s.subplotDims = [cNum length(predictors)];
+    end
+end
 
 % restrict to desired trials
 if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); end % keep only trials within condition
@@ -93,8 +100,13 @@ for j = 1:length(predictors)
     binWidth = range(xLims) * s.binWidth;
     
     for i = 1:cNum
+        if s.overlayConditions
+            sInd = j;
+        else
+            sInd = (i-1)*length(predictors) + j;
+        end
         
-        subplot(s.subplotDims(1), s.subplotDims(2), (i-1)*length(predictors) + j); hold on
+        subplot(s.subplotDims(1), s.subplotDims(2), sInd); hold on
         if length(s.levels)==1; c = s.colors(j,:); else; c=s.colors(i,:); end
         
         for k = 1:length(mice)
@@ -113,10 +125,12 @@ for j = 1:length(predictors)
             
             % plot mouse
             if s.avgMice
-                p = squeeze(probs(i,j,k,:));
-                t = squeeze(thicknesses(i,j,k,:));
-                t = t*s.mouseLineWidth/max(t);
-                patch([binCenters fliplr(binCenters)]', [p+t; flipud(p-t)], c, 'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha)
+                if s.mouseAlpha
+                    p = squeeze(probs(i,j,k,:));
+                    t = squeeze(thicknesses(i,j,k,:));
+                    t = t*s.mouseLineWidth/max(t);
+                    patch([binCenters fliplr(binCenters)]', [p+t; flipud(p-t)], c, 'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha)
+                end
             end
         end
         

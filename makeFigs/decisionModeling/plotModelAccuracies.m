@@ -16,6 +16,7 @@ s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
 s.model = 'glm';  % 'glm' or 'ann'
 s.modelTransfers = [];  % nX2 matrix describing which models trained under one condition (left column) to test on another condition (right column)
+s.plotF1 = false;  % whether to add another plot for F1 scores
 
 s.kFolds = 10;  % for k folds cross validation
 s.balanceClasses = false;  % whether to balance classes by subsampling
@@ -50,7 +51,11 @@ if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); e
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
-if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
+if s.modSwingContactsMax
+    if s.verbose; fprintf('%.2f of trials removed with modSwingContactsMax criterion\n', ...
+            1-mean(flat.modSwingContacts<=s.modSwingContactsMax)); end
+    flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :);
+end
 
 if s.deltaMin
     % 1) control distribution, std, all steps
@@ -235,12 +240,12 @@ end
 
 if s.plot
     % plot everything
-    figure('position', [200 703.00 600 255.00], 'color', 'white', 'menubar', 'none')
+    figure('position', [200 703.00 300+300*s.plotF1 255.00], 'color', 'white', 'menubar', 'none')
     colors = repelem(s.colors, 2, 1);
     colors = colors .* repmat([.5;1],length(s.levels),1);
 
     % accuracies
-    subplot(1,2,1)
+    subplot(1,1+s.plotF1,1)
     barFancy(accuracies, 'ylabel', 'model accuracy', 'levelNames', {s.levels}, 'colors', colors, s.barProps{:})
     
     fprintf('\naccuracies: ')
@@ -248,8 +253,10 @@ if s.plot
     fprintf('\n')
     
     % f1 scores
-    subplot(1,2,2)
-    barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
+    if s.plotF1
+        subplot(1,1+s.plotF1,2)
+        barFancy(f1Scores, 'ylabel', 'f1 score', 'levelNames', {[s.levels, 'shuffled']}, 'colors', colors, s.barProps{:})
+    end
 
     % save
     if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end

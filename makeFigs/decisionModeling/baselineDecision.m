@@ -12,14 +12,6 @@ flat = flattenData(data, ...
     'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', ...
     'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd', 'modSwingContacts'}]);
 
-% % get version of flat with trial restrictions applied, and with predictions of model stored as a column is data structure
-% [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
-%     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-%     'weightClasses', true, 'plot', false, 'kFolds', 10);
-% [~, ~, flat_subWithFails] = plotModelAccuracies(flat, m.predictors, outcome, ...
-%     'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-%     'weightClasses', true, 'plot', false, 'kFolds', 10);
-
 predictorColors = lines(length(m.predictorsAll));
 
 %% schematic imgs for step type decision
@@ -107,14 +99,14 @@ plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
 
 %% model accuracies
 plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
-    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', .005, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, 'kFolds', 15, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
 %% model predictors
-plotPredictors(flat, m.predictorsAll, 'isModPawLengthened', 'avgMice', true, 'colors', predictorColors,...
+plotPredictors(flat, m.predictors, 'isModPawLengthened', 'avgMice', true, 'colors', predictorColors,...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'mouseAlpha', .2, ...
+    'mouseAlpha', .2, 'subplotDims', [2 4], 'names', m.predictorsNamed, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'));
 
 %% model accuracies (predicted distance only)
@@ -171,7 +163,7 @@ print -clipboard -dbitmap
 %% forward feature selection
 
 % settings
-kFolds = 10;
+kFolds = 15;
 rng(0);  % random seed initialization
 
 % initializations
@@ -225,16 +217,20 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 %% predictor scatters and histograms
 
+[~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'plot', false, 'kFolds', 2);
+
 % settings
 binNum = 15;  % number of histogram bins
 maxPlots = length(m.predictors);
 scatAlpha = .4;
-maxScatters = 800;  % only plot this many per condition to avoid large vector images
+maxScatters = 500;  % only plot this many per condition to avoid large vector images
 percentileLims = [1 99];
 scatSz = 8;
 
 
-f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 431.00 778.00 587.00]);
+f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 431.00 900 800]);
 set(0, 'CurrentFigure', f1)
 
 sz = min(maxPlots, length(m.predictors));
