@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_muscimol';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = true;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')

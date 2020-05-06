@@ -22,9 +22,12 @@ conditionNames = {{'fore paw', 'hind paw'}, {'leading', 'trailing'}};
 
 % initializations
 vars.isLeading = struct('name', 'isLeading', 'levels', [1 0], 'levelNames', {{'leading', 'trailing'}});
+vars.isBigStep = struct('name', 'isBigStep', 'levels', [0 1], 'levelNames', {{'little step', 'big step'}});
 vars.isFore = struct('name', 'isFore', 'levels', [1 0], 'levelNames', {{'fore', 'hind'}});
+vars.isLightOn = struct('name', 'isLightOn', 'levels', [0 1], 'levelNames', {{'light off', 'light on'}});
 figVars = [vars.isFore; vars.isLeading];
 figConditionals = struct('name', 'isLightOn', 'condition', @(x) x==1);
+noConditionals = struct('name', '', 'condition', @(x) x);
 
 %% ----------
 % PLOT THINGS
@@ -394,7 +397,6 @@ end
 
 
 %% correlations
-close all
 figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 
 colorsWithBl = repelem(stepColors,2,1);
@@ -621,8 +623,128 @@ legend({'train', 'test'}, 'Box', 'off', 'Location', 'Best')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerContactHisto'), 'svg');
 
 
+%% compute accuracy of step length models
+
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
+sessionInfo = sessionInfo(sessionInfo.include==1 & ~cellfun(@isempty, sessionInfo.session),:);  % remove not included sessions and empty lines
+
+
+[corrs, mae] = deal(nan(1,length(sessions)));  % correlations, mean absolute error
+sessions = sessionInfo.session;
+for i = 1:length(sessions)
+    fprintf('computing session %s...\n', sessions{i})
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'kinData.mat'), 'models')
+    
+    % left forepaw
+    lf_mae = mean(abs(models{2}.predict - models{2}.Variables.y)*1000);
+    lf_corr = corr(models{2}.Variables.x1, models{2}.Variables.y);
+    
+    % right forpaw
+    rf_mae = mean(abs(models{3}.predict - models{3}.Variables.y)*1000);
+    rf_corr = corr(models{3}.Variables.x1, models{3}.Variables.y);
+    
+    % averages
+    corrs(i) = mean([lf_corr rf_corr]);
+    mae(i) = mean([lf_mae rf_mae]);
+end
+
+fprintf('\ncorrelation:           mean %.3f, sem %.3f\n', mean(corrs), std(corrs)/sqrt(length(corrs)))
+fprintf('mean absolute error:   mean %.3f, sem %.3f\n', mean(mae), std(mae)/sqrt(length(mae)))
 
 
 
+%% TEST DISTRIBUTION NORMALITY
+
+
+%% correlations (loop across paws)
+for i = 1:2
+    for j = 1:2
+        [h, p] = kstest(zscore(squeeze(corrs(i,j,:))));
+        fprintf('%i, %.5f: corr\n', h, p)
+    end
+end
+
+%% paw heights
+matMod = getDvMatrix(data, 'stepOverMaxHgt', figVars, {'mouse'}, noConditionals) * 1000;
+matBl = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, noConditionals) * 1000;
+mat = permute(cat(4,matBl,matMod), [1 2 4 3]); % add baseline vs mod steps as additional conditions
+for i = 1:2
+    for j = 1:2
+        for k = 1:2
+            [h, p] = kstest(zscore(squeeze(mat(i,j,k,:))));
+            fprintf('%i, %.5f: paw height\n', h, p)
+        end
+    end
+end
+
+%% success
+mat = getDvMatrix(data, 'isTrialSuccess', vars.isLightOn, {'mouse'}, noConditionals);
+mat = mean(mat,1);  % average across light on and light off
+[h, p] = kstest(zscore(mat));
+fprintf('%i, %.5f: success\n', h, p)
+
+%% velocity
+mat = getDvMatrix(data, 'trialVel', vars.isLightOn, {'mouse'}, noConditionals);
+mat = mean(mat,1);  % average across light on and light off
+[h, p] = kstest(zscore(mat));
+fprintf('%i, %.5f: velocity\n', h, p)
+
+%% body angle
+mat = getDvMatrix(data, 'trialAngle', vars.isLightOn, {'mouse'}, noConditionals);
+mat = mean(mat,1);  % average across light on and light off
+[h, p] = kstest(zscore(mat));
+fprintf('%i, %.5f: body angle\n', h, p)
+
+%% tail height
+mat = getDvMatrix(data, 'tailHgt', vars.isLightOn, {'mouse'}, noConditionals);
+mat = mean(mat,1);  % average across light on and light off
+[h, p] = kstest(zscore(mat));
+fprintf('%i, %.5f: tail height\n', h, p)
+
+%% distance to obstable
+mat = getDvMatrix(data, 'modPawDistanceToObs', vars.isBigStep, {'mouse'}, noConditionals);
+
+for i = 1:2
+    [h, p] = kstest(zscore(mat(i,:)));
+    fprintf('%i, %.5f: distance to obs\n', h, p)
+end
+
+%% model accuracies
+flat = flattenData(data, ...
+    [m.predictorsAll, {'mouse', 'session', 'trial', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
+    'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', ...
+    'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd', 'modSwingContacts'}]);
+
+mat = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'barProps', barProperties, 'kFolds', 15);
+
+for i = 1:2
+    [h, p] = kstest(zscore(squeeze(mat(1,i,:))));
+    fprintf('%i, %.5f: model accuracy\n', h, p)
+end
+
+%% entropy
+mat = plotEntropies(flat);
+
+for i = 1:2
+    [h, p] = kstest(zscore(squeeze(mat(i,1,:))));
+    fprintf('%i, %.5f: entropy\n', h, p)
+end
+
+%% lagging paw landing position variability
+
+flat = flattenData(data, {'mouse', 'session', 'trial', 'laggingPenultKin'});
+mice = unique({flat.mouse});
+landingPositions = cellfun(@(x) x(1,end), {flat.laggingPenultKin});
+
+mat = nan(1, length(mice));  % variability in planting paw distance to hurdle // (sensory condition) X (mouse)
+for j = 1:length(mice)
+    bins = strcmp({flat.mouse}, mice{j});
+    mat(j) = nanstd(landingPositions(bins));
+end
+
+[h, p] = kstest(zscore(mat));
+fprintf('%i, %.5f: lagging paw landing position variability\n', h, p)
 
 
