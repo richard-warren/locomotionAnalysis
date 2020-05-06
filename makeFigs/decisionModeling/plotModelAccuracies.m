@@ -17,6 +17,7 @@ s.colors = [];
 s.model = 'glm';  % 'glm' or 'ann'
 s.modelTransfers = [];  % nX2 matrix describing which models trained under one condition (left column) to test on another condition (right column)
 s.plotF1 = false;  % whether to add another plot for F1 scores
+s.figPos = [];
 
 s.kFolds = 10;  % for k folds cross validation
 s.balanceClasses = false;  % whether to balance classes by subsampling
@@ -44,6 +45,7 @@ if isempty(s.colors); s.colors = jet(length(s.levels)); end
 if isstruct(flat); flat = struct2table(flat); end
 cNum = length(s.levels) + size(s.modelTransfers,1);  % total number of conditions
 mice = unique(flat.mouse);
+if isempty(s.figPos); s.figPos = [200 703.00 300+300*s.plotF1 255.00]; end
 
 
 % restrict to desired trials
@@ -227,8 +229,16 @@ function [model, accuracy, f1, predictions] = computeModel(X, y, kFolds, prevMod
     f1 = nanmean(f1s);
     
     % train model on all samples
-    model = fitglm(X, y, 'Distribution', 'binomial', 'Weights', weights);  % fit model on all data
-    predictions = predict(model, X);
+    switch s.model
+        case 'glm'
+            model = fitglm(X, y, 'Distribution', 'binomial', 'Weights', weights);  % fit model on all data
+            predictions = predict(model, X);
+        
+        case 'ann'
+            model = patternnet(s.hiddenUnits);
+            model = train(model, X', y');
+            predictions = model(X')' > .5;
+    end
 end
 
 
@@ -241,7 +251,7 @@ end
 
 if s.plot
     % plot everything
-    figure('position', [200 703.00 300+300*s.plotF1 255.00], 'color', 'white', 'menubar', 'none')
+    figure('position', s.figPos, 'color', 'white', 'menubar', 'none')
     colors = repelem(s.colors, 2, 1);
     colors = colors .* repmat([.5;1],length(s.levels),1);
 

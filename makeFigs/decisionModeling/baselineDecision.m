@@ -13,6 +13,7 @@ flat = flattenData(data, ...
     'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd', 'modSwingContacts'}]);
 
 predictorColors = lines(length(m.predictorsAll));
+mice = unique({flat.mouse});
 
 %% schematic imgs for step type decision
 
@@ -83,30 +84,102 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'normalize', 'col', 'outcome', 'isModPawLengthened', ...
-    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', decisionColors(1,:), 'xLims', [-20 15], 'plotProbs', false);
 set(gcf, 'position', [200 379 295 362])
 xlabel('predicted landing distance (mm)')
 ylabel('landing distance (mm)')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeatmaps'), 'svg');
 
+%% (temp, for exploring whether heatmaps are blurrier with no light) heatmaps
+plotDecisionHeatmaps(flat, 'condition', 'isLightOn', 'levels', {0,1}, 'normalize', 'col', 'outcome', 'isModPawLengthened', ...
+    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', false, ...
+    'avgMice', true, 'plotMice', true, 'colors', decisionColors(1,:), 'xLims', [-20 15], 'plotProbs', false);
+
+%% (temp, for exploring whether 'better' mice have sharper decision boundaries) explore whether 'better' mice have sharper decisions
+
+% get heatmaps
+plotDecisionHeatmaps(flat, 'normalize', '', 'outcome', 'isModPawLengthened', ...
+    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', true, 'plotMice', true, 'colors', decisionColors(1,:), 'xLims', [-20 15], 'plotProbs', false, ...
+    'subplotDims', [2, ceil((length(mice)+1)/2)]);
+close(gcf);
+
+% get entropy
+entropies = plotEntropies(flat, ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'barProps', barProperties);
+close(gcf);
+
+% get success and velocity
+[success, velocity] = deal(nan(1,length(mice)));
+for i = 1:length(mice)
+    bins = strcmp({flat.mouse}, mice{i});
+    success(i) = nanmean([flat(bins).isTrialSuccess]);
+    velocity(i) = nanmean([flat(bins).velAtWiskContact]);
+end
+
+%%
+close all
+figure('Position', [36 1038 806 305], 'color', 'white', 'MenuBar', 'none');
+
+subplot(1,2,1)
+scatter(success, entropies, 'filled')
+xlabel('success rate')
+ylabel('entropy')
+
+subplot(1,2,2)
+scatter(velocity, entropies, 'filled')
+xlabel('velocity (m/s)')
+ylabel('entropy')
+
+% subplot(1,3,3)
+% scatter3(success, velocity, entropies, 'filled')
+% xlabel('success')
+% ylabel('velocity (m/s)')
+% zlabel('entropy')
+
+
+% plot heatmaps sorted by entropy
+figure('Position', [36 522 1282 821], 'color', 'white', 'MenuBar', 'none');
+
+[~, inds] = sort(entropies);
+
+entropiesSorted = entropies(inds);
+heatmapsSorted = heatmaps(inds);
+velocitySorted = velocity(inds);
+successSorted = success(inds);
+
+colormap('hot')
+for i = 1:length(heatmapsSorted)
+    subplot(3,ceil(length(heatmapsSorted)/3),i)
+    imagesc(heatmapsSorted{i})
+    set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
+    
+    title({sprintf('entropy: %.2f', entropiesSorted(i)), ...
+           sprintf('velocity: %.2f', velocitySorted(i)), ...
+           sprintf('success: %.2f', successSorted(i))})
+end
+
+
+
 %% trials scatters
 rng(1)
 plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
-    'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
+    'modSwingContactsMax', 0, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
     'colors', decisionColors, 'view', 'top', 'xLims', [-.11 .06], 'obsColor', obsColor, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
 %% model accuracies
-plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
+[~,~,flat_restricted] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, 'kFolds', 15, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
 %% model predictors
 plotPredictors(flat, m.predictors, 'isModPawLengthened', 'avgMice', true, 'colors', predictorColors,...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'mouseAlpha', .2, 'subplotDims', [2 4], 'names', m.predictorsNamed, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'mouseAlpha', .2, 'subplotDims', [2 4], 'names', m.predictorsNamed, 'figPos', [100 400 671 300], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'));
 
 %% model accuracies (predicted distance only)
@@ -230,7 +303,7 @@ percentileLims = [1 99];
 scatSz = 8;
 
 
-f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 431.00 900 800]);
+f1 = figure('Color', 'white', 'MenuBar', 'none', 'Position', [169 169 1037 843]);
 set(0, 'CurrentFigure', f1)
 
 sz = min(maxPlots, length(m.predictors));
@@ -319,31 +392,39 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 %% success rate by model prediction adherence (!!! need to make a new flat_sub trained without unsuccessful trials removed)
 
 % settings
-confidenceLims = [.4 .6];  % only include trials where model is very confident
+confidenceLims = [.5 .5];  % only include trials where model is very confident
 
-% compute overall success rate
-predictions = [flat_subWithFails.isModPawLengthened_predicted];
-confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-isModelCorrect = round(predictions) == [flat_subWithFails.(outcome)];  % bins where decision agrees with model prediction
+% get model predictors (stored in flat_temp), when including all failure trials
+[~,~,flat_temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'barProps', barProperties, 'kFolds', 15, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
+
+
+
+%% compute overall success rate
+predictions = [flat_temp.isModPawLengthened_predicted];
+confidentBins = predictions<=confidenceLims(1) | predictions>confidenceLims(2);
+isModelCorrect = round(predictions) == [flat_temp.(outcome)];  % bins where decision agrees with model prediction
 fprintf('POOLED MODEL\n')
 fprintf('correct prediction success:   %.3f (n=%i)\n', ...
-    mean([flat_subWithFails(isModelCorrect & confidentBins).isTrialSuccess]), sum(isModelCorrect & confidentBins))
+    mean([flat_temp(isModelCorrect & confidentBins).isTrialSuccess]), sum(isModelCorrect & confidentBins))
 fprintf('incorrect prediction success: %.3f (n=%i)\n\n', ...
-    mean([flat_subWithFails(~isModelCorrect & confidentBins).isTrialSuccess]), sum(~isModelCorrect & confidentBins))
+    mean([flat_temp(~isModelCorrect & confidentBins).isTrialSuccess]), sum(~isModelCorrect & confidentBins))
 
 
 % individual mouse rates
-mice = unique({flat_subWithFails.mouse});
+mice = unique({flat_temp.mouse});
 successRates = nan(2, length(mice));  % (correct, incorrect model predictions) X mouse
 accuracies = nan(1,length(mice));
 
 for i = 1:length(mice)
-    mouseBins = strcmp({flat_subWithFails.mouse}, mice{i});
+    mouseBins = strcmp({flat_temp.mouse}, mice{i});
     
-    predictions = flat_subWithFails(mouseBins).([outcome '_predicted']);
+    predictions = [flat_temp(mouseBins).([outcome '_predicted'])];
     confidentBins = predictions<confidenceLims(1) | predictions>confidenceLims(2);
-    isModelCorrect = round(predictions) == [flat_subWithFails(mouseBins).(outcome)];
-    mouseSuccess = [flat_subWithFails(mouseBins).isTrialSuccess];
+    isModelCorrect = round(predictions) == [flat_temp(mouseBins).(outcome)];
+    mouseSuccess = [flat_temp(mouseBins).isTrialSuccess];
     
     successRates(1,i) = mean(mouseSuccess(confidentBins & isModelCorrect));
     successRates(2,i) = mean(mouseSuccess(confidentBins & ~isModelCorrect));
@@ -355,13 +436,12 @@ fprintf('INDIVIDUAL MOUSE MODELS\n')
 fprintf('correct prediction success:   %.3f\n', nanmean(successRates(1,:)))
 fprintf('incorrect prediction success: %.3f\n', nanmean(successRates(2,:)))
 fprintf('overall accuracy: %.3f\n\n', mean(accuracies))
-[h, p] = ttest(successRates(1,:), successRates(2,:));
-fprintf('significance: %.3f\n\n', p)
 
 
-figure('Color', 'white', 'Position', [1987.00 448.00 300.00 291.00], 'MenuBar', 'none');
+figure('Color', 'white', 'Position', [1864 322 218 291], 'MenuBar', 'none');
 barFancy(successRates, barProperties{:}, ...
-    'levelNames', {{'correct', 'incorrect'}}, 'textRotation', 0, 'colors', [modelColor; modelColor*.2])
+    'levelNames', {{'correct', 'incorrect'}}, 'textRotation', 0, 'colors', [modelColor; modelColor*.2], ...
+    'comparisons', [1 2], 'test', 'ttest', 'ylabel', 'success rate')
 set(gca, 'YTick', 0:.5:1)
 
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelIncorrectAccuracy');
@@ -375,15 +455,15 @@ rng(0)
 excludeVars = {'obsHgt', 'wiskContactPosition'};
 predictorsNoWisk = m.predictors(~ismember(m.predictors, excludeVars));
 [acc_full] = plotModelAccuracies(flat, m.predictors, outcome, ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
 [acc_noWisk] = plotModelAccuracies(flat, predictorsNoWisk, outcome, ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 10);
 
 mat = [squeeze(acc_full(1,2,:))'; squeeze(acc_noWisk(1,2,:))'];  % (full vs. noWisk) X (mouse)
 
-figure('Color', 'white', 'Position', [200 448.00 300.00 291.00], 'MenuBar', 'none');
+figure('Color', 'white', 'Position', [1864 322 218 291], 'MenuBar', 'none');
 barFancy(mat, barProperties{:}, ...
     'levelNames', {{'full model', 'no whisker predictors'}}, barProperties{:}, ...
     'comparisons', [1 2], 'test', 'ttest', 'scatterColors', 'lines', 'scatterCondColor', false, ...

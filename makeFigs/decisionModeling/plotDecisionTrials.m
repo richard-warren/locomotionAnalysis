@@ -14,6 +14,7 @@ s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
+s.modSwingContactsMax = 0;  % exclude trials where number of contacts of first mod paw during first mod swing is greater than this value
 
 s.colors = flipud(colorme(2, 'offset', .2, 'showSamples', false));  % colors for little and big steps
 s.ctlStepColor = [.5 .5 .5];

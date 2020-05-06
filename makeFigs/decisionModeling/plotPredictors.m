@@ -12,6 +12,7 @@ s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
 s.names = {};  % use these names to label subplots (overwriting names in 'predictors')
 s.overlayConditions = false;  % whether to plot different conditions on top of one another, or as different rows
+s.figPos = [];
 
 s.avgMice = false;
 s.percentileLims = [10 99];
@@ -25,6 +26,8 @@ s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 s.deltaMin = 0;  % exclude little step trials where modPawDeltaLength is less than deltaLim standard deviations
+s.modSwingContactsMax = 0;  % exclude trials where number of contacts of first mod paw during first mod swing is greater than this value
+
 s.lineWidth = .05;  % expressed as fraction of y axis
 s.mouseLineWidth = .02;  % expressed as fraction of y axis
 s.verbose = true;
@@ -36,6 +39,7 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if length(s.levels)==1; colorNum=length(predictors); else; colorNum=length(s.condition); end 
 if isempty(s.colors); s.colors = jet(colorNum); end
+if isempty(s.figPos); s.figPos = [100 400 200*s.subplotDims(2) 150*s.subplotDims(1)]; end
 if isstruct(flat); flat = struct2table(flat); end
 cNum = length(s.levels);  % total number of conditions
 if isempty(s.names); s.names = predictors; end
@@ -52,6 +56,11 @@ if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); e
 if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
 if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
 if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
+if s.modSwingContactsMax
+    if s.verbose; fprintf('%.2f of trials removed with modSwingContactsMax criterion\n', ...
+            1-mean(flat.modSwingContacts<=s.modSwingContactsMax)); end
+    flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :);
+end
 
 if s.deltaMin
     % 1) control distribution, std, all steps
@@ -88,7 +97,7 @@ else
     condition = ones(height(flat), 1);
 end
 
-figure('position', [100 400 200*s.subplotDims(2) 150*s.subplotDims(1)], ...
+figure('position', s.figPos, ...
     'color', 'white', 'menubar', 'none')
 
 % loop over conditions

@@ -6,10 +6,11 @@ function [entropies, distributions] = plotEntropies(flat, varargin)
 s.condition = '';  % name of field in 'data' that contains different experimental conditions
 s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
-s.binNum = 100;  % number of bins in the distribution
+s.binNum = 200;  % number of bins in the distribution
 s.poolMice = false;  % whether to pool distributions across all mice
 
 s.xLims = [1 99];  % expressed as percentiles
+s.xLimsAbs = [];   % x limits in real world units (m) overwrites xLims if provided
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
@@ -81,33 +82,43 @@ end
 
 
 % loop over mice
-entropies = nan(cNum, length(mice));  % (condition) X (shuffled vs. non-shuffled) X (mice)
+entropies = nan(2, cNum, length(mice));  % (bigstep vs littlestep) X (condition) X (shuffled vs. non-shuffled) X (mice)
 distributions = nan(cNum, length(mice), s.binNum);
 
 lims = prctile(flat.modPawDistanceToObs, s.xLims);
 lims = lims + [-1 1]*.2*range(lims);
+if ~isempty(s.xLimsAbs); lims = s.xLimsAbs; end
+
 x = linspace(lims(1), lims(2), s.binNum);
 
-for i = 1:length(mice)
-    mouseBins = strcmp(flat.mouse, mice{i});
+for h = 1:2
+    stepBins = flat.isBigStep==(h-1);
     
-    % models per condition
-    for j = 1:cNum
-        conditionBins = condition==j;
-        bins = mouseBins & conditionBins;
-        kd = ksdensity(flat.modPawDistanceToObs(bins), x);
-        
-        distributions(j,i,:) = kd;
-        entropies(j,i) = entropy(kd/max(kd));
+    for i = 1:length(mice)
+        mouseBins = strcmp(flat.mouse, mice{i});
+
+        % models per condition
+        for j = 1:cNum
+            conditionBins = condition==j;
+            bins = stepBins & mouseBins & conditionBins;
+            kd = ksdensity(flat.modPawDistanceToObs(bins), x);
+            entropies(h,j,i) = entropy(kd/max(kd));
+            
+            % compute the overall distribution (pooled across step types)only once
+            if h==1
+                kd = ksdensity(flat.modPawDistanceToObs(mouseBins & conditionBins), x);
+                distributions(j,i,:) = kd;
+            end
+        end
     end
 end
 
 
 
-
 % plot accuracies
 figure('position', [200 703.00 300 255.00], 'color', 'white', 'menubar', 'none')
-barFancy(entropies, 'ylabel', 'entropy (bits)', 'levelNames', {s.levels}, 'colors', s.colors, s.barProps{:})
+barFancy(entropies, 'ylabel', 'entropy (bits)', 'levelNames', {{'little step', 'big step'}, s.levels}, ...
+    'colors', repmat(s.colors,2,1), s.barProps{:})
 if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
 
 % plot distributions

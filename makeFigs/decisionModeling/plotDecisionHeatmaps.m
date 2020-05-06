@@ -25,6 +25,8 @@ s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
 s.lightOffOnly = false;  % whether to restrict to light on trials
 s.deltaMin = 0;  % exclude trials where little step length is adjusted less than deltaMin
+s.modSwingContactsMax = 0;  % exclude trials where number of contacts of first mod paw during first mod swing is greater than this value
+
 
 
 % initializations
@@ -37,20 +39,51 @@ y = linspace(s.yLims(1), s.yLims(2), s.binNum);
 
 
 % restrict to desired trials
-if s.successOnly; flat = flat(flat.isTrialSuccess,:); end
-if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1,:); end
-if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
-% if s.modSwingContactsMax; flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :); end
-% if s.deltaMin
-%     minDif = std(flat.preModPawDeltaLength) * s.deltaMin;
-%     flat = flat(abs(flat.modPawDeltaLength)>minDif,:);
-% end
-if s.deltaMin; flat = flat( ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0), :); end
+if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); end % keep only trials within condition
+if s.successOnly; flat = flat(flat.isTrialSuccess==1, :); end
+if s.lightOffOnly; flat = flat(flat.isLightOn==0, :); end
+if s.modPawOnlySwing; flat = flat(flat.modPawOnlySwing==1, :); end
+if s.modSwingContactsMax
+    if s.verbose; fprintf('%.2f of trials removed with modSwingContactsMax criterion\n', ...
+            1-mean(flat.modSwingContacts<=s.modSwingContactsMax)); end
+    flat = flat(flat.modSwingContacts<=s.modSwingContactsMax, :);
+end
+
+if s.deltaMin
+    % 1) control distribution, std, all steps
+%     minDif = std(flat.preModPawDeltaLength) * 1;
+%     bins = abs(flat.modPawDeltaLength)>minDif;
+    
+    % 2) mod distribution, std, all steps
+%     bins = ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin);
+    
+    % 3) mod distribution, std, little steps only (old version)
+%     bins = ~(abs(zscore(flat.modPawDeltaLength))<s.deltaMin & [flat.isBigStep]==0);
+
+    % 4) mod distribution, meters, little steps only
+    bins = ~(abs(flat.modPawDeltaLength)<s.deltaMin & [flat.isBigStep]==0);
+    
+    % 5) control distribution, std, little steps only per mouse
+%     bins = true(1,height(flat));
+%     for i = 1:length(mice)
+%         mouseBins = strcmp(flat.mouse, mice{i});
+%         minDif = std(flat(mouseBins,:).preModPawDeltaLength) * s.deltaMin;
+%         if s.verbose; fprintf('%s: minDif %.1f mm\n', mice{i}, minDif*1000); end
+%         bins(mouseBins & abs(flat.modPawDeltaLength)<minDif & flat.isBigStep==0) = false;
+%     end
+    
+    if s.verbose; fprintf('%.2f of trials removed with deltaMin criterion\n', 1-mean(bins)); end
+    flat = flat(bins,:);
+end
 
 
 
 if ~isempty(s.condition)  % if no condition provided, create dummy variable
-    [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
+    if islogical(flat.(s.condition))
+        condition = flat.(s.condition)+1;
+    else
+        [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
+    end
 else
     condition = ones(height(flat),1);
 end

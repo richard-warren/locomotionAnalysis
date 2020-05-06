@@ -13,6 +13,7 @@ fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whisker
 %% initializations
 
 miceToExclude = {'den12'};
+% miceToExclude = {};
 global_config;
 % fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'whiskerTrim_data.mat'), 'data'); disp('whiskerTrim data loaded!')
 fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'whiskerTrim_data.mat'), 'data'); disp('whiskerTrim data loaded!')  % for working from home
@@ -24,12 +25,14 @@ vars.condition = struct('name', 'condition', ...
 % vars.condition = struct('name', 'condition', ...
 %     'levels', {{'bilateral full', 'unilateral int3', 'unilateral deltaOnly'}}, ...
 %     'levelNames', {{'biFull', 'uniPartial', 'deltaOnly'}});
+vars.isBigStep = struct('name', 'isBigStep', 'levels', [0 1], 'levelNames', {{'little step', 'big step'}});
 
 colors = repmat([51 204 255]/255, length(vars.condition.levels), 1) .* fliplr(linspace(0,1,length(vars.condition.levels)))';
 
 % set conditionals (for getDvMatrix)
 conditionals.isFore = struct('name', 'isFore', 'condition', @(x) x==1);
 conditionals.isLeading = struct('name', 'isLeading', 'condition', @(x) x==1);
+conditionals.isLittleStep = struct('name', 'isBigStep', 'condition', @(x) x==0);
 
 %% all bar plots
 figure('position', [421 584 824 543], 'color', 'white', 'menubar', 'none');
@@ -67,7 +70,7 @@ barFancy(dv, 'ylabel', 'forepaw height (mm)', 'levelNames', {vars.condition.leve
 % correlation
 subplot(2,3,6)
 dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.condition, {'mouse'}, {'session'}, [conditionals.isLeading; conditionals.isFore], 'corr'); % perform regression for each session, then average slopes across sessions for each mouse
-barFancy(dv, 'ylabel', 'paw:obstacle correlation', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
+barFancy(dv, 'ylabel', 'paw-obstacle correlation', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, ...
     'comparisons', [1 2; 1 3; 1 4; 1 5; 1 6], 'test', 'ttest')
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrimResults'), 'svg');
@@ -75,7 +78,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 %% decision making initialization
 flat = flattenData(data, ...
-    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
+    [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'isModPawContra', ...
     'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', ...
     'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modSwingContacts'}]);
 
@@ -101,7 +104,21 @@ plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.leve
 %% landing position entropy
 plotEntropies(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'poolMice', false, ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', colors, 'barProps', [barProperties, {'comparisons', [1 2; 1 3; 1 4; 1 5; 1 6]}]);
+    'colors', colors, 'barProps', [barProperties, {'comparisons', [1 2; 1 3; 1 4; 1 5; 1 6]}], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_entropy'));
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_histos'), 'svg')
+
+%% landing distance
+figure('position', [200 472.00 300 255], 'color', 'white', 'menubar', 'none');
+dv = getDvMatrix(data, 'modPawDistanceToObsAbs', [vars.condition], {'mouse'}, [figConditionals; conditionals.modPawOnlySwing; conditionals.isLittleStep])*1000;
+barFancy(dv, 'ylabel', 'little step landing distance (mm)', 'levelNames', {vars.condition.levelNames}, 'colors', repmat(colors,2,1), barProperties{:}, ...
+    'comparisons', [1 2; 1 3; 1 4; 1 5; 1 6], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrim_landingDistance'), 'svg');
+
+%% (temp; to compare ispi and contra paw first) heatmaps
+plotDecisionHeatmaps(flat(strcmp({flat.condition}, 'unilateral full')), 'condition', 'isModPawContra', 'levels', {0,1}, 'normalize', 'col', 'xLims', [-20 15], ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', true, 'plotMice', true, 'colors', colors, 'outcome', 'isModPawLengthened', 'plotProbs', false);
 
 
 

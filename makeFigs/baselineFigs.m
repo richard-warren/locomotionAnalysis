@@ -402,9 +402,9 @@ colorsWithBl(1:2:8,:) = colorsWithBl(2:2:8,:) * .25;
 
 mat = permute(cat(4, corrsControl, corrs), [1 2 4 3]);
 
-barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'paw:hurdle correlation', ...
+barFancy(mat, 'levelNames', conditionNames, 'ylabel', 'paw-obstacle correlation', ...
     'colors', colorsWithBl, 'YLim', [-.2 .8], barProperties{:}, extraBarProps{:}, ...
-    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest', 'lineAtZero', false)
 
 % save
 file = fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineHeightShapingBars');
@@ -416,7 +416,7 @@ figure('Color', 'white', 'Position', [200 400 500 400], 'MenuBar', 'none');
 plot([0 xLims(2)], [0 xLims(2)], 'Color', [obsColor .4], 'LineWidth', 3) % add unity line
 
 logPlotRick(obsHgts, pawHgts, ...
-    'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height (mm)', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
+    'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'obstacle height (mm)', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)))
 
@@ -438,7 +438,7 @@ saveas(gcf, file, 'svg');
 
 figure('Color', 'white', 'Position', [2000 400 400 300], 'MenuBar', 'none');
 logPlotRick([flat.obsHgt]*1000, [flat.isPawSuccess], ...
-    'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'hurdle height (mm)', 'ylabel', 'success rate', 'plotMice', false, ...
+    'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'obstacle height (mm)', 'ylabel', 'success rate', 'plotMice', false, ...
     'xlim', [3.4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', {flat.mouse}, ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)), 'computeVariance', false, 'ylim', [0 1])
 set(gca, 'xlim', [3.4 10], 'XTick', 4:10, 'YTick', [0 .5 1])
@@ -598,3 +598,31 @@ atNoseInd = find(flat(1).velVsPositionX>=0,1,'first');
 noseVels = squeeze(velData(:,:,atNoseInd));
 
 fprintf('\nobs at nose: %.2f +- %.2f SEM\n', mean(noseVels), std(noseVels)/sqrt(length(noseVels)))
+
+
+%% histogram showing accuracy of eddie's whisker contact classifier
+
+data = 'Y:\loco\obstacleData\papers\hurdles_paper1\figures\eddie_figs\200414_files\histdata.csv';
+histData = readtable(data);
+bins = -244:8:54;
+
+close all
+figure('color', 'white', 'position', [480 343 457 300], 'menubar', 'none'); hold on;
+
+props = {'Normalization', 'probability', 'FaceAlpha', .4};
+histogram(histData.train(~isnan(histData.train)), bins, 'FaceColor', [.4 .4 .4], props{:});
+histogram(histData.test(~isnan(histData.test)), bins, 'FaceColor', [20 96 168]/255, props{:});
+yLims = get(gca, 'ylim');
+% plot([0 0], yLims, 'Color', 'black')
+set(gca, 'ylim', yLims, 'xlim', bins([1 end]), 'YColor', 'none')
+xlabel('true - predicted contact time (ms)')
+xlabel('true - predicted contact time (ms)')
+legend({'train', 'test'}, 'Box', 'off', 'Location', 'Best')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerContactHisto'), 'svg');
+
+
+
+
+
+
+

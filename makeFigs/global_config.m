@@ -35,10 +35,10 @@ m.deltaMin = .005;  % (m) minimum change in step length for inclusion in model
 m.lightOffOnly = false;
 m.modPawOnlySwing = true;
 m.successOnly = false;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
-m.modSwingContactsMax = 4;  % first swing of first modified paw cannot have more than this many frames of contact with the obstacle // overall success is LESS THAN 5 frames
+m.modSwingContactsMax = false;  % first swing of first modified paw cannot have more than this many frames of contact with the obstacle // overall success is LESS THAN 5 frames
 
 m.predictorsAll = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
-m.predictorsNamedAll = {{'wheel velocity'}, {'body angle'}, {'obstacle height'}, {'obstacle position';'(horizontal)'}, {'paw position';'(horizontal)'}, {'paw velocity'; '(horizontal)'}, {'paw position';'(vertical)'}, {'paw velocity'; '(vertical)'}};
+m.predictorsNamedAll = {{'wheel velocity'}, {'body angle'}, {'obstacle height'}, {'obstacle proximity';'(horizontal)'}, {'paw position';'(horizontal)'}, {'paw velocity'; '(horizontal)'}, {'paw position';'(vertical)'}, {'paw velocity'; '(vertical)'}};
 m.predictors = {'wiskContactPosition', 'modPawX', 'velAtWiskContact', 'modPawXVel', 'modPawZ', 'modPawZVel', 'obsHgt', 'angleAtWiskContact'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
 [~, inds] = ismember(m.predictors, m.predictorsAll);
 m.predictorsNamed = m.predictorsNamedAll(inds);
