@@ -1,0 +1,10 @@
+name,parent,swap
+eye_top,,
+nose,,
+jaw,,
+tongue,,
+wisk_pad,,
+wisk_caudal,wisk_pad,
+wisk_rostral,wisk_pad,
+obstacle,,
+LED,,
