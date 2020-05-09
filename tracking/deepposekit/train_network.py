@@ -19,7 +19,7 @@ os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 ## make data generator
 
-training_set = r'D:\github\obstacle_analysis\tracking\label\training_sets\trainingset_run.h5'
+training_set = r'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.h5'
 data_generator = DataGenerator(training_set, zeros_to_nan=True)
 
 ## visualize frame

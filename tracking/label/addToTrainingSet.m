@@ -11,7 +11,7 @@ s.circSize = 100;
 s.vidScaling = 1.5;
 s.frameInds = [];  % inds of frames to include in preview
 s.lineColor = [.15 .15 1];
-s.scoreThresh = .2;  % don't show locations when confidence is below scoreThresh
+s.scoreThresh = .1;  % don't show locations when confidence is below scoreThresh
 
 
 
@@ -23,6 +23,8 @@ framesAdded = 0;
 % load data
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, vidName));
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, trackedFeaturesName)); % get raw tracking data
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+    'rewardTimes', 'frameTimeStamps'); % get raw tracking data
 
 features = locationsTable.Properties.VariableNames(2:3:end);
 scores = table2array(locationsTable(:,4:3:end));
@@ -102,6 +104,7 @@ close(fig)
 function changeFrames(~,~)
     
     key = double(get(fig, 'currentcharacter'));
+    disp(key)
     
     if ~isempty(key) && isnumeric(key)
         
@@ -153,6 +156,12 @@ function changeFrames(~,~)
         elseif key==27                  
             playing = false;
             paused = false;
+            
+        % 'w': go to next water drop
+        elseif key==119
+            nextRewardTime = rewardTimes(find(rewardTimes>frameTimeStamps(s.frameInds(frameInd)), 1, 'first'));
+            frameInd = s.frameInds(find(frameTimeStamps(s.frameInds)>nextRewardTime, 1, 'first'));
+            updateFrame(0);
         
         % OTHERWISE: toggle pausing
         else                            

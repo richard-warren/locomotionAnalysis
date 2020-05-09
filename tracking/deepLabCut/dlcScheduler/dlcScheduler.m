@@ -2,6 +2,10 @@
 % sessions // have separate memory for whether dlc and spike analyses are
 % done
 
+% new format: check if session analyzed // if not, check which network to
+% use and do run tracking with old or new analysis // each analysis should
+% have a wrapper!
+
 
 % settings
 checkFrequency = 60; % seconds

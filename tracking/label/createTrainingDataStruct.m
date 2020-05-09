@@ -26,7 +26,7 @@ ind = 1;  % index for trainingData
 for i = 1:length(sessions)
     
     % load sesssion data
-    fprintf('%s: loading session data...\n', sessions{i})
+    fprintf('\n%s: loading session data... ', sessions{i})
     
     % load session data
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
@@ -48,16 +48,16 @@ for i = 1:length(sessions)
     
     % get frames
     if strcmp(s.method, 'uniform')
-        fprintf('%s: finding uniformly spaced frames...\n', sessions{i})
+        fprintf('finding uniformly spaced frames... ')
         frames = round(linspace(1, totalFrames, sesFrames(i)+2));
         frames = frames(2:end-1)';
     
     elseif strcmp(s.method, 'random')
-        fprintf('%s: finding random frames...\n', sessions{i})
+        fprintf('finding random frames... ')
         frames = randsample(totalFrames, sesFrames(i))';
     
     elseif strcmp(s.method, 'metadata')
-        fprintf('%s: finding frames based on session metadata...\n', sessions{i})
+        fprintf('finding frames based on session metadata... ')
         
         % determine number of frames for each frame type
         frames = [];
@@ -111,6 +111,6 @@ for i = 1:length(sessions)
     
 end
 
-fprintf('%s: all done!\n', sessions{i})
+fprintf('all done!\n')
 
 
