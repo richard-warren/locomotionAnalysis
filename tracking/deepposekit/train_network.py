@@ -176,7 +176,7 @@ history = model.fit(
     batch_size=4,
     validation_batch_size=5,
     callbacks=callbacks,
-    epochs=1000,
+    epochs=500,
     n_workers=8,
     steps_per_epoch=None,
 )

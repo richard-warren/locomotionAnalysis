@@ -28,11 +28,11 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 
 switch view
     case 'run'
-        fprintf('\n%s: running deepposekit on run video...\n', session)
+        fprintf('%s: running deepposekit on run video... ', session)
         vid = fullfile(getenv('OBSDATADIR'), 'sessions', session, s.runVid);
         args = [vid ' ' s.runModel ' ' s.runSkeleton ' ' s.runOutput];
     case 'wisk'
-        fprintf('\n%s: running deepposekit on whisker video...\n', session)
+        fprintf('%s: running deepposekit on whisker video... ', session)
         vid = fullfile(getenv('OBSDATADIR'), 'sessions', session, s.wiskVid);
         args = [vid ' ' s.wiskModel ' ' s.wiskSkeleton ' ' s.wiskOutput];
 end

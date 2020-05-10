@@ -2,15 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="00078c66-bf3a-499f-99c1-f23f7ba2ce3f" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/tracking/deepposekit/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prelimAnalysis/getWheelPoints.m" beforeDir="false" afterPath="$PROJECT_DIR$/prelimAnalysis/getWheelPoints.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/analyzedSessions.mat" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/analyzedSessions.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/dpkAnalysis.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/dpkAnalysis.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/label/createTrainingData.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/createTrainingData.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/createTrainingDataStruct.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/createTrainingDataStruct.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/label/labelFrames.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/labelFrames.m" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,8 +21,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/train_network.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1656">
-              <caret line="75" column="8" selection-start-line="75" selection-start-column="8" selection-end-line="75" selection-end-column="8" />
+            <state relative-caret-position="200">
+              <caret line="110" column="38" selection-start-line="110" selection-start-column="34" selection-end-line="110" selection-end-column="38" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -35,8 +33,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="336">
-              <caret line="14" column="10" lean-forward="true" selection-start-line="14" selection-start-column="10" selection-end-line="14" selection-end-column="10" />
+            <state relative-caret-position="231">
+              <caret line="20" column="60" selection-start-line="20" selection-start-column="60" selection-end-line="20" selection-end-column="60" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -71,6 +69,9 @@
       <find>max_batches</find>
       <find>output_name</find>
       <find>skeleton</find>
+      <find>rotat</find>
+      <find>sample_</find>
+      <find>gray</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -79,8 +80,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/tracking/deepposekit/train_network.py" />
         <option value="$PROJECT_DIR$/tracking/deepposekit/test.py" />
+        <option value="$PROJECT_DIR$/tracking/deepposekit/train_network.py" />
         <option value="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" />
       </list>
     </option>
@@ -121,6 +122,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
@@ -166,7 +168,7 @@
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.15226555" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Version Control" />
-      <window_info active="true" anchor="bottom" id="Python Console" visible="true" weight="0.31163287" />
+      <window_info active="true" anchor="bottom" id="Python Console" visible="true" weight="0.26040554" />
       <window_info anchor="bottom" id="Terminal" weight="0.25720385" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -182,16 +184,6 @@
     </layout>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/tracking/deepposekit/train_network.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1656">
-          <caret line="75" column="8" selection-start-line="75" selection-start-column="8" selection-end-line="75" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="288">
@@ -210,10 +202,20 @@
     <entry file="file://$PROJECT_DIR$/dpkAnalysis.m">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
+    <entry file="file://$PROJECT_DIR$/tracking/deepposekit/train_network.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="200">
+          <caret line="110" column="38" selection-start-line="110" selection-start-column="34" selection-end-line="110" selection-end-column="38" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="14" column="10" lean-forward="true" selection-start-line="14" selection-start-column="10" selection-end-line="14" selection-end-column="10" />
+        <state relative-caret-position="231">
+          <caret line="20" column="60" selection-start-line="20" selection-start-column="60" selection-end-line="20" selection-end-column="60" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>

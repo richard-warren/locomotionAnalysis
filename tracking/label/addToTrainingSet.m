@@ -11,7 +11,9 @@ s.circSize = 100;
 s.vidScaling = 1.5;
 s.frameInds = [];  % inds of frames to include in preview
 s.lineColor = [.15 .15 1];
-s.scoreThresh = .1;  % don't show locations when confidence is below scoreThresh
+s.scoreThresh = .2;  % don't show locations when confidence is below scoreThresh
+s.invertFrame = false;
+s.textRotation = 45;
 
 
 
@@ -24,7 +26,10 @@ framesAdded = 0;
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, vidName));
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, trackedFeaturesName)); % get raw tracking data
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'rewardTimes', 'frameTimeStamps'); % get raw tracking data
+    'rewardTimes', 'frameTimeStamps', 'frameTimeStampsWisk', 'wiskContactTimes'); % get raw tracking data
+
+% a hack to determine with frameTimes to use
+if contains(vidName, 'isk'); times = frameTimeStampsWisk; else; times = frameTimeStamps; end
 
 features = locationsTable.Properties.VariableNames(2:3:end);
 scores = table2array(locationsTable(:,4:3:end));
@@ -42,7 +47,7 @@ fig = figure('name', [session ', frames added: 0'], 'units', 'pixels', ...
     'position', [600 100 vid.Width*s.vidScaling vid.Height*s.vidScaling], ...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
-frame = zeros(vid.Height, vid.Width);
+[frame, frameRaw] = deal(zeros(vid.Height, vid.Width));
 imPreview = image(frame, 'CDataMapping', 'scaled'); hold on;
 imAxis = gca;
 set(imAxis, 'visible', 'off', 'units', 'pixels',...
@@ -59,6 +64,7 @@ if ~isempty(s.skeleton)
     skeletonTbl = readtable(s.skeleton);
     hasParentInds = find(~cellfun(@isempty, skeletonTbl.parent));  % bins of features with a parent feature, as determined by spreadsheet
     numEdges = length(hasParentInds);
+    lineColors = hsv(numEdges);
     edges = nan(numEdges, 2);  % number of edges X 2 matrix storing connected features
     featurePairLines = cell(1,numEdges);
 
@@ -66,11 +72,11 @@ if ~isempty(s.skeleton)
     for i = 1:numEdges
         edges(i,1) = hasParentInds(i);
         edges(i,2) = find(strcmp(skeletonTbl.name, skeletonTbl.parent(hasParentInds(i))));  % index of parent feature
-        featurePairLines{i} = line([0 0], [0 0], 'color', s.lineColor); hold on
+        featurePairLines{i} = line([0 0], [0 0], 'color', lineColors(i,:)); hold on
         uistack(featurePairLines{i}, 'bottom');
         uistack(featurePairLines{i}, 'up');
         
-        lines{i} = line(0, 0, 'lineWidth', 2, 'color', s.lineColor);
+        lines{i} = line(0, 0, 'lineWidth', 2, 'color', lineColors(i,:));
     end
 end
 
@@ -78,7 +84,7 @@ end
 % set up text to show dlc scores
 scoreLabels = cell(1,length(features));
 if s.showLabels
-    for i = 1:length(features); scoreLabels{i} = text(0,0,'', 'color', colors(i,:)); end
+    for i = 1:length(features); scoreLabels{i} = text(0,0,'', 'color', colors(i,:), 'Rotation', s.textRotation); end
 end
 
 
@@ -104,7 +110,6 @@ close(fig)
 function changeFrames(~,~)
     
     key = double(get(fig, 'currentcharacter'));
-    disp(key)
     
     if ~isempty(key) && isnumeric(key)
         
@@ -126,10 +131,14 @@ function changeFrames(~,~)
             ind = length(trainingData)+1;
             trainingData(ind).session = session;
             trainingData(ind).frameNum = s.frameInds(frameInd);
-            trainingData(ind).frame = frame;
+            trainingData(ind).frame = frameRaw;
             trainingData(ind).includeFrame = false;
             for j = 1:length(features)
-                trainingData(ind).(features{j}) = squeeze(locations(s.frameInds(frameInd),:,j));
+                if scores(s.frameInds(frameInd),j) > s.scoreThresh
+                    trainingData(ind).(features{j}) = squeeze(locations(s.frameInds(frameInd),:,j));
+                else
+                    trainingData(ind).(features{j}) = [nan nan];
+                end
             end
 
             % resort the structure so like sessions stay together
@@ -159,8 +168,14 @@ function changeFrames(~,~)
             
         % 'w': go to next water drop
         elseif key==119
-            nextRewardTime = rewardTimes(find(rewardTimes>frameTimeStamps(s.frameInds(frameInd)), 1, 'first'));
-            frameInd = s.frameInds(find(frameTimeStamps(s.frameInds)>nextRewardTime, 1, 'first'));
+            nextRewardTime = rewardTimes(find(rewardTimes>times(s.frameInds(frameInd)), 1, 'first'));
+            frameInd = s.frameInds(find(times(s.frameInds)>nextRewardTime, 1, 'first'));
+            updateFrame(0);
+        
+        % 'o': go to next whisker contact
+        elseif key==111
+            nextContactTime = wiskContactTimes(find(wiskContactTimes>times(s.frameInds(frameInd)), 1, 'first'));
+            frameInd = s.frameInds(find(times(s.frameInds)>nextContactTime, 1, 'first'));
             updateFrame(0);
         
         % OTHERWISE: toggle pausing
@@ -180,13 +195,16 @@ function updateFrame(frameStep)
     elseif frameInd > length(s.frameInds); frameInd = 1; end
     
     % get frame
-    frame = rgb2gray(read(vid, s.frameInds(frameInd)));
+    frameRaw = rgb2gray(read(vid, s.frameInds(frameInd)));
+    frame = frameRaw;
+    if s.invertFrame; frame = 255-frame; end
     
 	% add frame number
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
         sprintf('session %s, frame %i', ...
         session, s.frameInds(frameInd)), ...
         'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+    disp(size(frame))
     
     % update figure
     set(imPreview, 'CData', frame);

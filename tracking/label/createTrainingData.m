@@ -1,13 +1,13 @@
 %% initialize new training data structure
 
 % settings
-view = 'run';  % 'run' or 'wisk'
-vidName = 'run_originalDimensions.mp4';
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% view = 'run';  % 'run' or 'wisk'
+% vidName = 'run_originalDimensions.mp4';
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
 
-% view = 'wisk';  % 'run' or 'wisk'
-% vidName = 'runWisk.mp4';
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+view = 'wisk';  % 'run' or 'wisk'
+vidName = 'runWisk.mp4';
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
 
 frameNum = 40;  % total number of frames
 
@@ -24,24 +24,29 @@ end
 
 %% label dataset
 
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+% run
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% invert = false;
 
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% wisk
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+invert = true;
 
-labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', false);
+
+labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert);
 
 %% convert dataset to deepposekit format
 
 % settings
 % trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
 % skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-% padDims = [];
+% imgDims = [];  % images are resized to this dimension (can leave empty)
 
 trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
 skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-padDims = [448 448];  % leave empty if you want to automatically determine the padding dimensions
+imgDims = [448 448];  % images are resized to this dimension (can leave empty)
 
 padImgs = true;  % dpk only works with dimensions continuosly divisible by 2 // if true, pad images to the next highest number that is continuously divisible by 2
 
@@ -60,29 +65,19 @@ numFeatures = length(features);
 % dimension order flipped, so i flip them here to make them work in python
 
 annotated = true(numEgs, numFeatures);
-
 annotations = nan(numEgs, numFeatures, 2);
 for i = 1:numEgs; for j = 1:numFeatures; annotations(i,j,:) = trainingData(i).(features{j}); end; end
 
-images = permute(cat(4, trainingData.frame), [4,1,2,3]);
-if padImgs
-    
-    % make list of dimensions that are valid for use with deepposekit (only numbers that are repeatedly divisible by 2)
-    validDims = 2.^(1:12)' * [1 3 5 7 11];
-    validDims = unique(validDims(:));
-    if isempty(padDims)
-        hgt = validDims(find(validDims>=size(images,2),1,'first'));
-        wid = validDims(find(validDims>=size(images,3),1,'first'));
-    else
-        hgt = padDims(1);
-        wid = padDims(2);
+
+% resize images
+trainingData_resized = trainingData;
+if imgDims
+    for i = 1:length(trainingData)
+        trainingData_resized(i).frame = trainingData_resized(i).frame(1:imgDims(1), 1:imgDims(2), :);
     end
-    images_temp = zeros(size(images,1), hgt, wid, size(images,4));
-    images_temp(:,1:min(size(images,2),hgt),1:min(size(images,3),wid),:) = images(:,1:min(hgt,end),1:min(wid,end),:);
-    images = images_temp;
-    fprintf('padding images to size (h,w): %i, %i\n', hgt, wid)
-    clear images_temp;
 end
+images = permute(cat(4, trainingData_resized.frame), [4,1,2,3]);
+
 
 skel = -ones(numFeatures, 2);  % first column in index (zero-based for python) of parent features; second column is zero-based index of 'swap' feature
 for i = 1:numFeatures
@@ -114,34 +109,74 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '191113_002';
-vid = 'runWisk.mp4';
-trackedFeatures = 'trackedFeatures_wisk.csv';
+session = '191126_001';
 
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+% run
+vid = 'run_originalDimensions.mp4';  % run_originalDimensions;
+trackedFeatures = 'trackedFeatures_run.csv';
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+invert = false;
 
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% wisk
+% vid = 'runWisk.mp4';  % run_originalDimensions;
+% trackedFeatures = 'trackedFeatures_wisk.csv';
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+% invert = true;
 
-addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleton);
+addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleton, 'invertFrame', invert);
 
 %% analyze batch of videos
 
 % read sessions from spreadsheet
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
 sessions = sessionInfo.session(sessionInfo.include==1);
-sessions = sessions(1:2);  % !!! temp
+% sessions = sessions(1:2);  % !!! temp
 
-%%
 for i = 1:length(sessions)
+    fprintf('%i/%i ', i, length(sessions))
     try
         dpkAnalysis(sessions{i}, 'run', 'verbose', false)
-        dpkAnalysis(sessions{i}, 'wisk', 'verbose', false)
+%         dpkAnalysis(sessions{i}, 'wisk', 'verbose', false)
     catch
         pfrintf('%s: problem with analysis!\n', sessions{i})
     end
 end
 disp('all done!')
+
+
+%% (temp) fix images in training set
+
+% run
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% vidName = 'run_originalDimensions.mp4';  % run_originalDimensions;
+
+% wisk
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+vidName = 'runWisk.mp4';  % run_originalDimensions;
+
+
+load(trainingSet)
+currentSession = '';
+for i = 1:length(trainingData)
+    
+    % load new session if necessary
+    if ~strcmp(trainingData(i).session, currentSession)
+        fprintf('%s: fixing frames...\n', trainingData(i).session)
+        vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', trainingData(i).session, vidName));
+        currentSession = trainingData(i).session;
+    end
+    
+    % update frame
+    trainingData(i).frame = rgb2gray(read(vid, trainingData(i).frameNum));
+end
+
+save(trainingSet, 'trainingData')
+disp('all done!')
+
+
+
+
 
 

@@ -7,6 +7,7 @@ s.nanColor = [1 0 0];
 s.lineColor = [0 0 1];
 s.labeledColor = [1 1 0];
 s.invertFrame = false;
+s.textRotation = 45;
 
 
 
@@ -48,7 +49,8 @@ for i = 1:length(features)
     end
     
     % create draggables for features
-    texts{i} = text(defaultPositions(i,1)+s.textOffset(1), defaultPositions(i,2)+s.textOffset(2), features{i}, 'interpreter', 'none');
+    texts{i} = text(defaultPositions(i,1)+s.textOffset(1), defaultPositions(i,2)+s.textOffset(2), features{i}, ...
+        'interpreter', 'none', 'rotation', s.textRotation);
     points{i} = impoint(gca, defaultPositions(i,:));
     addNewPositionCallback(points{i}, @(x) movePoint(i));
     setPositionConstraintFcn(points{i}, @constrainPosition)
@@ -62,13 +64,14 @@ end
 % create lines connecting feature pairs
 hasParentInds = find(~cellfun(@isempty, skeletonTbl.parent));  % bins of features with a parent feature, as determined by spreadsheet
 numEdges = length(hasParentInds);
+lineColors = hsv(numEdges);
 edges = nan(numEdges, 2);  % number of edges X 2 matrix storing connected features
 featurePairLines = cell(1,numEdges);
 
 for i = 1:numEdges
     edges(i,1) = hasParentInds(i);
     edges(i,2) = find(strcmp(skeletonTbl.name, skeletonTbl.parent(hasParentInds(i))));  % index of parent feature
-    featurePairLines{i} = line([0 0], [0 0], 'color', s.lineColor); hold on
+    featurePairLines{i} = line([0 0], [0 0], 'color', lineColors(i,:)); hold on
     uistack(featurePairLines{i}, 'bottom');
     uistack(featurePairLines{i}, 'up');
 end
