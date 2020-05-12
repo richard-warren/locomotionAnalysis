@@ -25,14 +25,14 @@ end
 %% label dataset
 
 % run
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-% invert = false;
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+invert = false;
 
 % wisk
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-invert = true;
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+% invert = true;
 
 
 labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert);
@@ -74,10 +74,11 @@ trainingData_resized = trainingData;
 if imgDims
     for i = 1:length(trainingData)
         trainingData_resized(i).frame = trainingData_resized(i).frame(1:imgDims(1), 1:imgDims(2), :);
+%         trainingData_resized(i).frame =
+%         repmat(trainingData_resized(i).frame, 1, 1, 3);  % create color dimension
     end
 end
-images = permute(cat(4, trainingData_resized.frame), [4,1,2,3]);
-
+images = permute(cat(4, trainingData_resized.frame), [3,2,1,4]);
 
 skel = -ones(numFeatures, 2);  % first column in index (zero-based for python) of parent features; second column is zero-based index of 'swap' feature
 for i = 1:numFeatures
@@ -92,12 +93,13 @@ fileName = fullfile(filepath, [name '.h5']);
 if exist(fileName, 'file'); delete(fileName); end
 h5create(fileName, '/annotated', fliplr(size(annotated)), 'Datatype', 'uint8')  % matlab doesn't support boolean datatypes, what the fuck
 h5create(fileName, '/annotations', fliplr(size(annotations)), 'Datatype', 'double')  % should really be <f8, whatever that means...
-h5create(fileName, '/images', fliplr(size(images)), 'Datatype', 'uint8')
+h5create(fileName, '/images', size(images), 'Datatype', 'uint8')
 h5create(fileName, '/skeleton', fliplr(size(skel)), 'Datatype', 'int32')
+h5create(fileName, '/features', fliplr(features), 'Datatype', 'int32')
 
 h5write(fileName, '/annotated', permute(uint8(annotated), [2 1]))
 h5write(fileName, '/annotations', permute(uint16(annotations), [3 2 1]))
-h5write(fileName, '/images', permute(images, [4 3 2 1]))
+h5write(fileName, '/images', images)
 h5write(fileName, '/skeleton', permute(int32(skel), [2 1]))
 
 h5disp(fileName) 
@@ -109,7 +111,7 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '191126_001';
+session = '200202_000';
 
 % run
 vid = 'run_originalDimensions.mp4';  % run_originalDimensions;
@@ -130,9 +132,9 @@ addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleto
 %% analyze batch of videos
 
 % read sessions from spreadsheet
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
-sessions = sessionInfo.session(sessionInfo.include==1);
-% sessions = sessions(1:2);  % !!! temp
+% sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
+% sessions = sessionInfo.session(sessionInfo.include==1);
+sessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};
 
 for i = 1:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
@@ -146,33 +148,53 @@ end
 disp('all done!')
 
 
-%% (temp) fix images in training set
+% %% (temp) fix images in training set
+% 
+% % run
+% % trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% % vidName = 'run_originalDimensions.mp4';  % run_originalDimensions;
+% 
+% % wisk
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+% vidName = 'runWisk.mp4';  % run_originalDimensions;
+% 
+% 
+% load(trainingSet)
+% currentSession = '';
+% for i = 1:length(trainingData)
+%     
+%     % load new session if necessary
+%     if ~strcmp(trainingData(i).session, currentSession)
+%         fprintf('%s: loading %s...\n', trainingData(i).session, vidName)
+%         vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', trainingData(i).session, vidName));
+%         currentSession = trainingData(i).session;
+%     end
+%     
+%     % update frame
+%     trainingData(i).frame = rgb2gray(read(vid, trainingData(i).frameNum));
+% end
+% 
+% save(trainingSet, 'trainingData')
+% disp('all done!')
 
-% run
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-% vidName = 'run_originalDimensions.mp4';  % run_originalDimensions;
+%% (temp) find out which sessions have 'originalDimensions' versions
 
-% wisk
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-vidName = 'runWisk.mp4';  % run_originalDimensions;
+files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
+sessions = {files([files.isdir]).name};
+origSessions = {};
 
-
-load(trainingSet)
-currentSession = '';
-for i = 1:length(trainingData)
-    
-    % load new session if necessary
-    if ~strcmp(trainingData(i).session, currentSession)
-        fprintf('%s: fixing frames...\n', trainingData(i).session)
-        vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', trainingData(i).session, vidName));
-        currentSession = trainingData(i).session;
+fileExists = false(1,length(sessions));
+fprintf('\n\n--------------------looking for originalDimensions--------------------\n')
+for i = 1:length(sessions)
+    dirSub = dir(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, '*.mp4'));
+    bins = contains({dirSub.name}, 'originalDimensions');
+    if any(bins)
+        fprintf('%s: ', sessions{i})
+        fprintf('%s ', dirSub(bins).name)
+        fprintf('\n')
+        origSessions{end+1} = sessions{i};
     end
-    
-    % update frame
-    trainingData(i).frame = rgb2gray(read(vid, trainingData(i).frameNum));
 end
-
-save(trainingSet, 'trainingData')
 disp('all done!')
 
 

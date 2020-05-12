@@ -21,7 +21,9 @@ os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 training_set = r'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.h5'
 data_generator = DataGenerator(training_set, zeros_to_nan=True)
+print('data_generator of length %i created' % len(data_generator))
 
+'''
 ## visualize frame
 
 image, keypoints = data_generator[0]
@@ -41,6 +43,7 @@ plt.scatter(keypoints[0, :, 0], keypoints[0, :, 1], c=np.arange(data_generator.k
 plt.xlim(0, image.shape[1])
 plt.ylim(image.shape[0], 0)
 plt.show()
+'''
 
 ## set up data augmentation
 
@@ -67,6 +70,7 @@ augmenter.append(iaa.Affine(rotate=(-5, 5),
                  )
 augmenter = iaa.Sequential(augmenter)
 
+'''
 ## check out augmentations
 plt.close('all')
 image, keypoints = data_generator[0]
@@ -86,7 +90,7 @@ plt.scatter(keypoints[0, :, 0], keypoints[0, :, 1], c=np.arange(data_generator.k
 plt.xlim(0, image.shape[1])
 plt.ylim(image.shape[0], 0)
 plt.show()
-
+'''
 ## make training generator
 
 train_generator = TrainingGenerator(generator=data_generator,
@@ -99,6 +103,7 @@ train_generator = TrainingGenerator(generator=data_generator,
                                     graph_scale=1)
 train_generator.get_config()
 
+'''
 ## check training generator output
 
 n_keypoints = data_generator.keypoints_shape[0]
@@ -121,13 +126,14 @@ ax4.imshow(outputs[0,...,-1], vmin=0)
 plt.show()
 
 train_generator.on_epoch_end()
-
+'''
 ## define model
 
-model = StackedDenseNet(train_generator, n_stacks=2, growth_rate=32, pretrained=False)
-# model = DeepLabCut(train_generator, backbone="resnet50")
+# model = StackedDenseNet(train_generator, n_stacks=2, growth_rate=32, pretrained=False)
+model = DeepLabCut(train_generator, backbone="resnet50")
 model.get_config()
 
+'''
 ## test prediction speed
 
 batch_size = 32
@@ -139,13 +145,13 @@ t0 = time.time()
 y = model.predict(x, batch_size=batch_size, verbose=1)
 t1 = time.time()
 print('frames per second: %.1f' % (x.shape[0] / (t1 - t0)))
-
+'''
 ##  set up training
 
 model_folder = os.path.join('tracking', 'deepposekit', 'models')
-model_name = 'model_run'
+model_name = 'model_run_'+model.get_config()['name']
 
-logger = Logger(validation_batch_size=5,
+logger = Logger(validation_batch_size=8,
     filepath = os.path.join(model_folder, model_name+'_log.h5')
 )
 
@@ -173,10 +179,10 @@ callbacks = [logger, reduce_lr, model_checkpoint, early_stop]
 ## train model
 
 history = model.fit(
-    batch_size=4,
-    validation_batch_size=5,
+    batch_size=8,
+    validation_batch_size=8,
     callbacks=callbacks,
-    epochs=500,
+    epochs=200,
     n_workers=8,
     steps_per_epoch=None,
 )

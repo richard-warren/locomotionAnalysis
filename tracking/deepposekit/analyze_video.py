@@ -14,7 +14,7 @@ video, model_name, skeleton, output = sys.argv[1:]
 
 # settings
 batch_size = 32
-max_frames = 50000  # set to None unless debugging
+max_frames = None  # set to None unless debugging
 
 # load model and video
 model = load_model(model_name)

@@ -7,7 +7,7 @@ s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepposekit\python.exe';
 s.matlabPath = 'C:\Program Files\MATLAB\R2019a\bin\win64';  % these is needed to fix the bug described here: https://www.mathworks.com/matlabcentral/answers/316233-can-t-run-external-program
 
 s.runVid = 'run_originalDimensions.mp4';
-s.runModel = 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run.h5';
+s.runModel = 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5';
 s.runSkeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';
 s.runOutput = 'trackedFeatures_run.csv';
 

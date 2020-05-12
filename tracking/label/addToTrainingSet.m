@@ -9,7 +9,6 @@ s.vidDelay = .02;
 s.showLabels = true;
 s.circSize = 100;
 s.vidScaling = 1.5;
-s.frameInds = [];  % inds of frames to include in preview
 s.lineColor = [.15 .15 1];
 s.scoreThresh = .2;  % don't show locations when confidence is below scoreThresh
 s.invertFrame = false;
@@ -38,7 +37,6 @@ for i = 1:length(features)
     locations(:,1,i) = table2array(locationsTable(:, (i-1)*3 + 2));
     locations(:,2,i) = table2array(locationsTable(:, (i-1)*3 + 3));
 end
-if isempty(s.frameInds); s.frameInds = 1:vid.Duration*vid.FrameRate; end
 colors = hsv(length(features));
 
 
@@ -130,12 +128,12 @@ function changeFrames(~,~)
             m = msgbox('adding frame to training set...'); pause(.5); close(m)
             ind = length(trainingData)+1;
             trainingData(ind).session = session;
-            trainingData(ind).frameNum = s.frameInds(frameInd);
+            trainingData(ind).frameNum = frameInd;
             trainingData(ind).frame = frameRaw;
             trainingData(ind).includeFrame = false;
             for j = 1:length(features)
-                if scores(s.frameInds(frameInd),j) > s.scoreThresh
-                    trainingData(ind).(features{j}) = squeeze(locations(s.frameInds(frameInd),:,j));
+                if scores(frameInd,j) > s.scoreThresh
+                    trainingData(ind).(features{j}) = squeeze(locations(frameInd,:,j));
                 else
                     trainingData(ind).(features{j}) = [nan nan];
                 end
@@ -149,6 +147,14 @@ function changeFrames(~,~)
             framesAdded = framesAdded + 1;
             set(fig, 'name', sprintf('%s, frames added: %i', session, framesAdded))
         
+        % 't': go to specific time (in seconds)
+        elseif key==116
+            pause(.001);
+            paused = true;
+            input = inputdlg('enter time (seconds)');
+            frameInd = find(times>=str2num(input{1}),1,'first');
+            updateFrame(0);
+            
         % 's': save training set
         elseif key==115
             uisave({'trainingData'}, trainingSet)
@@ -158,7 +164,7 @@ function changeFrames(~,~)
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
-            frameInd = find(s.frameInds>=str2num(input{1}),1,'first');
+            frameInd = str2num(input{1});
             updateFrame(0);
             
         % ESCAPE: close window
@@ -168,14 +174,14 @@ function changeFrames(~,~)
             
         % 'w': go to next water drop
         elseif key==119
-            nextRewardTime = rewardTimes(find(rewardTimes>times(s.frameInds(frameInd)), 1, 'first'));
-            frameInd = s.frameInds(find(times(s.frameInds)>nextRewardTime, 1, 'first'));
+            nextRewardTime = rewardTimes(find(rewardTimes>times(frameInd), 1, 'first'));
+            frameInd = find(times>nextRewardTime, 1, 'first');
             updateFrame(0);
         
         % 'o': go to next whisker contact
         elseif key==111
-            nextContactTime = wiskContactTimes(find(wiskContactTimes>times(s.frameInds(frameInd)), 1, 'first'));
-            frameInd = s.frameInds(find(times(s.frameInds)>nextContactTime, 1, 'first'));
+            nextContactTime = wiskContactTimes(find(wiskContactTimes>times(frameInd), 1, 'first'));
+            frameInd = find(times>nextContactTime, 1, 'first');
             updateFrame(0);
         
         % OTHERWISE: toggle pausing
@@ -191,30 +197,29 @@ end
 function updateFrame(frameStep)
     
     frameInd = frameInd + frameStep;
-    if frameInd < 1; frameInd = length(s.frameInds);
-    elseif frameInd > length(s.frameInds); frameInd = 1; end
+    if frameInd < 1; frameInd = length(times);
+    elseif frameInd > length(times); frameInd = 1; end
     
     % get frame
-    frameRaw = rgb2gray(read(vid, s.frameInds(frameInd)));
+    frameRaw = rgb2gray(read(vid, frameInd));
     frame = frameRaw;
     if s.invertFrame; frame = 255-frame; end
     
 	% add frame number
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
-        sprintf('session %s, frame %i', ...
-        session, s.frameInds(frameInd)), ...
+        sprintf('session %s, f=%i, t=%.2f', ...
+        session, frameInd, times(frameInd)), ...
         'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
-    disp(size(frame))
     
     % update figure
     set(imPreview, 'CData', frame);
     
     % determine which features to show
-    showFeature = scores(s.frameInds(frameInd),:) > s.scoreThresh;
+    showFeature = scores(frameInd,:) > s.scoreThresh;
     
     % upate scatter positions
-    x = locations(s.frameInds(frameInd),1,:);
-    y = locations(s.frameInds(frameInd),2,:);
+    x = locations(frameInd,1,:);
+    y = locations(frameInd,2,:);
     x(~showFeature) = nan;
     y(~showFeature) = nan;
     set(scatterLocations, 'XData', x, 'YData', y);
@@ -223,7 +228,7 @@ function updateFrame(frameStep)
     if s.showLabels
         for j = 1:length(features)
             set(scoreLabels{j}, 'position', [x(j)+10, y(j)], ...
-                'string', sprintf('%s: %.2f', features{j}, scores(s.frameInds(frameInd),j)));
+                'string', sprintf('%s: %.2f', features{j}, scores(frameInd,j)));
         end
     end
     

@@ -8,6 +8,10 @@ s.lineColor = [0 0 1];
 s.labeledColor = [1 1 0];
 s.invertFrame = false;
 s.textRotation = 45;
+s.hideWhileMoving = true;  % whether to hide other tracked features while moving a single feature
+
+% todo: hide other features while moving one feature // move unlabeled
+% points to corner of screen?
 
 
 
@@ -16,8 +20,9 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 skeletonTbl = readtable(skeleton);
 load(trainingSet, 'trainingData');
 features = skeletonTbl.name;
-hgt = size(trainingData(1).frame, 1);
-wid = size(trainingData(1).frame, 2);
+
+hgt = max(cellfun(@(x) size(x,1), {trainingData.frame}));
+wid = max(cellfun(@(x) size(x,2), {trainingData.frame}));
 defaultPositions = [randi(wid, length(features), 1), randi(hgt, length(features), 1)];
 fields = fieldnames(trainingData);  % columns already in trainingData
 ind = 1;
@@ -120,6 +125,10 @@ function keypress(~,~)
                     updateFrame(0);
                 end
                 
+            % h: toggle hiding of feature labels
+            case 104
+                for j = 1:length(texts); set(texts{j}, 'Color', 'none'); end
+                
             % f: move to next frame that is not yet included
             case 102
                 newStructInd = find(~[trainingData.includeFrame] & 1:length(trainingData)>ind, 1, 'first'); % find first frame with nonlabelled part that is later than current frame
@@ -160,15 +169,17 @@ function updateFrame(frameStep)
     frame = trainingData(ind).frame;
     if s.invertFrame; frame = 255-frame; end
     set(im, 'CData', frame);
+    set(gca, 'position', [0 0 1 1]);
     if trainingData(ind).includeFrame; includedStr = '(included)'; else; includedStr = ''; end
     set(fig, 'name', ...
-        sprintf('%s, frame %i %s (n = %i/%i)', ...
-        trainingData(ind).session, trainingData(ind).frameNum, includedStr, ind, length(trainingData)))
+        sprintf('%s, frame %i %s (n = %i/%i), %.1f percent complete', ...
+        trainingData(ind).session, trainingData(ind).frameNum, includedStr, ind, length(trainingData), mean([trainingData.includeFrame])*100))
     
     % update colors and positions of points
     for j = 1:length(features)
         pos = trainingData(ind).(features{j});
         
+        % update colors and positions
         if any(isnan(pos)) % not yet tracked
             set(texts{j}, 'color', s.nanColor);
             setColor(points{j}, s.nanColor);
@@ -190,6 +201,7 @@ end
 
 
 function movePoint(featureInd)
+    
     pos = getPosition(points{featureInd});
     trainingData(ind).(features{featureInd}) = pos;
     setColor(points{featureInd}, s.labeledColor);
@@ -213,7 +225,6 @@ end
 
 % update feature pair lines
 function updateFeatureLines()
-%     keyboard
     for j = 1:size(edges,1)
         inds = edges(j,:);
         pos1 = getPosition(points{inds(1)});
