@@ -111,7 +111,7 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '200202_000';
+session = '200113_000';
 
 % run
 vid = 'run_originalDimensions.mp4';  % run_originalDimensions;
@@ -134,12 +134,16 @@ addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleto
 % read sessions from spreadsheet
 % sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
 % sessions = sessionInfo.session(sessionInfo.include==1);
-sessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};
+
+% sessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};
+sessions = {'200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};  % !!! temp
 
 for i = 1:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
     try
-        dpkAnalysis(sessions{i}, 'run', 'verbose', false)
+        dpkAnalysis(sessions{i}, 'run', 'verbose', false, ...
+            'runModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_DeepLabCut.h5', ...
+            'runOutput', 'trackedFeatures_runDLC.csv')
 %         dpkAnalysis(sessions{i}, 'wisk', 'verbose', false)
     catch
         pfrintf('%s: problem with analysis!\n', sessions{i})
