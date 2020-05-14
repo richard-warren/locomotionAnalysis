@@ -67,7 +67,7 @@ for s in sessions:
     for f in files:
         csv_name = os.path.join(os.environ['OBSDATADIR'], 'sessions', s, f)
         if os.path.exists(csv_name):
-            print('%s: loading tracking data...' % s)
+            print('%s: loading %s...' % (s, f))
             tracking = pd.read_csv(csv_name)
 
             for paw in paw_names:
@@ -118,7 +118,7 @@ for s_i, s in enumerate(sessions):
             error_rates[f_i, s_i] = np.mean(np.abs((y - y_hat) > thresh))
             axes[f_i, s_i].annotate('err rate: %.5f' % error_rates[f_i, s_i], xy=(.04, .9), xycoords='axes fraction')
 
-fig.savefig(os.path.join('tracking', 'deepposekit', 'figures', 'x_alignment'))
+fig.savefig(os.path.join('tracking', 'deepposekit', 'figures', 'x_alignment_thresh%i'%thresh))
 
 ## print average error rates across models
 print('------ERROR RATES------')

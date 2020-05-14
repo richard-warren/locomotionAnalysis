@@ -135,8 +135,7 @@ addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleto
 % sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
 % sessions = sessionInfo.session(sessionInfo.include==1);
 
-% sessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};
-sessions = {'200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};  % !!! temp
+sessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};
 
 for i = 1:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
