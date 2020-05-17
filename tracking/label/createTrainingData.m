@@ -95,7 +95,6 @@ h5create(fileName, '/annotated', fliplr(size(annotated)), 'Datatype', 'uint8')  
 h5create(fileName, '/annotations', fliplr(size(annotations)), 'Datatype', 'double')  % should really be <f8, whatever that means...
 h5create(fileName, '/images', size(images), 'Datatype', 'uint8')
 h5create(fileName, '/skeleton', fliplr(size(skel)), 'Datatype', 'int32')
-h5create(fileName, '/features', fliplr(features), 'Datatype', 'int32')
 
 h5write(fileName, '/annotated', permute(uint8(annotated), [2 1]))
 h5write(fileName, '/annotations', permute(uint16(annotations), [3 2 1]))
@@ -111,7 +110,7 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '200113_000';
+session = '200202_000';
 
 % run
 vid = 'run_originalDimensions.mp4';  % run_originalDimensions;
@@ -132,17 +131,21 @@ addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleto
 %% analyze batch of videos
 
 % read sessions from spreadsheet
-% sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
-% sessions = sessionInfo.session(sessionInfo.include==1);
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
+groomingSessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '200130_000'};
+otherSessions = sessionInfo.session(sessionInfo.include==1);
+otherSessions = otherSessions(~ismember(otherSessions, groomingSessions));
 
-sessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000'};
+% choose sessions to use
+sessions = groomingSessions;
+
 
 for i = 1:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
     try
         dpkAnalysis(sessions{i}, 'run', 'verbose', false, ...
-            'runModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_DeepLabCut.h5', ...
-            'runOutput', 'trackedFeatures_runDLC.csv')
+            'runModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
+            'runOutput', 'trackedFeatures_run.csv')
 %         dpkAnalysis(sessions{i}, 'wisk', 'verbose', false)
     catch
         pfrintf('%s: problem with analysis!\n', sessions{i})

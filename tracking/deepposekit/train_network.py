@@ -129,8 +129,8 @@ train_generator.on_epoch_end()
 '''
 ## define model
 
-# model = StackedDenseNet(train_generator, n_stacks=2, growth_rate=32, pretrained=False)
-model = DeepLabCut(train_generator, backbone="resnet50")
+model = StackedDenseNet(train_generator, n_stacks=2, growth_rate=32, pretrained=False)
+# model = DeepLabCut(train_generator, backbone="resnet50")
 model.get_config()
 
 '''

@@ -10,9 +10,10 @@ s.showLabels = true;
 s.circSize = 100;
 s.vidScaling = 1.5;
 s.lineColor = [.15 .15 1];
-s.scoreThresh = .2;  % don't show locations when confidence is below scoreThresh
+s.scoreThresh = .5;  % don't show locations when confidence is below scoreThresh
 s.invertFrame = false;
 s.textRotation = 45;
+s.deltaThresh = 50;  % (pixels) // when looking for frames where paws in top are bottom views are misaligned, only include frames where the x difference is > deltaThresh
 
 
 
@@ -38,6 +39,18 @@ for i = 1:length(features)
     locations(:,2,i) = table2array(locationsTable(:, (i-1)*3 + 3));
 end
 colors = hsv(length(features));
+
+% find frames where x positions are misaligned
+pawPairs = {{'paw1LH_top', 'paw1LH_bot'}, {'paw2LF_top', 'paw2LF_bot'}, {'paw3RF_top', 'paw3RF_bot'}, {'paw4RH_top', 'paw4RH_bot'}};
+deltaX = nan(length(times), 4);
+for i = 1:length(pawPairs)
+    bins = ismember(features, pawPairs{i});
+    deltaX(:,i) = diff(squeeze(locations(:,1,bins)),[],2);
+end
+isMisaligned = all(scores(:,contains(features, 'paw'))>s.scoreThresh,2) & ...  % all paws have high confidence
+    any(deltaX>s.deltaThresh,2);  % at least one paw is misaligned
+isMisaligned = [false; diff(isMisaligned)==1];  % only keep first true is sequences of consecutive trues
+misalignedInds = find(isMisaligned);
 
 
 % set up figure
@@ -158,6 +171,12 @@ function changeFrames(~,~)
         % 's': save training set
         elseif key==115
             uisave({'trainingData'}, trainingSet)
+        
+        % 'm': go to next misaligned frame
+        elseif key==109
+            paused = true;
+            frameInd = misalignedInds(find(misalignedInds>frameInd,1,'first'));
+            updateFrame(0);
         
         % 'f': select frame
         elseif key==102                  

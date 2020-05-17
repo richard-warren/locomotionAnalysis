@@ -172,8 +172,8 @@ function updateFrame(frameStep)
     set(gca, 'position', [0 0 1 1]);
     if trainingData(ind).includeFrame; includedStr = '(included)'; else; includedStr = ''; end
     set(fig, 'name', ...
-        sprintf('%s, frame %i %s (n = %i/%i), %.1f percent complete', ...
-        trainingData(ind).session, trainingData(ind).frameNum, includedStr, ind, length(trainingData), mean([trainingData.includeFrame])*100))
+        sprintf('%s, frame %i %s (n = %i/%i), %i unlabelled', ...
+        trainingData(ind).session, trainingData(ind).frameNum, includedStr, ind, length(trainingData), sum([trainingData.includeFrame]==0)))
     
     % update colors and positions of points
     for j = 1:length(features)
