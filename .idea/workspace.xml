@@ -2,17 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="00078c66-bf3a-499f-99c1-f23f7ba2ce3f" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/tracking/deepposekit/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prelimAnalysis/analyzeSession.m" beforeDir="false" afterPath="$PROJECT_DIR$/prelimAnalysis/analyzeSession.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/dpkAnalysis.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/dpkAnalysis.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/errors.png" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/figures/errors.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/createTrainingData.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/createTrainingData.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/labelFrames.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/labelFrames.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/dpkAnalysis.m" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

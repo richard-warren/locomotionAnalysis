@@ -46,6 +46,22 @@ function analyzeSession(session, varargin)
 
     
     
+    % run tracking
+    % todo
+    
+    
+    
+    
+    % face tracking
+    % todo
+    
+    
+    
+    
+    % todo: isLicking? // LED times? // circle tracking? // wiskAngle?
+    
+    
+    
     % analyze reward times
     if analyzeVar('rewardTimes')
         
