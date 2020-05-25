@@ -47,13 +47,27 @@ function analyzeSession(session, varargin)
     
     
     % run tracking
-    % todo
+    if ~exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') || s.rerunRunNetwork
+        dpkAnalysis(session, 'verbose', false, ...
+            'vid', 'run.mp4', ...
+            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
+            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
+            'output', 'trackedFeaturesRaw.csv')
+    end
     
     
     
     
     % face tracking
-    % todo
+    if ~exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file') || s.rerunWiskNetwork
+        dpkAnalysis(session, 'verbose', false, ...
+            'vid', 'runWisk.mp4', ...
+            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk_StackedDenseNet.h5', ...
+            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv', ...
+            'output', 'trackedFeaturesRaw_wisk.csv')
+    end
+    
+    
     
     
     
