@@ -39,16 +39,18 @@ labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert);
 
 %% convert dataset to deepposekit format
 
+% note: training data must be in sizes that work for deeppostkit // later
+% on, when evaluating videos, the VideoReader can resize things as
+% necessary on the fly
+
 % settings
 % trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
 % skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-% imgDims = [];  % images are resized to this dimension (can leave empty)
+% imgDims = [352 384];  % images are resized to this dimension ([336 380] are the original dimensions) (must be valid DPK dimensions)
 
 trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
 skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-imgDims = [448 448];  % images are resized to this dimension (can leave empty)
-
-padImgs = true;  % dpk only works with dimensions continuosly divisible by 2 // if true, pad images to the next highest number that is continuously divisible by 2
+imgDims = [448 448];  % images are resized to this dimension (must be valid DPK dimensions)
 
 
 % load data
@@ -70,15 +72,15 @@ for i = 1:numEgs; for j = 1:numFeatures; annotations(i,j,:) = trainingData(i).(f
 
 
 % resize images
-trainingData_resized = trainingData;
-if imgDims
-    for i = 1:length(trainingData)
-        trainingData_resized(i).frame = trainingData_resized(i).frame(1:imgDims(1), 1:imgDims(2), :);
-%         trainingData_resized(i).frame =
-%         repmat(trainingData_resized(i).frame, 1, 1, 3);  % create color dimension
-    end
+for i = 1:length(trainingData)
+    sz = size(trainingData(i).frame);  % original size of training image
+    frame = zeros(imgDims);
+    x = min(sz(2), imgDims(2));
+    y = min(sz(1), imgDims(1));
+    frame(1:y,1:x) = trainingData(i).frame(1:y,1:x);
+    trainingData(i).frame = frame;
 end
-images = permute(cat(4, trainingData_resized.frame), [3,2,1,4]);
+images = permute(cat(4, trainingData.frame), [3,2,1,4]);
 
 skel = -ones(numFeatures, 2);  % first column in index (zero-based for python) of parent features; second column is zero-based index of 'swap' feature
 for i = 1:numFeatures
@@ -89,8 +91,8 @@ end
 % create h5 file
 [filepath, name] = fileparts(trainingSet);
 fileName = fullfile(filepath, [name '.h5']);
-
 if exist(fileName, 'file'); delete(fileName); end
+
 h5create(fileName, '/annotated', fliplr(size(annotated)), 'Datatype', 'uint8')  % matlab doesn't support boolean datatypes, what the fuck
 h5create(fileName, '/annotations', fliplr(size(annotations)), 'Datatype', 'double')  % should really be <f8, whatever that means...
 h5create(fileName, '/images', size(images), 'Datatype', 'uint8')
@@ -110,7 +112,7 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '200202_000';
+session = '200130_002';
 
 % run
 vid = 'run_originalDimensions.mp4';  % run_originalDimensions;
@@ -137,18 +139,20 @@ otherSessions = sessionInfo.session(sessionInfo.include==1);
 otherSessions = otherSessions(~ismember(otherSessions, groomingSessions));
 
 % choose sessions to use
-sessions = groomingSessions;
-
+% sessions = otherSessions;
+% sessions = groomingSessions;
+sessions = {groomingSessions{:}, otherSessions{:}};
 
 for i = 1:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
     try
-        dpkAnalysis(sessions{i}, 'run', 'verbose', false, ...
-            'runModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
-            'runOutput', 'trackedFeatures_run.csv')
-%         dpkAnalysis(sessions{i}, 'wisk', 'verbose', false)
+        dpkAnalysis(sessions{i}, 'verbose', true, ...
+            'vid', 'run_originalDimensions.mp4', ...
+            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
+            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
+            'output', 'trackedFeatures_run.csv')
     catch
-        pfrintf('%s: problem with analysis!\n', sessions{i})
+        fprintf('%s: problem with analysis!\n', sessions{i})
     end
 end
 disp('all done!')
@@ -203,7 +207,10 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
+%% (temp) test models on old frames with different dimensions
 
+dpkAnalysis('190929_003', 'run', 'verbose', true, 'runModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', 'runOutput', 'trackedFeatures_run.csv', 'runVid', 'run.mp4')
+% dpkAnalysis('190929_003', 'wisk', 'verbose', true, 'wiskModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk.h5', 'wiskOutput', 'trackedFeatures_wisk.csv')
 
 
 

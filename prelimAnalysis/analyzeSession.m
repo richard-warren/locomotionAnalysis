@@ -6,7 +6,7 @@ function analyzeSession(session, varargin)
     % listed as arguments to the analyzeVar() function in the code blocks
     % below // to recompute a variable, pass 'overwriteVars' as follows:
     %
-    % analyzeSession('191118_001', 'overwriteVars', 'reawrdTimes')
+    % analyzeSession('191118_001', 'overwriteVars', 'rewardTimes')
     % analyzeSession('191118_001', 'overwriteVars', {'rewardTimes, isLightOn'}) % for multiple variables
     
 

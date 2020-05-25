@@ -135,6 +135,7 @@ function keypress(~,~)
                 if isempty(newStructInd); newStructInd = find(~[trainingData.includeFrame], 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
                 if ~isempty(newStructInd); ind = newStructInd; end % otherwise, keep current frame
                 updateFrame(0);
+                for j = 1:length(texts); set(texts{j}, 'Color', 'none'); end  % turn off labels
             
             % n: move to ind
             case 110

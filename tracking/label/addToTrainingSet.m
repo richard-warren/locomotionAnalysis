@@ -42,7 +42,7 @@ colors = hsv(length(features));
 
 % find frames where x positions are misaligned
 pawPairs = {{'paw1LH_top', 'paw1LH_bot'}, {'paw2LF_top', 'paw2LF_bot'}, {'paw3RF_top', 'paw3RF_bot'}, {'paw4RH_top', 'paw4RH_bot'}};
-deltaX = nan(length(times), 4);
+deltaX = nan(size(locations,1), 4);
 for i = 1:length(pawPairs)
     bins = ismember(features, pawPairs{i});
     deltaX(:,i) = diff(squeeze(locations(:,1,bins)),[],2);
@@ -95,7 +95,7 @@ end
 % set up text to show dlc scores
 scoreLabels = cell(1,length(features));
 if s.showLabels
-    for i = 1:length(features); scoreLabels{i} = text(0,0,'', 'color', colors(i,:), 'Rotation', s.textRotation); end
+    for i = 1:length(features); scoreLabels{i} = text(0,0,'', 'color', colors(i,:), 'Rotation', s.textRotation, 'interpreter', 'none'); end
 end
 
 
@@ -151,6 +151,7 @@ function changeFrames(~,~)
                     trainingData(ind).(features{j}) = [nan nan];
                 end
             end
+            fprintf('added frame %i to trainingData\n', ind)
 
             % resort the structure so like sessions stay together
             [~, sortInds] = sort({trainingData.session});
@@ -175,7 +176,12 @@ function changeFrames(~,~)
         % 'm': go to next misaligned frame
         elseif key==109
             paused = true;
-            frameInd = misalignedInds(find(misalignedInds>frameInd,1,'first'));
+            nextMisaligned = find(misalignedInds>frameInd,1,'first');
+            if ~isempty(nextMisaligned)
+                frameInd = misalignedInds(nextMisaligned);
+            else
+                disp('no more misaligned frames!')
+            end
             updateFrame(0);
         
         % 'f': select frame

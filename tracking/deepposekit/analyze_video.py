@@ -8,18 +8,18 @@ import os
 # parse input arguments
 video, model_name, skeleton, output = sys.argv[1:]
 # video = r'Z:\loco\obstacleData\sessions\200308_000\run_originalDimensions.mp4'
-# model_name = r'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run.h5'
+# model_name = r'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5'
 # skeleton = r'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv'
 # output = 'trackedFeatures_run.csv'
 
 # settings
 batch_size = 32
-# max_frames = None  # set to None unless debugging
-max_frames = None  # set to None unless debugging
+max_frames = 5000  # set to None unless debugging
+# max_frames = 100000  # set to None unless debugging
 
 # load model and video
 model = load_model(model_name)
-reader = VideoReader(video, batch_size=batch_size, gray=True, pad_imgs=True)
+reader = VideoReader(video, batch_size=batch_size, gray=True, frame_size=model.input_shape)
 
 # predict
 max_batches = max_frames//batch_size if max_frames else None
