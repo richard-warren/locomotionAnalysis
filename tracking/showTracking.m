@@ -1,10 +1,14 @@
-function showTracking(session, trainingDataPath)
+function showTracking(session, varargin)
 
 % to do: show confidence and gobal class in bottom left // think about how
 % i should handle confidence thresholds...
 
+% additional features: paw touches // arbitrary signal // arbitrary times
+% // wheel // post-processed tracking // whisker overlay // whisker
+% contacts // confidences // go to water, whisker contact
+
 % settings
-onlyShowFramesNearObs = true;
+s.scoreThresh = .8;
 vidFs = 250;
 vidDelay = .02;
 showDlcScores = false;
@@ -13,7 +17,6 @@ showStance = true;
 circSize = 100;
 vidSizeScaling = 1.5;
 colorMap = 'hsv';
-scaling = 1.0; % network was trained on resolution of (saling)*(original resolution)
 connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
                      {'paw2LF_bot', 'paw2LF_top'}, ...
                      {'paw3RF_bot', 'paw3RF_top'}, ...
@@ -24,13 +27,7 @@ connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
 
 
 
-% initializations
-frameInds = getFramesToShow(session, onlyShowFramesNearObs);
-addingFrames = exist('trainingDataPath', 'var'); % keeps track of whether frames will be added to the training set
-if addingFrames
-    load(trainingDataPath, 'trainingData', 'view');
-    framesAdded = 0;
-end
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 
 % load video
 vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4');
@@ -42,8 +39,7 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'pixelsPerM', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn');
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
-locations = locations / scaling; % bring back to original resolution
+[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh);
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 if showStance
@@ -53,7 +49,7 @@ end
 
 
 % set up figure
-if addingFrames; figureName = [session ', frames added: 0']; else; figureName = session; end
+figureName = session;
 hgt = vid.Height;
 fig = figure('name', figureName, 'units', 'pixels', 'position', [600 100 vid.Width*vidSizeScaling hgt*vidSizeScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
@@ -145,37 +141,12 @@ function changeFrames(~,~)
             paused = true;
             updateFrame(1);
         
-        % 'a': add frame to training set
-        elseif key==97
-            if addingFrames
-                m = msgbox('adding frame to training set...'); pause(.5); close(m)
-                ind = length(trainingData)+1;
-                trainingData(ind).session = session;
-                trainingData(ind).frameNum = frameInds(frameInd);
-                trainingData(ind).includeFrame = false;
-                for j = 1:length(features)
-                    trainingData(ind).(features{j}) = squeeze(locations(frameInds(frameInd),:,j));
-                end
-
-                % resort the structure so like sessions stay together
-                [~, sortInds] = sort({trainingData.session});
-                trainingData = trainingData(sortInds);
-                
-                % update figure title
-                framesAdded = framesAdded + 1;
-                set(fig, 'name', sprintf('%s, frames added: %i', session, framesAdded))
-            end
-        
-        % 's': save training set
-        elseif key==115
-            uisave({'trainingData', 'view'}, trainingDataPath)
-        
         % 'f': select frame
         elseif key==102                  
             pause(.001);
             paused = true;
             input = inputdlg('enter frame number');
-            frameInd = find(frameInds>=str2num(input{1}),1,'first');
+            frameInd = str2num(input{1});
             updateFrame(0);
             
         % 't': go to specific trial
@@ -183,7 +154,7 @@ function changeFrames(~,~)
             pause(.001);
             paused = true;
             input = inputdlg('enter trial number');
-            frameInd = find(frameTimeStamps(frameInds)>=obsOnTimes(str2num(input{1})),1,'first');
+            frameInd = find(frameTimeStamps>=obsOnTimes(str2num(input{1})),1,'first');
             updateFrame(0);
             
         % ESCAPE: close window
@@ -204,19 +175,23 @@ end
 function updateFrame(frameStep)
     
     frameInd = frameInd + frameStep;
-    if frameInd < 1; frameInd = length(frameInds);
-    elseif frameInd > length(frameInds); frameInd = 1; end
+    if frameInd < 1; frameInd = vid.NumberOfFrames;
+    elseif frameInd > vid.NumberOfFrames; frameInd = 1; end
     
     
     % get frame and sub-frames
-    frame = rgb2gray(read(vid, frameInds(frameInd)));
+    frame = rgb2gray(read(vid, frameInd));
     
 	% add frame number
-    trial = find(obsOnTimes>=frameTimeStamps(frameInds(frameInd)),1,'first')-1;
-    if isLightOn(trial); lightText = 'light on'; else; lightText = 'light off'; end
+    trial = find(obsOnTimes>=frameTimeStamps(frameInd),1,'first')-1;
+    if trial
+        if isLightOn(trial); lightText = 'light on'; else; lightText = 'light off'; end
+    else
+        lightText = '';
+    end
     frame = insertText(frame, [size(frame,2) size(frame,1)], ...
-        sprintf('session %s, frame %i, trial %i, %s', ...
-        session, frameInds(frameInd), trial, lightText), ...
+        sprintf('frame %i, trial %i, %s', ...
+        frameInd, trial, lightText), ...
         'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
     
     % update figure
@@ -225,48 +200,48 @@ function updateFrame(frameStep)
     
     % lines connecting within view features
     for j = 1:length(connectedFeatures)
-        set(linesConnected{j}, 'xdata', locations(frameInds(frameInd),1,connectedFeatureInds{j}), ...
-            'ydata', locations(frameInds(frameInd),2,connectedFeatureInds{j}));
+        set(linesConnected{j}, 'xdata', locations(frameInd,1,connectedFeatureInds{j}), ...
+            'ydata', locations(frameInd,2,connectedFeatureInds{j}));
     end
 
     % upate scatter positions
-    set(scatterLocations, 'XData', locations(frameInds(frameInd),1,:), ...
-        'YData', locations(frameInds(frameInd),2,:), ...
+    set(scatterLocations, 'XData', locations(frameInd,1,:), ...
+        'YData', locations(frameInd,2,:), ...
         'SizeData', ones(1,length(features))*circSize - (ones(1,length(features)) ...
-                    .* isInterped(frameInds(frameInd),:)) * circSize * .9);
+                    .* isInterped(frameInd,:)) * circSize * .9);
     
     % update scatter stance positions
     if showStance
-        isStance = repmat(stanceBins(frameInds(frameInd),:),1,2);
+        isStance = repmat(stanceBins(frameInd,:),1,2);
         set(scatterStance, ...
-            'XData', squeeze(locations(frameInds(frameInd),1,[botPawInds topPawInds])) .* isStance', ...
-            'YData', squeeze(locations(frameInds(frameInd),2,[botPawInds topPawInds])));
+            'XData', squeeze(locations(frameInd,1,[botPawInds topPawInds])) .* isStance', ...
+            'YData', squeeze(locations(frameInd,2,[botPawInds topPawInds])));
     end
     
     % update paw touch scatter
     if exist('touchesPerPaw', 'var')
-        touchingBins = touchesPerPaw(frameInds(frameInd),:)>0;
-        x = locations(frameInds(frameInd), 1, [topPawInds(touchingBins) botPawInds(touchingBins)]);
-        y = locations(frameInds(frameInd), 2, [topPawInds(touchingBins) botPawInds(touchingBins)]);
+        touchingBins = touchesPerPaw(frameInd,:)>0;
+        x = locations(frameInd, 1, [topPawInds(touchingBins) botPawInds(touchingBins)]);
+        y = locations(frameInd, 2, [topPawInds(touchingBins) botPawInds(touchingBins)]);
         set(obsTouchScatter, 'XData', x, 'YData', y);
     end
 
     % update scores text
     if showDlcScores
         for j = 1:length(features)
-            set(scoreLabels{j}, 'position', [locations(frameInds(frameInd),1,j)+10, locations(frameInds(frameInd),2,j)], ...
-                'string', sprintf('%.2f', scores(frameInds(frameInd),j)));
+            set(scoreLabels{j}, 'position', [locations(frameInd,1,j)+10, locations(frameInd,2,j)], ...
+                'string', sprintf('%.2f', scores(frameInd,j)));
         end
     end
     
     if showTouchData
         for j = 1:4
-            classInd = touchesPerPaw(frameInds(frameInd),j);
+            classInd = touchesPerPaw(frameInd,j);
             if classInd==0; classInd=find(strcmp(touchClassNames, 'no_touch')); end
             class = touchClassNames{classInd};
-            confidence = touchConfidences(frameInds(frameInd));
+            confidence = touchConfidences(frameInd);
             set(touchScoreLabels{j}, ...
-                'position', [locations(frameInds(frameInd),1,topPawInds(j))+10, locations(frameInds(frameInd),2,topPawInds(j))], ...
+                'position', [locations(frameInd,1,topPawInds(j))+10, locations(frameInd,2,topPawInds(j))], ...
                 'string', sprintf('%s (%.2f)', class, confidence));
             
         end

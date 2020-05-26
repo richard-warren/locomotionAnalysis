@@ -2,7 +2,9 @@
 
 <p align="center"><img src="other/rig.png" width="500"></p>
 
-The neural control of some simple types of movement is well understood, but how the brain coordinates complex, whole-body behavior remains a mystery. For my PhD research I developed a closed loop system in which mice run on top of a wheel and skillfully leap over motorized hurdles while I record from their brains. I developed a custom linear motion system along with custom microcontroller software that moves hurdles towards mice at the same speed that mice are running, simulating what it is like to jump over stationary objects. Using [an open source motion tracking system](https://hackaday.io/project/160744-kinemouse-wheel) I developed, we can then relate the 3D movements of mice to the activity of neurons that control these movements.
+For my PhD research (in the lab of [Nate Sawtell](https://zuckermaninstitute.columbia.edu/nathaniel-sawtell-phd)) I developed a closed loop system in which mice run on top of a wheel and leap over motorized hurdles. I designed a custom linear motion system along with microcontroller software that moves hurdles towards mice at the same speed that they are running, simulating what it is like to jump over stationary objects. Using [an open source motion tracking system](https://hackaday.io/project/160744-kinemouse-wheel) I designed we can relate 3D movements to the activity of neurons that control these movements.
+
+I found that hurdling in mice involves a rapid sensorimotor decision that appears to be independent of primary motor and sensory cortex (manuscript in preparation). I am now collaborating with [Qianyun Zhang](https://github.com/RynzzZ) to understand how neural activity in the cerebellum relates and contributes to this behavior.
 
 # how to...
 
@@ -48,6 +50,3 @@ kinData.mat | "trial-ized" struct, with each row containing many metrics for a t
 ephys_* folder | contains probe recordings
 neuralData.mat | processed neural data
 cellData.csv | spreadsheet containing information about sorted units
-
-## runAnalyzed.mat
-todo

@@ -133,7 +133,7 @@ addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleto
 %% analyze batch of videos
 
 % read sessions from spreadsheet
-sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'sheet', 'trainingSetSessions');
+sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionsToLabel.xlsx'), 'sheet', 'runSessions');
 groomingSessions = {'200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '200130_000'};
 otherSessions = sessionInfo.session(sessionInfo.include==1);
 otherSessions = otherSessions(~ismember(otherSessions, groomingSessions));

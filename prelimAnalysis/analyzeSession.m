@@ -496,9 +496,10 @@ function analyzeSession(session, varargin)
             ~isempty(data.obsOnTimes)
    
         if s.verbose; fprintf('%s: tracking obstacles in bottom view\n', session); end
-        
-        % load tracking data if not already open
         if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        
+        % settings
+        confidenceThresh = .8;
         
         % get obs pix positions
         obsHighX = locations.obsHigh_bot;
@@ -508,8 +509,8 @@ function analyzeSession(session, varargin)
         
         % ensure that confidences are high for top and bottom points of obstacle, and ensure that both have x values that are close to one another
         validInds = abs(obsHighX - obsLowX) < 10 & ...
-                    obsHighScores>0.99 & ...
-                    obsLowScores>0.99;
+                    obsHighScores>confidenceThresh & ...
+                    obsLowScores>confidenceThresh;
         obsPixPositions = mean([obsHighX, obsLowX], 2);
         obsPixPositions(~validInds) = nan;
         

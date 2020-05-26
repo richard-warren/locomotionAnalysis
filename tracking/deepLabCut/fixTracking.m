@@ -1,5 +1,5 @@
 function [locations, features, featurePairInds, isInterped, scores] = ...
-    fixTracking(locationsTable, frameTimeStamps, pixelsPerM)
+    fixTracking(locationsTable, frameTimeStamps, pixelsPerM, varargin)
 
 
 % todo: given raw tracking data (locationsTable, read from csv), produces
@@ -14,11 +14,14 @@ function [locations, features, featurePairInds, isInterped, scores] = ...
 
 % settings
 xDiffMax = .005;  % .005 // (m) the same paw in the bottom and top view cannot deviate more than xDiffMax in the x dimension
-scoreThresh = .99;  % .99 // remove tracking with confidence values beneathe scoreThresh
+s.scoreThresh = .99;  % .99 // remove tracking with confidence values beneathe scoreThresh
 pairNames = {'paw1', 'paw2', 'paw3', 'paw4'};  % two features both containing the same string in this array are considered the same feature in the top and bottom views, and are subject to xDiffMax constraint
 maxSpeed = 4;  % 2 // (m/s) tracked feature cannot move faster than this across adjacent frames
 lookAheadFrames = 200;  % this is relevant to the non-intuitive but fast algorithm i use to find velocity constraint violations // don't touch this unless you understand setp 2
 
+
+% initializations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 
 
 % load data and convert from table to matrices
@@ -57,7 +60,7 @@ end
 
 
 % 1) remove locations beneathe score thresh
-lowScoreBins = permute(repmat(scores<scoreThresh,1,1,2), [1 3 2]);
+lowScoreBins = permute(repmat(scores<s.scoreThresh,1,1,2), [1 3 2]);
 locations(lowScoreBins) = nan;
 
 
