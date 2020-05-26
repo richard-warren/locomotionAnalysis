@@ -31,6 +31,9 @@ if len(sys.argv)!=3:
 if os.path.split(sys.argv[0])[0] != '':
     os.chdir(os.path.split(sys.argv[0])[0])
 
+# global settings
+OBS_CONFIDENCE = .5  # only analyze frames where obstacle tracking confidence is > OBS_CONFIDENCE
+
 session = sys.argv[2]
 baseDir = sys.argv[1]
 modelName = "largecroptrim.25-0.77"
@@ -103,6 +106,7 @@ print("Loading session metadata")
 
 trackedFeatures = np.loadtxt(os.path.join(baseDir, session, "trackedFeaturesRaw.csv"), delimiter=",",skiprows=1)
 mat = scipy.io.loadmat(os.path.join(baseDir, session, "runAnalyzed.mat"))
+# todo: remove assumptions about indices of obstacle and nose within trackedFeatures
 
 obsOnTimes = np.squeeze(mat['obsOnTimes'])
 obsOnFrames = []
@@ -219,7 +223,7 @@ for idx, framenum, endframe in tqdm(trialFrames):
         cacheTime = 0
         incrementTime = 0
         needFrames = deque()
-        while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
+        while (nosePos[0]-obsPos[0]<50 or obsConf<OBS_CONFIDENCE) and framenum < endframe:
             needFrames.append(framenum)
             framenum+=1
             features = trackedFeatures[convertWiskStamps(framenum)]
@@ -246,7 +250,7 @@ for idx, framenum, endframe in tqdm(trialFrames):
         obsConf = features[24]
         nosePos = list(map(int, [features[19], features[20]]))
         needAnal = deque()
-        while (nosePos[0]-obsPos[0]<50 or obsConf!=1) and framenum < endframe:
+        while (nosePos[0]-obsPos[0]<50 or obsConf<OBS_CONFIDENCE) and framenum < endframe:
             session = []
             if framenum<timesteps:
                 framenum+=1

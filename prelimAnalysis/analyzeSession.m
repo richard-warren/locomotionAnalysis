@@ -18,7 +18,7 @@ function analyzeSession(session, varargin)
     s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
     
     s.rerunRunNetwork = false;
-    s.rerunFaceNetwork = false;
+    s.rerunWiskNetwork = false;
     s.rerunWiskContactNetwork = false;
     s.rerunPawContactNetwork = false;
 
