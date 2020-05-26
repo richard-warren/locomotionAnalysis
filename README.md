@@ -1,4 +1,4 @@
-# locomotionAnalysis
+# how does the brain coordinate complex behavior?
 
 <p align="center"><img src="other/rig.png" width="500"></p>
 
@@ -13,7 +13,9 @@ Analyzing a session requires running four neural networks (run tracking, run con
 - `dpkanalysis()` can also run the implementation of deeplabcut within the deepposekit framework by specifying a deeplabcut model
 - the old version of the deeplabcut analysis (for run tracking only) can be run using the `dlcAnalysis(session) `wrapper
 
-## understand the contents of a session folder
+# what is in...
+
+## a session folder
 Immediately after recording each session will contain:
 
 file | description
@@ -46,3 +48,6 @@ kinData.mat | "trial-ized" struct, with each row containing many metrics for a t
 ephys_* folder | contains probe recordings
 neuralData.mat | processed neural data
 cellData.csv | spreadsheet containing information about sorted units
+
+## runAnalyzed.mat
+todo

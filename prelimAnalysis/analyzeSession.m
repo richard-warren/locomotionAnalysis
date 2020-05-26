@@ -9,8 +9,7 @@ function analyzeSession(session, varargin)
     % analyzeSession('191118_001', 'overwriteVars', 'rewardTimes')
     % analyzeSession('191118_001', 'overwriteVars', {'rewardTimes, isLightOn'}) % for multiple variables
     
-
-
+    
     % settings
     s.verbose = true;
     s.targetFs = 1000; % frequency that positional data will be resampled to
@@ -70,9 +69,39 @@ function analyzeSession(session, varargin)
     
     
     
-    
-    
-    % todo: isLicking? // LED times? // circle tracking? // wiskAngle?
+    % whisker angle
+    if analyzeVar('whiskerAngle')
+        
+        if s.verbose; fprintf('%s: getting whisker angles\n', session); end
+        if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
+        
+        % settings
+        confidenceThresh = .5;
+        medianFiltering = 5;
+        smoothing = 5;
+        angleLims = [-120 -60];
+
+        pad = [median(locationsWisk.wisk_pad) median(locationsWisk.wisk_pad_1)];  % location of whisker pad
+        
+        valid = locationsWisk.wisk_caudal_2>confidenceThresh | locationsWisk.wisk_rostral_2>confidenceThresh;
+
+        % get [x y] matrices for rostral and caudal whiskers
+        c = [medfilt1(locationsWisk.wisk_caudal,medianFiltering), medfilt1(locationsWisk.wisk_caudal_1,medianFiltering)];
+        r = [medfilt1(locationsWisk.wisk_rostral,medianFiltering), medfilt1(locationsWisk.wisk_rostral_1,medianFiltering)];
+
+        % average position of rostral and caudal whisker
+        avg = mean(cat(3,c,r), 3);
+        avg = avg - pad;  % normalize to location of whisker pad
+        avg(:,2) = -avg(:,2);  % flip y axis (because y is reversed in tracking)
+        
+        % compute angles
+        whiskerAngle = rad2deg(atan2(avg(:,2), avg(:,1)));
+        whiskerAngle = smooth(whiskerAngle, smoothing);
+        whiskerAngle(whiskerAngle<angleLims(1) | whiskerAngle>angleLims(2) | ~valid) = nan;
+        
+        % todo: interpolation?
+        saveVars('whiskerAngle', whiskerAngle)
+    end
     
     
     
@@ -97,6 +126,35 @@ function analyzeSession(session, varargin)
         rewardTimes = rewardTimes(logical([1; diff(rewardTimes)>minRewardInteveral]));
 
         saveVars('rewardTimes', rewardTimes);
+    end
+    
+    
+    
+    
+    % led indices
+    if analyzeVar('ledInds')
+        
+        if s.verbose; fprintf('%s: getting LED indices\n', session); end
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        
+        % settings
+        confidenceThresh = .8;
+        minDuration = 4;  % (frames)
+        % todo: should perhaps check that two LEDs are not super close together
+        
+        led = locations.LED_2 > confidenceThresh;
+        ledInds = find(diff(led)==1)+1;
+        offInds = find(diff(led)==-1)+1;
+        
+        offInds = offInds(offInds>ledInds(1));  % ensure first switch is ON
+        ledInds = ledInds(ledInds<offInds(end));  % ensure last switch is OFF
+        
+        valid = offInds - ledInds >= minDuration;
+        ledInds = ledInds(valid);
+        
+        if length(data.rewardTimes) ~= length(ledInds); fprintf('WARNING! Different number of rewards detected in Spike2 and with LED in camera!\N'); end
+        
+        saveVars('ledInds', ledInds)
     end
     
     
@@ -344,6 +402,39 @@ function analyzeSession(session, varargin)
 
         saveVars('frameTimeStampsWisk', frameTimeStampsWisk)
     end
+    
+    
+    
+    
+    % licking
+    if analyzeVar('lickTimes')
+        
+        if s.verbose; fprintf('%s: getting lick times\n', session); end
+        if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
+        
+        % setttings
+        confidenceThresh = .5;
+        smoothing = 5;  % (frames)
+        minPeakDistance = 10;  % (frames)
+        
+        % remove low confidence frames
+        valid = locationsWisk.tongue_2 > confidenceThresh;
+        sig = locationsWisk.tongue_1;  % y position of tongue
+        sig = medfilt1(sig, 3);
+        sig = smooth(sig, smoothing);
+        sig(~valid) = nan;
+
+        % get rid of tracking outliers
+        lims = prctile(sig, [50 99]);
+        valid = sig<lims(2);
+        sig(~valid) = nan;
+
+        % get lick times
+        [~, lickInds] = findpeaks(sig, 'MinPeakDistance', minPeakDistance, 'MinPeakHeight', lims(1));
+        lickTimes = data.frameTimeStampsWisk(lickInds);
+        
+        saveVars('lickTimes', lickTimes);
+    end
 
 
 
@@ -388,9 +479,9 @@ function analyzeSession(session, varargin)
 
         if s.verbose; fprintf('%s: getting nose position\n', session); end
 
-        locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); % get raw tracking data
-        noseBotX = median(locationsTable.nose_bot);
-        noseBotY = median(locationsTable.nose_bot_1);
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        noseBotX = median(locations.nose_bot);
+        noseBotY = median(locations.nose_bot_1);
 
         saveVars('nosePos', [noseBotX noseBotY])
     end
@@ -407,13 +498,13 @@ function analyzeSession(session, varargin)
         if s.verbose; fprintf('%s: tracking obstacles in bottom view\n', session); end
         
         % load tracking data if not already open
-        if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
         
         % get obs pix positions
-        obsHighX = locationsTable.obsHigh_bot;
-        obsLowX = locationsTable.obsLow_bot;
-        obsHighScores = locationsTable.obsHigh_bot_2;
-        obsLowScores = locationsTable.obsLow_bot_2;
+        obsHighX = locations.obsHigh_bot;
+        obsLowX = locations.obsLow_bot;
+        obsHighScores = locations.obsHigh_bot_2;
+        obsLowScores = locations.obsLow_bot_2;
         
         % ensure that confidences are high for top and bottom points of obstacle, and ensure that both have x values that are close to one another
         validInds = abs(obsHighX - obsLowX) < 10 & ...
@@ -475,9 +566,23 @@ function analyzeSession(session, varargin)
     % get wheel points
     if analyzeVar('wheelCenter', 'wheelRadius') && exist(fullfile(sessionDir, 'run.csv'), 'file')
         
-        if s.verbose; fprintf('%s: getting wheel center and radius\n', session); end
+        if s.verbose; fprintf('%s: getting wheel center and radius ', session); end
         
-        wheelPoints = getWheelPoints(session);
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        
+        % if wheel was tracked with the neural network
+        if any(contains(locations.Properties.VariableNames, 'wheel'))
+            fprintf('(using neural network tracking)\n')
+            wheelPoints = [median(locations.wheel_left), median(locations.wheel_left_1)
+                           median(locations.wheel_mid), median(locations.wheel_mid_1)
+                           median(locations.wheel_right), median(locations.wheel_right_1)];
+        
+        % otherwise use hacky algorithm
+        else
+            fprintf('(using hacky algorithm)\n')
+            wheelPoints = getWheelPoints(session);
+        end
+        
         [wheelRadius, wheelCenter] = fitCircle(wheelPoints);
         
         saveVars('wheelCenter', wheelCenter, 'wheelRadius', wheelRadius);
@@ -491,8 +596,8 @@ function analyzeSession(session, varargin)
         
         if s.verbose; fprintf('%s: getting body angle\n', session); end
         
-        if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        bodyAngles = getSessionBodyAngles(locationsTable, data.nosePos);
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        bodyAngles = getSessionBodyAngles(locations, data.nosePos);
         
         saveVars('bodyAngles', bodyAngles)
     end
@@ -506,9 +611,9 @@ function analyzeSession(session, varargin)
         if s.verbose; fprintf('%s: getting obstacle heights\n', session); end
         
         % load tracking data if not already open
-        if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        obsTopY = locationsTable.obs_top_1;
-        obsTopScores = locationsTable.obs_top_2;
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        obsTopY = locations.obs_top_1;
+        obsTopScores = locations.obs_top_2;
         
         wheelTopPix = data.wheelCenter(2) - data.wheelRadius;
         bins = ~isnan(data.obsPixPositions)' & ...
@@ -578,8 +683,8 @@ function analyzeSession(session, varargin)
         % figure out which paws are touching obs in each touch frame
         
         % get xz positions for paws
-        if ~exist('locationsTable', 'var'); locationsTable = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        [locations, features] = fixTracking(locationsTable, data.frameTimeStamps, data.pixelsPerM);
+        if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
+        [locations, features] = fixTracking(locations, data.frameTimeStamps, data.pixelsPerM);
         pawXZ = nan(size(locations,1), 2, 4);
         for i = 1:4
             pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');

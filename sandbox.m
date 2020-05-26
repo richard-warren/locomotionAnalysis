@@ -1,3 +1,83 @@
+%% play around with jaw tracking
+
+%% play around with whisker angle computation
+
+% locationsWisk = readtable('Z:\loco\obstacleData\sessions\999999_999\trackedFeaturesRaw_wisk.csv');
+% load('Z:\loco\obstacleData\sessions\999999_999\runAnalyzed.mat', 'lickTimes', 'frameTimeStampsWisk')
+
+% settings
+confidenceThresh = .5;
+medianFiltering = 5;
+smoothing = 5;
+angleLims = [-120 -60];
+
+pad = [median(locationsWisk.wisk_pad) median(locationsWisk.wisk_pad_1)];  % location of whisker pad
+valid = locationsWisk.wisk_caudal_2>confidenceThresh | locationsWisk.wisk_rostral_2>confidenceThresh;
+
+c = [medfilt1(locationsWisk.wisk_caudal,medianFiltering), medfilt1(locationsWisk.wisk_caudal_1,medianFiltering)];
+r = [medfilt1(locationsWisk.wisk_rostral,medianFiltering), medfilt1(locationsWisk.wisk_rostral_1,medianFiltering)];
+
+avg = mean(cat(3,c,r), 3);
+avg = avg - pad;
+avg(:,2) = -avg(:,2);
+angles = rad2deg(atan2(avg(:,2), avg(:,1)));
+angles = smooth(angles, smoothing);
+% interpolation?
+
+angles(angles<angleLims(1) | angles>angleLims(2)) = nan;
+
+
+% close all; figure('position', [186.00 129.00 1601.00 849.00]); hold on
+% plot(frameTimeStampsWisk, r(:,1))
+% plot(frameTimeStampsWisk, c(:,1))
+% plot(frameTimeStampsWisk, a(:,1), 'LineWidth', 2)
+% plot([lickTimes, lickTimes], get(gca, 'YLim'), 'color', [.6 .6 .6])
+
+% close all; figure('position', [186.00 129.00 1601.00 849.00]); hold on
+% t = randi(size(a,1)); close all; figure; plot([0 a(t,1)], [0 a(t,2)]); set(gca, 'YDir', 'normal'); daspect([1 1 1])
+% disp(angles(t))
+
+close all; figure('position', [186.00 129.00 1601.00 849.00]); hold on
+angles(~valid) = nan;
+plot(frameTimeStampsWisk, angles)
+plot([lickTimes, lickTimes], get(gca, 'YLim'), 'color', [.6 .6 .6])
+set(gca, 'xlim', [445.1172  570.2924])
+
+
+%% try peak finding algorithms on lick signal
+
+locationsWisk = readtable('Z:\loco\obstacleData\sessions\999999_999\trackedFeaturesRaw_wisk.csv');
+
+conf = .5;
+valid = locationsWisk.tongue_2 > conf;
+
+raw = locationsWisk.tongue_1;
+sig = smooth(raw, 5);
+
+sig(~valid) = nan;
+raw(~valid) = nan;
+
+lims = prctile(raw, [50 99]);
+valid = sig<lims(2);
+
+sig(~valid) = nan;
+raw(~valid) = nan;
+
+
+close all; figure('position', [186.00 129.00 1601.00 849.00]);
+
+plot(raw, 'color', 'blue'); hold on;
+plot(sig, 'LineWidth', 2); hold on;
+
+
+set(gca, 'xlim', [178704 179657])
+
+figure;
+findpeaks(sig, 'MinPeakDistance', 10, 'MinPeakHeight', lims(1))
+
+% check that: confidence high // peak above AND BELOW thresh
+
+
 %% test hildebrand plots
 
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', 'baselineNotes');
