@@ -18,7 +18,7 @@ s.scoreThresh = .99;  % .99 // remove tracking with confidence values beneathe s
 pairNames = {'paw1', 'paw2', 'paw3', 'paw4'};  % two features both containing the same string in this array are considered the same feature in the top and bottom views, and are subject to xDiffMax constraint
 maxSpeed = 4;  % 2 // (m/s) tracked feature cannot move faster than this across adjacent frames
 lookAheadFrames = 200;  % this is relevant to the non-intuitive but fast algorithm i use to find velocity constraint violations // don't touch this unless you understand setp 2
-s.medianFiltering = 0;
+s.medianFiltering = 3;
 
 
 % initializations
@@ -105,10 +105,14 @@ end
 % 3) fill in missing values AND median filter
 pawBins = contains(features, 'paw');
 if s.medianFiltering>1
+    locationsPreFilt = locations;
     locations(:,1,pawBins) = medfilt2(squeeze(locations(:,1,pawBins)), [s.medianFiltering, 1]);
     locations(:,2,pawBins) = medfilt2(squeeze(locations(:,2,pawBins)), [s.medianFiltering, 1]);
+    
+    % median filtering will cause some locatinos to turn to NaN // revert these locations to their original values
+    locations(isnan(locations) & ~isnan(locationsPreFilt)) = locationsPreFilt(isnan(locations) & ~isnan(locationsPreFilt));
 end
-isInterped = isnan(squeeze(locations(:,1,:))) | isnan(squeeze(locations(:,2,:)));  % the latter term may be unnecessary
+isInterped = isnan(squeeze(locations(:,1,:)));
 locations(:,1,pawBins) = fillmissing(squeeze(locations(:,1,pawBins)), 'pchip', 'endvalues', 'nearest');
 locations(:,2,pawBins) = fillmissing(squeeze(locations(:,2,pawBins)), 'pchip', 'endvalues', 'nearest');
 

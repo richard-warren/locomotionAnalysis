@@ -143,7 +143,7 @@ otherSessions = otherSessions(~ismember(otherSessions, groomingSessions));
 % sessions = groomingSessions;
 sessions = {groomingSessions{:}, otherSessions{:}};
 
-for i = 8:length(sessions)
+for i = 20:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
     try
         dpkAnalysis(sessions{i}, 'verbose', false, ...

@@ -3,12 +3,14 @@ function showTracking(session, varargin)
 
 % settings
 s.includeWiskCam = true;  % whether to add whisker camera
-s.scoreThresh = .5;
-s.vidDelay = .02;
 s.showConfidence = false;
 s.showPawTouch = true;
 s.showPawTouchConfidence = true;
 s.showStance = true;
+
+s.scoreThresh = .5;
+
+s.vidDelay = .02;
 s.circSize = 80;
 s.vidScaling = 1.5;
 s.colorMap = 'hsv';
@@ -22,6 +24,10 @@ connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
                      {'tailBase_top', 'tailMid_top'}, ...
                      {'obsHigh_bot', 'obsLow_bot'}}; % features that are connected within a view (not across views)
 
+% extra signal settings
+s.sig = [];
+s.xlims = [-2 1];
+
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
@@ -34,13 +40,15 @@ if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessi
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', 'pixelsPerM', 'wiskContactTimes', 'rewardTimes', 'wiskContactFrames', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn', 'whiskerAngle', 'lickTimes');
+whiskerAngle = fillmissing(whiskerAngle, 'pchip');
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh, 'medianFiltering', 0);
+[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh);
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
+fps = 1/median(diff(frameTimeStamps));
 if s.showStance
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, ...
-        wheelTimes, wheelCenter, wheelRadius, 1/median(diff(frameTimeStamps)), pixelsPerM);
+        wheelTimes, wheelCenter, wheelRadius, fps, pixelsPerM);
 end
 
 
@@ -55,7 +63,7 @@ sz = [size(frame,1) size(frame,2) 3];
 
 
 % set up figure
-fig = figure('name', session, 'units', 'pixels', 'position', [600 100 sz(1)*s.vidScaling sz(2)*s.vidScaling],...
+fig = figure('name', session, 'units', 'pixels', 'position', [1000 100 sz(1)*s.vidScaling sz(2)*s.vidScaling],...
     'menubar', 'none', 'color', 'black', 'keypressfcn', @changeFrames);
 colormap gray
 imPreview = image(frame, 'CDataMapping', 'scaled'); hold on;
@@ -210,7 +218,7 @@ function changeFrames(~,~)
         % 'o': go to next whisker contact
         elseif key==111
             nextContactTime = wiskContactTimes(find(wiskContactTimes>frameTimeStamps(frameInd), 1, 'first'));
-            frameInd = find(frameTimeStamps>nextContactTime, 1, 'first');
+            frameInd = find(frameTimeStamps>nextContactTime, 1, 'first') - 10;
             updateFrame(0);
             
         % ESCAPE: close window
@@ -311,15 +319,29 @@ function updateFrame(frameStep)
     
     % update whisker view tracking
     if s.includeWiskCam
-        if ismember(frameTimeStampsWisk(frameIndWisk), lickTimes); c = [1 0 0]; else; c = s.faceColor; end
-        set(scatterWisk, 'XData', locationsWisk(frameIndWisk,1,:), 'YData', locationsWisk(frameIndWisk,2,:), 'cdata', c);
         
+        % face tracking
+        recentLick = any((lickTimes-frameTimeStampsWisk(frameIndWisk))>=0 & (lickTimes-frameTimeStampsWisk(frameIndWisk))<(5/fps));
+        if recentLick
+            c = repmat(s.faceColor, length(wiskFeatures), 1);
+            c(contains(wiskFeatures, 'tongue'),:) = [1 0 0];
+            circSz = repelem(40, length(wiskFeatures));
+            circSz(contains(wiskFeatures, 'tongue')) = 100;
+        else
+            c = s.faceColor;
+            circSz = 40;
+        end
+        set(scatterWisk, 'XData', locationsWisk(frameIndWisk,1,:), ...
+            'YData', locationsWisk(frameIndWisk,2,:), ...
+            'sizedata', circSz, 'cdata', c);
         
         % whisker angle
         x = cosd(whiskerAngle(frameIndWisk)) * wiskLength;
         y = -sind(whiskerAngle(frameIndWisk)) * wiskLength;
-        if ismember(frameIndWisk, wiskContactFrames); c = 'red'; else; c = s.faceColor; end
-        set(wisk, 'XData', [pad(1) pad(1)+x], 'YData', [pad(2) pad(2)+y], 'color', c)
+        
+        recentContact = any((frameIndWisk-wiskContactFrames)>=0 & (frameIndWisk-wiskContactFrames)<5);
+        if recentContact; c = 'red'; w=4; else; c = s.faceColor; w=2; end
+        set(wisk, 'XData', [pad(1) pad(1)+x], 'YData', [pad(2) pad(2)+y], 'color', c, 'linewidth', w)
     end
 
     % pause to reflcet on the little things...
