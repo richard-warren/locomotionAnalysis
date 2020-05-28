@@ -26,7 +26,9 @@ connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
 
 % extra signal settings
 s.sig = [];
+s.sigTimes = [];
 s.xlims = [-2 1];
+s.sigName = 'body angle';
 
 
 % initializations
@@ -156,6 +158,20 @@ if s.showPawTouchConfidence
     for i = 1:4; touchConfidenceLabels{i} = text(0,0,'', 'color', [1 1 1], 'interpreter', 'none'); end
 end
 
+
+% set up second figure if sig provided
+if ~isempty(s.sig)
+    figSig = figure('name', session, 'position', [400 100 400 200], 'menubar', 'none', 'color', 'black'); hold on
+    yLims = prctile(s.sig, [1 99]);
+    plot([0 0], yLims, 'color', [1 1 1 .5], 'LineWidth', 2)  % vertical line at x=0
+    sigPlot = plot(0, 0, 'LineWidth', 2, 'color', 'white');
+    set(gca, 'color', 'black', 'box', 'off', 'xtick', [s.xlims(1) 0 s.xlims(2)], ...
+        'XLim', s.xlims, 'YColor', 'white', 'XColor', 'white', 'YLim', yLims) 
+    sigScat = scatter(0, 0, 50, [1 1 0], 'filled');  % circle that will follow the signal at x=0
+    ylabel(s.sigName)
+end
+
+
 % set state variables
 frameInd = 1;
 playing = true;
@@ -168,6 +184,7 @@ while playing
     updateFrame(1);
 end
 close(fig)
+if ~isempty(s.sig); close(figSig); end
 
 
 
@@ -237,6 +254,8 @@ end
 
 % update frame preview
 function updateFrame(frameStep)
+    
+    set(0, 'currentfigure', fig);
     
     frameInd = frameInd + frameStep;
     if frameInd < 1; frameInd = vid.NumberOfFrames;
@@ -343,7 +362,19 @@ function updateFrame(frameStep)
         if recentContact; c = 'red'; w=4; else; c = s.faceColor; w=2; end
         set(wisk, 'XData', [pad(1) pad(1)+x], 'YData', [pad(2) pad(2)+y], 'color', c, 'linewidth', w)
     end
-
+    
+    
+    % update sig plot
+    if ~isempty(s.sig)
+        set(0, 'currentfigure', figSig);
+        bins = s.sigTimes>(frameTimeStamps(frameInd)+s.xlims(1)) & s.sigTimes<(frameTimeStamps(frameInd)+s.xlims(2));
+        x = s.sigTimes(bins)-frameTimeStamps(frameInd);
+        y = s.sig(bins);
+        set(sigPlot, 'xdata', x, 'ydata', y)
+        set(sigScat, 'ydata', y(find(x>=0,1,'first')))
+    end
+    
+    
     % pause to reflcet on the little things...
     pause(s.vidDelay);
 end
