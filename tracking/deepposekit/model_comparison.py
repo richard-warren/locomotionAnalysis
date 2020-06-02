@@ -53,14 +53,16 @@ plt.savefig(os.path.join('tracking', 'deepposekit', 'figures', 'errors'))
 
 # settings
 paw_names = ['paw1LH', 'paw2LF', 'paw3RF', 'paw4RH']  # names of fields in tracking spreadsheets
-sessions = ['200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '191221_000']
+sessions = ['200113_000', '200116_000', '200117_000', '200114_000', '200131_000', '200202_000', '200130_000', '191119_001', '191113_002', '191113_000', '191124_000', '200310_000', '191126_001', '191209_001', '191128_002', '200120_000', '200120_001', '200120_002', '200120_003', '200120_004']
+# sessions = ['200113_000', '200116_000', '200117_000']
 files = ['trackedFeatures_run.csv', 'trackedFeatures_runDLC.csv']
 scatters = 1000
 thresh = 25
+session_smps = 10000  # random samples per session
 
 
 # make df with one row per tracked feature, for all features in all frames in all sessions
-# todo: this is super memory inefficient // perhaps subsample for entire videos... // also, should have different columns for dft sessions, because having to do logical indexing below over this enormous length df takes tons of time
+# todo: this is super memory inefficient // should have different columns for dft sessions, because having to do logical indexing below over this enormous length df takes tons of time
 data = pd.DataFrame(columns=['tracking_file', 'session', 'paw', 'x_bot', 'x_top'])
 
 for s in sessions:
@@ -69,16 +71,16 @@ for s in sessions:
         if os.path.exists(csv_name):
             print('%s: loading %s...' % (s, f))
             tracking = pd.read_csv(csv_name)
+            inds = np.random.choice(range(len(tracking)), session_smps, replace=False)
 
             for paw in paw_names:
                 idx = len(data)
-                data = data.reindex(list(range(len(data) + len(tracking))))  # extend dataframe
-
+                data = data.reindex(list(range(len(data) + session_smps)))  # extend dataframe
                 data.loc[idx:, 'tracking_file'] = f
                 data.loc[idx:, 'session'] = s
                 data.loc[idx:, 'paw'] = paw
-                data.loc[idx:, 'x_bot'] = list(tracking[paw+'_bot'])
-                data.loc[idx:, 'x_top'] = list(tracking[paw+'_top'])
+                data.loc[idx:, 'x_bot'] = list(tracking.loc[inds,paw+'_bot'])
+                data.loc[idx:, 'x_top'] = list(tracking.loc[inds,paw+'_top'])
         else:
             print('%s: WARNING! %s does not exist for this session...' % (s, f))
 
@@ -120,7 +122,7 @@ for s_i, s in enumerate(sessions):
 
 fig.savefig(os.path.join('tracking', 'deepposekit', 'figures', 'x_alignment_thresh%i'%thresh))
 
-## print average error rates across models
+# print average error rates across models
 print('------ERROR RATES------')
 for f_i, f in enumerate(files):
     print('%s: %.5f' % (f, np.mean(error_rates[f_i])))

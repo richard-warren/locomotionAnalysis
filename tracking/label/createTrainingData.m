@@ -25,14 +25,14 @@ end
 %% label dataset
 
 % run
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-invert = false;
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% invert = false;
 
 % wisk
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-% invert = true;
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+invert = true;
 
 
 labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert);
@@ -115,20 +115,20 @@ fprintf('created file: %s\n', fileName)
 session = '999999_999';
 
 % run
-vid = 'run.mp4';  % run_originalDimensions;
-trackedFeatures = 'trackedFeaturesRaw.csv';
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-invert = false;
+% vid = 'run.mp4';  % run_originalDimensions;
+% trackedFeatures = 'trackedFeaturesRaw.csv';
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% invert = false;
 
 % wisk
-% vid = 'runWisk.mp4';  % run_originalDimensions;
-% trackedFeatures = 'trackedFeatures_wisk.csv';
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-% invert = true;
+vid = 'runWisk.mp4';  % run_originalDimensions;
+trackedFeatures = 'trackedFeaturesRaw_wisk.csv';
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+invert = true;
 
-addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleton, 'invertFrame', invert, 'scoreThresh', 0);
+addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleton, 'invertFrame', invert, 'scoreThresh', .5);
 
 %% analyze batch of videos
 
@@ -143,19 +143,27 @@ otherSessions = otherSessions(~ismember(otherSessions, groomingSessions));
 % sessions = groomingSessions;
 sessions = {groomingSessions{:}, otherSessions{:}};
 
-for i = 20:length(sessions)
+for i = 1:length(sessions)
     fprintf('%i/%i ', i, length(sessions))
     try
+        % run (dpk vs dlc)
+%         dpkAnalysis(sessions{i}, 'verbose', false, ...
+%             'vid', 'run_originalDimensions.mp4', ...
+%             'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
+%             'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
+%             'output', 'trackedFeatures_run.csv')
+%         dpkAnalysis(sessions{i}, 'verbose', false, ...
+%             'vid', 'run_originalDimensions.mp4', ...
+%             'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_DeepLabCut.h5', ...
+%             'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
+%             'output', 'trackedFeatures_runDLC.csv')
+        
+        % wisk (dpk)
         dpkAnalysis(sessions{i}, 'verbose', false, ...
-            'vid', 'run_originalDimensions.mp4', ...
-            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
-            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
-            'output', 'trackedFeatures_run.csv')
-        dpkAnalysis(sessions{i}, 'verbose', false, ...
-            'vid', 'run_originalDimensions.mp4', ...
-            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_DeepLabCut.h5', ...
-            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
-            'output', 'trackedFeatures_runDLC.csv')
+            'vid', 'runWisk.mp4', ...
+            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk_StackedDenseNet.h5', ...
+            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv', ...
+            'output', 'trackedFeaturesRaw_wisk.csv')
     catch
         fprintf('%s: problem with analysis!\n', sessions{i})
     end
@@ -191,32 +199,5 @@ disp('all done!')
 % 
 % save(trainingSet, 'trainingData')
 % disp('all done!')
-
-%% (temp) find out which sessions have 'originalDimensions' versions
-
-files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
-sessions = {files([files.isdir]).name};
-origSessions = {};
-
-fileExists = false(1,length(sessions));
-fprintf('\n\n--------------------looking for originalDimensions--------------------\n')
-for i = 1:length(sessions)
-    dirSub = dir(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, '*.mp4'));
-    bins = contains({dirSub.name}, 'originalDimensions');
-    if any(bins)
-        fprintf('%s: ', sessions{i})
-        fprintf('%s ', dirSub(bins).name)
-        fprintf('\n')
-        origSessions{end+1} = sessions{i};
-    end
-end
-disp('all done!')
-
-%% (temp) test models on old frames with different dimensions
-
-dpkAnalysis('190929_003', 'run', 'verbose', true, 'runModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', 'runOutput', 'trackedFeatures_run.csv', 'runVid', 'run.mp4')
-% dpkAnalysis('190929_003', 'wisk', 'verbose', true, 'wiskModel', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk.h5', 'wiskOutput', 'trackedFeatures_wisk.csv')
-
-
 
 

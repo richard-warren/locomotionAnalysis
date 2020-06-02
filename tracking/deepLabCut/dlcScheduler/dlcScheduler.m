@@ -11,7 +11,7 @@
 checkFrequency = 60; % seconds
 sessionsDir = [getenv('OBSDATADIR') 'sessions\'];
 schedulerDir = [getenv('GITDIR') 'locomotionAnalysis\tracking\deepLabCut\dlcScheduler\'];
-dlcPath = [getenv('GITDIR') 'DeepLabCutBatch'];
+dlcPath = [getenv('GITDIR') 'DeepLabCut'];
 
 % initializations
 load([schedulerDir 'analyzedSessions.mat'], 'analyzedSessions');

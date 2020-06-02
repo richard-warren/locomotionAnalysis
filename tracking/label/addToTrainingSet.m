@@ -42,15 +42,19 @@ colors = hsv(length(features));
 
 % find frames where x positions are misaligned
 pawPairs = {{'paw1LH_top', 'paw1LH_bot'}, {'paw2LF_top', 'paw2LF_bot'}, {'paw3RF_top', 'paw3RF_bot'}, {'paw4RH_top', 'paw4RH_bot'}};
-deltaX = nan(size(locations,1), 4);
-for i = 1:length(pawPairs)
-    bins = ismember(features, pawPairs{i});
-    deltaX(:,i) = diff(squeeze(locations(:,1,bins)),[],2);
+if any(ismember(features, cat(2,pawPairs{:})))  % if paws are actually in this video
+    deltaX = nan(size(locations,1), 4);
+    for i = 1:length(pawPairs)
+        bins = ismember(features, pawPairs{i});
+        deltaX(:,i) = diff(squeeze(locations(:,1,bins)),[],2);
+    end
+    isMisaligned = all(scores(:,contains(features, 'paw'))>s.scoreThresh,2) & ...  % all paws have high confidence
+        any(deltaX>s.deltaThresh,2);  % at least one paw is misaligned
+    isMisaligned = [false; diff(isMisaligned)==1];  % only keep first true is sequences of consecutive trues
+    misalignedInds = find(isMisaligned);
+else
+    deltaX = zeros(size(locations,1), 4);
 end
-isMisaligned = all(scores(:,contains(features, 'paw'))>s.scoreThresh,2) & ...  % all paws have high confidence
-    any(deltaX>s.deltaThresh,2);  % at least one paw is misaligned
-isMisaligned = [false; diff(isMisaligned)==1];  % only keep first true is sequences of consecutive trues
-misalignedInds = find(isMisaligned);
 
 
 % set up figure

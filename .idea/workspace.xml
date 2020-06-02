@@ -2,7 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="00078c66-bf3a-499f-99c1-f23f7ba2ce3f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/tracking/showTracking.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/showTracking.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sandbox.m" beforeDir="false" afterPath="$PROJECT_DIR$/sandbox.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/errors.png" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/figures/errors.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment_thresh25.png" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment_thresh25.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment_thresh50.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/dlcAnalysis.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/dlcAnalysis.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/label/createTrainingData.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/createTrainingData.m" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -21,11 +30,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="264">
-              <caret line="16" column="18" selection-start-line="16" selection-start-column="18" selection-end-line="16" selection-end-column="18" />
+            <state relative-caret-position="432">
+              <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -33,46 +42,13 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/model_comparison.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="96">
-              <caret line="4" column="13" lean-forward="true" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tracking/pawContact/expandanalyze.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="504">
-              <caret line="21" selection-start-line="21" selection-end-line="22" selection-end-column="97" />
+            <state relative-caret-position="2448">
+              <caret line="102" selection-start-line="102" selection-end-line="102" />
               <folding>
-                <element signature="e#0#40#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tracking/whiskerContact/cropanalyzevideo.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="396">
-              <caret line="298" column="26" selection-start-line="298" selection-start-column="26" selection-end-line="298" selection-end-column="26" />
-              <folding>
-                <element signature="e#0#40#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tracking/deepposekit/test.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="528">
-              <caret line="81" column="33" selection-start-line="81" selection-start-column="33" selection-end-line="81" selection-end-column="33" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
+                <element signature="e#0#9#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -127,16 +103,16 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" />
         <option value="$PROJECT_DIR$/tracking/deepposekit/test.py" />
         <option value="$PROJECT_DIR$/tracking/deepposekit/train_network.py" />
-        <option value="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" />
         <option value="$PROJECT_DIR$/tracking/pawContact/expandanalyze.py" />
         <option value="$PROJECT_DIR$/tracking/whiskerContact/cropanalyzevideo.py" />
+        <option value="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" />
+        <option value="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="496" />
     <option name="y" value="376" />
     <option name="width" value="974" />
@@ -229,7 +205,7 @@
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32977587" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.18356457" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info active="true" anchor="bottom" id="Python Console" order="10" visible="true" weight="0.33084312" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="10" visible="true" weight="0.40234792" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -266,32 +242,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="264">
-          <caret line="16" column="18" selection-start-line="16" selection-start-column="18" selection-end-line="16" selection-end-column="18" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="528">
           <caret line="81" column="33" selection-start-line="81" selection-start-column="33" selection-end-line="81" selection-end-column="33" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tracking/pawContact/expandanalyze.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="21" selection-start-line="21" selection-end-line="22" selection-end-column="97" />
-          <folding>
-            <element signature="e#0#40#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -306,10 +262,33 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/tracking/pawContact/expandanalyze.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="504">
+          <caret line="21" selection-start-line="21" selection-end-line="22" selection-end-column="97" />
+          <folding>
+            <element signature="e#0#40#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/model_comparison.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="96">
-          <caret line="4" column="13" lean-forward="true" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
+        <state relative-caret-position="2448">
+          <caret line="102" selection-start-line="102" selection-end-line="102" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

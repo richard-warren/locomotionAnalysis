@@ -1,4 +1,23 @@
-%% play around with jaw tracking
+%% demonsrate face tracking stuff
+
+load(fullfile(getenv('OBSDATADIR'), 'sessions', '999999_999', 'runAnalyzed.mat'), ...
+    'wheelTimes', 'wheelPositions', 'lickTimes', 'whiskerAngles', 'frameTimeStampsWisk', 'targetFs', 'rewardTimes')
+wheelVel = getVelocity(wheelPositions, .05, targetFs);
+whiskerAngle = fillmissing(whiskerAngle, 'pchip');
+% whiskerAngle(whiskerAngle<-120) = nan;
+%%
+close all; figure('color', 'white', 'position', [286.00 456.00 1437.00 360.00]); hold on
+yLims = [-2 2];
+
+plot(wheelTimes, zscore(wheelVel))
+plot(frameTimeStampsWisk, zscore(whiskerAngle));
+plot([lickTimes, lickTimes], yLims, 'color', [.6 .6 .6])
+plot([rewardTimes, rewardTimes], yLims, 'color', 'blue', 'LineWidth', 2)
+
+
+% legend('velocity', 'whisker angle')
+set(gca, 'xlim', [288.7246  304.5106], 'ylim', yLims, 'visible', 'off')
+
 
 %% play around with whisker angle computation
 
