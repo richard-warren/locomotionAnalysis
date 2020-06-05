@@ -28,14 +28,16 @@ end
 % trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
 % skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
 % invert = false;
+% maxFiltering = 1;
 
 % wisk
 trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
 skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
 invert = true;
+maxFiltering = 3;
 
 
-labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert);
+labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert, 'maxFiltering', maxFiltering);
 
 %% convert dataset to deepposekit format
 
@@ -44,13 +46,13 @@ labelFrames(trainingSet, skeleton, 'vidScaling', 2, 'invertFrame', invert);
 % necessary on the fly
 
 % settings
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-% imgDims = [352 384];  % images are resized to this dimension ([336 380] are the original dimensions) (must be valid DPK dimensions)
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+imgDims = [352 384];  % images are resized to this dimension ([336 380] are the original dimensions) (must be valid DPK dimensions)
 
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-imgDims = [448 448];  % images are resized to this dimension (must be valid DPK dimensions)
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% imgDims = [448 448];  % images are resized to this dimension (must be valid DPK dimensions)
 
 
 % load data
@@ -112,21 +114,21 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '999999_999';
+session = '200113_000';
 
 % run
-% vid = 'run.mp4';  % run_originalDimensions;
-% trackedFeatures = 'trackedFeaturesRaw.csv';
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-% invert = false;
+vid = 'run.mp4';  % run_originalDimensions;
+trackedFeatures = 'trackedFeaturesRaw.csv';
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+invert = false;
 
 % wisk
-vid = 'runWisk.mp4';  % run_originalDimensions;
-trackedFeatures = 'trackedFeaturesRaw_wisk.csv';
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-invert = true;
+% vid = 'runWisk.mp4';  % run_originalDimensions;
+% trackedFeatures = 'trackedFeaturesRaw_wisk.csv';
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+% invert = true;
 
 addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleton, 'invertFrame', invert, 'scoreThresh', .5);
 

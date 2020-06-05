@@ -9,6 +9,7 @@ s.labeledColor = [1 1 0];
 s.invertFrame = false;
 s.textRotation = 45;
 s.hideWhileMoving = true;  % whether to hide other tracked features while moving a single feature
+s.maxFiltering = 0;  % if odd number>1, sliding window max filtering is applied with window size (maxFiltering X maxFiltering)
 
 % todo: hide other features while moving one feature // move unlabeled
 % points to corner of screen?
@@ -135,7 +136,7 @@ function keypress(~,~)
                 if isempty(newStructInd); newStructInd = find(~[trainingData.includeFrame], 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
                 if ~isempty(newStructInd); ind = newStructInd; end % otherwise, keep current frame
                 updateFrame(0);
-                for j = 1:length(texts); set(texts{j}, 'Color', 'none'); end  % turn off labels
+%                 for j = 1:length(texts); set(texts{j}, 'Color', 'none'); end  % turn off labels
             
             % n: move to ind
             case 110
@@ -169,6 +170,9 @@ function updateFrame(frameStep)
     % update frame
     frame = trainingData(ind).frame;
     if s.invertFrame; frame = 255-frame; end
+    if s.maxFiltering>1; frame = ordfilt2(frame, s.maxFiltering^2, true(s.maxFiltering)); end
+    
+    
     set(im, 'CData', frame);
     set(gca, 'position', [0 0 1 1]);
     if trainingData(ind).includeFrame; includedStr = '(included)'; else; includedStr = ''; end

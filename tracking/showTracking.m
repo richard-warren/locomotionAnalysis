@@ -42,7 +42,7 @@ if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessi
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', 'pixelsPerM', 'wiskContactTimes', 'rewardTimes', 'wiskContactFrames', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn', 'whiskerAngle', 'lickTimes');
-whiskerAngle = fillmissing(whiskerAngle, 'pchip');
+if exist('whiskerAngle', 'var'); whiskerAngle = fillmissing(whiskerAngle, 'pchip'); end
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh);
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
@@ -218,12 +218,12 @@ function changeFrames(~,~)
             frameInd = str2num(input{1});
             updateFrame(0);
             
-        % 't': go to specific trial
+        % 't': go to specific time (in seconds)
         elseif key==116
             pause(.001);
             paused = true;
-            input = inputdlg('enter trial number');
-            frameInd = find(frameTimeStamps>=obsOnTimes(str2num(input{1})),1,'first');
+            input = inputdlg('enter time (seconds)');
+            frameInd = find(frameTimeStamps>=str2num(input{1}),1,'first');
             updateFrame(0);
         
         % 'w': go to next water drop

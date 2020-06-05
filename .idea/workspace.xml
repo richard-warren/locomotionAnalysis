@@ -2,16 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="00078c66-bf3a-499f-99c1-f23f7ba2ce3f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/sandbox.m" beforeDir="false" afterPath="$PROJECT_DIR$/sandbox.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepLabCut/dlcScheduler/dlcScheduler.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/errors.png" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/figures/errors.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment_thresh25.png" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment_thresh25.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/figures/x_alignment_thresh50.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/dlcAnalysis.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/dlcAnalysis.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/addToTrainingSet.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prelimAnalysis/analyzeSession.m" beforeDir="false" afterPath="$PROJECT_DIR$/prelimAnalysis/analyzeSession.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/dpkAnalysis.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/dpkAnalysis.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/label/createTrainingData.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/createTrainingData.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/label/labelFrames.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/labelFrames.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/reanalyzeOldVids.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/reanalyzeOldVids.m" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracking/showTracking.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/showTracking.m" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -24,8 +22,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/train_network.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2928">
-              <caret line="138" column="18" selection-start-line="138" selection-start-column="18" selection-end-line="138" selection-end-column="18" />
+            <state relative-caret-position="420">
+              <caret line="189" column="16" selection-start-line="189" selection-start-column="16" selection-end-line="189" selection-end-column="16" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -33,8 +34,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="432">
-              <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+            <state relative-caret-position="360">
+              <caret line="15" column="15" selection-start-line="15" selection-start-column="15" selection-end-line="15" selection-end-column="15" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -65,7 +66,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>rotat</find>
       <find>sample_</find>
       <find>gray</find>
       <find>validation_split</find>
@@ -95,6 +95,7 @@
       <find>obsc</find>
       <find>trackedfe</find>
       <find>features</find>
+      <find>patience</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -104,19 +105,19 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/tracking/deepposekit/test.py" />
-        <option value="$PROJECT_DIR$/tracking/deepposekit/train_network.py" />
         <option value="$PROJECT_DIR$/tracking/pawContact/expandanalyze.py" />
         <option value="$PROJECT_DIR$/tracking/whiskerContact/cropanalyzevideo.py" />
         <option value="$PROJECT_DIR$/tracking/deepposekit/model_comparison.py" />
+        <option value="$PROJECT_DIR$/tracking/deepposekit/train_network.py" />
         <option value="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="496" />
-    <option name="y" value="376" />
+  <component name="ProjectFrameBounds" extendedState="7">
+    <option name="x" value="953" />
+    <option name="y" value="540" />
     <option name="width" value="974" />
-    <option name="height" value="1087" />
+    <option name="height" value="547" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -203,9 +204,9 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32977587" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32977587" />
-      <window_info anchor="bottom" id="Terminal" order="8" weight="0.18356457" />
+      <window_info anchor="bottom" id="Terminal" order="8" weight="0.2529349" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info active="true" anchor="bottom" id="Python Console" order="10" visible="true" weight="0.40234792" />
+      <window_info active="true" anchor="bottom" id="Python Console" order="10" visible="true" weight="0.22732124" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -234,13 +235,6 @@
     <entry file="file://$PROJECT_DIR$/dpkAnalysis.m" />
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/hyperparam_test.py">
       <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tracking/deepposekit/train_network.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2928">
-          <caret line="138" column="18" selection-start-line="138" selection-start-column="18" selection-end-line="138" selection-end-column="18" />
-        </state>
-      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/test.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -282,10 +276,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/tracking/deepposekit/train_network.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="189" column="16" selection-start-line="189" selection-start-column="16" selection-end-line="189" selection-end-column="16" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+        <state relative-caret-position="360">
+          <caret line="15" column="15" selection-start-line="15" selection-start-column="15" selection-end-line="15" selection-end-column="15" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>

@@ -134,8 +134,8 @@ train_generator.get_config()
 
 ## define model
 
-# model = StackedDenseNet(train_generator, n_stacks=2, growth_rate=32, pretrained=False)
-model = DeepLabCut(train_generator, backbone="resnet50")
+model = StackedDenseNet(train_generator, n_stacks=2, growth_rate=32, pretrained=False)
+# model = DeepLabCut(train_generator, backbone="resnet50")
 model.get_config()
 
 
@@ -187,7 +187,7 @@ history = model.fit(
     batch_size=8,
     validation_batch_size=8,
     callbacks=callbacks,
-    epochs=250,
+    epochs=1000,
     n_workers=8,
     steps_per_epoch=None,
 )

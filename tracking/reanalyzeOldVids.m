@@ -40,9 +40,49 @@ end
 disp('all done!')
 
 
-%% get rid of cropped versions for ephys experiments
+% %% get rid of cropped views and concat top and bot FOR EPHYS SESSIONS ONLY
+% % note: this does not delete the un-concatenated versions, which could optionally be done later to save disk space
+% 
+% for i = 1:length(ephysSessions)
+%     
+%     folder = fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i});
+%     dirSub = dir(fullfile(folder, '*.mp4'));
+%     
+%     % rename originalDimensions
+%     origInds = find(contains({dirSub.name}, '_originalDimensions'));
+%     if ~isempty(origInds)
+%         fprintf('%s: renaming files ', ephysSessions{i})
+%         for j = 1:length(origInds)
+%             fprintf('%s ', dirSub(origInds(j)).name)
+%             movefile(fullfile(folder, dirSub(origInds(j)).name), ...
+%                      fullfile(folder, erase(dirSub(origInds(j)).name, '_originalDimensions')));
+%         end
+%         fprintf('\n')
+%         
+%         % concatenate views if originally recorded un-concatenated
+%         if exist(fullfile(folder, 'runTop.mp4')); concatTopBotVids(ephysSessions{i}); end
+%         fprintf('\n')
+%     end
+% end
 
-% rename _orig files to overwrite cropped // if runTop and runBot, concat to run // get rid of runTop and runBot?
+%% reanalyze ephys sessions
+
+for i = 1%:length(ephysSessions)
+    fprintf('\n___________%i/%i___________\n', i, length(ephysSessions))
+    try
+        analyzeSession(ephysSessions{i}, ...
+            'overwriteVars', 'all', ...
+            'verbose', true, ...
+            'superVerbose', false, ...
+            'rerunRunNetwork', true, ...
+            'rerunWiskNetwork', true, ...
+            'rerunPawContactNetwork', true, ...
+            'rerunWiskContactNetwork', true);
+    catch
+        fprintf('%s: problem with analysis!\n', sessions{i})
+    end
+end
+disp('all done!')
 
 
 %% to clear up disk space we could:

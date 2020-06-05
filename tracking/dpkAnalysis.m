@@ -8,7 +8,7 @@ s.matlabPath = 'C:\Program Files\MATLAB\R2019a\bin\win64';  % this is needed to 
 s.vid = 'run.mp4';
 s.model = 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5';
 s.skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';
-s.output = 'trackedFeatures_run.csv';
+s.output = 'trackedFeaturesRaw.csv';
 
 s.verbose = true;
 
