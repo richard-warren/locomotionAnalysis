@@ -18,26 +18,39 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
-%% find sessions with ephys folders
+%% find ephys folders
 
-files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
-sessions = {files([files.isdir]).name};
-ephysSessions = {};
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
+ephysSessions = ephysInfo.session(ephysInfo.include==1);
+clear ephysInfo
 
-hasEphysFolder = false(1,length(sessions));
-fprintf('\n\n--------------------looking for ephys folders--------------------\n')
-for i = 1:length(sessions)
-    dirSub = dir(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}));
-    dirSub = dirSub([dirSub.isdir]);
-    bins = contains({dirSub.name}, 'ephys_');
-    if any(bins)
-        fprintf('%s: ', sessions{i})
-        fprintf('%s ', dirSub(bins).name)
-        fprintf('\n')
-        ephysSessions{end+1} = sessions{i};
-    end
-end
-disp('all done!')
+% %% find sessions with ephys folders
+% 
+% unusableSessions = {'181109_000', ...  % ephys folder only
+%                     '190923_003', ...  % ephys folder only
+%                     '190523_000', ...
+%                     '190523_001', ...
+%                     '190523_002', ...
+%                     '200118_000'};
+% 
+% files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
+% sessions = {files([files.isdir]).name};
+% ephysSessions = {};
+% 
+% hasEphysFolder = false(1,length(sessions));
+% fprintf('\n\n--------------------looking for ephys folders--------------------\n')
+% for i = 1:length(sessions)
+%     dirSub = dir(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}));
+%     dirSub = dirSub([dirSub.isdir]);
+%     bins = contains({dirSub.name}, 'ephys_');
+%     if any(bins)
+%         fprintf('%s: ', sessions{i})
+%         fprintf('%s ', dirSub(bins).name)
+%         fprintf('\n')
+%         ephysSessions{end+1} = sessions{i};
+%     end
+% end
+% disp('all done!')
 
 
 % %% get rid of cropped views and concat top and bot FOR EPHYS SESSIONS ONLY
@@ -67,8 +80,15 @@ disp('all done!')
 
 %% reanalyze ephys sessions
 
-for i = 1%:length(ephysSessions)
+problemSessions = {};
+
+for i = 1:length(ephysSessions)
     fprintf('\n___________%i/%i___________\n', i, length(ephysSessions))
+    
+    % concat top and bot if necessary
+    folder = fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i});
+    if ~exist(fullfile(folder, 'run.mp4')); concatTopBotVids(ephysSessions{i}); end
+    
     try
         analyzeSession(ephysSessions{i}, ...
             'overwriteVars', 'all', ...
@@ -79,10 +99,78 @@ for i = 1%:length(ephysSessions)
             'rerunPawContactNetwork', true, ...
             'rerunWiskContactNetwork', true);
     catch
-        fprintf('%s: problem with analysis!\n', sessions{i})
+        fprintf('%s: problem with analysis!\n', ephysSessions{i})
+        problemSessions{end+1} = ephysSessions{i};
     end
 end
 disp('all done!')
+
+
+%% reanalyze single field in ephysSessions
+
+skipSessions = {'191009_003', '200118_001'};
+
+sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
+for i = 1:length(sessions)
+    analyzeSession(sessions{i}, 'overwriteVars', {'ledInds', 'ledIndsWisk'}, 'verbose', true);
+    fprintf('\n')
+end
+
+
+
+%% reanalyze single sessions
+analyzeSession('191008_003', ...
+            'overwriteVars', 'all', ...
+            'verbose', true, ...
+            'superVerbose', false, ...
+            'rerunRunNetwork', true, ...
+            'rerunWiskNetwork', true, ...
+            'rerunPawContactNetwork', true, ...
+            'rerunWiskContactNetwork', true);
+
+%% recover broken session
+
+session = '191009_003'; % '200118_001', '191009_003'
+
+% figure out if any frames lost at the beginning of session
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'ledInds', 'ledIndsWisk', 'rewardTimes')
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), 'exposure')
+firstLedTtl = find(exposure.times > rewardTimes(1), 1, 'first');
+
+if firstLedTtl==ledInds(1) && firstLedTtl==ledIndsWisk(1)
+    disp('no frames lost at beginning')
+else
+    fprintf('%i frames unaccounted for in run camera\n', firstLedTtl-ledInds(1))
+    fprintf('%i frames unaccounted for in wisk camera\n', firstLedTtl-ledIndsWisk(1))
+end
+
+% check length of videos
+vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
+vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
+fprintf('%i run frames, %i whisker frames\n', vid.NumberOfFrames, vidWisk.NumberOfFrames)
+
+% check if there are skipped frames
+runCamMeta = dlmread(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+wiskCamMeta = dlmread(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'wisk.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+deltaFramesRun = diff(runCamMeta(:,2));
+deltaFramesWisk = diff(wiskCamMeta(:,1));
+
+if any(deltaFramesRun>1) || any(deltaFramesWisk>1)
+    disp('frames were skipped!')
+else
+    disp('no skipped frames')
+end
+
+% save data assuming no frames lost at beginning
+data = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'));
+
+data.frameTimeStamps = nan(length(runCamMeta),1);
+data.frameTimeStampsWisk = nan(length(wiskCamMeta),1);
+data.frameTimeStamps(1:length(exposure.times)) = exposure.times;
+data.frameTimeStampsWisk(1:length(exposure.times)) = exposure.times;
+
+save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), '-struct', 'data')
+disp('data saved')
 
 
 %% to clear up disk space we could:
@@ -97,6 +185,9 @@ disp('all done!')
 % accomodate the cropping, and throw away cropped vid, performing the rest
 % of the analysis on the uncropped video // alternatively, see if old DLC
 % can handle uncropped vids, and reanalyze like that...
+
+%%
+
 
 
 

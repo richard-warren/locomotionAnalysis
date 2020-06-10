@@ -30,4 +30,4 @@ if s.verbose
 else
     [~,~] = system([pathReset s.pythonPath ' tracking\deepposekit\analyze_video.py ' args]);
 end
-fprintf('%s: deepposekit analysis finished in %.1f minutes\n', session, toc/60)
+fprintf('deepposekit analysis finished in %.1f minutes\n', toc/60)

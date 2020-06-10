@@ -15,7 +15,7 @@ function analyzeSession(session, varargin)
     s.superVerbose = false;  % whether to also display 
     s.targetFs = 1000; % frequency that positional data will be resampled to
     s.overwriteVars = '';
-    s.plotObsTracking = true;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
+    s.plotObsTracking = false;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
     
     s.rerunRunNetwork = false;
     s.rerunWiskNetwork = false;
@@ -132,30 +132,49 @@ function analyzeSession(session, varargin)
     
     
     
-    % led indices
+    % led indices (run camera)
     if analyzeVar('ledInds')
         
-        if s.verbose; fprintf('%s: getting LED indices\n', session); end
+        if s.verbose; fprintf('%s: getting LED indices (for run camera)... ', session); end
         if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
         
         % settings
         confidenceThresh = .8;
         minDuration = 4;  % (frames)
-        % todo: should perhaps check that two LEDs are not super close together
+        minDistanceTime = 250;  % (frames)
+        maxDistanceSpace = 4;  % (pixels)
         
-        led = locations.LED_2 > confidenceThresh;
-        ledInds = find(diff(led)==1)+1;
-        offInds = find(diff(led)==-1)+1;
-        
-        offInds = offInds(offInds>ledInds(1));  % ensure first switch is ON
-        ledInds = ledInds(ledInds<offInds(end));  % ensure last switch is OFF
-        
-        valid = offInds - ledInds >= minDuration;
-        ledInds = ledInds(valid);
-        
-        if length(data.rewardTimes) ~= length(ledInds); fprintf('WARNING! Different number of rewards detected in Spike2 and with LED in camera!\N'); end
+        ledInds = getLedInds(locations.LED_2, locations.LED, locations.LED_1, ...
+            confidenceThresh, minDuration, minDistanceTime, maxDistanceSpace);
         
         saveVars('ledInds', ledInds)
+    end
+    
+    
+    
+    
+    % led indices (wisk camera)
+    if analyzeVar('ledIndsWisk')
+        
+        if s.verbose; fprintf('%s: getting LED indices (for whisker camera)... ', session); end
+        if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
+        
+        if ~isempty(data.ledInds)
+        
+            % settings
+            confidenceThresh = .7;
+            minDuration = 4;  % (frames)
+            minDistanceTime = 250;  % (frames)
+            maxDistanceSpace = 2;  % (pixels)
+
+            ledIndsWisk = getLedInds(locationsWisk.LED_2, locationsWisk.LED, locationsWisk.LED_1, ...
+                confidenceThresh, minDuration, minDistanceTime, maxDistanceSpace);
+        else
+            ledIndsWisk = [];
+            fprintf('no LED detected in run camera, so assuming no LED in whisker camera.\n');
+        end
+        
+        saveVars('ledIndsWisk', ledIndsWisk)
     end
     
     
@@ -383,6 +402,7 @@ function analyzeSession(session, varargin)
         frameCounts = camMetadata(:,2);
         timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
         frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
+%         frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session, [7435, 6925]);  % !!! temp
 
         saveVars('frameTimeStamps', frameTimeStamps)
     end
@@ -396,10 +416,11 @@ function analyzeSession(session, varargin)
         if s.verbose; fprintf('%s: getting wisk frame time stamps\n', session); end
         load(fullfile(sessionDir, 'run.mat'), 'exposure')
 
-        camMetadataWisk = dlmread(fullfile(sessionDir, 'wisk.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
+        camMetadataWisk = dlmread(fullfile(sessionDir, 'wisk.csv')); % columns: point grey counter, point grey timestamps (uninterpretted)
         frameCountsWisk = camMetadataWisk(:,1);
         timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
         frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+%         frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session, [7435, 6925]);
 
         saveVars('frameTimeStampsWisk', frameTimeStampsWisk)
     end
@@ -809,8 +830,8 @@ function analyzeSession(session, varargin)
             analyze = true;
         end
     end
-
-
+    
+    
     % adds variables to 'data' struct
     function saveVars(varargin)
         % varargin: name-value pairs where the name is the name of the field to be added to 'data', and value is the value to be assigned to that field
@@ -818,4 +839,45 @@ function analyzeSession(session, varargin)
         for v = 1:2:length(varargin); data.(varargin{v}) = varargin{v+1}; end
         anythingAnalyzed = true;
     end
+    
+    
+    % get led indices for run or whisker cam
+    function inds = getLedInds(conf, x, y, confidenceThresh, minDuration, minDistanceTime, maxDistanceSpace)
+        
+        conf = conf > confidenceThresh;
+        inds = find(diff(conf)==1)+1;
+        
+        if ~isempty(inds)
+            offInds = find(diff(conf)==-1)+1;
+
+            offInds = offInds(offInds>inds(1));  % ensure first switch is ON
+            inds = inds(inds<offInds(end));  % ensure last switch is OFF
+
+            % remove brief inds
+            isBrief = offInds - inds >= minDuration;
+            inds = inds(isBrief);
+            
+            % remove inds too close together in time
+            isTooClose = [Inf; diff(inds)] < minDistanceTime;
+            inds = inds(~isTooClose);
+            
+            % remove inds too far from the median LED location (the LED should never move)
+            distances = sqrt(sum(([x(inds), y(inds)] - [median(x(inds)), median(y(inds))]).^2,2));  % distances of each detected LED to the median LED position
+            inds = inds(distances < maxDistanceSpace);
+            
+            if length(data.rewardTimes) ~= length(inds)
+                fprintf('WARNING! %i rewards detected in Spike2 and %i in camera! Saving empty vector.\n', length(data.rewardTimes), length(inds));
+            else
+                fprintf('\n')
+            end
+        else
+            inds = [];
+            fprintf('no LED detected\n');
+        end
+    end
 end
+
+
+
+
+

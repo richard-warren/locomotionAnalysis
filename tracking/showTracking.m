@@ -10,7 +10,7 @@ s.showStance = true;
 
 s.scoreThresh = .5;
 
-s.vidDelay = .02;
+s.vidDelay = .001;
 s.circSize = 80;
 s.vidScaling = 1.5;
 s.colorMap = 'hsv';
@@ -47,7 +47,7 @@ locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, '
 [locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh);
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
-fps = 1/median(diff(frameTimeStamps));
+fps = 1/nanmedian(diff(frameTimeStamps));
 if s.showStance
     stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, ...
         wheelTimes, wheelCenter, wheelRadius, fps, pixelsPerM);
