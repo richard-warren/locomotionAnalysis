@@ -8,16 +8,19 @@ I found that hurdling in mice involves a rapid sensorimotor decision that appear
 
 # how to...
 
-## analyze a single session
+#### analyze a single session
 Analyzing a session requires running four neural networks (run tracking, run contact, whisker tracking, whisker contact), and several post-processing steps to get data ready for analysis. `analyzeSession(session)` does all of this. Note that:
 - you can re-analyze a session *without* re-running certain neural networks by setting any of the following optional arguments to false: `rerunRunNetwork, rerunFaceNetwork, rerunWiskContactNetwork, rerunPawContactNetwork`.
 - deepposekit can analyze a run OR whisker video using the `dpkAnalysis()` wrapper
 - `dpkanalysis()` can also run the implementation of deeplabcut within the deepposekit framework by specifying a deeplabcut model
 - the old version of the deeplabcut analysis (for run tracking only) can be run using the `dlcAnalysis(session) `wrapper
 
+#### finish your PhD
+tbd
+
 # what is in...
 
-## a session folder
+#### a session folder
 Immediately after recording each session will contain:
 
 file | description

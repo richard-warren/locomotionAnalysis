@@ -435,24 +435,27 @@ function analyzeSession(session, varargin)
         if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
         
         % setttings
-        confidenceThresh = .5;
-        smoothing = 5;  % (frames)
-        minPeakDistance = 10;  % (frames)
+        confidenceThresh = .25;
+        smoothing = 5;  % (frames) mean smoothing for x, y, and confidence
+        minPeakDistance = 10;  % (frames) licks must be at least this many frames apart in time
+        maxDistance = 100;  % (pixels) maximum distance of tongue to median tongue position
         
-        % remove low confidence frames
-        valid = locationsWisk.tongue_2 > confidenceThresh;
-        sig = locationsWisk.tongue_1;  % y position of tongue
+        % get x, y, and confidence
+        x = smooth(locationsWisk.tongue, smoothing);
+        y = smooth(locationsWisk.tongue_1, smoothing);
+        conf = smooth(locationsWisk.tongue_2, smoothing);
+        
+        % find distance to median tongue position
+        dist = sqrt(sum(([x y] - [median(x(conf>confidenceThresh)) median(y(conf>confidenceThresh))]).^2,2));  % distances of coordinates to median tongue position
+        
+        % remove low confidence and tracking outlier frames
+        valid = conf>confidenceThresh & dist<maxDistance;
+        sig = y;  % y position of tongue
         sig = medfilt1(sig, 3);
-        sig = smooth(sig, smoothing);
         sig(~valid) = nan;
-
-        % get rid of tracking outliers
-        lims = prctile(sig, [50 99]);
-        valid = sig<lims(2);
-        sig(~valid) = nan;
-
+        
         % get lick times
-        [~, lickInds] = findpeaks(sig, 'MinPeakDistance', minPeakDistance, 'MinPeakHeight', lims(1));
+        [~, lickInds] = findpeaks(sig, 'MinPeakDistance', minPeakDistance);
         lickTimes = data.frameTimeStampsWisk(lickInds);
         
         saveVars('lickTimes', lickTimes);

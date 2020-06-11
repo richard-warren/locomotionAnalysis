@@ -114,21 +114,21 @@ fprintf('created file: %s\n', fileName)
 
 %% add incorrect frames from tracked vid
 
-session = '200113_000';
+session = '181001_002';
 
 % run
-vid = 'run.mp4';  % run_originalDimensions;
-trackedFeatures = 'trackedFeaturesRaw.csv';
-trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
-skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
-invert = false;
+% vid = 'run.mp4';  % run_originalDimensions;
+% trackedFeatures = 'trackedFeaturesRaw.csv';
+% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_run.mat';
+% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv';  % skeletons follow the 'deepposekit' format
+% invert = false;
 
 % wisk
-% vid = 'runWisk.mp4';  % run_originalDimensions;
-% trackedFeatures = 'trackedFeaturesRaw_wisk.csv';
-% trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
-% skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
-% invert = true;
+vid = 'runWisk.mp4';  % run_originalDimensions;
+trackedFeatures = 'trackedFeaturesRaw_wisk.csv';
+trainingSet = 'D:\github\locomotionAnalysis\tracking\label\training_sets\trainingset_wisk.mat';
+skeleton = 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv';  % skeletons follow the 'deepposekit' format
+invert = true;
 
 addToTrainingSet(session, vid, trackedFeatures, trainingSet, 'skeleton', skeleton, 'invertFrame', invert, 'scoreThresh', .5);
 

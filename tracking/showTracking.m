@@ -9,8 +9,8 @@ s.showPawTouchConfidence = true;
 s.showStance = true;
 
 s.scoreThresh = .5;
-
-s.vidDelay = .001;
+s.zoom = [];  % (pixels, [x y]) this will optionally zoom to the top right corner of the video
+s.vidDelay = .02;
 s.circSize = 80;
 s.vidScaling = 1.5;
 s.colorMap = 'hsv';
@@ -37,6 +37,7 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 % load video
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
+frameNum = vid.Duration*vid.FrameRate;  % this may not be totally accurate
 
 % get locations data and convert to 3d matrix
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
@@ -71,6 +72,12 @@ colormap gray
 imPreview = image(frame, 'CDataMapping', 'scaled'); hold on;
 imAxis = gca;
 set(imAxis, 'visible', 'off', 'units', 'pixels', 'units', 'normalized', 'position', [0 0 1 1]);
+if ~isempty(s.zoom)  % zoom on face
+    set(gca, ...
+        'xlim', [size(frame,2)-s.zoom(1) size(frame,2)], ...
+        'ylim', [1 s.zoom(2)]);
+end
+    
 
 
 % draw circle at wheel location
@@ -104,6 +111,10 @@ if s.includeWiskCam
     
     clear locationsWiskTable
     scatterWisk = scatter(imAxis, zeros(1,length(wiskFeatures)), zeros(1,length(wiskFeatures)), 40, s.faceColor, 'filled');
+    
+    % make dot that will appear when lick is detected
+    tonguePos = nanmedian(locationsWisk(:,:,contains(wiskFeatures, 'tongue')),1);
+    scatterLick = scatter(tonguePos(1), tonguePos(2), 100, 'red', 'filled', 'Visible', 'on');  % dot that appears when a lick is deteceted
     
     % create whisker angle line
     wisk = plot([0 0], [0 0], 'color', s.faceColor, 'LineWidth', 2);
@@ -258,8 +269,8 @@ function updateFrame(frameStep)
     set(0, 'currentfigure', fig);
     
     frameInd = frameInd + frameStep;
-    if frameInd < 1; frameInd = vid.NumberOfFrames;
-    elseif frameInd > vid.NumberOfFrames; frameInd = 1; end
+    if frameInd < 1; frameInd = frameNum;
+    elseif frameInd > frameNum; frameInd = 1; end
     
     % get frame and sub-frames
     if s.includeWiskCam
@@ -270,7 +281,7 @@ function updateFrame(frameStep)
         frame = read(vid, frameInd);
     end
     
-	% add metadata
+    % add metadata
     trial = find(obsOnTimes>=frameTimeStamps(frameInd),1,'first')-1;
     if trial
         if isLightOn(trial); lightText = 'light on'; else; lightText = 'light off'; end
@@ -340,25 +351,19 @@ function updateFrame(frameStep)
     if s.includeWiskCam
         
         % face tracking
-        recentLick = any((lickTimes-frameTimeStampsWisk(frameIndWisk))>=0 & (lickTimes-frameTimeStampsWisk(frameIndWisk))<(5/fps));
-        if recentLick
-            c = repmat(s.faceColor, length(wiskFeatures), 1);
-            c(contains(wiskFeatures, 'tongue'),:) = [1 0 0];
-            circSz = repelem(40, length(wiskFeatures));
-            circSz(contains(wiskFeatures, 'tongue')) = 100;
-        else
-            c = s.faceColor;
-            circSz = 40;
-        end
-        set(scatterWisk, 'XData', locationsWisk(frameIndWisk,1,:), ...
-            'YData', locationsWisk(frameIndWisk,2,:), ...
-            'sizedata', circSz, 'cdata', c);
+        recentLick = any((lickTimes-frameTimeStampsWisk(frameIndWisk))>=0 & (lickTimes-frameTimeStampsWisk(frameIndWisk))<(7/fps));
+        
+        set(scatterWisk, 'XData', locationsWisk(frameIndWisk,1,:), ... 
+            'YData', locationsWisk(frameIndWisk,2,:), 'cdata', s.faceColor);
+        
+        % check it lick detected where tracking of tongue is below thresh
+        if recentLick; set(scatterLick, 'visible', 'on'); else; set(scatterLick, 'visible', 'off'); end
         
         % whisker angle
         x = cosd(whiskerAngle(frameIndWisk)) * wiskLength;
         y = -sind(whiskerAngle(frameIndWisk)) * wiskLength;
         
-        recentContact = any((frameIndWisk-wiskContactFrames)>=0 & (frameIndWisk-wiskContactFrames)<5);
+        recentContact = any((frameIndWisk-wiskContactFrames)>=0 & (frameIndWisk-wiskContactFrames)<7);
         if recentContact; c = 'red'; w=4; else; c = s.faceColor; w=2; end
         set(wisk, 'XData', [pad(1) pad(1)+x], 'YData', [pad(2) pad(2)+y], 'color', c, 'linewidth', w)
     end

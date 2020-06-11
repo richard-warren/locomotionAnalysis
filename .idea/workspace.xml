@@ -2,12 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="00078c66-bf3a-499f-99c1-f23f7ba2ce3f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/models/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/prepPredictors.m" beforeDir="false" afterPath="$PROJECT_DIR$/models/prepPredictors.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/prelimAnalysis/analyzeSession.m" beforeDir="false" afterPath="$PROJECT_DIR$/prelimAnalysis/analyzeSession.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/analyze_video.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/deepposekit/train_network.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/dpkAnalysis.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/dpkAnalysis.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/createTrainingData.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/createTrainingData.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracking/label/labelFrames.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/label/labelFrames.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/reanalyzeOldVids.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/reanalyzeOldVids.m" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracking/showTracking.m" beforeDir="false" afterPath="$PROJECT_DIR$/tracking/showTracking.m" afterDir="false" />
     </list>
@@ -34,8 +32,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
-              <caret line="15" column="15" selection-start-line="15" selection-start-column="15" selection-end-line="15" selection-end-column="15" />
+            <state relative-caret-position="288">
+              <caret line="12" column="36" selection-start-line="12" selection-start-column="36" selection-end-line="12" selection-end-column="36" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -113,7 +111,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="953" />
     <option name="y" value="540" />
     <option name="width" value="974" />
@@ -193,7 +191,7 @@
     <frame x="-8" y="-8" width="1936" height="1096" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.105374075" />
+      <window_info content_ui="combo" id="Project" order="0" weight="0.105374075" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -288,8 +286,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/tracking/deepposekit/analyze_video.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="15" column="15" selection-start-line="15" selection-start-column="15" selection-end-line="15" selection-end-column="15" />
+        <state relative-caret-position="288">
+          <caret line="12" column="36" selection-start-line="12" selection-start-column="36" selection-end-line="12" selection-end-column="36" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>

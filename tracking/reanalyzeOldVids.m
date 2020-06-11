@@ -18,7 +18,7 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
-%% find ephys folders
+%% find ephysSessions
 
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
 ephysSessions = ephysInfo.session(ephysInfo.include==1);
@@ -78,7 +78,7 @@ clear ephysInfo
 %     end
 % end
 
-%% reanalyze ephys sessions
+%% reanalyze everything for ephys sessions
 
 problemSessions = {};
 
@@ -108,14 +108,25 @@ disp('all done!')
 
 %% reanalyze single field in ephysSessions
 
-skipSessions = {'191009_003', '200118_001'};
+% settings
+skipSessions = {};
+vars = {'lickTimes'};
 
 sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
 for i = 1:length(sessions)
-    analyzeSession(sessions{i}, 'overwriteVars', {'ledInds', 'ledIndsWisk'}, 'verbose', true);
+    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true);
     fprintf('\n')
 end
+disp('all done!')
 
+%% show tracking with continuous signal
+
+session = ephysSessions{1};
+
+locationsWisk = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'));
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'frameTimeStampsWisk')
+
+showTracking(session, 'sig', locationsWisk.tongue_1, 'sigTimes', frameTimeStampsWisk)
 
 
 %% reanalyze single sessions
@@ -186,12 +197,13 @@ disp('data saved')
 % of the analysis on the uncropped video // alternatively, see if old DLC
 % can handle uncropped vids, and reanalyze like that...
 
-%%
+%% show sample whisker frame for each session
 
+for i = 1:length(ephysSessions)
+    vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runWisk.mp4'));
+    figure('name', ephysSessions{i}); imshow(read(vid,10000));
+end
 
-
-
-
-
+%% play video while zooming in on face
 
 
