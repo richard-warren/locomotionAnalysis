@@ -2,12 +2,16 @@
 % sessions // have separate memory for whether dlc and spike analyses are
 % done
 
+% new format: check if session analyzed // if not, check which network to
+% use and do run tracking with old or new analysis // each analysis should
+% have a wrapper!
+
 
 % settings
 checkFrequency = 60; % seconds
 sessionsDir = [getenv('OBSDATADIR') 'sessions\'];
 schedulerDir = [getenv('GITDIR') 'locomotionAnalysis\tracking\deepLabCut\dlcScheduler\'];
-dlcPath = [getenv('GITDIR') 'DeepLabCutBatch'];
+dlcPath = [getenv('GITDIR') 'DeepLabCut'];
 
 % initializations
 load([schedulerDir 'analyzedSessions.mat'], 'analyzedSessions');
@@ -54,7 +58,7 @@ while true
                 end
                 
                 fprintf('%s: starting DeepLabCut analysis at %i:%i...\n', newSessions{1}, currentTime(4), currentTime(5))
-                    tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
+                tic; [~,~] = system([dlcPath(1:2) ' && cd ' dlcPath ' && batchDLC.bat ' newSessions{1}]); % first move to correct drive, then execute script
                 fprintf('%s: DeepLabCut analysis finished in %.1f hours\n', newSessions{1}, toc/60/60)
                 dlcAnalysisSuccessful = true;
             else

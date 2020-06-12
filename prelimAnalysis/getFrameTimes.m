@@ -1,11 +1,13 @@
-function frameTimes = getFrameTimes(ttlTimes, camTimes, camCounts, session)
+function frameTimes = getFrameTimes(ttlTimes, camTimes, camCounts, session, alignmentFrame)
 
 % find the times of cameras frames with respect to spike clock. ttls
 % trigger frames acquisition and are recorded in spike. given the times of
 % these ttls, as well as the times of each frames wrt the cameras clock, as
 % well as the frame counts, find times of each frame wrt to camera. does
 % this by finding gaps in ttls, which serve as a reference point in both
-% time systems, and aligning to this reference point
+% time systems, and aligning to this reference point // alignmentFrame is
+% optional, and specifies [spikeTtl frameCount] pair that are known to be
+% the same // use this for broken sessions
 %
 % input    ttlTimes:      timestamps for times of camera exposure (vidTtl) recorded in Spike, which has temporal gaps in between trials
 %          camTimes:      timestamps from camera metadata (s)
@@ -24,30 +26,36 @@ camGaps = find(diff(camTimes)>ttlGap(1) & diff(camTimes)<ttlGap(2));
 
 % find the interval between ttlGaps that is the closest in duration for camera and ttls
 % this ensures we are aligning to the same ttl gap
-if length(ttlGaps)==1 && length(camGaps)==1  % if same number of ttl gaps, just use the first one
-    ttlGap = 1;
-    camGap = 1;
-else
-    ttlGapDurations = diff(ttlTimes(ttlGaps));
-    camGapDurations = diff(camTimes(camGaps));
-    
-    if length(ttlGaps)==length(camGaps)  % if same number of gaps, use the most similar gap (to avoid using a gap where a frame may be lost at the beginning or the end)
-        [~, minInd] = min(abs(ttlGapDurations-camGapDurations));
-        ttlGap = minInd;
-        camGap = minInd;
-    else  % otherwise try to find the best match (note that the following approach will fail for evenly spaced ttl gaps or if two gaps happen to be of similar duration) // would be smarter to loop across all entries, only keeping those with closely match durations
-        fprintf('%s: WARNING! different number of ttl gaps detected in camera and spike!\n', session);
-        [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
-        [~, minInd] = min(diffs);
-        ttlGap = inds(minInd);
-        camGap = minInd;
+if ~exist('alignmentFrame', 'var')
+    if length(ttlGaps)==1 && length(camGaps)==1  % if same number of ttl gaps, just use the first one
+        ttlGap = 1;
+        camGap = 1;
+    else
+        ttlGapDurations = diff(ttlTimes(ttlGaps));
+        camGapDurations = diff(camTimes(camGaps));
+
+        if length(ttlGaps)==length(camGaps)  % if same number of gaps, use the most similar gap (to avoid using a gap where a frame may be lost at the beginning or the end)
+            [~, minInd] = min(abs(ttlGapDurations-camGapDurations));
+            ttlGap = minInd;
+            camGap = minInd;
+        else  % otherwise try to find the best match (note that the following approach will fail for evenly spaced ttl gaps or if two gaps happen to be of similar duration) // would be smarter to loop across all entries, only keeping those with closely match durations
+            fprintf('%s: WARNING! %i gaps in camera and % gaps in spike!\n', session, length(camGapDurations), length(ttlGapDurations));
+            [inds, diffs] = knnsearch(ttlGapDurations, camGapDurations);
+            [~, minInd] = min(diffs);
+            ttlGap = inds(minInd);
+            camGap = minInd;
+        end
     end
+    
+    % using ttlGap as a reference, shift camCounts such that the
+    % camCount corresponding to ttlGap has same index as spike ttl
+    % corresponding to the ttlGap
+    camCountsShifted = camCounts - camCounts(camGaps(camGap)) + ttlGaps(ttlGap);
+
+else
+    camCountsShifted = camCounts - camCounts(alignmentFrame(2)) + alignmentFrame(1);
 end
 
-% using the first ttlGap as a reference, shift camCounts such that the
-% camCount corresponding to the first gap has same index as spike ttl
-% corresponding to the first gap
-camCountsShifted = camCounts - camCounts(camGaps(camGap)) + ttlGaps(ttlGap);
 
 % if camera was started before spike, account for missing ttls at beginning
 if any(camCountsShifted<1)
@@ -56,7 +64,7 @@ if any(camCountsShifted<1)
     fprintf('%s: WARNING! %i camera frame(s) detected before spike recording turned on!\n', session, length(beginningNans));
 end
 
-% if camera was stopped after spike, account for extra ttls at endeginning
+% if camera was stopped after spike, account for extra ttls at end
 if any(camCountsShifted>length(ttlTimes))
     endNans = nan(sum(camCountsShifted>length(ttlTimes)), 1);
     camCountsShifted = camCountsShifted(camCountsShifted<=length(ttlTimes));

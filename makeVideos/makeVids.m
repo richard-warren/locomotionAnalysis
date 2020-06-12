@@ -5,7 +5,7 @@
 sessions = {'200309_000'};
 
 for i = 1:length(sessions)
-    makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', sessions{i}), sessions{i});
+    tic; makeVidWisk(fullfile(getenv('OBSDATADIR'), 'editedVid', sessions{i}), sessions{i}, 'includeWiskCam', true); toc
 end
 
 %% make wide view setup example view (shows obs coming into view from far off on the right side of the screen)

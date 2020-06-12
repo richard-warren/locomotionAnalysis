@@ -532,7 +532,7 @@ plotDecisionHeatmaps(flat, 'outcome', 'isModPawLengthened', ...
     'avgMice', true, 'plotMice', false, 'binNum', 50, 'xLims', [-25 15], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_heatMaps'));
 
-%% test model accuracy under different conditions
+a%% test model accuracy under different conditions
 
 plotModelAccuracies(flat, predictorsSub, 'isBigStep', 'model', 'glm');
 

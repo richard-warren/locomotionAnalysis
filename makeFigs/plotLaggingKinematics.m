@@ -19,7 +19,7 @@ s.ctlStepColor = [.5 .5 .5];
 s.obsColor = [188 125 181] / 255;
 
 s.trialsToShow = 50;
-s.histoFillAlpha = .2;
+s.histoFillAlpha = .1;
 s.xLims = [-.15 0];
 
 s.histoOffset = .005;  % (m)
@@ -46,7 +46,7 @@ if s.lightOffOnly; flat = flat(~flat.isLightOn,:); end
 xGrid = linspace(s.xLims(1), s.xLims(2), 500);  % grid for histograms
 kinData = permute(cat(3, flat.laggingPenultKin{:}), [3,1,2]);
 
-figure('Color', 'white', 'Position', [2001.00 10 900.00 180*(length(s.levels)+1)], 'MenuBar', 'none');
+figure('Color', 'white', 'Position', [200 200 900.00 180*(length(s.levels)+1)], 'MenuBar', 'none');
 if ~isempty(s.condition)  % if no condition provided, create dummy variable
     [~, condition] = ismember(flat.(s.condition), s.levels);  % turn the 'condition' into numbers
 else
@@ -70,7 +70,7 @@ for i = 1:length(s.levels)
     subplot(length(s.levels)+1, 1, length(s.levels)+1); hold on
     pdfs(i,:) = ksdensity(landingPositions(bins), xGrid);
     fill([xGrid(1) xGrid xGrid(end)], [0 pdfs(i,:) 0], s.colors(i,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
-    plot(xGrid, pdfs(i,:), 'Color', s.colors(i,:), 'LineWidth', 2)
+    plot(xGrid, pdfs(i,:), 'Color', s.colors(i,:), 'LineWidth', 3)
 end
 set(gca, 'XLim', s.xLims, 'YColor', 'none', 'XTick', [])
 

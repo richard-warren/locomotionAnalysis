@@ -87,7 +87,6 @@ for i = 1:max(s.conditions)
     end
 end
 
-set(gca, 'XLim', s.xlim, 'Box', 'off')
 if ~isempty(s.xlabel); xlabel(s.xlabel); end
 if ~isempty(s.ylabel); ylabel(s.ylabel); end
 if ~isempty(s.ylim); set(gca, 'YLim', s.ylim); end
@@ -95,4 +94,4 @@ if ~isempty(s.conditionNames)
     for i = 1:length(s.conditionNames); lines(i) = plot([nan nan], 'color', s.colors(i,:), 'LineWidth', 2); end % create dummy lines
     legend(lines, s.conditionNames, 'Box', 'off', 'Location', 'best');
 end
-
+set(gca, 'XLim', s.xlim, 'Box', 'off')

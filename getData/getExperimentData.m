@@ -48,10 +48,10 @@ trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', '
              'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
-             'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
+             'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawDistanceToObsAbs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
              'modPawKin', 'modPawKinInterp', 'preModPawKin', 'preModPawKinInterp', 'laggingPenultKin', 'modPawDeltaLength', 'preModPawDeltaLength', ...
              'sensoryCondition', 'contactInd', 'contactIndInterp', 'trialDuration', 'touchFrames', 'modPawOnlySwing', ...
-             'isModPawLengthened', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
+             'isModPawLengthened', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel', 'modSwingContacts'};
 pawVars = {'isContra', 'isFore', 'isLeading', 'isPawSuccess', 'stepOverMaxHgt', 'preObsHgt', 'controlPreObsHgt', 'controlStepHgt', 'noObsStepHgt', ...
            'stepOverStartingDistance', 'stepOverEndingDistance', 'stepOverKinInterp', 'controlStepKinInterp', ...
            'isValidZ', 'preObsKin', 'xDistanceAtPeak', 'stepOverLength', 'preStepOverLength', 'prePreStepOverLength', 'controlStepLength', ...
@@ -386,6 +386,12 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var{i} = g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,1,end);
             end
             
+        case 'modPawDistanceToObsAbs'  % absolute value of distance of mod paw to obstacle at END of first mod step
+            var = num2cell(false(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                var{i} = abs(g.sesKinData(i).modifiedLocations{g.sesKinData(i).firstModPaw}(1,1,end));
+            end
+            
         case 'modPawPredictedDistanceToObs'  % predicted distance of mod paw to obstacle at END of first mod step (where would the paw have landed relative to the obstacle if there were no behavioral modifications?)
             var = num2cell(false(1,length(g.sesKinData)));
             for i = g.sesKinInds
@@ -528,6 +534,14 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 x = g.sesKinData(i).locations([cInd-g.velSmps+1, cInd], 3, g.sesKinData(i).firstModPaw);
                 var{i} = diff(x) / (g.velSmps*g.secondsPerFrame);
             end
+            
+        case 'modSwingContacts'  % number of obstacle contact frames during the first modified swing for the first modified paw
+            var = num2cell(nan(1,length(g.sesKinData)));
+            for i = g.sesKinInds
+                bins = g.sesKinData(i).modifiedStepIdentities(:, g.sesKinData(i).firstModPaw)==1;  % bins of first swing for first modified paw
+                var{i} = sum(g.sesData.touchesPerPaw(g.sesKinData(i).trialInds(bins), g.sesKinData(i).firstModPaw)>0);
+            end
+            
             
             
             

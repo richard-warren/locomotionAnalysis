@@ -87,7 +87,7 @@ for i = 1:max(conditions)
         end
         if s.scatterEnds
             scatter(conditionTrajectories(inds,1,end), conditionTrajectories(inds,2,end), ...
-                20, s.colors(i,:), 'filled', 'MarkerFaceAlpha', 1)
+                20, [s.colors(i,:)], 'filled', 'MarkerFaceAlpha', (1+s.trialAlpha)/2)
         end
     end
 end

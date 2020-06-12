@@ -20,11 +20,9 @@ s.showObsOn = false;  % whether to add text showing when obs turns on
 
 s.obsPosRange = [-.05 .1];  % (m) for each trial, show when obs is within this range of the mouse's nose
 s.playBackSpeed = .15;  % fraction of real time speed for playback
-s.trialLabels = {};  % cell array of trial labels - can be useful for distinguishing different trial types // if providing trialLabels, you also need to provide 'trials', a list of the trial numbers you would like to show
 
 s.trialNum = 10;  % number of trials (evenly spaced throughout session) to show
 s.trials = [];  % array of specific trials to show // if provided, s.trialNum is ignored
-
 
 
 % initializations
@@ -33,7 +31,7 @@ vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4')
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
 
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'obsPositionsFixed', 'obsTimes', 'obsPixPositions', 'wheelPositions', 'wheelTimes', 'isLightOn', ...
+    'obsPositionsFixed', 'obsTimes', 'wheelPositions', 'wheelTimes', 'isLightOn', ...
     'obsOnTimes', 'frameTimeStamps', 'frameTimeStampsWisk');
 
 if s.showPawTouches
@@ -126,21 +124,6 @@ for i = s.trials
                 frame = insertText(frame, [size(frame,2) size(frame,1)], text,...
                                    'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
             end
-            
-%             % add trial condition info
-%             if ~isempty(s.trialLabels)
-%                 if trialInds(i)==1
-%                     boxColor = 'yellow';
-%                     textColor = 'white';
-%                 else
-%                     boxColor = 'blue';
-%                     textColor = 'white';
-%                 end
-%                 frame = insertText(frame, [size(frame,2), 0], trialLabels{trialInds(i)},...
-%                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
-%                 frame = insertText(frame, [size(frame,2), size(frameTop,1)+size(frameBot,1)], trialLabels{trialInds(i)},...
-%                                    'BoxColor', boxColor, 'anchorpoint', 'RightTop', 'textcolor', textColor);
-%             end
             
             % show when obstacle turns on
             if s.showObsOn

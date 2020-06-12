@@ -38,11 +38,11 @@ thresh = mean(frames(:))*threshFactor;
 minProjection = uint8(min(frames, [], 3));
 
 
-% threshold image and keep only connected regions that interest the bottom row of image
+% threshold image and keep only connected regions that intersects the bottom row of image
 threshed = minProjection > thresh;
 threshed(end,:) = 0;  % this is a hack that allows the function to work with only the top view, or with top and bottom views concatenated
 % [~, botRow] = min(diff(sum(threshed,2)));  % !!! switch to this line if switched completely away from unconcatenated vids // this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
-botRow = find(diff(sum(threshed,2))<-60, 1, 'first');  % this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
+botRow = find(abs(diff(sum(threshed,2)))>60, 1, 'first');  % this finds the bottom row of the top view // the row after this has a sharp drop in brightness, because the wheel gets cut off abruptly
 threshed = threshed(1:botRow, :);  % restrict to top camera view
 regionInfo = bwlabel(threshed);
 botRowGroups = unique(regionInfo(end,:)); botRowGroups = botRowGroups(botRowGroups>0);

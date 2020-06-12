@@ -1,4 +1,4 @@
-function [frame, yWiskPos, xWiskPos, wiskScaling] = ...
+function [frame, yWiskPos, xWiskPos, wiskScaling, frameNumWisk] = ...
     getFrameWithWisk(vidRun, vidWisk, frameTimeStamps, frameTimeStampsWisk, frameNumRun, varargin)
 
 % returns a frame with the whisker camera overlaid on the run camera //
@@ -19,7 +19,7 @@ s.edgeFading = 50;  % (pixels) how much to fade out left and right side of frade
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
-frameNumWisk = knnsearch(frameTimeStampsWisk, frameTimeStamps(frameNumRun));
+[~, frameNumWisk] = min(abs(frameTimeStampsWisk - frameTimeStamps(frameNumRun)));
 frameWisk = rgb2gray(read(vidWisk, frameNumWisk));
 frameRun = rgb2gray(read(vidRun, frameNumRun));
 

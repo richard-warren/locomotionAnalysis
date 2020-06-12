@@ -3,13 +3,15 @@
 
 % global
 axisColor = [.15 .15 .15];  % use this for black
-obsColor = [188 125 181] / 255;
+% obsColor = [188 125 181] / 255;
+obsColor = [1 .7 0];
 obsAlpha = .15;
 waterColor = [48 135 227]*.75 / 255;
 ctlStepColor = [1 1 1] * .4;
-barProperties = {'scatterAlpha', .5, 'barAlpha', .4, 'labelSizePerFactor', .1, ...
-                 'lineThickness', 2, 'scatterColors', 'lines', 'connectDots', true, ...
-                 'lineAlpha', .05, 'showBars', true};
+barProperties = {'showBars', false, 'showErrorBars', false, 'lineThickness', 4, 'connectDots', true, ...
+                 'lineAlpha', .1, 'showScatter', true, 'scatterColors', 'lines', 'scatterSize', 40, ...
+                 'scatterAlpha', .8, 'scatterCondColor', true, 'constantEdgeColor', [], 'barWidth', .8};
+sessionPlotProperties = {'colors', 'lines', 'alpha', .3, 'scatSize', 0, 'meanColor', axisColor};
 
 
 % step type colors (leading, lagging, fore, hind)
@@ -21,23 +23,26 @@ stepColors = hsv2rgb([.65 stepSaturation 1;
 
 
 % sensory dependence colors
-% colorWisk = [51 204 255]/255;
-% colorVision = [255 221 21]/255;
-colorWisk = hsv2rgb([.05 1 1]);
+colorWisk = [188 125 181] / 255;
 colorVision = obsColor;
 colorNone = [.2 .2 .2];
-% both = mean([colorWisk;colorVision],1);
-both = hsv2rgb(mean([rgb2hsv(colorWisk); rgb2hsv(colorVision)],1));
-sensColors = [both; colorWisk; colorVision; colorNone];
+colorBoth = hsv2rgb(mean([rgb2hsv(colorWisk); rgb2hsv(colorVision)],1));
+sensColors = [colorBoth; colorWisk; colorVision; colorNone];
 
 
 % decision making
-m.deltaMin =.5;
+m.deltaMin = .005;  % (m) minimum change in step length for inclusion in model
 m.lightOffOnly = false;
 m.modPawOnlySwing = true;
-m.successOnly = true;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
+m.successOnly = false;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
+m.modSwingContactsMax = false;  % first swing of first modified paw cannot have more than this many frames of contact with the obstacle // overall success is LESS THAN 5 frames
+
 m.predictorsAll = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
-m.predictors = {'modPawX', 'obsHgt', 'velAtWiskContact', 'wiskContactPosition', 'modPawZ'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
+m.predictorsNamedAll = {{'wheel velocity'}, {'body angle'}, {'obstacle height'}, {'obstacle proximity';'(horizontal)'}, {'paw position';'(horizontal)'}, {'paw velocity'; '(horizontal)'}, {'paw position';'(vertical)'}, {'paw velocity'; '(vertical)'}};
+m.predictors = {'wiskContactPosition', 'modPawX', 'velAtWiskContact', 'modPawXVel', 'modPawZ', 'modPawZVel', 'obsHgt', 'angleAtWiskContact'};  % the values in this array are determined via forward selection in the scipt baselineDecision.m
+[~, inds] = ismember(m.predictors, m.predictorsAll);
+m.predictorsNamed = m.predictorsNamedAll(inds);
+
 m.heatmapNormalize = 'col';  % normalize row or colum to sum to 1
 decisionColors = flipud(colorme(2, 'offset', .2, 'showSamples', false)); % first entry is small step, second is big step
 preDecisionColor = hsv2rgb(mean(rgb2hsv(decisionColors),1));

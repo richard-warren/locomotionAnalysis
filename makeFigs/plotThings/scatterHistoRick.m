@@ -47,8 +47,10 @@ subplot(2,2,1); hold on;
 set(gca, 'Position', [s.border s.scatPlotSize+s.border s.scatPlotSize 1-s.scatPlotSize-s.border-.01])
 if groupNum>1
     for m = 1:groupNum
-        kd = ksdensity(x(s.groupId==m), xGrid);
-        plot(xGrid, kd, 'LineWidth', s.groupHistoLineWidth, 'Color', [s.colors(m,:) s.groupHistoAlpha]);
+        if any(~isnan(x(s.groupId==m)))
+            kd = ksdensity(x(s.groupId==m), xGrid);
+            plot(xGrid, kd, 'LineWidth', s.groupHistoLineWidth, 'Color', [s.colors(m,:) s.groupHistoAlpha]);
+        end
     end
 end
 kd = ksdensity(x, xGrid);
@@ -62,8 +64,10 @@ subplot(2,2,4); hold on;
 set(gca, 'Position', [s.scatPlotSize+s.border s.border 1-s.scatPlotSize-s.border-.01 s.scatPlotSize])
 if groupNum>1
     for m = 1:groupNum
-        kd = ksdensity(y(s.groupId==m), yGrid);
-        plot(kd, yGrid, 'LineWidth', s.groupHistoLineWidth, 'Color', [s.colors(m,:) s.groupHistoAlpha]);
+        if any(~isnan(y(s.groupId==m)))
+            kd = ksdensity(y(s.groupId==m), yGrid);
+            plot(kd, yGrid, 'LineWidth', s.groupHistoLineWidth, 'Color', [s.colors(m,:) s.groupHistoAlpha]);
+        end
     end
 end
 kd = ksdensity(y, yGrid);

@@ -17,6 +17,12 @@ import sys
 import scipy.io
 
 from tqdm import tqdm
+import ipdb
+
+# global settings
+OBS_CONFIDENCE = .5  # only analyze frames where obstacle tracking confidence is > OBS_CONFIDENCE
+PAW_CONFIDENCE = .8  # only analyze frames where obstacle tracking confidence is > PAW_CONFIDENCE
+# todo: would be better to run analysis AFTER post-processing paw tracking data
 
 if len(sys.argv)!=3:
     print("Usage: python expandanalyze.py baseDir session")
@@ -56,10 +62,20 @@ learn.load(modelName)
 clip = VideoFileClip(os.path.join(baseDir, session, 'run.mp4'))
 print("Duration of video (s): ",clip.duration,", FPS: ",clip.fps,", Dimensions: ",clip.size)
 
+# load feature names, feature tracking, and runAnalyzed.mat
+with open(os.path.join(baseDir, session, 'trackedFeaturesRaw.csv')) as f:
+    reader = csv.reader(f)
+    featureNames = next(reader)
 trackedFeatures = np.loadtxt(os.path.join(baseDir, session, 'trackedFeaturesRaw.csv'), delimiter=",",skiprows=1)
 mat = scipy.io.loadmat(os.path.join(baseDir, session, "runAnalyzed.mat"))
-
 print("Loaded features")
+
+# find inds for paw x coordinates and obstacle
+pawInds = []
+for p in ['paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top']:
+    pawInds.append(np.where([f==p for f in featureNames])[0][0])
+obsInds = np.where([f=='obs_top' for f in featureNames])[0]
+
 
 with open(os.path.join(baseDir, session, 'pawAnalyzed.csv'), 'w') as csvfile:
     size = [168, 396]
@@ -72,11 +88,12 @@ with open(os.path.join(baseDir, session, 'pawAnalyzed.csv'), 'w') as csvfile:
     print("Preparing Data")
     for framenum, pos in enumerate(tqdm(mat['obsPixPositions'][0])):
         features = trackedFeatures[framenum]
-        pawX = [features[1 + i * 3] for i in range(4) if features[3 + i * 3] > 0.9]
-        obsPos = list(map(int,[features[22],features[23]]))  # todo: should not assume the obstacle position is at 22, 23
-        obsConf = features[24]
+        # pawX = [features[1 + i * 3] for i in range(4) if features[3 + i * 3] > 0.9]
+        pawX = [features[i] for i in pawInds if features[i] > PAW_CONFIDENCE]
+        obsPos = list(map(int,[features[obsInds[0]],features[obsInds[1]]]))
+        obsConf = features[obsInds[2]]
         image = clip.get_frame(framenum * (1 / clip.fps))
-        if obsConf != 1:
+        if obsConf < OBS_CONFIDENCE:
             continue
         try:
             if min(abs(i - obsPos[0]) for i in pawX) > 30:
