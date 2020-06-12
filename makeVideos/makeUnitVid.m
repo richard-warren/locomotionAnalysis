@@ -42,7 +42,8 @@ if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end;
 
 % set up video readers / writer
 disp('initializing...')
-vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run_originalDimensions.mp4');
+% vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run_originalDimensions.mp4');
+vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4');
 if ~exist(vidName, 'file'); concatTopBotVids(session); end
 vid = VideoReader(vidName);
 
@@ -84,7 +85,8 @@ end
 % get neural data
 display('getting neural data...');
 ephysInfo = getSessionEphysInfo(session);
-[~, unit_ids, bestChannels] = getGoodSpkInds(session);
+% [~, unit_ids, bestChannels] = getGoodSpkInds(session);
+[~, unit_ids, bestChannels] = getGoodSpkInds_old(session);
 bestChannel = bestChannels(unit_id==unit_ids);
 getVoltage = @(data, channel, inds) data.Data.Data(channel,inds);
 data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.ephysFolder, [ephysInfo.fileNameBase '_CHs.dat']), ...

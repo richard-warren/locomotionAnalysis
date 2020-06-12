@@ -7,7 +7,7 @@ function plotQualityMetrics(session)
 spkWindow = [-.3 .75]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
 showFigures = 'on';
-% highPassFreq = 300;
+highPassFreq = 300;
 
 % SNR settings
 snrYLims = [0 20];
@@ -44,11 +44,10 @@ fprintf('%s: collecting data... ', session)
 ephysInfo = getSessionEphysInfo(session);
 for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
 spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
-load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
+load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'forQualityMetricsPlot',[mapFile '.mat']), ...
     'xcoords', 'ycoords', 'channelNum_OpenEphys')
 
 % only for visualizatoon purpose (the waveform plot)
-% xcoords(33:64) = 21;
 xcoords = xcoords*0.25;
 ycoords = ycoords*0.25;
 
@@ -65,9 +64,9 @@ data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolde
     'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
 
 % create folder for figures, deleting old one if it already exists
-folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics', session);
-if isfolder(folder); cmd_rmdir(folder); end % delete folder if already exists
-mkdir(folder);
+folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics');
+% if isfolder(folder); cmd_rmdir(folder); end % delete folder if already exists
+% mkdir(folder);
 
 
 cellColors = hsv(length(unit_ids))*.8;

@@ -7,43 +7,69 @@ function [spkInds, unit_ids, bestChannels] = getGoodSpkInds(session)
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
 ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 
+% check whether old session or not
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+isOldSession = ephysInfo.isOldSession(strcmp(session, ephysInfo.session));
+
 
 addpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 allSpkInds = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_times.npy'));
 clusters = readNPY(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'spike_clusters.npy'));
-clusterGroups = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_group.tsv'));
-clusterInfo = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_info.tsv'));
 
-
-
-% get good units
-unit_ids = [];
-for i = 1:size(clusterGroups.group, 1)
-    if strcmp(clusterGroups.group(i, 1:4), 'good')
-        unit_ids = [unit_ids; clusterGroups.cluster_id(i)];        
+if ~isOldSession
+    clusterGroups = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_group.tsv'));
+    clusterInfo = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_info.tsv'));
+    
+    % get good units
+    unit_ids = [];
+    for i = 1:size(clusterGroups.group, 1)
+        if strcmp(clusterGroups.group(i, 1:4), 'good')
+            unit_ids = [unit_ids; clusterGroups.cluster_id(i)];
+        end
     end
+    
+else
+    clusterGroups = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'cluster_groups.csv'));
+    unit_ids = clusterGroups.cluster_id(strcmp(clusterGroups.group, 'good'));
 end
+    
 
 % get best channels for each good units
 ephysInfo = getSessionEphysInfo(session);
 for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
 load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
     'xcoords', 'ycoords', 'connected', 'channelNum_OpenEphys')
-channelNum_OpenEphys = channelNum_OpenEphys - 1;
+
 
 
 bestChannels = nan(length(unit_ids),1);
-for i = 1:length(unit_ids)
-    ind = find(clusterInfo.id == unit_ids(i));
-    bestChannels(i) = clusterInfo.ch(ind)+1;   
+if ~isOldSession
+    for i = 1:length(unit_ids)
+        ind = find(clusterInfo.id == unit_ids(i));
+        bestChannels(i) = clusterInfo.ch(ind)+1;
+    end    
+else
+    for i = 1:length(unit_ids)
+        ind = find(clusterInfo.id == unit_ids(i));
+        bestChannels(i) = clusterInfo.channel(ind)+1; % for older sessions
+    end
+    
 end
+
 
 % get spike times for individual units
 spkInds = cell(1,length(unit_ids));
 for i = 1:length(unit_ids)
     spkInds{i} = allSpkInds(clusters==unit_ids(i));
 end
+
+end
+
+
+
 
 % % get best channels
 % strcmp(clusterGroups.group(i, :), 'good ')
@@ -64,10 +90,6 @@ end
 %     [~, ind] = max(peak2peak(cluster_template,1));
 %     bestChannels(i) = channel_map(ind);
 % end
-
-
-
-
 
 
 

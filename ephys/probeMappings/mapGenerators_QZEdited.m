@@ -54,11 +54,12 @@ fs = 30000; % sampling frequency
 % probe BDFD // original mapping
 save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+% Z:\obstacleData\ephys\channelMaps\kilosort\forQualityMetricsPlot
 
-% probe BDFD2 // after right most shank broken
-connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
-save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'channelNum_OpenEphys', 'fs')
+% % probe BDFD2 // after right most shank broken
+% connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
+% save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
+%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'channelNum_OpenEphys', 'fs')
 
 
 % visualize final mapping results
@@ -77,6 +78,9 @@ daspect([1 1 1])
 
 
 %% NeuronexusA1x32Poly3, intan
+
+channelNum_OpenEphys = [1 17 8 24 16 2 29 32 7 26 3 15 21 19 11 23 14 12 28 30 6 18 9 13 22 25 5 27 10 4 31 20];
+
 
 neuro = [23 25 27 29 31 19 17 21 11 15 13 1 3 5 7 9;
          24 26 28 30 32 20 18 22 12 16 14 2 4 6 8 10];
@@ -122,14 +126,14 @@ ycoords   = siteLocationsRemapped(:,2);
 kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
-% probe C6CE
-save('Z:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+% % probe C6CE
+% save('Z:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
+%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 % probe D55F // nine sites defective?
 connected([18 28 14 9 10 2 7 15 11]) = false;
 save('Z:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+    'chanMap', 'channelNum_OpenEphys', 'connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 %% NeuroCambridge ASSY-H2 (32 channel per shank*2)
 
@@ -143,10 +147,10 @@ channelNum_OpenEphys_shank2 = [63 61 60 58 56 54 52 50 47 51 53 55 57 59 62 64 3
 
 y = [775:-25:0]'; % y coordinates for both shanks.
 x_shank1 = repmat(1, 32, 1); % x coordinates for shankA.
-x_shank2 = repmat(1000, 32, 1); % x coordinates for shankB.
+x_shank2 = repmat(100, 32, 1); % x coordinates for shankB.
 x = [x_shank1 x_shank2]; % x coordinates for both shanks.
 sitaLocation_shank1 = [x_shank1 y];
-siteLocation_shank2 = [x_shank2 y-800];
+siteLocation_shank2 = [x_shank2 y];
 siteLocation = [sitaLocation_shank1; siteLocation_shank2]; % xy coordinates for both shanks.
 
 % plot the probe channel map
@@ -178,7 +182,7 @@ kcoords   = [kccords_shank1; kccords_shank2]; % grouping of channels (i.e. tetro
 fs = 30000; % sampling frequency
 
 % probe ASSY77
-save('Z:\obstacleData\ephys\channelMaps\kilosort\ASSY77.mat', ...
+save('Z:\obstacleData\ephys\channelMaps\kilosort\forQualityMetricsPlot\ASSY77.mat', ...
     'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 

@@ -105,13 +105,13 @@ ycoords   = siteLocationsRemapped(:,2);
 kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
-% probe C6CE
-save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+% % probe C6CE
+% save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
+%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 % probe D55F // nine sites defective?
 connected([18 28 14 9 10 2 7 15 11]) = false;
-save('Y:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
+save('Z:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 

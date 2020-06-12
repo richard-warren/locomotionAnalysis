@@ -23,6 +23,18 @@ files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
 ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
 
 
+% figure out which sync signal was used
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+s.event = ephysInfo.syncSignal{strcmp(session, ephysInfo.session)};
+if strcmp(s.event, 'reward')
+    s.eventTimeName = 'rewardTimes';
+elseif strcmp(s.event, 'obsOn')
+    s.eventTimeName = 'obsOnTimes';
+else
+    fprintf('WARNING: CANNOT figure out sync signal for openEphys and spike');
+end
+    
+
 % get mapping from open ephys to spike times
 [channel, eventTimes, info] = load_open_ephys_data_faster(...
     fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
@@ -34,7 +46,8 @@ eventSpikeTimes = cell2mat(struct2cell(eventSpikeTimes));
 
 if length(eventEphysTimes)~=length(eventSpikeTimes)
     fprintf('WARNING: %i events in spike and %i events in openEphys...', length(eventSpikeTimes), length(eventEphysTimes))
-    
+
+
     if length(eventEphysTimes) > length(eventSpikeTimes)
         longString = eventEphysTimes;
         shortString = eventSpikeTimes;

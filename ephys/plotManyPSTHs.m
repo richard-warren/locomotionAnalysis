@@ -42,7 +42,7 @@ for cellNum = 1:length(unit_ids)
     
     % reward delivery
     plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
-    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-1 1]});
+    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-0.5 1.5]});
     xlabel('reward delivery')
     
     % reward delivery -> reward delivery
@@ -186,7 +186,7 @@ for cellNum = 1:length(unit_ids)
             pawTouchInd = find(pawTouchBins, 1, 'first');
             if sum(pawTouchBins)>=minTouchInds
                 times(end+1) = frameTimeStamps(pawTouchInd); 
-                touchTrials = [touchTrials, i]
+                touchTrials = [touchTrials, i];
             end
         end
         

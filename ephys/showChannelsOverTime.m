@@ -30,7 +30,7 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile
 sortedInds = [];
 for i = 1:64
     temp = find(channelNum_OpenEphys == i); 
-    sortedInds = [sortedInds; 65 - temp];
+    sortedInds = [sortedInds; length(channelNum_OpenEphys)+1 - temp];
 end
     
 

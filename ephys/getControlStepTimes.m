@@ -1,4 +1,4 @@
-function times = getModifiedStepTimes(session, paw, opts)
+function times = getControlStepTimes(session, paw)
 
 % load runAnalyzed.mat
 sessionFolder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
@@ -19,9 +19,9 @@ end
 times = nan(length(kinData), 2);
 
 for i = find([kinData.isTrialAnalyzed])
-    stepOverBins = kinData(i).modifiedStepIdentities(:,paw) == max(kinData(i).modifiedStepIdentities(:,paw));
-    times(i, 1) = frameTimeStamps(kinData(i).trialInds([find(stepOverBins,1,'first')]));
-    times(i, 2) = frameTimeStamps(kinData(i).trialInds([find(stepOverBins,1,'last')]));
+    controlStepBins = kinData(i).controlStepIdentities(:,paw) == max(kinData(i).controlStepIdentities(:,paw));
+    times(i, 1) = frameTimeStamps(kinData(i).trialInds([find(controlStepBins,1,'first')]));
+    times(i, 2) = frameTimeStamps(kinData(i).trialInds([find(controlStepBins,1,'last')]));
     
 end
 

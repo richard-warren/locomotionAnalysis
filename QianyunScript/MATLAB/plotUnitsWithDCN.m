@@ -6,6 +6,8 @@ includeInt = true;
 downsampleRate = 0.3;
 thickness = 50;
 
+disp('importing...');
+
 if includeInt
     RICoords = importTiffStack(fullfile(folder, 'InterpositusRight.tif'), downsampleRate, thickness);
     LICoords = importTiffStack(fullfile(folder, 'InterpositusLeft.tif'), downsampleRate, thickness);
@@ -26,7 +28,7 @@ disp('All Done!');
 mouseID = 'cer12';
 GC_columnInd = 6;
 side_columnInd = 3;
-stepModulated_columnInd = 7;
+% stepModulated_columnInd = 7;
 
 fileName = fullfile(getenv('OBSDATADIR'), 'ephys', 'ephysHistoData', 'ephysHistoData.mat');
 temp = load(fileName);
@@ -36,17 +38,17 @@ clear temp
 inds = find(strcmp(mouseID, ephysHistoData(:, 2)));
 goodChannelRight = [];
 goodChannelLeft = [];
-isStepModulatedLeft = [];
-isStepModulatedRight = [];
+% isStepModulatedLeft = [];
+% isStepModulatedRight = [];
 
 for i = 1:length(inds)
     if ~isempty(ephysHistoData{inds(i), GC_columnInd})
         if strcmp('right', ephysHistoData{inds(i), side_columnInd}) 
             goodChannelRight = cat(1, goodChannelRight, ephysHistoData{inds(i), GC_columnInd});
-            isStepModulatedRight = cat(1, isStepModulatedRight, ephysHistoData{inds(i), stepModulated_columnInd});
+            % isStepModulatedRight = cat(1, isStepModulatedRight, ephysHistoData{inds(i), stepModulated_columnInd});
         else
             goodChannelLeft = cat(1, goodChannelLeft, ephysHistoData{inds(i), GC_columnInd});
-            isStepModulatedLeft = cat(1, isStepModulatedLeft, ephysHistoData{inds(i), stepModulated_columnInd});
+            % isStepModulatedLeft = cat(1, isStepModulatedLeft, ephysHistoData{inds(i), stepModulated_columnInd});
         end            
     end
 end
@@ -76,9 +78,9 @@ yrange = [200, max(LICoords(:, 2))+300]; % just for visualizing purposes
 
 % plot DCN and good units
 if includeInt
-    plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
+    plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.01);
     hold on
-    plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
+    plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.01);
 end
 
 if includeDentate
@@ -88,22 +90,25 @@ if includeDentate
 end
 
 points_left = goodChannelLeft;
-points_left(:, 2) = 400;
+points_left(:, 2) = 200;
 points_right = goodChannelRight;
-points_right(:, 2) = 400;
+points_right(:, 2) = 200;
 
 plot3(points_left(:, 1), points_left(:, 2), points_left(:, 3), '.', 'Markersize', markerSize, 'Color', [0.4 0.69 0.90]);
-plot3(points_right(:, 1), points_right, points_right(:, 3), '.', 'Markersize', markerSize, 'Color', [0.46 0.67 0.18]);
+plot3(points_right(:, 1), points_right(:, 2), points_right(:, 3), '.', 'Markersize', markerSize, 'Color', [0.46 0.67 0.18]);
 
 % adding numbers & color code units to indicate which is within and which is out of DCN
 for i = 1:size(goodChannelLeft, 1)
-    text(points_left(i, 1)+80, points_left(i, 2), points_left(i, 3), num2str(i), 'Color',  [0.46 0.67 0.18],...
-        'FontWeight', 'bold', 'FontSize', frontSize);
+    
     
     if ifInDCN(goodChannelLeft(i, :), LICoords)
-        plot3(points_left(i, 1), points_left(i, 2), points_left(i, 3), '.', 'Markersize', 20, 'Color', [1 0.4 0.4]);
+        plot3(points_left(i, 1), 200, points_left(i, 3), '.', 'Markersize', 20, 'Color', [1 0.4 0.4]);
+        text(points_left(i, 1)+80, 200, points_left(i, 3), num2str(i), 'Color',  [0.46 0.67 0.18],...
+        'FontWeight', 'bold', 'FontSize', frontSize);
     else
-        plot3(points_left(i, 1), points_left(i, 2), points_left(i, 3), '.', 'Markersize', 20, 'Color', [0.65 0.65 0.65]);
+        plot3(points_left(i, 1), 200, points_left(i, 3), '.', 'Markersize', 20, 'Color', [0.65 0.65 0.65]);
+        text(points_left(i, 1)+80, 200, points_left(i, 3), num2str(i), 'Color',  [0.46 0.67 0.18],...
+        'FontWeight', 'bold', 'FontSize', frontSize);
     end
     
 %     if isStepModulatedLeft(i)
@@ -115,13 +120,16 @@ for i = 1:size(goodChannelLeft, 1)
 end
 
 for i = 1:size(goodChannelRight, 1)
-    text(points_right(i, 1)+80, points_right(i, 2), points_right(i, 3), num2str(i), 'Color',  [0.4 0.69 0.90],...
-        'FontWeight', 'bold',  'FontSize', frontSize);
+    
     
     if ifInDCN(goodChannelRight(i, :), RICoords)
         plot3(points_right(i, 1), points_right(i, 2), points_right(i, 3), '.', 'Markersize', 20, 'Color', [1 0.4 0.4]);
+        text(points_right(i, 1)+80, points_right(i, 2), points_right(i, 3), num2str(i), 'Color', [0.4 0.69 0.90],...
+        'FontWeight', 'bold',  'FontSize', frontSize);
     else
         plot3(points_right(i, 1), points_right(i, 2), points_right(i, 3), '.', 'Markersize', 20, 'Color', [0.65 0.65 0.65]);
+        text(points_right(i, 1)+80, points_right(i, 2), points_right(i, 3), num2str(i), 'Color', [0.4 0.69 0.90],...
+        'FontWeight', 'bold',  'FontSize', frontSize);
     end
     
 %     if isStepModulatedRight(i)
@@ -187,19 +195,19 @@ h2 = subplot(2, 2, 2);
 set(h2, 'position', [0.54, 0.51, 0.4, 0.5])
 
 
-plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
+plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.01);
 hold on
-plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
+plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.01);
 if includeDentate
-    plotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange, 0.1);
-    plotRegions3D(RDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange, 0.1);
+    plotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange, 0.05);
+    plotRegions3D(RDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange, 0.05);
 end
 
 
 points_left = goodChannelLeft;
-points_left(:, 3) = 1500;
+points_left(:, 3) = 2000;
 points_right = goodChannelRight;
-points_right(:, 3) = 1500;
+points_right(:, 3) = 2000;
 
 plot3(points_left(:, 1), points_left(:, 2), points_left(:, 3), '.', 'Markersize', markerSize, 'Color', [0.4 0.69 0.90]);
 plot3(points_right(:, 1), points_right(:, 2), points_right(:, 3), '.', 'Markersize', markerSize, 'Color', [0.46 0.67 0.18]);
