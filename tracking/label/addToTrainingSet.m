@@ -14,7 +14,7 @@ s.scoreThresh = .5;  % don't show locations when confidence is below scoreThresh
 s.invertFrame = false;
 s.textRotation = 45;
 s.deltaThresh = 50;  % (pixels) // when looking for frames where paws in top are bottom views are misaligned, only include frames where the x difference is > deltaThresh
-
+s.zoom = [];  % (pixels, [x y]) this will optionally zoom to the top right corner of the video
 
 
 % initializations
@@ -67,6 +67,11 @@ imPreview = image(frame, 'CDataMapping', 'scaled'); hold on;
 imAxis = gca;
 set(imAxis, 'visible', 'off', 'units', 'pixels',...
     'position', [0 0 vid.Width*s.vidScaling vid.Height*s.vidScaling]);
+if ~isempty(s.zoom)  % zoom on face
+    set(gca, ...
+        'xlim', [size(frame,2)-s.zoom(1) size(frame,2)], ...
+        'ylim', [1 s.zoom(2)]);
+end
 
 
 % set up scatter points for tracked features

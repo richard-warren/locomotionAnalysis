@@ -1,6 +1,11 @@
 # todo
 - [ ] fine tune tracking
-  - [ ] add 10 frames per session for old sessions // retrain // reanalyze :(
+  - [X] add to whisker training set and retrain
+  - [X] add to run training set and retrain (2 lick, 8 run errors per session)
+  - [X] re-analyze  and check (180917_002: 9330 15290 37888) and (200130_000)
+  - [X] make alignment frames automatic for problem sessions
+  - [ ] some way of storing info about tracking analysis, and make confidence threshold dependent on this
+  - [ ] re-analyze all vids
   - [ ] lick times [should i use main video instead to increase accuracy on old sessions with big lick spout?]
   - [ ] whisker contact (180922_001: first trial)
   - [ ] whisker angle
@@ -41,6 +46,7 @@
   - rewards
 
 # questions
+- how to handle temporal discontinuities in old sessions?
 - some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
 - how to construct distance to obstacle and distance to reward ramping signals? // want something that want signal that goes from SAME small number to 0 at whisker contact, and then fall down again // perhaps should look at all ramping cells to figure out best shape for this predictor
 - how to handle moments when predictors are not known, e.g. occlusion
@@ -52,4 +58,7 @@
 - [ ] add isBlinking based on eye tracking confidence to analyzeSession?
 - [ ] housekeeping
   - [ ] figure out how to deal with different scoreThresh for new sessions // which analyses will potentially be affected by this, eg paw contacts, fixTracking...
+  - [ ] make sure getKinematicData works with new analysis... will we be using this in the new project at all?
   - [ ] get rid of redundant video files
+- [ ] documentation for creating training data
+- [ ] add lick amplitude?

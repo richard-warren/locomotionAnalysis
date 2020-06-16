@@ -53,6 +53,7 @@ if ~exist('alignmentFrame', 'var')
     camCountsShifted = camCounts - camCounts(camGaps(camGap)) + ttlGaps(ttlGap);
 
 else
+    fprintf('%s: using alignmentFrames.csv to align timestamps\n', session)
     camCountsShifted = camCounts - camCounts(alignmentFrame(2)) + alignmentFrame(1);
 end
 

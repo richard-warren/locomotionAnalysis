@@ -401,8 +401,14 @@ function analyzeSession(session, varargin)
         camMetadata = dlmread(fullfile(sessionDir, 'run.csv')); % columns: bonsai timestamps, point grey counter, point grey timestamps (uninterpretted)
         frameCounts = camMetadata(:,2);
         timeStampsFlir = timeStampDecoderFLIR(camMetadata(:,3));
-        frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
-%         frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session, [7435, 6925]);  % !!! temp
+        
+        if ~exist(fullfile(sessionDir, 'alignmentFrames.csv'), 'file')
+            frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session);
+        else
+            alignmentFrames = readtable(fullfile(sessionDir, 'alignmentFrames.csv'));
+            frameTimeStamps = getFrameTimes(exposure.times, timeStampsFlir, frameCounts, session, ...
+                [alignmentFrames.ttlNumberRun, alignmentFrames.frameNumberRun]);
+        end
 
         saveVars('frameTimeStamps', frameTimeStamps)
     end
@@ -419,8 +425,14 @@ function analyzeSession(session, varargin)
         camMetadataWisk = dlmread(fullfile(sessionDir, 'wisk.csv')); % columns: point grey counter, point grey timestamps (uninterpretted)
         frameCountsWisk = camMetadataWisk(:,1);
         timeStampsFlirWisk = timeStampDecoderFLIR(camMetadataWisk(:,2));
-        frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
-%         frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session, [7435, 6925]);
+        
+        if ~exist(fullfile(sessionDir, 'alignmentFrames.csv'), 'file')
+            frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session);
+        else
+            alignmentFrames = readtable(fullfile(sessionDir, 'alignmentFrames.csv'));
+            frameTimeStampsWisk = getFrameTimes(exposure.times, timeStampsFlirWisk, frameCountsWisk, session, ...
+                [alignmentFrames.ttlNumberWisk, alignmentFrames.frameNumberWisk]);
+        end
 
         saveVars('frameTimeStampsWisk', frameTimeStampsWisk)
     end

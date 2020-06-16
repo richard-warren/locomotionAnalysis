@@ -81,6 +81,7 @@ clear ephysInfo
 %% reanalyze everything for ephys sessions
 
 problemSessions = {};
+% ephysSessions = {'180917_002', '200130_000'};  % temp
 
 for i = 1:length(ephysSessions)
     fprintf('\n___________%i/%i___________\n', i, length(ephysSessions))
@@ -141,7 +142,7 @@ analyzeSession('191008_003', ...
 
 %% recover broken session
 
-session = '191009_003'; % '200118_001', '191009_003'
+session = '200118_001'; % '200118_001', '191009_003'
 
 % figure out if any frames lost at the beginning of session
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'ledInds', 'ledIndsWisk', 'rewardTimes')
@@ -197,13 +198,14 @@ disp('data saved')
 % of the analysis on the uncropped video // alternatively, see if old DLC
 % can handle uncropped vids, and reanalyze like that...
 
-%% show sample whisker frame for each session
+%% count reward number per session
 
+r = nan(1, length(ephysSessions));
 for i = 1:length(ephysSessions)
-    vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runWisk.mp4'));
-    figure('name', ephysSessions{i}); imshow(read(vid,10000));
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runAnalyzed.mat'), 'rewardTimes')
+    r(i) = length(rewardTimes);
 end
-
-%% play video while zooming in on face
-
-
+    
+    
+    
+    

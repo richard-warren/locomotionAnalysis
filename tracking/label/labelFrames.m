@@ -35,7 +35,7 @@ selectedPoint = nan;
 fig = figure('name', sprintf('%s, frame %i', trainingData(ind).session, trainingData(ind).frameNum), ...
     'menubar', 'none', 'color', 'white', 'keypressfcn', @keypress, 'position', [200 0 wid*s.vidScaling, hgt*s.vidScaling]);
 colormap gray
-im = image(trainingData(ind).frame, 'CDataMapping', 'scaled'); hold on
+im = image(zeros(hgt,wid), 'CDataMapping', 'scaled'); hold on
 set(gca, 'position', [0 0 1 1], 'visible', 'off')
 selectedCirc = scatter(0, 0, 200, [.5 .5 1], 'linewidth', 3, 'visible', 'off'); hold on
 
@@ -136,7 +136,7 @@ function keypress(~,~)
                 if isempty(newStructInd); newStructInd = find(~[trainingData.includeFrame], 1, 'first'); end % if couldnt find any, search for nonlabelled part starting from beginning
                 if ~isempty(newStructInd); ind = newStructInd; end % otherwise, keep current frame
                 updateFrame(0);
-%                 for j = 1:length(texts); set(texts{j}, 'Color', 'none'); end  % turn off labels
+                for j = 1:length(texts); set(texts{j}, 'Color', 'none'); end  % turn off labels  % uncomment to hide labels when moving to new not included frame
             
             % n: move to ind
             case 110
@@ -168,13 +168,14 @@ function updateFrame(frameStep)
     if ind>length(trainingData); ind=1; end
     
     % update frame
-    frame = trainingData(ind).frame;
+    frame = ones(hgt, wid)*255*s.invertFrame;
+    temp = trainingData(ind).frame;
+    frame(1:size(temp,1), 1:size(temp,2)) = temp;
     if s.invertFrame; frame = 255-frame; end
     if s.maxFiltering>1; frame = ordfilt2(frame, s.maxFiltering^2, true(s.maxFiltering)); end
     
     
     set(im, 'CData', frame);
-    set(gca, 'position', [0 0 1 1]);
     if trainingData(ind).includeFrame; includedStr = '(included)'; else; includedStr = ''; end
     set(fig, 'name', ...
         sprintf('%s, frame %i %s (n = %i/%i), %i unlabelled', ...
