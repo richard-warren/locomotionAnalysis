@@ -4,20 +4,19 @@
   - [X] add to run training set and retrain (2 lick, 8 run errors per session)
   - [X] re-analyze  and check (180917_002: 9330 15290 37888) and (200130_000)
   - [X] make alignment frames automatic for problem sessions
-  - [ ] some way of storing info about tracking analysis, and make confidence threshold dependent on this
-  - [ ] re-analyze all vids
+  - [X] re-analyze all vids
+  - [X] whisker contact (180922_001: first trial)
   - [ ] lick times [should i use main video instead to increase accuracy on old sessions with big lick spout?]
-  - [ ] whisker contact (180922_001: first trial)
   - [ ] whisker angle
   - [ ] body angle
-  - [ ] fix paw contact bug (frame 10612)
+  - [ ] fix paw contact bug (999999_999: 10612)
   - [ ] check grooming on old cropped sessions AND new sessions
   - [ ] paw tracking (180917_002: 9330 15290 37888) [should i retrain including old sessions?]
-- [ ] ephys data changes
 - [ ] prepare predictors for single session
 - [ ] figure out how to make aggregate plots for all predictors
 - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
 - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
+- [ ] make isSated variable, or some predictor that encodes how sated they are?
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
 

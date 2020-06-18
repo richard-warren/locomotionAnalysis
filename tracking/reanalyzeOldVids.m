@@ -111,12 +111,12 @@ disp('all done!')
 
 % settings
 skipSessions = {};
-vars = {'lickTimes'};
+vars = {'wiskContactTimes'};
 
 sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
 for i = 1:length(sessions)
-    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true);
     fprintf('\n')
+    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true);
 end
 disp('all done!')
 

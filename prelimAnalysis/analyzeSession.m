@@ -797,6 +797,11 @@ function analyzeSession(session, varargin)
         contactTimes = nan(1,length(data.obsOnTimes));
         contactPositions = nan(1,length(data.obsOnTimes));
         
+        % set to nan -1 contact frames
+        notFoundBins = wiskContactData.framenum==-1;
+        if sum(notFoundBins)>1; disp('more than one non-contact frame!'); end
+        wiskContactData(notFoundBins,:) = num2cell(nan(sum(notFoundBins),2));
+        
         for i = 1:length(data.obsOnTimes)
             if wiskContactData.framenum(i)>0
                 time = data.frameTimeStampsWisk(wiskContactData.framenum(i));
