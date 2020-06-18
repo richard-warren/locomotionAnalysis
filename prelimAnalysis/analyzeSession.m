@@ -21,6 +21,8 @@ function analyzeSession(session, varargin)
     s.rerunWiskNetwork = false;
     s.rerunWiskContactNetwork = false;
     s.rerunPawContactNetwork = false;
+    
+    s.showLickFig = false;  % whether to show figure for lickTimes analysis
 
     % rig characteristics
     s.whEncoderSteps = 2880; % 720cpr * 4t
@@ -447,18 +449,19 @@ function analyzeSession(session, varargin)
         if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
         
         % setttings
-        confidenceThresh = .25;
+        confidenceThresh = .5;
         smoothing = 5;  % (frames) mean smoothing for x, y, and confidence
-        minPeakDistance = 10;  % (frames) licks must be at least this many frames apart in time
-        maxDistance = 100;  % (pixels) maximum distance of tongue to median tongue position
+        minTimeDiff = 20;  % (frames) licks must be at least this many frames apart in time
+        maxDistance = 40;  % (pixels) maximum vertical (y) distance of tongue to median tongue position
+        minDistance = 5;  % (pixels) tongue must be minDistance pixels away (vertically) from median tongue position for lick to count
         
         % get x, y, and confidence
-        x = smooth(locationsWisk.tongue, smoothing);
         y = smooth(locationsWisk.tongue_1, smoothing);
         conf = smooth(locationsWisk.tongue_2, smoothing);
         
         % find distance to median tongue position
-        dist = sqrt(sum(([x y] - [median(x(conf>confidenceThresh)) median(y(conf>confidenceThresh))]).^2,2));  % distances of coordinates to median tongue position
+        tonguePos = median(y(conf>confidenceThresh));
+        dist = y-tonguePos;  % vertical distance to median tongue position
         
         % remove low confidence and tracking outlier frames
         valid = conf>confidenceThresh & dist<maxDistance;
@@ -466,9 +469,30 @@ function analyzeSession(session, varargin)
         sig = medfilt1(sig, 3);
         sig(~valid) = nan;
         
+        sig = sig-tonguePos;  % express relative to median tongue position
+        
         % get lick times
-        [~, lickInds] = findpeaks(sig, 'MinPeakDistance', minPeakDistance);
+        [~, lickInds] = findpeaks(sig, 'MinPeakDistance', minTimeDiff, 'MinPeakHeight', minDistance);
         lickTimes = data.frameTimeStampsWisk(lickInds);
+        
+        if s.showLickFig
+            figure('name', sprintf('%s: lickTimes', session), 'color', 'white', 'position', [108.00 53.00 1664.00 921.00]);
+            rows = 6;
+            cols = 3;
+            xLims = [-1 4];  % (seconds) time pre and post reward to plot
+            yLims = [-20 maxDistance]; % (pixels) relative to median tongue position
+            
+            for i = 1:(rows*cols)
+                subplot(rows, cols, i); hold on
+                plot(data.frameTimeStampsWisk - data.rewardTimes(i), sig);
+                scatter(lickTimes - data.rewardTimes(i), sig(lickInds), 20, 'filled');
+                plot([0 0], get(gca, 'ylim'))
+                set(gca, 'xlim', xLims, 'ylim', yLims);
+            end
+            pause(.1)
+            xlabel('time from water (s)')
+            ylabel('tongue pos - median tongue pos (pixels)')
+        end
         
         saveVars('lickTimes', lickTimes);
     end
@@ -799,7 +823,6 @@ function analyzeSession(session, varargin)
         
         % set to nan -1 contact frames
         notFoundBins = wiskContactData.framenum==-1;
-        if sum(notFoundBins)>1; disp('more than one non-contact frame!'); end
         wiskContactData(notFoundBins,:) = num2cell(nan(sum(notFoundBins),2));
         
         for i = 1:length(data.obsOnTimes)

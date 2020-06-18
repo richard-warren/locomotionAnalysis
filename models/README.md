@@ -5,8 +5,8 @@
   - [X] re-analyze  and check (180917_002: 9330 15290 37888) and (200130_000)
   - [X] make alignment frames automatic for problem sessions
   - [X] re-analyze all vids
-  - [X] whisker contact (180922_001: first trial)
-  - [ ] lick times [should i use main video instead to increase accuracy on old sessions with big lick spout?]
+  - [X] whisker contact
+  - [X] lick times]
   - [ ] whisker angle
   - [ ] body angle
   - [ ] fix paw contact bug (999999_999: 10612)

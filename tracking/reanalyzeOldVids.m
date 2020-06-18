@@ -24,34 +24,6 @@ ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.
 ephysSessions = ephysInfo.session(ephysInfo.include==1);
 clear ephysInfo
 
-% %% find sessions with ephys folders
-% 
-% unusableSessions = {'181109_000', ...  % ephys folder only
-%                     '190923_003', ...  % ephys folder only
-%                     '190523_000', ...
-%                     '190523_001', ...
-%                     '190523_002', ...
-%                     '200118_000'};
-% 
-% files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
-% sessions = {files([files.isdir]).name};
-% ephysSessions = {};
-% 
-% hasEphysFolder = false(1,length(sessions));
-% fprintf('\n\n--------------------looking for ephys folders--------------------\n')
-% for i = 1:length(sessions)
-%     dirSub = dir(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}));
-%     dirSub = dirSub([dirSub.isdir]);
-%     bins = contains({dirSub.name}, 'ephys_');
-%     if any(bins)
-%         fprintf('%s: ', sessions{i})
-%         fprintf('%s ', dirSub(bins).name)
-%         fprintf('\n')
-%         ephysSessions{end+1} = sessions{i};
-%     end
-% end
-% disp('all done!')
-
 
 % %% get rid of cropped views and concat top and bot FOR EPHYS SESSIONS ONLY
 % % note: this does not delete the un-concatenated versions, which could optionally be done later to save disk space
@@ -110,13 +82,16 @@ disp('all done!')
 %% reanalyze single field in ephysSessions
 
 % settings
+close all
 skipSessions = {};
-vars = {'wiskContactTimes'};
+vars = {'lickTimes'};
+args = {'showLickFig', true};  % passed to analyzeSession
 
+fprintf('\n_____ reanalyzing: '); fprintf('%s ', vars{:}); fprintf('_____\n')
 sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
 for i = 1:length(sessions)
+    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true, args{:});
     fprintf('\n')
-    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true);
 end
 disp('all done!')
 
@@ -198,14 +173,18 @@ disp('data saved')
 % of the analysis on the uncropped video // alternatively, see if old DLC
 % can handle uncropped vids, and reanalyze like that...
 
-%% count reward number per session
+%% load lick time diffs for all sessions
 
-r = nan(1, length(ephysSessions));
+d = cell(1, length(ephysSessions));
 for i = 1:length(ephysSessions)
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runAnalyzed.mat'), 'rewardTimes')
-    r(i) = length(rewardTimes);
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runAnalyzed.mat'), 'lickTimes')
+    d{i} = diff(lickTimes);
 end
-    
-    
-    
-    
+disp('all done!')
+
+
+close all;
+diffs = cat(1,d{:});
+figure; histogram(diffs(diffs<1)*250,100)
+
+

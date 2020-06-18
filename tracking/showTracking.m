@@ -243,6 +243,12 @@ function changeFrames(~,~)
             frameInd = find(frameTimeStamps>nextRewardTime, 1, 'first');
             updateFrame(0);
         
+        % 'l': go to next lick
+        elseif key==108
+            nextLickTime = lickTimes(find(lickTimes>frameTimeStamps(frameInd), 1, 'first'));
+            frameInd = find(frameTimeStamps>nextLickTime, 1, 'first')-10;
+            updateFrame(0);
+        
         % 'o': go to next whisker contact
         elseif key==111
             nextContactTime = wiskContactTimes(find(wiskContactTimes>frameTimeStamps(frameInd), 1, 'first'));
