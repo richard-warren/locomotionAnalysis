@@ -48,12 +48,14 @@ frameWisk = 255 - frameWisk;
 frameWisk([1:s.border, end-s.border:end], :) = 255;
 frameWisk(:, [1:s.border, end-s.border:end]) = 255;
 
-% add to run frame (currently assumes padding is not necessary on the top)
+% add to run frame (todo: there should be a nice way of handling that padding regardless of the position of the whisker relative to run camera...)
 rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
 frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * s.isPaddingWhite);
 
+topPadding = abs(min(yWiskPos,0))+1;
+frame = cat(1, ones(topPadding, size(frame,2))*255 * s.isPaddingWhite, frame);
+
 xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
 yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
-frame(yInds, xInds) =  frameWisk;
-
+frame(yInds+topPadding, xInds) =  frameWisk;
 

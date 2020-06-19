@@ -84,8 +84,8 @@ disp('all done!')
 % settings
 close all
 skipSessions = {};
-vars = {'lickTimes'};
-args = {'showLickFig', true};  % passed to analyzeSession
+vars = {'bodyAngles'};
+args = {'showLickFig', false};  % passed to analyzeSession
 
 fprintf('\n_____ reanalyzing: '); fprintf('%s ', vars{:}); fprintf('_____\n')
 sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
@@ -106,7 +106,7 @@ showTracking(session, 'sig', locationsWisk.tongue_1, 'sigTimes', frameTimeStamps
 
 
 %% reanalyze single sessions
-analyzeSession('191008_003', ...
+analyzeSession('999999_999', ...
             'overwriteVars', 'all', ...
             'verbose', true, ...
             'superVerbose', false, ...
@@ -186,5 +186,29 @@ disp('all done!')
 close all;
 diffs = cat(1,d{:});
 figure; histogram(diffs(diffs<1)*250,100)
+
+%% check confidence statistics for new and old sessions
+
+new = readtable('Z:\loco\obstacleData\sessions\200311_000\trackedFeaturesRaw.csv');
+old = readtable('Z:\loco\obstacleData\sessions\200310_001\trackedFeaturesRaw.csv');
+
+newConf = table2array(new(:,contains(new.Properties.VariableNames, '_2')));
+oldConf = table2array(old(:,contains(old.Properties.VariableNames, '_2')));
+
+bins = 100;
+close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bins)
+
+%% copy metadata to all ephysSessions
+
+files = {'trackedFeaturesRaw_metadata.mat', 'trackedFeaturesRaw_wisk_metadata.mat'};
+srcDir = 'C:\Users\rick\Desktop\';
+
+for i = 1:length(ephysSessions)
+    for j = 1:length(files)
+        copyfile(fullfile(srcDir, files{j}), ...
+            fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, files{j}));
+    end
+end
+disp('all done!')
 
 

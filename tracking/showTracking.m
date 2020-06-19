@@ -2,11 +2,12 @@ function showTracking(session, varargin)
 
 
 % settings
-s.includeWiskCam = true;  % whether to add whisker camera
+s.showWiskCam = true;  % whether to add whisker camera
 s.showConfidence = false;
 s.showPawTouch = true;
 s.showPawTouchConfidence = true;
 s.showStance = true;
+s.showBodyAngle = true;
 
 s.scoreThresh = .5;
 s.zoom = [];  % (pixels, [x y]) this will optionally zoom to the top right corner of the video
@@ -15,7 +16,7 @@ s.circSize = 80;
 s.vidScaling = 1.5;
 s.colorMap = 'hsv';
 s.faceColor = [1 1 0];  % color for face tracking points
-s.frameProps = {'isPaddingWhite', false, 'edgeFading', 5, 'border', 2};  % arguments to be passed to getFrameWithWisk (only when includeWiskCam=true)
+s.frameProps = {'isPaddingWhite', false, 'edgeFading', 5, 'border', 2};  % arguments to be passed to getFrameWithWisk (only when showWiskCam=true)
 connectedFeatures = {{'paw1LH_bot', 'paw1LH_top'}, ...
                      {'paw2LF_bot', 'paw2LF_top'}, ...
                      {'paw3RF_bot', 'paw3RF_top'}, ...
@@ -36,14 +37,15 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 
 % load video
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
-if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
+if s.showWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
 frameNum = vid.Duration*vid.FrameRate;  % this may not be totally accurate
 
 % get locations data and convert to 3d matrix
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', 'pixelsPerM', 'wiskContactTimes', 'rewardTimes', 'wiskContactFrames', ...
-    'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn', 'whiskerAngle', 'lickTimes');
-if exist('whiskerAngle', 'var'); whiskerAngle = fillmissing(whiskerAngle, 'pchip'); end
+    'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn', 'whiskerAngle', 'lickTimes', ...
+    'bodyAngles', 'nosePos');
+% if exist('whiskerAngle', 'var'); whiskerAngle = fillmissing(whiskerAngle, 'pchip'); end
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 [locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh);
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
@@ -56,7 +58,7 @@ end
 
 
 % get position where wisk frame should overlap with runTop frame
-if s.includeWiskCam
+if s.showWiskCam
     [frame, yWiskPos, xWiskPos, wiskScaling] = ...
         getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, find(frameTimeStamps>obsOnTimes(1), 1, 'first'), s.frameProps{:});  % use first frame where obstacle is on to ensure mouse is on the wheel when the whisker cam position is determined
 else
@@ -85,7 +87,7 @@ viscircles(wheelCenter', wheelRadius, 'color', 'blue');
 
 
 % add whisker features
-if s.includeWiskCam
+if s.showWiskCam
     wiskFeatures = {'jaw', 'tongue', 'nose'};
     
     % remove locations from run tracking that will be in wisk tracking
@@ -160,6 +162,11 @@ end
 if s.showConfidence
     confidenceLabels = cell(1,length(features));
     for i = 1:length(features); confidenceLabels{i} = text(0,0,'', 'color', cmap(i,:)); end
+end
+
+% set up body angle line
+if s.showBodyAngle
+    angleLine = plot([0 0], [0 0], 'color', 'white', 'LineWidth', 1);
 end
 
 
@@ -279,7 +286,7 @@ function updateFrame(frameStep)
     elseif frameInd > frameNum; frameInd = 1; end
     
     % get frame and sub-frames
-    if s.includeWiskCam
+    if s.showWiskCam
         [frame,~,~,~,frameIndWisk] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, frameInd, ...
             'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, s.frameProps{:});
         frame = repmat(frame, 1, 1, 3);  % add color dimension
@@ -325,6 +332,7 @@ function updateFrame(frameStep)
     
     % update paw touch scatter
     if s.showPawTouch
+        keyboard
         touchingBins = touchesPerPaw(frameInd,:)>0;
         x = locations(frameInd, 1, [topPawInds(touchingBins) botPawInds(touchingBins)]);
         y = locations(frameInd, 2, [topPawInds(touchingBins) botPawInds(touchingBins)]);
@@ -354,24 +362,37 @@ function updateFrame(frameStep)
     end
     
     % update whisker view tracking
-    if s.includeWiskCam
+    if s.showWiskCam
         
         % face tracking
-        recentLick = any((lickTimes-frameTimeStampsWisk(frameIndWisk))>=0 & (lickTimes-frameTimeStampsWisk(frameIndWisk))<(7/fps));
+        if exist('lickTimes', 'var')
+            recentLick = any((lickTimes-frameTimeStampsWisk(frameIndWisk))>=0 & (lickTimes-frameTimeStampsWisk(frameIndWisk))<(7/fps));
+        else
+            recentLick = false;
+        end
         
         set(scatterWisk, 'XData', locationsWisk(frameIndWisk,1,:), ... 
             'YData', locationsWisk(frameIndWisk,2,:), 'cdata', s.faceColor);
         
-        % check it lick detected where tracking of tongue is below thresh
+        % check if lick detected where tracking of tongue is below thresh
         if recentLick; set(scatterLick, 'visible', 'on'); else; set(scatterLick, 'visible', 'off'); end
         
         % whisker angle
-        x = cosd(whiskerAngle(frameIndWisk)) * wiskLength;
-        y = -sind(whiskerAngle(frameIndWisk)) * wiskLength;
-        
-        recentContact = any((frameIndWisk-wiskContactFrames)>=0 & (frameIndWisk-wiskContactFrames)<7);
-        if recentContact; c = 'red'; w=4; else; c = s.faceColor; w=2; end
-        set(wisk, 'XData', [pad(1) pad(1)+x], 'YData', [pad(2) pad(2)+y], 'color', c, 'linewidth', w)
+        if exist('whiskerAngle', 'var')
+            x = cosd(whiskerAngle(frameIndWisk)) * wiskLength;
+            y = -sind(whiskerAngle(frameIndWisk)) * wiskLength;
+            
+            recentContact = any((frameIndWisk-wiskContactFrames)>=0 & (frameIndWisk-wiskContactFrames)<7);
+            if recentContact; c = 'red'; w=4; else; c = s.faceColor; w=2; end
+            set(wisk, 'XData', [pad(1) pad(1)+x], 'YData', [pad(2) pad(2)+y], 'color', c, 'linewidth', w)
+        end
+    end
+    
+    % update body angle
+    if s.showBodyAngle
+        x = cosd(bodyAngles(frameInd)) * 50;
+        y = -sind(bodyAngles(frameInd)) * 50;
+        set(angleLine, 'XData', [nosePos(1) nosePos(1)-x], 'YData', [nosePos(2) nosePos(2)+y])
     end
     
     

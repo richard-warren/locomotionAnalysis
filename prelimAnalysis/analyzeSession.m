@@ -659,9 +659,25 @@ function analyzeSession(session, varargin)
         if s.verbose; fprintf('%s: getting body angle\n', session); end
         
         if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        bodyAngles = getSessionBodyAngles(locations, data.nosePos);
         
-        saveVars('bodyAngles', bodyAngles)
+        % settings
+        confidenceThresh = .8;
+        percentileLims = [1 99];
+        
+        tailXY = [locations.tailBase_bot, locations.tailBase_bot_1];
+        conf = locations.tailBase_bot_2;
+        tailXY = data.nosePos - tailXY;  % set X to number of pixels behind nose
+        angles = rad2deg(atan2(tailXY(:,2), tailXY(:,1)));
+        
+        % get rid of low confidence and outlier time points
+        angles(conf<confidenceThresh) = nan;
+        lims = prctile(angles, percentileLims);
+        angles(angles<lims(1) | angles>lims(2)) = nan;
+        
+        % interpolate
+        angles = fillmissing(angles, 'linear');
+        
+        saveVars('bodyAngles', angles)
     end
     
     

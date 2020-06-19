@@ -34,6 +34,7 @@ run.mp4 | run video (top and bottom views concatenated)
 runWisk.mp4 | whisker video
 webCam.avi | webcam video
 trialInfo.csv | trial metadata (e.g. obstacle height) exported from Bonsai
+trackedFeaturesRaw_metadata.mat + trackedFeaturesRaw_wisk_metadata.mat | contains metadata about which neural network analyses were used for the run and whisker cameras // used to determine confidence threshold for tracking, which should be lower for new deepposekit analyses relative to old deeplabcut analyses // these files are not currently in old sessions, which are assumed to be old if these files do not exist
 alignmentFrames.csv | (optional) if getFrameTimes alignment breaks for a session, include this .csv file that encodes one pair of manually identified ttlNumber and frameNumber (for both run run *and* wisk cams) that are known to correspond to the same frame (see session 191009_003 for an example)
 
 

@@ -1,4 +1,17 @@
 # todo
+- [ ] make scoreThresh dlc vs. dpk dependent
+  - [X] save metadata files for all sessions
+  - [ ] read files whenever confidence is needed
+    - fixTracking
+    - paw contact (eddie)
+    - wisk contact (eddie)
+    - paw contact in analyzeSession
+    - showTracking
+    - getKinData
+    - showLeadingLagging
+    - showSingleFrameTracking
+  - [ ] reanalyze sessions paw contacts (without network analysis) when done
+  - [X] add to documentation
 - [ ] fine tune tracking
   - [X] add to whisker training set and retrain
   - [X] add to run training set and retrain (2 lick, 8 run errors per session)
@@ -6,17 +19,17 @@
   - [X] make alignment frames automatic for problem sessions
   - [X] re-analyze all vids
   - [X] whisker contact
-  - [X] lick times]
-  - [ ] whisker angle
-  - [ ] body angle
-  - [ ] fix paw contact bug (999999_999: 10612)
+  - [X] lick times
+  - [X] body angle
+  - [X] paw tracking
+  - [ ] paw contact bug (999999_999: 10612)
   - [ ] check grooming on old cropped sessions AND new sessions
-  - [ ] paw tracking (180917_002: 9330 15290 37888) [should i retrain including old sessions?]
+  - [ ] whisker angle
 - [ ] prepare predictors for single session
 - [ ] figure out how to make aggregate plots for all predictors
 - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
 - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
-- [ ] make isSated variable, or some predictor that encodes how sated they are?
+- [ ] write matlab code to handle to experiment conditions (surprise, omission)
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
 
@@ -52,11 +65,11 @@
 - is there a quantitative index that tells the non-linearity of a relationship? eg fraction of variance explained non-linearly after regressing away linear relationship?
 
 # long term todo
+- [ ] make isSated variable, or some predictor that encodes how sated they are?
 - [ ] sliding window mutual information to find optimal leads/lags for predictors, sort of like a non-linear version of cross-correlations
 - [ ] should obstacle height be included somehow?
 - [ ] add isBlinking based on eye tracking confidence to analyzeSession?
 - [ ] housekeeping
-  - [ ] figure out how to deal with different scoreThresh for new sessions // which analyses will potentially be affected by this, eg paw contacts, fixTracking...
   - [ ] make sure getKinematicData works with new analysis... will we be using this in the new project at all?
   - [ ] get rid of redundant video files
 - [ ] documentation for creating training data
