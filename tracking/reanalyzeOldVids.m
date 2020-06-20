@@ -25,31 +25,6 @@ ephysSessions = ephysInfo.session(ephysInfo.include==1);
 clear ephysInfo
 
 
-% %% get rid of cropped views and concat top and bot FOR EPHYS SESSIONS ONLY
-% % note: this does not delete the un-concatenated versions, which could optionally be done later to save disk space
-% 
-% for i = 1:length(ephysSessions)
-%     
-%     folder = fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i});
-%     dirSub = dir(fullfile(folder, '*.mp4'));
-%     
-%     % rename originalDimensions
-%     origInds = find(contains({dirSub.name}, '_originalDimensions'));
-%     if ~isempty(origInds)
-%         fprintf('%s: renaming files ', ephysSessions{i})
-%         for j = 1:length(origInds)
-%             fprintf('%s ', dirSub(origInds(j)).name)
-%             movefile(fullfile(folder, dirSub(origInds(j)).name), ...
-%                      fullfile(folder, erase(dirSub(origInds(j)).name, '_originalDimensions')));
-%         end
-%         fprintf('\n')
-%         
-%         % concatenate views if originally recorded un-concatenated
-%         if exist(fullfile(folder, 'runTop.mp4')); concatTopBotVids(ephysSessions{i}); end
-%         fprintf('\n')
-%     end
-% end
-
 %% reanalyze everything for ephys sessions
 
 problemSessions = {};
@@ -84,8 +59,8 @@ disp('all done!')
 % settings
 close all
 skipSessions = {};
-vars = {'bodyAngles'};
-args = {'showLickFig', false};  % passed to analyzeSession
+vars = {'whiskerAngle'};
+args = {'showLickFig', true};  % passed to analyzeSession
 
 fprintf('\n_____ reanalyzing: '); fprintf('%s ', vars{:}); fprintf('_____\n')
 sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
@@ -212,3 +187,26 @@ end
 disp('all done!')
 
 
+%% find grooming by plotting wheel vel and vertical paw position
+
+close all
+sessions = ephysSessions(1:14);
+
+for i = 1:length(sessions)
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
+        'wheelPositions', 'wheelTimes', 'rewardTimes', 'frameTimeStamps');
+    locations = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'trackedFeaturesRaw.csv'));
+    rf_z = -locations.paw3RF_top_1;
+    rf_conf = locations.paw3RF_top_2;
+    rf_z(rf_conf<.8) = nan;
+    wheelVel = getVelocity(wheelPositions, .1, 1/nanmedian(diff(wheelTimes)));
+
+    figure('name', sessions{i}, 'color', 'white', 'Position', [30.00 772.00 1781.00 176.00]); hold on
+%     yyaxis left
+%     plot(wheelTimes, wheelVel)
+%     yyaxis right
+    plot(frameTimeStamps, rf_z)
+    set(gca, 'ylim', [-140 0])
+    pause(.1)
+end
+disp('all done!')

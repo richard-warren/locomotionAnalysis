@@ -4,7 +4,7 @@ function dlcAnalysis(session, varargin)
 % settings
 s.verbose = false;
 s.dlcPath = 'D:\github\DeepLabCut';
-s.output = 'trackedFeatures_run.csv';
+s.output = 'trackedFeaturesRaw.csv';
 s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
 
 

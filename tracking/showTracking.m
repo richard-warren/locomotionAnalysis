@@ -9,7 +9,6 @@ s.showPawTouchConfidence = true;
 s.showStance = true;
 s.showBodyAngle = true;
 
-s.scoreThresh = .5;
 s.zoom = [];  % (pixels, [x y]) this will optionally zoom to the top right corner of the video
 s.vidDelay = .02;
 s.circSize = 80;
@@ -45,9 +44,9 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', 'pixelsPerM', 'wiskContactTimes', 'rewardTimes', 'wiskContactFrames', ...
     'wheelCenter', 'wheelRadius', 'touchesPerPaw', 'touchClassNames', 'touchConfidences', 'obsOnTimes', 'isLightOn', 'whiskerAngle', 'lickTimes', ...
     'bodyAngles', 'nosePos');
-% if exist('whiskerAngle', 'var'); whiskerAngle = fillmissing(whiskerAngle, 'pchip'); end
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', s.scoreThresh);
+scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
+[locations, features, ~, isInterped, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 fps = 1/nanmedian(diff(frameTimeStamps));
@@ -94,32 +93,38 @@ if s.showWiskCam
     locations(:,:,contains(features, wiskFeatures)) = nan;
     
     % load whisker tracking
-    locationsWiskTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv')); % get raw tracking data
-    locationsWisk = nan(height(locationsWiskTable), 2, length(wiskFeatures));
-    
-    % find whisker pad and length
-    pad = [median(locationsWiskTable.wisk_pad) median(locationsWiskTable.wisk_pad_1)];  % location of whisker pad
-    pad = pad*wiskScaling + [xWiskPos yWiskPos];
-    tipAvg = [median(locationsWiskTable.wisk_caudal) median(locationsWiskTable.wisk_caudal_1)]*wiskScaling + [xWiskPos yWiskPos];
-    wiskLength = norm(tipAvg - pad);
-    
-    % fix tracking
-    for i = 1:length(wiskFeatures)
-        valid = locationsWiskTable.([wiskFeatures{i} '_2']) > s.scoreThresh;
-        
-        locationsWisk(valid,1,i) = locationsWiskTable.(wiskFeatures{i})(valid)*wiskScaling + xWiskPos;
-        locationsWisk(valid,2,i) = locationsWiskTable.([wiskFeatures{i} '_1'])(valid)*wiskScaling + yWiskPos;
+    if exist(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'), 'file')
+        isWiskTracked = true;
+        locationsWiskTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv')); % get raw tracking data
+        locationsWisk = nan(height(locationsWiskTable), 2, length(wiskFeatures));
+
+        % find whisker pad and length
+        pad = [median(locationsWiskTable.wisk_pad) median(locationsWiskTable.wisk_pad_1)];  % location of whisker pad
+        pad = pad*wiskScaling + [xWiskPos yWiskPos];
+        tipAvg = [median(locationsWiskTable.wisk_caudal) median(locationsWiskTable.wisk_caudal_1)]*wiskScaling + [xWiskPos yWiskPos];
+        wiskLength = norm(tipAvg - pad);
+
+        % fix tracking
+        for i = 1:length(wiskFeatures)
+            valid = locationsWiskTable.([wiskFeatures{i} '_2']) > scoreThresh;
+
+            locationsWisk(valid,1,i) = locationsWiskTable.(wiskFeatures{i})(valid)*wiskScaling + xWiskPos;
+            locationsWisk(valid,2,i) = locationsWiskTable.([wiskFeatures{i} '_1'])(valid)*wiskScaling + yWiskPos;
+        end
+
+        clear locationsWiskTable
+        scatterWisk = scatter(imAxis, zeros(1,length(wiskFeatures)), zeros(1,length(wiskFeatures)), 40, s.faceColor, 'filled');
+
+        % make dot that will appear when lick is detected
+        tonguePos = nanmedian(locationsWisk(:,:,contains(wiskFeatures, 'tongue')),1);
+        scatterLick = scatter(tonguePos(1), tonguePos(2), 100, 'red', 'filled', 'Visible', 'on');  % dot that appears when a lick is deteceted
+
+        % create whisker angle line
+        wisk = plot([0 0], [0 0], 'color', s.faceColor, 'LineWidth', 2);
+    else
+        isWiskTracked = false;
     end
-    
-    clear locationsWiskTable
-    scatterWisk = scatter(imAxis, zeros(1,length(wiskFeatures)), zeros(1,length(wiskFeatures)), 40, s.faceColor, 'filled');
-    
-    % make dot that will appear when lick is detected
-    tonguePos = nanmedian(locationsWisk(:,:,contains(wiskFeatures, 'tongue')),1);
-    scatterLick = scatter(tonguePos(1), tonguePos(2), 100, 'red', 'filled', 'Visible', 'on');  % dot that appears when a lick is deteceted
-    
-    % create whisker angle line
-    wisk = plot([0 0], [0 0], 'color', s.faceColor, 'LineWidth', 2);
+        
 end
 
 
@@ -256,6 +261,12 @@ function changeFrames(~,~)
             frameInd = find(frameTimeStamps>nextLickTime, 1, 'first')-10;
             updateFrame(0);
         
+        % 'c': go to next paw contact
+        elseif key==99
+            touchInds = find(any(touchesPerPaw,2));
+            frameInd = touchInds(find(touchInds>frameInd,1,'first'));
+            updateFrame(0);
+        
         % 'o': go to next whisker contact
         elseif key==111
             nextContactTime = wiskContactTimes(find(wiskContactTimes>frameTimeStamps(frameInd), 1, 'first'));
@@ -332,7 +343,6 @@ function updateFrame(frameStep)
     
     % update paw touch scatter
     if s.showPawTouch
-        keyboard
         touchingBins = touchesPerPaw(frameInd,:)>0;
         x = locations(frameInd, 1, [topPawInds(touchingBins) botPawInds(touchingBins)]);
         y = locations(frameInd, 2, [topPawInds(touchingBins) botPawInds(touchingBins)]);
@@ -362,7 +372,7 @@ function updateFrame(frameStep)
     end
     
     % update whisker view tracking
-    if s.showWiskCam
+    if s.showWiskCam && isWiskTracked
         
         % face tracking
         if exist('lickTimes', 'var')
@@ -396,7 +406,7 @@ function updateFrame(frameStep)
     end
     
     
-    % update sig plot
+    % update sig (signal) plot
     if ~isempty(s.sig)
         set(0, 'currentfigure', figSig);
         bins = s.sigTimes>(frameTimeStamps(frameInd)+s.xlims(1)) & s.sigTimes<(frameTimeStamps(frameInd)+s.xlims(2));

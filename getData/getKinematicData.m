@@ -24,7 +24,8 @@ if timeOperations; tic; end
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'))
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 kinData(length(obsOnTimes)) = struct();
-[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
+scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
+[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
 topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
 stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawInds), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, pixelsPerM);

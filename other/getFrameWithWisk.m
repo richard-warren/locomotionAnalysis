@@ -48,14 +48,23 @@ frameWisk = 255 - frameWisk;
 frameWisk([1:s.border, end-s.border:end], :) = 255;
 frameWisk(:, [1:s.border, end-s.border:end]) = 255;
 
-% add to run frame (todo: there should be a nice way of handling that padding regardless of the position of the whisker relative to run camera...)
+% add to run frame
+
+% todo: currently assumes whisker frames is not HIGHER than run frame, and
+% crops the top of whisker frame otherwise... there must be a nicer way of
+% handling this...
 rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
 frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * s.isPaddingWhite);
 
-topPadding = abs(min(yWiskPos,0))+1;
-frame = cat(1, ones(topPadding, size(frame,2))*255 * s.isPaddingWhite, frame);
+% crop top of wisk frame if it is too high
+if yWiskPos<1
+    frameWisk = frameWisk((-yWiskPos+2):end,:,:);
+    yWiskPosTemp = 1;
+else
+    yWiskPosTemp = yWiskPos;
+end
 
 xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
-yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
-frame(yInds+topPadding, xInds) =  frameWisk;
+yInds = yWiskPosTemp:yWiskPosTemp+size(frameWisk,1)-1;
+frame(yInds, xInds) =  frameWisk;
 

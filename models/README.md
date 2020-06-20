@@ -1,34 +1,36 @@
 # todo
-- [ ] make scoreThresh dlc vs. dpk dependent
+- [X] make scoreThresh dlc vs. dpk dependent
   - [X] save metadata files for all sessions
-  - [ ] read files whenever confidence is needed
-    - fixTracking
-    - paw contact (eddie)
-    - wisk contact (eddie)
-    - paw contact in analyzeSession
-    - showTracking
-    - getKinData
-    - showLeadingLagging
-    - showSingleFrameTracking
-  - [ ] reanalyze sessions paw contacts (without network analysis) when done
+  - [X] read files whenever confidence is needed
+    - [X] fixTracking
+    - [X] paw contact in analyzeSession
+    - [X] getKinData
+    - [X] showTracking
+    - [X] showLeadingLagging
+    - [X] showSingleFrameTracking
+    - [X] paw contact (eddie - using low thresh for all sessions)
+    - [X] wisk contact (eddie - using low thresh for all sessions)
+    - [X] reanalyze all session paw contacts (without network analysis)
   - [X] add to documentation
-- [ ] fine tune tracking
+- [X] fine tune tracking
   - [X] add to whisker training set and retrain
   - [X] add to run training set and retrain (2 lick, 8 run errors per session)
   - [X] re-analyze  and check (180917_002: 9330 15290 37888) and (200130_000)
   - [X] make alignment frames automatic for problem sessions
   - [X] re-analyze all vids
   - [X] whisker contact
-  - [X] lick times
   - [X] body angle
   - [X] paw tracking
-  - [ ] paw contact bug (999999_999: 10612)
-  - [ ] check grooming on old cropped sessions AND new sessions
-  - [ ] whisker angle
+  - [X] paw contacts
+  - [X] lick times
+  - [X] check grooming on old cropped sessions AND new sessions
+  - [X] whisker angle
 - [ ] prepare predictors for single session
-- [ ] figure out how to make aggregate plots for all predictors
-- [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
-- [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
+- [ ] single cell plots
+- [ ] aggregate plots
+  - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
+  - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
+  - [ ] use these plots to determine model transformations
 - [ ] write matlab code to handle to experiment conditions (surprise, omission)
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
@@ -63,6 +65,7 @@
 - how to construct distance to obstacle and distance to reward ramping signals? // want something that want signal that goes from SAME small number to 0 at whisker contact, and then fall down again // perhaps should look at all ramping cells to figure out best shape for this predictor
 - how to handle moments when predictors are not known, e.g. occlusion
 - is there a quantitative index that tells the non-linearity of a relationship? eg fraction of variance explained non-linearly after regressing away linear relationship?
+- should maybe use continuous signal for licks instead of times, and have a 'home' position for the tongue in the mouth...
 
 # long term todo
 - [ ] make isSated variable, or some predictor that encodes how sated they are?
@@ -74,3 +77,4 @@
   - [ ] get rid of redundant video files
 - [ ] documentation for creating training data
 - [ ] add lick amplitude?
+- [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)

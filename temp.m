@@ -29,3 +29,13 @@ fprintf('\ntrial proportions...\n')
 fprintf('a: %.3f\n', mean(trialType==1))
 fprintf('b: %.3f\n', mean(trialType==2))
 fprintf('c: %.3f\n', mean(trialType==3))
+
+
+
+
+
+
+
+
+
+

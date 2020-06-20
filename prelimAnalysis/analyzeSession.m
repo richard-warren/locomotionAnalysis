@@ -73,7 +73,7 @@ function analyzeSession(session, varargin)
     
     
     % whisker angle
-    if analyzeVar('whiskerAngle')
+    if analyzeVar('whiskerAngle') && exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file')
         
         if s.verbose; fprintf('%s: getting whisker angles\n', session); end
         if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
@@ -102,7 +102,7 @@ function analyzeSession(session, varargin)
         whiskerAngle = smooth(whiskerAngle, smoothing);
         whiskerAngle(whiskerAngle<angleLims(1) | whiskerAngle>angleLims(2) | ~valid) = nan;
         
-        % todo: interpolation?
+        whiskerAngle = fillmissing(whiskerAngle, 'linear');
         saveVars('whiskerAngle', whiskerAngle)
     end
     
@@ -146,8 +146,13 @@ function analyzeSession(session, varargin)
         minDistanceTime = 250;  % (frames)
         maxDistanceSpace = 4;  % (pixels)
         
-        ledInds = getLedInds(locations.LED_2, locations.LED, locations.LED_1, ...
-            confidenceThresh, minDuration, minDistanceTime, maxDistanceSpace);
+        if any(contains(locations.Properties.VariableNames, 'LED'))
+            ledInds = getLedInds(locations.LED_2, locations.LED, locations.LED_1, ...
+                confidenceThresh, minDuration, minDistanceTime, maxDistanceSpace);
+        else
+            fprintf(' LED not tracked in trackedfeaturesRaw.csv\n')
+            ledInds = [];
+        end
         
         saveVars('ledInds', ledInds)
     end
@@ -156,7 +161,7 @@ function analyzeSession(session, varargin)
     
     
     % led indices (wisk camera)
-    if analyzeVar('ledIndsWisk')
+    if analyzeVar('ledIndsWisk') && exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file')
         
         if s.verbose; fprintf('%s: getting LED indices (for whisker camera)... ', session); end
         if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
@@ -443,7 +448,7 @@ function analyzeSession(session, varargin)
     
     
     % licking
-    if analyzeVar('lickTimes')
+    if analyzeVar('lickTimes') && exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file')
         
         if s.verbose; fprintf('%s: getting lick times\n', session); end
         if ~exist('locationsWisk', 'var'); locationsWisk = readtable(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv')); end
@@ -453,7 +458,7 @@ function analyzeSession(session, varargin)
         smoothing = 5;  % (frames) mean smoothing for x, y, and confidence
         minTimeDiff = 20;  % (frames) licks must be at least this many frames apart in time
         maxDistance = 40;  % (pixels) maximum vertical (y) distance of tongue to median tongue position
-        minDistance = 5;  % (pixels) tongue must be minDistance pixels away (vertically) from median tongue position for lick to count
+        minDistance = 2;  % (pixels) tongue must be minDistance pixels away (vertically) from median tongue position for lick to count
         
         % get x, y, and confidence
         y = smooth(locationsWisk.tongue_1, smoothing);
@@ -486,7 +491,8 @@ function analyzeSession(session, varargin)
                 subplot(rows, cols, i); hold on
                 plot(data.frameTimeStampsWisk - data.rewardTimes(i), sig);
                 scatter(lickTimes - data.rewardTimes(i), sig(lickInds), 20, 'filled');
-                plot([0 0], get(gca, 'ylim'))
+                plot([0 0], get(gca, 'ylim'), 'color', [0 0 .6])
+                plot(xLims, [minDistance minDistance], 'color', [.6 .6 .6])
                 set(gca, 'xlim', xLims, 'ylim', yLims);
             end
             pause(.1)
@@ -762,7 +768,8 @@ function analyzeSession(session, varargin)
         
         % get xz positions for paws
         if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
-        [locations, features] = fixTracking(locations, data.frameTimeStamps, data.pixelsPerM);
+        scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
+        [locations, features] = fixTracking(locations, data.frameTimeStamps, data.pixelsPerM, 'scoreThresh', scoreThresh);
         pawXZ = nan(size(locations,1), 2, 4);
         for i = 1:4
             pawXBin = contains(features, ['paw' num2str(i)]) & contains(features, '_bot');
