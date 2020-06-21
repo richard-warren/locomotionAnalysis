@@ -1,4 +1,15 @@
 # todo
+- [ ] add omissionTimes and surpriseTimes to analyzeSession
+- [ ] prepare predictors for single session
+- [ ] single cell plots
+- [ ] aggregate plots
+  - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
+  - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
+  - [ ] use these plots to determine model transformations
+- [ ] write matlab code to handle to experiment conditions (surprise, omission)
+
+
+# done
 - [X] make scoreThresh dlc vs. dpk dependent
   - [X] save metadata files for all sessions
   - [X] read files whenever confidence is needed
@@ -12,11 +23,11 @@
     - [X] wisk contact (eddie - using low thresh for all sessions)
     - [X] reanalyze all session paw contacts (without network analysis)
   - [X] add to documentation
+- [X] make alignment frames automatic for problem sessions
 - [X] fine tune tracking
   - [X] add to whisker training set and retrain
   - [X] add to run training set and retrain (2 lick, 8 run errors per session)
   - [X] re-analyze  and check (180917_002: 9330 15290 37888) and (200130_000)
-  - [X] make alignment frames automatic for problem sessions
   - [X] re-analyze all vids
   - [X] whisker contact
   - [X] body angle
@@ -25,13 +36,6 @@
   - [X] lick times
   - [X] check grooming on old cropped sessions AND new sessions
   - [X] whisker angle
-- [ ] prepare predictors for single session
-- [ ] single cell plots
-- [ ] aggregate plots
-  - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
-  - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
-  - [ ] use these plots to determine model transformations
-- [ ] write matlab code to handle to experiment conditions (surprise, omission)
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
 

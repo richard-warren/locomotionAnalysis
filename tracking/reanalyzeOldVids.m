@@ -92,7 +92,7 @@ analyzeSession('999999_999', ...
 
 %% recover broken session
 
-session = '200118_001'; % '200118_001', '191009_003'
+session = '200620_002'; % '200118_001', '191009_003'
 
 % figure out if any frames lost at the beginning of session
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'ledInds', 'ledIndsWisk', 'rewardTimes')

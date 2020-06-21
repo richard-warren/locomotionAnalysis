@@ -108,27 +108,51 @@ function analyzeSession(session, varargin)
     
     
     
+    % decode wheel position
+    if analyzeVar('wheelPositions', 'wheelTimes')
+
+        if s.verbose; fprintf('%s: decoding wheel position\n', session); end
+        load(fullfile(sessionDir, 'run.mat'), 'whEncodA', 'whEncodB')
+
+        [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
+                                                     whEncodB.times, whEncodB.level,...
+                                                     s.whEncoderSteps, s.wheelRad, s.targetFs, session);
+        
+         saveVars('wheelPositions', wheelPositions, 'wheelTimes', wheelTimes, 'targetFs', s.targetFs);
+    end
+    
+    
+    
     % analyze reward times
-    if analyzeVar('rewardTimes')
+    if analyzeVar('rewardTimes', 'isRewardSurprise', 'omissionTimes')
         
         if s.verbose; fprintf('%s: getting reward times\n', session); end
-        load(fullfile(sessionDir, 'run.mat'), 'reward')
+        load(fullfile(sessionDir, 'run.mat'), 'reward', 'Cue')
         
         % settings
         minRewardInteveral = 1;  % remove rewards detected within minRewardInterval of eachother
         
-        % find reward times
+        % reward times
         if isfield(reward, 'values')  % if recorded as analog input (sessions prior to 191523)
             rewardInds = find(diff(reward.values>2)==1) + 1;
             rewardTimes = reward.times(rewardInds);
         else
             rewardTimes = reward.times(logical(reward.level));  % keep only transitions from low to high
         end
+        rewardTimes = rewardTimes(logical([1; diff(rewardTimes)>minRewardInteveral])); % remove reward times occuring within minRewardInteveral seconds of eachother
+        
+        % determine whether reward was surprise (delivered earlier than expected)
+        rewardDistances = diff(interp1(data.wheelTimes, data.wheelPositions, rewardTimes));  % distance (m) between rewards
+        isRewardSurprise = [false; rewardDistances < nanmedian(rewardDistances) * .75];
+        
+        % find omissions (cue without reward)
+        cueInds = find(diff(Cue.values>2)==1)+1;
+        cueTimes  = Cue.times(cueInds);
+        cueTimes = cueTimes(logical([1; diff(cueTimes)>minRewardInteveral])); % remove reward times occuring within minRewardInteveral seconds of eachother
+        [~, closestRewardDistance] = knnsearch(rewardTimes, cueTimes);
+        omissionTimes = cueTimes(closestRewardDistance>1);
 
-        % remove reward times occuring within minRewardInteveral seconds of eachother
-        rewardTimes = rewardTimes(logical([1; diff(rewardTimes)>minRewardInteveral]));
-
-        saveVars('rewardTimes', rewardTimes);
+        saveVars('rewardTimes', rewardTimes, 'isRewardSurprise', isRewardSurprise, 'omissionTimes', omissionTimes);
     end
     
     
@@ -203,22 +227,6 @@ function analyzeSession(session, varargin)
         end
         
         saveVars('obsPositions', obsPositions, 'obsTimes', obsTimes, 'targetFs', s.targetFs);
-    end
-
-
-
-
-    % decode wheel position
-    if analyzeVar('wheelPositions', 'wheelTimes')
-
-        if s.verbose; fprintf('%s: decoding wheel position\n', session); end
-        load(fullfile(sessionDir, 'run.mat'), 'whEncodA', 'whEncodB')
-
-        [wheelPositions, wheelTimes] = rotaryDecoder(whEncodA.times, whEncodA.level,...
-                                                     whEncodB.times, whEncodB.level,...
-                                                     s.whEncoderSteps, s.wheelRad, s.targetFs, session);
-        
-         saveVars('wheelPositions', wheelPositions, 'wheelTimes', wheelTimes, 'targetFs', s.targetFs);
     end
 
 
