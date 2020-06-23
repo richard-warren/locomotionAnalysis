@@ -35,9 +35,11 @@ function analyzeSession(session, varargin)
     if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
     if ischar(s.overwriteVars); s.overwriteVars = {s.overwriteVars}; end  % make sure overwriteVars is in cell format
     anythingAnalyzed = false; % results are only saved if something was found that wasn't already analyzed
+    sessionDir = fullfile(getenv('OBSDATADIR'), 'sessions', session);
+    isRunVid = exist(fullfile(sessionDir, 'run.mp4'), 'file');
+    isWiskVid = exist(fullfile(sessionDir, 'runWisk.mp4'), 'file');
 
     % load or initialize data structure
-    sessionDir = fullfile(getenv('OBSDATADIR'), 'sessions', session);
     if exist(fullfile(sessionDir, 'runAnalyzed.mat'), 'file') && ~isequal(s.overwriteVars, {'all'})
         data = load(fullfile(sessionDir, 'runAnalyzed.mat'));
     else
@@ -49,7 +51,7 @@ function analyzeSession(session, varargin)
     
     
     % run tracking
-    if ~exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') || s.rerunRunNetwork
+    if (~exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file') || s.rerunRunNetwork) && isRunVid
         dpkAnalysis(session, 'verbose', s.superVerbose, ...
             'vid', 'run.mp4', ...
             'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5', ...
@@ -61,7 +63,7 @@ function analyzeSession(session, varargin)
     
     
     % face tracking
-    if ~exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file') || s.rerunWiskNetwork
+    if (~exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file') || s.rerunWiskNetwork) && isWiskVid
         dpkAnalysis(session, 'verbose', s.superVerbose, ...
             'vid', 'runWisk.mp4', ...
             'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk_StackedDenseNet.h5', ...
@@ -146,11 +148,15 @@ function analyzeSession(session, varargin)
         isRewardSurprise = [false; rewardDistances < nanmedian(rewardDistances) * .75];
         
         % find omissions (cue without reward)
-        cueInds = find(diff(Cue.values>2)==1)+1;
-        cueTimes  = Cue.times(cueInds);
-        cueTimes = cueTimes(logical([1; diff(cueTimes)>minRewardInteveral])); % remove reward times occuring within minRewardInteveral seconds of eachother
-        [~, closestRewardDistance] = knnsearch(rewardTimes, cueTimes);
-        omissionTimes = cueTimes(closestRewardDistance>1);
+        if exist('Cue', 'var')
+            cueInds = find(diff(Cue.values>2)==1)+1;
+            cueTimes  = Cue.times(cueInds);
+            cueTimes = cueTimes(logical([1; diff(cueTimes)>minRewardInteveral])); % remove reward times occuring within minRewardInteveral seconds of eachother
+            [~, closestRewardDistance] = knnsearch(rewardTimes, cueTimes);
+            omissionTimes = cueTimes(closestRewardDistance>1);
+        else
+            omissionTimes = [];
+        end
 
         saveVars('rewardTimes', rewardTimes, 'isRewardSurprise', isRewardSurprise, 'omissionTimes', omissionTimes);
     end
@@ -159,7 +165,7 @@ function analyzeSession(session, varargin)
     
     
     % led indices (run camera)
-    if analyzeVar('ledInds')
+    if analyzeVar('ledInds') && isRunVid && isWiskVid
         
         if s.verbose; fprintf('%s: getting LED indices (for run camera)... ', session); end
         if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end
@@ -698,7 +704,7 @@ function analyzeSession(session, varargin)
     
     
     % get height of obs for each trial
-    if analyzeVar('obsHeights') && ~isempty(data.obsOnTimes)
+    if analyzeVar('obsHeights') && ~isempty(data.obsOnTimes) && isRunVid
         
         if s.verbose; fprintf('%s: getting obstacle heights\n', session); end
         

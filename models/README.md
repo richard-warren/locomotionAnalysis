@@ -1,5 +1,5 @@
 # todo
-- [ ] add omissionTimes and surpriseTimes to analyzeSession
+- [ ] write autoAnalyze
 - [ ] prepare predictors for single session
 - [ ] single cell plots
 - [ ] aggregate plots
@@ -8,8 +8,73 @@
   - [ ] use these plots to determine model transformations
 - [ ] write matlab code to handle to experiment conditions (surprise, omission)
 
+# analysis flow
+- prepPredictors
+  - untransformed predictors containing
+    - continuous: continuous signals
+    - logical: nX2 matrix of on/off times
+    - event: nX1 matrix of times
+- prepDesignMatrix
+  - given predictors from prepPredictors, creates design matrix by
+    - including only user defined predictors
+    - applying transformation (e.g. convolve, raise to powers...)
+- saveCellTuning
+  - for each cell, compute tuning for each predictors in prepPredictors (not in design matrix)
+  - for each cell-predictor combo, compute (trial X time) matrix of firing rate responses, along with x axis values, and *maybe* condition of each row (e.g. is light on, is reward omission)
+    - event: true PSTHs
+    - logical: interpolated 'epoch' responses
+    - continuous: density estimates, along with x axis probability?
+  - each predictor will need associated x axis range
+  - will predictors need 'condition' labels, if i want to break down by e.g. isLightOn later?
 
-# done
+# predictors
+- continuous
+  - paws (lh lf rf rh) (x y z) (position velocity)
+  - paw contact (lh lf rf rh) (dorsal ventral)
+  - jaw position [along first PC]
+  - body angle
+  - ear position [along first PC]
+  - nose position [along first PC]
+  - distance to obstacle [ramping signal]
+  - distance to reward
+  - whisker angle
+  - butt height
+- logical
+  - swing stance (lh lf rf rh)
+  - paw contacts (lh lf rf rh) (dorsal ventral)
+  - eye open
+  - obstacle on (light nolight)
+  - (maybe add later) one hot vector encoding whether mouse is: running, licking, grooming, doing nothing
+- event
+  - whisker contact
+  - licks
+  - obstacle on
+  - obstacle off
+  - rewards
+
+# questions
+- how to handle temporal discontinuities in old sessions?
+- some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
+- how to construct distance to obstacle and distance to reward ramping signals? // want something that want signal that goes from SAME small number to 0 at whisker contact, and then fall down again // perhaps should look at all ramping cells to figure out best shape for this predictor
+- how to handle moments when predictors are not known, e.g. occlusion
+- is there a quantitative index that tells the non-linearity of a relationship? eg fraction of variance explained non-linearly after regressing away linear relationship?
+- should maybe use continuous signal for licks instead of times, and have a 'home' position for the tongue in the mouth...
+
+# long term todo
+- [ ] figure out how to filter out poorly behaving sessions (e.g. based on velocity)
+- [ ] make isSated variable, or some predictor that encodes how sated they are?
+- [ ] sliding window mutual information to find optimal leads/lags for predictors, sort of like a non-linear version of cross-correlations
+- [ ] should obstacle height be included somehow?
+- [ ] add isBlinking based on eye tracking confidence to analyzeSession?
+- [ ] housekeeping
+  - [ ] make sure getKinematicData works with new analysis... will we be using this in the new project at all?
+  - [ ] get rid of redundant video files
+- [ ] documentation for creating training data
+- [ ] add lick amplitude?
+- [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
+
+# todo(ne)
+- [X] add omissionTimes and surpriseTimes to analyzeSession
 - [X] make scoreThresh dlc vs. dpk dependent
   - [X] save metadata files for all sessions
   - [X] read files whenever confidence is needed
@@ -38,47 +103,3 @@
   - [X] whisker angle
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
-
-# predictors
-- continuous
-  - paws (lh lf rf rh) (x y z) (position velocity)
-  - paw contact (lh lf rf rh) (dorsal ventral)
-  - jaw position [along first PC]
-  - body angle
-  - ear position [along first PC]
-  - nose position [along first PC]
-  - distance to obstacle [ramping signal]
-  - distance to reward
-  - whisker angle
-- logical
-  - swing stance (lh lf rf rh)
-  - paw contacts (lh lf rf rh) (dorsal ventral)
-  - eye open
-  - obstacle on (light nolight)
-  - (maybe add later) one hot vector encoding whether mouse is: running, licking, grooming, doing nothing
-- event
-  - whisker contact
-  - licks
-  - obstacle on
-  - obstacle off
-  - rewards
-
-# questions
-- how to handle temporal discontinuities in old sessions?
-- some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
-- how to construct distance to obstacle and distance to reward ramping signals? // want something that want signal that goes from SAME small number to 0 at whisker contact, and then fall down again // perhaps should look at all ramping cells to figure out best shape for this predictor
-- how to handle moments when predictors are not known, e.g. occlusion
-- is there a quantitative index that tells the non-linearity of a relationship? eg fraction of variance explained non-linearly after regressing away linear relationship?
-- should maybe use continuous signal for licks instead of times, and have a 'home' position for the tongue in the mouth...
-
-# long term todo
-- [ ] make isSated variable, or some predictor that encodes how sated they are?
-- [ ] sliding window mutual information to find optimal leads/lags for predictors, sort of like a non-linear version of cross-correlations
-- [ ] should obstacle height be included somehow?
-- [ ] add isBlinking based on eye tracking confidence to analyzeSession?
-- [ ] housekeeping
-  - [ ] make sure getKinematicData works with new analysis... will we be using this in the new project at all?
-  - [ ] get rid of redundant video files
-- [ ] documentation for creating training data
-- [ ] add lick amplitude?
-- [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)

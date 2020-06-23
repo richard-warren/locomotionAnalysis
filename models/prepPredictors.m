@@ -1,3 +1,3 @@
 
 
-dt = .002;  % output resolution
+dt = .001;  % output resolution
