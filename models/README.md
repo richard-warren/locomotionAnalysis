@@ -29,6 +29,7 @@
 
 # predictors
 - continuous
+  - [ ] wheel velocity
   - [X] paws (lh lf rf rh) (x y z) (position velocity)
   - [X] body angle
   - [X] whisker angle
@@ -36,6 +37,7 @@
   - [X] jaw [along first PC]
   - [X] ear [along first PC]
   - [X] nose [along first PC]
+  - [ ] satiation
   - potential additions:
     - distance to obstacle [ramping signal]
     - distance to reward [ramping signal]

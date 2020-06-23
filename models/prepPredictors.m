@@ -1,16 +1,17 @@
 function prepPredictors(session)
 
-session = '200621_000';
-
+% settings
 s.dt = .002;
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [1 99];  % remove and interpolate tracking outside this percentile range
+s.plotPredictors = true;
 
 % initializations
 % if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', ...
-    'bodyAngles', 'whiskerAngle', 'pixelsPerM', 'wheelCenter', 'wheelRadius');
+    'bodyAngles', 'whiskerAngle', 'pixelsPerM', 'wheelCenter', 'wheelRadius', ...
+    'lickTimes');
 locationsRun = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
 locationsWisk = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'));
 pawNames = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'};
@@ -28,6 +29,11 @@ tMin = max([frameTimeStamps(1), frameTimeStampsWisk(1), 0]);  % start with recor
 tMax = min([frameTimeStamps(end), frameTimeStampsWisk(end), wheelTimes(end)]);  % start with recording device that ends first
 t = tMin:s.dt:tMax;
 cntPredictors = table(t', 'VariableNames', {'t'});
+
+% wheel velocity
+vel = getVelocity(wheelPositions, s.velTime, 1/nanmedian(diff(wheelTimes)));
+vel = interp1(wheelTimes, vel, t);
+cntPredictors.velocity = vel(:);
 
 % paw locations and velocity
 pawXYZ = getPawXYZ(session);
@@ -76,15 +82,37 @@ nose = (nose-nanmean(nose)) / pixelsPerM;
 nose = interp1(frameTimeStampsWisk, nose, t);
 cntPredictors.nose = nose(:);
 
+% satiation
+lickBins = histcounts(lickTimes, [t (t(end)+s.dt)]);
+satiation = cumsum(lickBins);
+satiation = satiation / max(satiation);
+cntPredictors.satiation = satiation(:);
+
+
 
 % -------
 % LOGICAL
 % -------
-keyboard
 
 
 
 
+
+
+% make nice little plot
+if s.plotPredictors
+    dz = 8;  % (standard deviation) vertical separation
+    xLims = [992 1042];
+    
+    figure('color', 'white', 'position', [125.00 93.00 1666.00 886.00]);
+    names = cntPredictors.Properties.VariableNames(2:end);
+    plot(t, zscore(table2array(cntPredictors(:,2:end)))+ [1:width(cntPredictors)-1]*dz);
+    set(gca, 'xlim', xLims, 'visible', 'off')
+    for i = 1:length(names)
+        text(xLims(1), i*dz, names{i}, ...
+            'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle', 'Interpreter', 'none')
+    end
+end
 
 
 
