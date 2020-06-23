@@ -1,6 +1,6 @@
 # todo
-- [ ] write autoAnalyze
 - [ ] prepare predictors for single session
+- [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
 - [ ] single cell plots
 - [ ] aggregate plots
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
@@ -29,16 +29,16 @@
 
 # predictors
 - continuous
-  - paws (lh lf rf rh) (x y z) (position velocity)
-  - paw contact (lh lf rf rh) (dorsal ventral)
-  - jaw position [along first PC]
-  - body angle
-  - ear position [along first PC]
-  - nose position [along first PC]
-  - distance to obstacle [ramping signal]
-  - distance to reward
-  - whisker angle
-  - butt height
+  - [X] paws (lh lf rf rh) (x y z) (position velocity)
+  - [X] body angle
+  - [X] whisker angle
+  - [X] butt height
+  - [X] jaw [along first PC]
+  - [X] ear [along first PC]
+  - [X] nose [along first PC]
+  - potential additions:
+    - distance to obstacle [ramping signal]
+    - distance to reward [ramping signal]
 - logical
   - swing stance (lh lf rf rh)
   - paw contacts (lh lf rf rh) (dorsal ventral)
@@ -74,6 +74,7 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] write autoAnalyze
 - [X] add omissionTimes and surpriseTimes to analyzeSession
 - [X] make scoreThresh dlc vs. dpk dependent
   - [X] save metadata files for all sessions

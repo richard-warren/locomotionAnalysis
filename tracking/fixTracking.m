@@ -1,8 +1,7 @@
 function [locations, features, featurePairInds, isInterped, scores] = ...
     fixTracking(locationsTable, frameTimeStamps, pixelsPerM, varargin)
 
-
-% todo: given raw tracking data (locationsTable, read from csv), produces
+% given raw tracking data (locationsTable, read from csv), produces
 % locations matrix (nFrames X 2 X nFeatures) encoding the locations (in
 % pixels) of each feature // in addition to structuring the data in this
 % away, it fixes the tracking by: removing low confidence frames,

@@ -9,7 +9,7 @@ function thresh = getScoreThresh(session, metadata, varargin)
 s.defaultThresh = .99;  % thresh if no metadata in session folder
 s.deeplabcutThresh = .99;
 s.deepposekitThresh = .8;
-s.verbose = true;
+s.verbose = false;
 
 
 % initializations
