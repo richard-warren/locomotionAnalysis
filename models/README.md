@@ -1,8 +1,10 @@
 # todo
-- [ ] prepare predictors for single session
-- [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
+- [ ] prepPredictors
 - [ ] single cell plots
 - [ ] aggregate plots
+- [ ] choose transformations
+  - [ ] may need some mechanism for regressing away arbitrary predictors...
+- [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
   - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
   - [ ] use these plots to determine model transformations
@@ -28,33 +30,40 @@
   - will predictors need 'condition' labels, if i want to break down by e.g. isLightOn later?
 
 # predictors
-- continuous
-  - [ ] wheel velocity
-  - [X] paws (lh lf rf rh) (x y z) (position velocity)
+- [X] continuous
+  - [X] wheel velocity
+  - [X] paws (lh lf rf rh) (x y z)
   - [X] body angle
   - [X] whisker angle
   - [X] butt height
   - [X] jaw [along first PC]
   - [X] ear [along first PC]
   - [X] nose [along first PC]
-  - [ ] satiation
+  - [X] satiation
+  - [X] vel for (almost) all variables above
+  - [X] whisker pad position (this actually moves during grooming...)
   - potential additions:
     - distance to obstacle [ramping signal]
     - distance to reward [ramping signal]
-- logical
-  - swing stance (lh lf rf rh)
-  - paw contacts (lh lf rf rh) (dorsal ventral)
-  - eye open
-  - obstacle on (light nolight)
-  - (maybe add later) one hot vector encoding whether mouse is: running, licking, grooming, doing nothing
-- event
-  - whisker contact
-  - licks
-  - obstacle on
-  - obstacle off
-  - rewards
+    - sound like predictor, obstacle velocity
+    - brightness like predictor, something ramping when light is on and decaying as passes eye position
+- [X] epoch
+  - [X] swing stance (lh lf rf rh)
+  - [X] obstacle (could also be event)
+  - [X] obstacle light (could also be event)
+  - [X] rewards
+  - [X] stride
+  - potential additions:
+    - one hot vector encoding whether mouse is: running, licking, grooming, doing nothing
+    - is eye closed (would require better tracking - currently confidence on eye tracking is low whenever light reflection at bottom of eye is occluded, which occurs during grooming and when eye is closed)
+- [X] event
+  - [X] whisker contact
+  - [X] licks
+  - [X] rewards (normal, surprise, omission)
+  - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
 
 # questions
+- when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
 - how to handle temporal discontinuities in old sessions?
 - some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
 - how to construct distance to obstacle and distance to reward ramping signals? // want something that want signal that goes from SAME small number to 0 at whisker contact, and then fall down again // perhaps should look at all ramping cells to figure out best shape for this predictor
@@ -63,6 +72,7 @@
 - should maybe use continuous signal for licks instead of times, and have a 'home' position for the tongue in the mouth...
 
 # long term todo
+- [ ] how to handle nose in old sessions, which is out of view!
 - [ ] figure out how to filter out poorly behaving sessions (e.g. based on velocity)
 - [ ] make isSated variable, or some predictor that encodes how sated they are?
 - [ ] sliding window mutual information to find optimal leads/lags for predictors, sort of like a non-linear version of cross-correlations
@@ -71,6 +81,7 @@
 - [ ] housekeeping
   - [ ] make sure getKinematicData works with new analysis... will we be using this in the new project at all?
   - [ ] get rid of redundant video files
+  - should i be storing stanceBins in runAnalyzed.mat?
 - [ ] documentation for creating training data
 - [ ] add lick amplitude?
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)

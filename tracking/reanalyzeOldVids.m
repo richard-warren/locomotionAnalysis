@@ -59,7 +59,7 @@ disp('all done!')
 % settings
 close all
 skipSessions = {};
-vars = {'whiskerAngle'};
+vars = {''};
 args = {'showLickFig', true};  % passed to analyzeSession
 
 fprintf('\n_____ reanalyzing: '); fprintf('%s ', vars{:}); fprintf('_____\n')
@@ -69,15 +69,6 @@ for i = 1:length(sessions)
     fprintf('\n')
 end
 disp('all done!')
-
-%% show tracking with continuous signal
-
-session = ephysSessions{1};
-
-locationsWisk = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'frameTimeStampsWisk')
-
-showTracking(session, 'sig', locationsWisk.tongue_1, 'sigTimes', frameTimeStampsWisk)
 
 
 %% reanalyze single sessions
@@ -148,19 +139,7 @@ disp('data saved')
 % of the analysis on the uncropped video // alternatively, see if old DLC
 % can handle uncropped vids, and reanalyze like that...
 
-%% load lick time diffs for all sessions
 
-d = cell(1, length(ephysSessions));
-for i = 1:length(ephysSessions)
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runAnalyzed.mat'), 'lickTimes')
-    d{i} = diff(lickTimes);
-end
-disp('all done!')
-
-
-close all;
-diffs = cat(1,d{:});
-figure; histogram(diffs(diffs<1)*250,100)
 
 %% check confidence statistics for new and old sessions
 
@@ -173,40 +152,10 @@ oldConf = table2array(old(:,contains(old.Properties.VariableNames, '_2')));
 bins = 100;
 close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bins)
 
-%% copy metadata to all ephysSessions
 
-files = {'trackedFeaturesRaw_metadata.mat', 'trackedFeaturesRaw_wisk_metadata.mat'};
-srcDir = 'C:\Users\rick\Desktop\';
+%% prep predictors
 
 for i = 1:length(ephysSessions)
-    for j = 1:length(files)
-        copyfile(fullfile(srcDir, files{j}), ...
-            fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, files{j}));
-    end
+    prepPredictors(ephysSessions{i})
 end
-disp('all done!')
 
-
-%% find grooming by plotting wheel vel and vertical paw position
-
-close all
-sessions = ephysSessions(1:14);
-
-for i = 1:length(sessions)
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
-        'wheelPositions', 'wheelTimes', 'rewardTimes', 'frameTimeStamps');
-    locations = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'trackedFeaturesRaw.csv'));
-    rf_z = -locations.paw3RF_top_1;
-    rf_conf = locations.paw3RF_top_2;
-    rf_z(rf_conf<.8) = nan;
-    wheelVel = getVelocity(wheelPositions, .1, 1/nanmedian(diff(wheelTimes)));
-
-    figure('name', sessions{i}, 'color', 'white', 'Position', [30.00 772.00 1781.00 176.00]); hold on
-%     yyaxis left
-%     plot(wheelTimes, wheelVel)
-%     yyaxis right
-    plot(frameTimeStamps, rf_z)
-    set(gca, 'ylim', [-140 0])
-    pause(.1)
-end
-disp('all done!')
