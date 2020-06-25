@@ -155,7 +155,7 @@ close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bin
 
 %% prep predictors
 
-for i = 1:length(ephysSessions)
+for i = 24:length(ephysSessions)
     prepPredictors(ephysSessions{i})
 end
 

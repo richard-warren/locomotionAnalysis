@@ -1,6 +1,6 @@
 # todo
-- [ ] prepPredictors
 - [ ] single cell plots
+  - [ ] psth, epoch, continuous 'tuning curves'
 - [ ] aggregate plots
 - [ ] choose transformations
   - [ ] may need some mechanism for regressing away arbitrary predictors...
@@ -16,10 +16,6 @@
     - continuous: continuous signals
     - logical: nX2 matrix of on/off times
     - event: nX1 matrix of times
-- prepDesignMatrix
-  - given predictors from prepPredictors, creates design matrix by
-    - including only user defined predictors
-    - applying transformation (e.g. convolve, raise to powers...)
 - saveCellTuning
   - for each cell, compute tuning for each predictors in prepPredictors (not in design matrix)
   - for each cell-predictor combo, compute (trial X time) matrix of firing rate responses, along with x axis values, and *maybe* condition of each row (e.g. is light on, is reward omission)
@@ -28,7 +24,10 @@
     - continuous: density estimates, along with x axis probability?
   - each predictor will need associated x axis range
   - will predictors need 'condition' labels, if i want to break down by e.g. isLightOn later?
-
+- prepDesignMatrix
+  - given predictors from prepPredictors, creates design matrix by
+    - including only user defined predictors
+    - applying transformation (e.g. convolve, raise to powers...)
 # predictors
 - [X] continuous
   - [X] wheel velocity
@@ -70,6 +69,8 @@
 - how to handle moments when predictors are not known, e.g. occlusion
 - is there a quantitative index that tells the non-linearity of a relationship? eg fraction of variance explained non-linearly after regressing away linear relationship?
 - should maybe use continuous signal for licks instead of times, and have a 'home' position for the tongue in the mouth...
+- how to see if information being encoded varies over time
+- how to do these info theoretic 'bits per thing' metrics of utility of dft predictors
 
 # long term todo
 - [ ] how to handle nose in old sessions, which is out of view!
@@ -87,6 +88,7 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] prepPredictors
 - [X] write autoAnalyze
 - [X] add omissionTimes and surpriseTimes to analyzeSession
 - [X] make scoreThresh dlc vs. dpk dependent

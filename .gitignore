@@ -3,3 +3,6 @@
 
 # videos
 *.mp4
+
+# other
+.idea

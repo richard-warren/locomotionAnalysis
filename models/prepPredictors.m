@@ -69,25 +69,25 @@ cntPredictors.buttHeight = buttHeight(:);
 
 % jaw (first pc projection)
 [jawX, jawZ, jawConfidence] = deal(locationsWisk.jaw, locationsWisk.jaw_1, locationsWisk.jaw_2);
-jaw = pcProject([jawX, jawZ], jawConfidence, true);
+jaw = pcProject([jawX, jawZ], jawConfidence, true, 'jaw');
 jaw = interp1(frameTimeStampsWisk(validTimesWisk), jaw(validTimesWisk), t);
 cntPredictors.jaw = jaw(:);
 
 % ear (first pc projection)
 [earX, earZ, earConfidence] = deal(locationsRun.ear, locationsRun.ear_1, locationsRun.ear_2);
-ear = pcProject([earX, earZ], earConfidence, true);
+ear = pcProject([earX, earZ], earConfidence, true, 'ear');
 ear = interp1(frameTimeStamps(validTimes), ear(validTimes), t);
 cntPredictors.ear = ear(:);
 
 % nose (first pc projection)
 [noseX, noseZ, noseConfidence] = deal(locationsWisk.nose, locationsWisk.nose_1, locationsWisk.nose_2);
-nose = pcProject([noseX, noseZ], noseConfidence, true);
+nose = pcProject([noseX, noseZ], noseConfidence, true, 'nose');
 nose = interp1(frameTimeStampsWisk(validTimesWisk), nose(validTimesWisk), t);
 cntPredictors.nose = nose(:);
 
 % % whisker pad (first pc projection)
 % [padX, padZ, padConfidence] = deal(locationsWisk.wisk_pad, locationsWisk.wisk_pad_1, locationsWisk.wisk_pad_2);
-% pad = pcProject([padX, padZ], padConfidence, true);
+% pad = pcProject([padX, padZ], padConfidence, true, 'pad');
 % pad = interp1(frameTimeStampsWisk(validTimesWisk), pad(validTimesWisk), t);
 % cntPredictors.pad = pad(:);
 
@@ -192,7 +192,7 @@ if s.plotPredictors
     
     % initialiations
     set(0, 'DefaultAxesTickLabelInterpreter', 'none')
-    figure('color', 'white', 'position', [125.00 93.00 1666.00 886.00]); hold on
+    figure('name', session, 'color', 'white', 'position', [125.00 93.00 1666.00 886.00]); hold on
     eventNames = fieldnames(eventPredictors); eventNames = eventNames(~ismember(eventNames, ommit));
     epochNames = fieldnames(epochPredictors); epochNames = epochNames(~ismember(epochNames, ommit));
     cntNames = cntPredictors.Properties.VariableNames(2:end); cntNames = cntNames(~ismember(cntNames, ommit));
@@ -206,7 +206,9 @@ if s.plotPredictors
     for i = 1:length(epochNames)
         epoch = epochPredictors.(epochNames{i});
         epoch = epoch(any(epoch>xLims(1) & epoch<xLims(2),2),:);  % only plot epochs within xLims
-        plot(epoch', repelem(y(i), 2), 'LineWidth', 5, 'color', colors(i,:))
+        if ~isempty(epoch)
+            plot(epoch', repelem(y(i), 2), 'LineWidth', 5, 'color', colors(i,:))
+        end
     end
     
     % continuous
@@ -246,21 +248,25 @@ if s.plotPredictors; savefig(gcf, fullfile(dirName, 'predictors')); end
 % FUNCTIONS
 % ---------
 
-function projection = pcProject(sig, confidence, normalize)
+function projection = pcProject(sig, confidence, normalize, name)
     % project signal onto first principal component
     % signal is (time X dimension) matrix
     
-    if ~exist('normalize', 'var'); normalize = false; end
+    validBins = confidence>=scoreThresh;
+    if mean(validBins)>.5  % at least half of the frame must be tracked
+        sig(~validBins,:) = nan;
+        pcs = pca(sig);
+        projection = sig * pcs(:,1);  % project onto first pc
+        lims = prctile(projection, s.percentileLims);
+        projection(projection<lims(1) | projection>lims(2)) = nan;
+        projection = fillmissing(projection, 'pchip');
     
-    sig(confidence<scoreThresh,:) = nan;
-    pcs = pca(sig);
-    projection = sig * pcs(:,1);  % project onto first pc
-    lims = prctile(projection, s.percentileLims);
-    projection(projection<lims(1) | projection>lims(2)) = nan;
-    projection = fillmissing(projection, 'pchip');
-    
-    if normalize
-        projection = (projection-nanmean(projection)) / pixelsPerM;
+        if normalize
+            projection = (projection-nanmean(projection)) / pixelsPerM;
+        end
+    else
+        projection = zeros(1,length(confidence));
+        fprintf('  %s tracking unsuccessful\n', name)
     end
 end
 
