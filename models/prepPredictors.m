@@ -253,10 +253,8 @@ end
 
 dirName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling');
 if ~exist(dirName, 'dir'); mkdir(dirName); end
-save(fullfile(dirName, 'predictors.mat'), 'contPredictors', 'epochPredictors', 'eventPredictors')
-if s.plotPredictors
-    saveas(gcf, fullfile(dirName, 'predictors.png'));
-end
+save(fullfile(dirName, 'predictors.mat'), 'predictors')
+if s.plotPredictors; saveas(gcf, fullfile(dirName, 'predictors.png')); end
 
 
 
