@@ -1,3 +1,9 @@
+%% find ephysSessions
+
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
+ephysSessions = ephysInfo.session(ephysInfo.include==1);
+clear ephysInfo
+
 %% find out which sessions have 'originalDimensions' files
 
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
@@ -17,12 +23,6 @@ for i = 1:length(sessions)
     end
 end
 disp('all done!')
-
-%% find ephysSessions
-
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
-ephysSessions = ephysInfo.session(ephysInfo.include==1);
-clear ephysInfo
 
 
 %% reanalyze everything for ephys sessions
@@ -155,7 +155,7 @@ close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bin
 
 %% prep predictors
 
-for i = 24:length(ephysSessions)
+for i = 1:length(ephysSessions)
     prepPredictors(ephysSessions{i})
 end
 

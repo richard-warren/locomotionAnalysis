@@ -2,7 +2,7 @@
 - [ ] single cell plots
   - [ ] psth, epoch, continuous 'tuning curves'
 - [ ] aggregate plots
-- [ ] choose transformations
+- [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
 - [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here

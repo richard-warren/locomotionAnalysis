@@ -36,12 +36,12 @@ validTimesWisk = ~isnan(frameTimeStampsWisk);
 tMin = max([frameTimeStamps(1), frameTimeStampsWisk(1), 0]);  % start with recording device that starts last (spike starts at zero)
 tMax = min([frameTimeStamps(end), frameTimeStampsWisk(end), wheelTimes(end)]);  % start with recording device that ends first
 t = tMin:s.dt:tMax;
-cntPredictors = table(t', 'VariableNames', {'t'});
+contPredictors = table(t', 'VariableNames', {'t'});
 
 % wheel velocity
 vel = getVelocity(wheelPositions, s.velTime, 1/nanmedian(diff(wheelTimes)));
 vel = interp1(wheelTimes, vel, t);
-cntPredictors.velocity = vel(:);
+contPredictors.velocity = vel(:);
 
 % paw locations and velocity
 [pawXYZ, pawXYZ_pixels] = getPawXYZ(session);
@@ -49,15 +49,15 @@ for i = 1:length(pawNames)
     for j = 1:3
         pos = pawXYZ.(pawNames{i})(:,j);
         pos = interp1(frameTimeStamps(validTimes), pos(validTimes), t);
-        cntPredictors.([pawNames{i} '_' dimensions{j}]) = pos(:);
+        contPredictors.([pawNames{i} '_' dimensions{j}]) = pos(:);
     end
 end
 
 % body angle
-cntPredictors.bodyAngle = interp1(frameTimeStamps(validTimes), bodyAngles(validTimes), t)';
+contPredictors.bodyAngle = interp1(frameTimeStamps(validTimes), bodyAngles(validTimes), t)';
 
 % whisker angle
-cntPredictors.whiskerAngle = interp1(frameTimeStampsWisk(validTimesWisk), whiskerAngle(validTimesWisk), t)';
+contPredictors.whiskerAngle = interp1(frameTimeStampsWisk(validTimesWisk), whiskerAngle(validTimesWisk), t)';
 
 % butt height
 [buttHeight, buttConfidence] = deal(locationsRun.tailBase_top_1, locationsRun.tailBase_top_2);
@@ -65,25 +65,25 @@ buttHeight(buttConfidence<scoreThresh) = nan;
 buttHeight = fillmissing(buttHeight, 'pchip');
 buttHeight = ((wheelCenter(2)-wheelRadius) - buttHeight) / pixelsPerM; % flip z and set s.t. top of wheel is zero
 buttHeight = interp1(frameTimeStamps(validTimes), buttHeight(validTimes), t);
-cntPredictors.buttHeight = buttHeight(:);
+contPredictors.buttHeight = buttHeight(:);
 
 % jaw (first pc projection)
 [jawX, jawZ, jawConfidence] = deal(locationsWisk.jaw, locationsWisk.jaw_1, locationsWisk.jaw_2);
 jaw = pcProject([jawX, jawZ], jawConfidence, true, 'jaw');
 jaw = interp1(frameTimeStampsWisk(validTimesWisk), jaw(validTimesWisk), t);
-cntPredictors.jaw = jaw(:);
+contPredictors.jaw = jaw(:);
 
 % ear (first pc projection)
 [earX, earZ, earConfidence] = deal(locationsRun.ear, locationsRun.ear_1, locationsRun.ear_2);
 ear = pcProject([earX, earZ], earConfidence, true, 'ear');
 ear = interp1(frameTimeStamps(validTimes), ear(validTimes), t);
-cntPredictors.ear = ear(:);
+contPredictors.ear = ear(:);
 
 % nose (first pc projection)
 [noseX, noseZ, noseConfidence] = deal(locationsWisk.nose, locationsWisk.nose_1, locationsWisk.nose_2);
 nose = pcProject([noseX, noseZ], noseConfidence, true, 'nose');
 nose = interp1(frameTimeStampsWisk(validTimesWisk), nose(validTimesWisk), t);
-cntPredictors.nose = nose(:);
+contPredictors.nose = nose(:);
 
 % % whisker pad (first pc projection)
 % [padX, padZ, padConfidence] = deal(locationsWisk.wisk_pad, locationsWisk.wisk_pad_1, locationsWisk.wisk_pad_2);
@@ -94,15 +94,15 @@ cntPredictors.nose = nose(:);
 % satiation
 lickBins = histcounts(lickTimes, [t (t(end)+s.dt)]);
 satiation = cumsum(lickBins) / sum(lickBins);
-cntPredictors.satiation = satiation(:);
+contPredictors.satiation = satiation(:);
 
 % velocity for continuous predictors
-names = cntPredictors.Properties.VariableNames;
+names = contPredictors.Properties.VariableNames;
 exclude = {'t', 'velocity', 'satiation'};  % don't compute velocity for these predictors
 for i = 1:length(names)
     if ~ismember(names{i}, exclude)
-        vel = getVelocity(cntPredictors.(names{i}), s.velTime, 1/s.dt);
-        cntPredictors.([names{i} '_vel']) = vel(:);
+        vel = getVelocity(contPredictors.(names{i}), s.velTime, 1/s.dt);
+        contPredictors.([names{i} '_vel']) = vel(:);
     end
 end
 
@@ -195,8 +195,8 @@ if s.plotPredictors
     figure('name', session, 'color', 'white', 'position', [125.00 93.00 1666.00 886.00]); hold on
     eventNames = fieldnames(eventPredictors); eventNames = eventNames(~ismember(eventNames, ommit));
     epochNames = fieldnames(epochPredictors); epochNames = epochNames(~ismember(epochNames, ommit));
-    cntNames = cntPredictors.Properties.VariableNames(2:end); cntNames = cntNames(~ismember(cntNames, ommit));
-    allNames = [epochNames; cntNames'; eventNames];
+    contNames = contPredictors.Properties.VariableNames(2:end); contNames = contNames(~ismember(contNames, ommit));
+    allNames = [epochNames; contNames'; eventNames];
     rows = length(allNames);
     colors = lines(rows);
     y = 0:dz:dz*rows-1;
@@ -214,11 +214,11 @@ if s.plotPredictors
     % continuous
     dy = length(epochNames);
     bins = t>xLims(1) & t<xLims(2);
-    yOffsets = y((1:length(cntNames))+dy);
-    plot(t(bins), zscore(table2array(cntPredictors(bins,2:end))) + yOffsets);
+    yOffsets = y((1:length(contNames))+dy);
+    plot(t(bins), zscore(table2array(contPredictors(bins,2:end))) + yOffsets);
     
     % events
-    dy = length(epochNames) + length(cntNames);
+    dy = length(epochNames) + length(contNames);
     plot(xLims, repmat(y((1:length(eventNames))+dy),2,1)', 'color', [.4 .4 .4])  % horizontal lines for each event predictor
     for i = 1:length(eventNames)
         x = eventPredictors.(eventNames{i});
@@ -238,8 +238,11 @@ end
 
 dirName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling');
 if ~exist(dirName, 'dir'); mkdir(dirName); end
-save(fullfile(dirName, 'predictors.mat'), 'cntPredictors', 'epochPredictors', 'eventPredictors')
-if s.plotPredictors; savefig(gcf, fullfile(dirName, 'predictors')); end
+save(fullfile(dirName, 'predictors.mat'), 'contPredictors', 'epochPredictors', 'eventPredictors')
+if s.plotPredictors
+    delete(fullfile(dirName, 'predictors.fig'))  % temp
+    saveas(gcf, fullfile(dirName, 'predictors.png'));
+end
 
 
 
