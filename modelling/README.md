@@ -62,6 +62,11 @@
   - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
 
 # questions
+- ashok continuous tuning Qs:
+  - how best to capture 'avg' tuning of firing rate to continuous var
+  - sliding average vs kernel vs gaussian process model
+  - instantaneous fr vs. densities based on spike times
+  - incorporate uncertainty into across mouse pooling? eg weight by x axis probability...
 - when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
 - how to handle temporal discontinuities in old sessions?
 - some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
@@ -119,3 +124,10 @@
   - [X] whisker angle
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
+
+# to clear disk space in the future we could:
+- get rid of runTop, runBot when run exists
+- get rid of originalDimensions for old sessions OR ...
+- get rid of cropped for old sessions and reanalyze: could potentially
+- analyze on cropped vids with old network, then shift the coordinates to accomodate the cropping, and throw away cropped vid, performing the rest of the analysis on the uncropped video
+- alternatively, see if old DLC can handle uncropped vids, and reanalyze like that...

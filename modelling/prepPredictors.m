@@ -1,4 +1,4 @@
-function prepPredictors(session)
+function prepPredictors(session, varargin)
 
 % prepares table containing all predictors used for neural encoding models
 % // data are either events, epochs (e.g. isLightOn), or continuous
@@ -18,9 +18,8 @@ s.plotPredictors = true;
 
 
 
-
 % initializations
-% if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 fprintf('%s: preparing predictors...\n', session)
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', ...
@@ -123,7 +122,6 @@ end
 
 
 
-
 % -----
 % EPOCH
 % -----
@@ -151,7 +149,6 @@ for i = 1:4
     swingStartTimes = frameTimeStamps(find(diff(stanceBins(:,i))==-1)+1);
     addPredictor([pawNames{i} '_stride'], [swingStartTimes(1:end-1) swingStartTimes(2:end)], 'epoch')
 end
-
 
 
 
@@ -192,9 +189,9 @@ end
 
 
 
-% ------------------
-% PLOT YOUR FACE OFF
-% ------------------
+% -----
+% PLOT!
+% -----
 
 % make nice little plot
 if s.plotPredictors
@@ -242,7 +239,9 @@ if s.plotPredictors
     end
     
     % fancify
-    set(gca, 'xlim', xLims, 'ytick', y, 'YTickLabel', predictors.Properties.RowNames(allInds), 'YLim', [y(1) y(end)], 'TickDir', 'out')
+    set(gca, 'xlim', xLims, 'ytick', y, ...
+        'YTickLabel', predictors.Properties.RowNames([epochInds; contInds; eventInds]), ...
+        'YLim', [y(1) y(end)], 'TickDir', 'out')
 end
 
 
@@ -254,8 +253,9 @@ end
 dirName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling');
 if ~exist(dirName, 'dir'); mkdir(dirName); end
 save(fullfile(dirName, 'predictors.mat'), 'predictors')
-if s.plotPredictors; saveas(gcf, fullfile(dirName, 'predictors.png')); end
-
+if s.plotPredictors
+    saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', sprintf('%s predictors.png', session)));
+end
 
 
 
@@ -305,6 +305,14 @@ function addPredictor(name, data, type, t)
     % extends predictors tabel by add a new row
     
     if ~exist('t', 'var'); t = []; end
+    
+    % ensure homogeneous orientation
+    if strcmp(type, 'event')
+        data=data(:);
+    elseif strcmp(type, 'continuous')
+        data=data(:)';
+    end
+    
     newRow = table({data}, categorical({type}, {'event', 'epoch', 'continuous'}), {t}, ...
         'VariableNames', {'data', 'type', 't'}, 'RowNames', {name});
     predictors = [predictors; newRow];

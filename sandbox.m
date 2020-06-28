@@ -238,3 +238,104 @@ for i = 1:length(sessions)
     
     
 end
+
+%% test nonparametric curve fitting methods
+
+
+% settings
+
+% make data
+xLims = [0 8*pi];
+offset = 2;
+n = 1000;
+smps = 400;
+noise = .5;
+xDist = makedist('Triangular', 'a', mean(xLims), 'b', xLims(2), 'c', xLims(2));
+xTrue = linspace(xLims(1), xLims(2), n);
+yTrue = sin(xTrue) + offset;
+x = random(xDist, 1, smps);
+y = sin(x) + offset + randn(1,smps)*noise;
+
+
+
+% plot
+close all
+figure('color', 'white', 'position', [962.00 2.00 958.00 994.00]);
+subplot(4,1,1); hold on;
+plot(xTrue, yTrue, 'LineWidth', 2, 'Color', [0 0 0 .25])
+scatter(x, y, 20, 'filled', 'MarkerFaceAlpha', .4)
+yLims = get(gca, 'ylim');
+set(gca, 'xlim', xLims)
+ylabel('samples')
+
+% moving average
+width = .1;
+window = diff(xLims)*width;
+mvAvg = nan(1,n);
+for i = 1:n
+    bins = x>=(xTrue(i)-.5*window) & x<(xTrue(i)+.5*window);
+    mvAvg(i) = sum(y(bins)) / sum(bins);
+end
+mvAvg = smooth(mvAvg, 40);
+
+subplot(4,1,2); hold on;
+plot(xTrue, yTrue, 'LineWidth', 2, 'Color', [0 0 0 .25])
+plot(xTrue, mvAvg, 'LineWidth', 2)
+set(gca, 'ylim', yLims, 'xlim', xLims)
+
+% density estimation
+[pdf, xi] = ksdensity([x' y']);
+pdf = reshape(pdf, sqrt(length(pdf)), []);
+pdfNorm = pdf ./ sum(pdf,1);  % normalize columns
+xPdf = unique(xi(:,1));
+colMeans = unique(xi(:,2))' * pdfNorm;
+subplot(4,1,3); hold on
+plot(xTrue, yTrue, 'LineWidth', 2, 'Color', [0 0 0 .25])
+plot(xPdf, colMeans, 'LineWidth', 2)
+set(gca, 'ylim', yLims, 'xlim', xLims)
+ylabel('joint pdf mean')
+
+% gpr
+tic
+phi = [mean(std(x))*.5; std(y)/sqrt(2)];  % length scale, signal std
+
+gprModel = fitrgp(x', y, 'FitMethod', 'none', 'KernelParameters', phi, 'ConstantSigma', true);
+
+% inds = randperm(smps, setSz);
+% setSz = 1000;
+% gprModel = fitrgp(x(inds)', y(inds), ...
+%     'FitMethod', 'none', 'KernelParameters', phi, 'ConstantSigma', true);
+
+yGpr = predict(gprModel, xTrue');
+
+subplot(4,1,4); hold on
+cla
+plot(xTrue, yTrue, 'LineWidth', 2, 'Color', [0 0 0 .25])
+plot(xTrue, yGpr, 'LineWidth', 2)
+set(gca, 'ylim', yLims, 'xlim', xLims)
+ylabel('gaussian process regression')
+toc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

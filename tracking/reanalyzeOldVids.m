@@ -126,21 +126,6 @@ save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), '-s
 disp('data saved')
 
 
-%% to clear up disk space we could:
-
-
-% get rid of runTop, runBot when run exists
-
-% get rid of originalDimensions for old sessions OR ...
-
-% get rid of cropped for old sessions and reanalyze: could potentially
-% analyze on cropped vids with old network, then shift the coordinates to
-% accomodate the cropping, and throw away cropped vid, performing the rest
-% of the analysis on the uncropped video // alternatively, see if old DLC
-% can handle uncropped vids, and reanalyze like that...
-
-
-
 %% check confidence statistics for new and old sessions
 
 new = readtable('Z:\loco\obstacleData\sessions\200311_000\trackedFeaturesRaw.csv');
@@ -153,9 +138,10 @@ bins = 100;
 close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bins)
 
 
-%% prep predictors
+%% modelling analyses on all sessions
 
 for i = 1:length(ephysSessions)
     prepPredictors(ephysSessions{i})
+    getNeuralResponses(ephysSessions{i})
 end
 
