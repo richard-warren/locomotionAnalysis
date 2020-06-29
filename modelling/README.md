@@ -1,7 +1,15 @@
 # todo
-- [ ] single cell plots
-  - [ ] psth, epoch, continuous 'tuning curves'
-- [ ] aggregate plots
+- [ ] revisit spk rate kernel width... fast enough for lick responses?
+- [ ] getNeuralResponses
+  - [X] initial draft
+  - [X] single cell plots
+  - [X] fix empty plots
+  - [X] add phase as to prepPredictors
+  - [ ] add response duration to epochs // other metadata?
+  - [ ] add 'include' field or similar when predictor analysis fails
+  - [ ] separate plot function?
+  - [ ] replace moving avgs (add std AND confidence metric along x axis?)
+- [ ] aggregate plots!
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
 - [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
@@ -16,7 +24,7 @@
     - continuous: continuous signals
     - logical: nX2 matrix of on/off times
     - event: nX1 matrix of times
-- saveCellTuning
+- getNeuralResponses
   - for each cell, compute tuning for each predictors in prepPredictors (not in design matrix)
   - for each cell-predictor combo, compute (trial X time) matrix of firing rate responses, along with x axis values, and *maybe* condition of each row (e.g. is light on, is reward omission)
     - event: true PSTHs
@@ -78,6 +86,7 @@
 - how to do these info theoretic 'bits per thing' metrics of utility of dft predictors
 
 # long term todo
+- [ ] should i mask out phase when not running? also, why do i need to high pass for phase to work??
 - [ ] how to handle nose in old sessions, which is out of view!
 - [ ] figure out how to filter out poorly behaving sessions (e.g. based on velocity)
 - [ ] make isSated variable, or some predictor that encodes how sated they are?

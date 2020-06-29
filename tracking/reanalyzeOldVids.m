@@ -141,7 +141,12 @@ close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bin
 %% modelling analyses on all sessions
 
 for i = 1:length(ephysSessions)
-    prepPredictors(ephysSessions{i})
-    getNeuralResponses(ephysSessions{i})
+    try
+        prepPredictors(ephysSessions{i})
+        getNeuralResponses(ephysSessions{i})
+        close all
+    catch
+        fprintf('%s: problem analysis\n', ephysSessions{i})
+    end
 end
 

@@ -317,7 +317,33 @@ ylabel('gaussian process regression')
 toc
 
 
+%% test phase determination
 
+
+% % fake data
+% x = linspace(0, 8*pi, 1000);
+% y = sin(x);
+
+% real data
+load('temp.mat', 't', 'pos')
+x = t;
+y = pos;
+clear pos t
+
+xLims = [700 750];
+
+% high pass
+y = highpass(y, .1, 1/median(diff(x)));
+
+% compute phase
+phase = angle(hilbert(y));
+
+
+close all;
+figure('color', 'white', 'position', [86.00 473.00 1748.00 420.00]); hold on
+plot(x, y * ((2*pi)/range(y)));
+plot(x, phase);
+set(gca, 'xlim', xLims)
 
 
 
