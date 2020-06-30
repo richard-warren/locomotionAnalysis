@@ -5,10 +5,8 @@
   - [X] single cell plots
   - [X] fix empty plots
   - [X] add phase as to prepPredictors
-  - [ ] add response duration to epochs // other metadata?
+  - [X] add confidence and density estimates to continuous variables
   - [ ] add 'include' field or similar when predictor analysis fails
-  - [ ] separate plot function?
-  - [ ] replace moving avgs (add std AND confidence metric along x axis?)
 - [ ] aggregate plots!
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
@@ -70,11 +68,6 @@
   - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
 
 # questions
-- ashok continuous tuning Qs:
-  - how best to capture 'avg' tuning of firing rate to continuous var
-  - sliding average vs kernel vs gaussian process model
-  - instantaneous fr vs. densities based on spike times
-  - incorporate uncertainty into across mouse pooling? eg weight by x axis probability...
 - when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
 - how to handle temporal discontinuities in old sessions?
 - some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact

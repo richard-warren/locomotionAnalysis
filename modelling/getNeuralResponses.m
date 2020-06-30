@@ -12,7 +12,7 @@ s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
 s.epochGridNum = 200;  % number of points in epoch x axis
 s.percentileLims = [.1 99.9];  % limits for continuous variables
-s.contGridNum = 500;    % number of points in continuous x axis
+s.contGridNum = 200;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
 s.plotResponses = true;  % whether to make and save plot of all responses
 
@@ -34,11 +34,11 @@ xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.epochGridNum);
 
 
 % for each cell
-for i = 2:length(unit_ids)
+for i = 1:length(unit_ids)
     fprintf('%s, cell %i: computing neural responses...\n', session, cellData.unit_id(i))
     
-    cellResponses = table({}, categorical({}, {'event', 'epoch', 'continuous'}), [], ...
-        'VariableNames', {'response', 'type', 'xLims'}, 'RowNames', {});
+    cellResponses = table({}, {}, {}, categorical({}, {'event', 'epoch', 'continuous'}), [], ...
+        'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {});
     tLims = timeStamps([find(~isnan(spkRates(i,:)),1,'first') find(~isnan(spkRates(i,:)),1,'last')]);
     
     if s.plotResponses
@@ -113,22 +113,26 @@ for i = 2:length(unit_ids)
             xGrid = linspace(xLims(1), xLims(2), s.contGridNum);
             winSz = s.contWindowSz*diff(xLims);
             
-            response = nan(1, length(xGrid));
+            [response, responseStd, density] = deal(nan(1, length(xGrid)));
             for k = 1:length(xGrid)
                 bins = predictors.data{j} >= (xGrid(k)-.5*winSz) & ...
                     predictors.data{j} < (xGrid(k)+.5*winSz) & ...
                     ~isnan(spkRate);
-                if any(bins); response(k) = sum(spkRate(bins)) / sum(bins); end
+                if any(bins)
+                    response(k) = sum(spkRate(bins)) / sum(bins);
+                    responseStd(k) = std(spkRate(bins));
+                    density(k) = sum(bins);
+                end
             end
+            density = density / sum(density);
             cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'continuous', xLims);
+                predictors.Properties.RowNames{j}, response, 'continuous', xLims, responseStd, density);
             
             if s.plotResponses
                 subplot(rows, rows, j); hold on
-                pdf = ksdensity(predictors.data{j}, xGrid);
-                pdf = pdf * (yMax/max(pdf));
+                density = density * (yMax/max(density));
                 fill([xLims(1) xGrid xLims(2) xLims(1)]', ...
-                    [0 pdf 0 0]', [0 0 0], ...
+                    [0 density 0 0]', [0 0 0], ...
                     'EdgeColor', [1 1 1]*.6, 'FaceAlpha', .1)
                 inds = randperm(length(spkRate), 1000);
                 scatter(predictors.data{j}(inds), spkRate(inds), 5, s.contColor, 'filled', 'markerfacealpha', .25)
@@ -157,14 +161,16 @@ disp('all done!')
 
 
 
-function responses = addResponse(responses, name, data, type, xLims)
+function responses = addResponse(responses, name, response, type, xLims, responseStd, density)
     % extend predictors table by adding new row
     
-    if ~exist('xLims', 'var'); xLims = []; end
-    newRow = table({data}, categorical({type}, {'event', 'epoch', 'continuous'}), xLims, ...
-        'VariableNames', {'response', 'type', 'xLims'}, 'RowNames', {name});
+    % conly continuous variables have the following fields
+    if ~exist('responseStd', 'var'); responseStd= []; end
+    if ~exist('density', 'var'); density = []; end
+    
+    newRow = table({response}, {responseStd}, {density}, categorical({type}, {'event', 'epoch', 'continuous'}), xLims, ...
+        'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {name});
     responses = [responses; newRow];
-%     fprintf('adding: %s...\n', name)
 end
 
 end
