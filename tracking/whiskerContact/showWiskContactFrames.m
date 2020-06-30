@@ -2,8 +2,7 @@ function showWiskContactFrames(session)
 
 % initializations
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'wiskContactFrames', 'wiskContactFramesConfidences')
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'wiskContactFrames')
 
 if exist('wiskContactFrames', 'var')
     allImgs = zeros(vid.Height, vid.Width, length(wiskContactFrames));
@@ -16,8 +15,9 @@ if exist('wiskContactFrames', 'var')
         end
     end
 
-    figure; montage(allImgs, 'DisplayRange', [0 255]);
-    set(gcf, 'name', session, 'units', 'normalized', 'position', [0 0 1 1])
+    figure();
+    montage(allImgs, 'DisplayRange', [0 255]);
+    set(gcf, 'name', sprintf('%s: whisker contact frames', session), 'position', [40 40 1800 900]);
 else
     fprintf('%s: no whisker frames to show!', session)
 end

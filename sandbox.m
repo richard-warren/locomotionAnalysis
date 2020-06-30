@@ -317,46 +317,23 @@ ylabel('gaussian process regression')
 toc
 
 
-%% test phase determination
+%% look into kernel width (by seeing spk rate fluctuations surrouding lick times)
+
+session = '200311_000';
+cell = 73;
 
 
-% % fake data
-% x = linspace(0, 8*pi, 1000);
-% y = sin(x);
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'));
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'lickTimes');
+cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
+cellInd = find(cellData.unit_id==cell);
 
-% real data
-load('temp.mat', 't', 'pos')
-x = t;
-y = pos;
-clear pos t
+%%
+close all
+figure; hold on
 
-xLims = [700 750];
-
-% high pass
-y = highpass(y, .1, 1/median(diff(x)));
-
-% compute phase
-phase = angle(hilbert(y));
-
-
-close all;
-figure('color', 'white', 'position', [86.00 473.00 1748.00 420.00]); hold on
-plot(x, y * ((2*pi)/range(y)));
-plot(x, phase);
-set(gca, 'xlim', xLims)
-
-
-
-
-
-
-
-
-
-
-
-
-
+plot(timeStamps, spkRates(cellInd,:));
+plot([lickTimes, lickTimes]', get(gca,'ylim'), 'color', [.4 .4 1]);
 
 
 

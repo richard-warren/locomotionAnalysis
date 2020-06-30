@@ -14,7 +14,7 @@ if ~exist('obsTracking', 'var')
     load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'obsTracking');
 end
 figure('name', [session ': obstacle tracking of wheel velocity'], ...
-    'color', 'white', 'position', [2002 41 1462 940])
+    'color', 'white', 'position', [40 40 1800 900])
 plotCols = ceil(length(obsTracking) / plotRows);
 
 % plot

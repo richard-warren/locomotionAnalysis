@@ -5,12 +5,11 @@ function formatEphysData(session, varargin)
 
 
 % settings
-s.spkRateFs = 1000;     % sampling frequency of instantaneous firing rate
-s.kernelRise = .005;  % rise and fall for double exponential kernel
-s.kernelFall = .02;
-s.kernelSig = .02;  % if a gaussian kernel is used
+s.spkRateFs = 1000;      % sampling frequency of instantaneous firing rate
+s.kernelRise = .005;     % (s) rise for double exponential kernel
+s.kernelFall = .02;      % (s) fall for double exponential kernel
+s.kernelSig = .02;       % (s) if a gaussian kernel is used
 s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
-s.event = 'reward'; % what event is openEphys using for syncing
 s.eventTimeName = 'rewardTimes'; % the name of paramters storing event(defined by s.event) time in spike clock
 
 
@@ -107,6 +106,7 @@ end
 
 
 % Linear mapping from open ephys to spike event time
+% todo: the mapping should maybe be piecewise, eg using interp1()
 openEphysToSpikeMapping = polyfit(matchEventEphysTimes, matchEventSpikeTimes, 1); % get linear mapping from open ephys to spike
 
 % check that predictions are accurate
@@ -171,9 +171,9 @@ for i = 1:length(spkTimes)
     
 end
 
-
+settings = s;
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping')
+     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping', 'settings')
 disp('all done!')
 
 

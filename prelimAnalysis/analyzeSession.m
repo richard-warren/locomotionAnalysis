@@ -7,7 +7,7 @@ function analyzeSession(session, varargin)
     % below // to recompute a variable, pass 'overwriteVars' as follows:
     %
     % analyzeSession('191118_001', 'overwriteVars', 'rewardTimes')
-    % analyzeSession('191118_001', 'overwriteVars', {'rewardTimes, isLightOn'}) % for multiple variables
+    % analyzeSession('191118_001', 'overwriteVars', {'rewardTimes, isLightOn'})  % for multiple variables
     
     
     % settings
@@ -15,14 +15,12 @@ function analyzeSession(session, varargin)
     s.superVerbose = false;  % whether to also display 
     s.targetFs = 1000; % frequency that positional data will be resampled to
     s.overwriteVars = '';
-    s.plotObsTracking = false;  % whether to check obstacle tracking of wheel velocity by plotting them on top of one another
+    s.plotDiagnostics = false;  % whether to make several diagnostic plots
     
     s.rerunRunNetwork = false;
     s.rerunWiskNetwork = false;
     s.rerunWiskContactNetwork = false;
     s.rerunPawContactNetwork = false;
-    
-    s.showLickFig = false;  % whether to show figure for lickTimes analysis
 
     % rig characteristics
     s.whEncoderSteps = 2880; % 720cpr * 4t
@@ -335,7 +333,7 @@ function analyzeSession(session, varargin)
             rowInd = rowInd + 1; 
         end
         if anyPoorTrackingTrials; fprintf('\n'); end
-        if s.plotObsTracking; plotObsTracking(session, obsTracking); end
+        if s.plotDiagnostics; plotObsTracking(session, obsTracking); end
         
         saveVars('obsTracking', obsTracking)
     end
@@ -494,8 +492,8 @@ function analyzeSession(session, varargin)
         [~, lickInds] = findpeaks(sig, 'MinPeakDistance', minTimeDiff, 'MinPeakHeight', minDistance);
         lickTimes = data.frameTimeStampsWisk(lickInds);
         
-        if s.showLickFig
-            figure('name', sprintf('%s: lickTimes', session), 'color', 'white', 'position', [108.00 53.00 1664.00 921.00]);
+        if s.plotDiagnostics
+            figure('name', sprintf('%s: lickTimes', session), 'color', 'white', 'position', [40 40 1800 900]);
             rows = 6;
             cols = 3;
             xLims = [-1 4];  % (seconds) time pre and post reward to plot
@@ -879,6 +877,11 @@ function analyzeSession(session, varargin)
                  'wiskContactFramesConfidences', wiskContactData.confidence, ...
                  'wiskContactTimes', contactTimes, ...
                  'wiskContactPositions', contactPositions);
+         
+        if s.plotDiagnostics
+            save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data')
+            showWiskContactFrames(session);
+        end
     end
     
     

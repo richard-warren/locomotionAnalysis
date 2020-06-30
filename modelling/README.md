@@ -1,16 +1,14 @@
 # todo
-- [ ] revisit spk rate kernel width... fast enough for lick responses?
-- [ ] getNeuralResponses
-  - [X] initial draft
-  - [X] single cell plots
-  - [X] fix empty plots
-  - [X] add phase as to prepPredictors
-  - [X] add confidence and density estimates to continuous variables
-  - [ ] add 'include' field or similar when predictor analysis fails
+- [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
+- [ ] rewrite formatEphysData
+  - [ ] one fcn for getFiring rates
+  - [ ] sync signal is spreadsheet somewhere...
+  - [ ] rework alignment algorithm
 - [ ] aggregate plots!
+  - [ ] some metric of modulation
+  - [ ] clustering for similarly modulated neurons?
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
-- [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
   - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
   - [ ] use these plots to determine model transformations
@@ -95,6 +93,14 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] percentile limits for epochs
+- [X] check spike width is narrow enough for fast licking
+- [X] getNeuralResponses
+  - [X] initial draft
+  - [X] single cell plots
+  - [X] fix empty plots
+  - [X] add phase as to prepPredictors
+  - [X] add confidence and density estimates to continuous variables
 - [X] prepPredictors
 - [X] write autoAnalyze
 - [X] add omissionTimes and surpriseTimes to analyzeSession

@@ -12,9 +12,10 @@ s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
 s.epochGridNum = 200;  % number of points in epoch x axis
 s.percentileLims = [.1 99.9];  % limits for continuous variables
-s.contGridNum = 200;    % number of points in continuous x axis
+s.contGridNum = 500;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
 s.plotResponses = true;  % whether to make and save plot of all responses
+s.maxEpochs = 1000;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
 
 % plots
 colors = lines(3);
@@ -40,6 +41,7 @@ for i = 1:length(unit_ids)
     cellResponses = table({}, {}, {}, categorical({}, {'event', 'epoch', 'continuous'}), [], ...
         'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {});
     tLims = timeStamps([find(~isnan(spkRates(i,:)),1,'first') find(~isnan(spkRates(i,:)),1,'last')]);
+    spkBins = ~isnan(spkRates(i,:));
     
     if s.plotResponses
         figure('color', 'white', 'name', sprintf('%s_cell%i', session, cellData.unit_id(i)), 'position', [185.00 58.00 1583.00 915.00]);
@@ -52,7 +54,6 @@ for i = 1:length(unit_ids)
         
         if predictors.type(j)=='event'
             events = predictors.data{j};
-%             events = events(all((events+s.eventLims)>tLims(1) & (events+s.eventLims)<tLims(2),2));
             
             response = nan(length(events), length(xEvent));
             for k = 1:length(events)
@@ -81,11 +82,20 @@ for i = 1:length(unit_ids)
             epochs = predictors.data{j};
             epochs = epochs(all(epochs>tLims(1) & epochs<tLims(2),2),:);
             response = nan(size(epochs,1), length(xEpoch));
+            durations = diff(epochs,1,2);
             
-            for k = 1:size(epochs,1)
-                dt = (epochs(k,2)-epochs(k,1));
-                epoch = dt*s.epochLims + epochs(k,1);
-                epochBins = timeStamps>=epoch(1) & timeStamps<=epoch(2) & ~isnan(spkRates(i,:));
+            % if too many epochs find the elements of central duration
+            if size(epochs,1)>s.maxEpochs    
+                middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (0:s.maxEpochs-1);
+                [~, sortInds] = sort(durations);
+                inds = sortInds(middleIndsSorted)';
+            else
+                inds = 1:length(epochs);
+            end
+            
+            for k = inds
+                epoch = durations(k)*s.epochLims + epochs(k,1);
+                epochBins = timeStamps>=epoch(1) & timeStamps<=epoch(2) * spkBins;
                 if any(epochBins)
                     response(k,:) = interp1(timeStamps(epochBins), spkRates(i,epochBins), ...
                         linspace(epoch(1), epoch(2), s.epochGridNum), 'linear', 'extrap');
@@ -109,6 +119,7 @@ for i = 1:length(unit_ids)
         
         elseif predictors.type(j)=='continuous'
             spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
+            spkRateBins = ~isnan(spkRate);
             xLims = prctile(predictors.data{j}, s.percentileLims);
             xGrid = linspace(xLims(1), xLims(2), s.contGridNum);
             winSz = s.contWindowSz*diff(xLims);
@@ -117,7 +128,7 @@ for i = 1:length(unit_ids)
             for k = 1:length(xGrid)
                 bins = predictors.data{j} >= (xGrid(k)-.5*winSz) & ...
                     predictors.data{j} < (xGrid(k)+.5*winSz) & ...
-                    ~isnan(spkRate);
+                    spkRateBins;
                 if any(bins)
                     response(k) = sum(spkRate(bins)) / sum(bins);
                     responseStd(k) = std(spkRate(bins));

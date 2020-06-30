@@ -142,7 +142,7 @@ close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bin
 
 for i = 1:length(ephysSessions)
     try
-        prepPredictors(ephysSessions{i})
+%         prepPredictors(ephysSessions{i})
         getNeuralResponses(ephysSessions{i})
         close all
     catch

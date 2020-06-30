@@ -1,4 +1,4 @@
-function autoAnalyze()
+function autoAnalyze(varargin)
 
 % this script keeps track of which sessions have been analyzed using
 % analyzeSession() // it automatically checks the sessions folder and
@@ -6,7 +6,8 @@ function autoAnalyze()
 
 
 % settings
-checkFrequency = 60; % seconds
+s.plotDiagnostics = true;
+s.checkFrequency = 60; % seconds
 
 % initializations
 analyzedFile = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'tracking', 'autoAnalyze', 'analyzedSessions.mat');
@@ -29,7 +30,7 @@ while true
             pause(120);  % wait to make sure data are fully transfered to engram
             
             try
-                analyzeSession(newSessions{i})
+                analyzeSession(newSessions{i}, 'plotDiagnostics', s.plotDiagnostics)
                 analyzedSessions{end+1} = newSessions{i};
                 save(analyzedFile, 'analyzedSessions');
             catch
@@ -40,6 +41,6 @@ while true
         fprintf('waiting for new files to analyze...')
     end
     
-    pause(checkFrequency)
+    pause(s.checkFrequency)
 end
 
