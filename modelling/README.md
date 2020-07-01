@@ -1,12 +1,18 @@
 # todo
-- [ ] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
 - [ ] rewrite formatEphysData
   - [ ] one fcn for getFiring rates
   - [ ] sync signal is spreadsheet somewhere...
   - [ ] rework alignment algorithm
-- [ ] aggregate plots!
-  - [ ] some metric of modulation
-  - [ ] clustering for similarly modulated neurons?
+  - [ ] recreate all runAnalyzed.mat
+  - [ ] make sure analysis is working for ALL sessions
+- [ ] aggregate plots (first pass)
+  - ordering:
+    - event: avg response rate / overall avg rate
+    - epoch: ?
+    - cont: ?
+- [ ] aggregate plots (smarter)
+  - how to compare MI for cont, epoch, event?
+  - characterize 'true' and residual responses
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
@@ -77,6 +83,7 @@
 - how to do these info theoretic 'bits per thing' metrics of utility of dft predictors
 
 # long term todo
+- [ ] i should probably be smoothing vel somehow, e.g. really using the local fitting method
 - [ ] should i mask out phase when not running? also, why do i need to high pass for phase to work??
 - [ ] how to handle nose in old sessions, which is out of view!
 - [ ] figure out how to filter out poorly behaving sessions (e.g. based on velocity)
@@ -93,6 +100,7 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
 - [X] percentile limits for epochs
 - [X] check spike width is narrow enough for fast licking
 - [X] getNeuralResponses

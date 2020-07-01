@@ -140,13 +140,13 @@ close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bin
 
 %% modelling analyses on all sessions
 
-for i = 1:length(ephysSessions)
+for i = 20:length(ephysSessions)
     try
 %         prepPredictors(ephysSessions{i})
         getNeuralResponses(ephysSessions{i})
         close all
     catch
-        fprintf('%s: problem analysis\n', ephysSessions{i})
+        fprintf('%s: problem with analysis\n', ephysSessions{i})
     end
 end
 

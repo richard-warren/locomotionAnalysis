@@ -10,36 +10,34 @@ s.kernelRise = .005;     % (s) rise for double exponential kernel
 s.kernelFall = .02;      % (s) fall for double exponential kernel
 s.kernelSig = .02;       % (s) if a gaussian kernel is used
 s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
-s.eventTimeName = 'rewardTimes'; % the name of paramters storing event(defined by s.event) time in spike clock
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
-
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 addpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
-files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
-ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
-
+ephysFolder = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'ephys_*'));
+ephysFolder = ephysFolder.name;
+ephysInfo = getSessionEphysInfo(session);
 
 % get mapping from open ephys to spike times
 [channel, eventTimes, info] = load_open_ephys_data_faster(...
-    fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
-eventChannel = unique(channel); % assumes only one digital input is used!
-eventEphysTimes = eventTimes(logical(info.eventId) & channel==eventChannel); % only take rising edge of event channel // !!! is the first variablee returned from load_open_ephys_data_faster really the identity of the event channel???
-eventSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), s.eventTimeName); 
-eventSpikeTimes = cell2mat(struct2cell(eventSpikeTimes));
+    fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));  % load event data
+eventChannel = unique(channel);  % assumes only one digital input is used!
+syncEphysTimes = eventTimes(logical(info.eventId) & channel==eventChannel); % only take rising edge of event channel
+syncSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), ephysInfo.syncSignal);
+syncSpikeTimes = syncSpikeTimes.(ephysInfo.syncSignal).times(syncSpikeTimes.(ephysInfo.syncSignal).level==1);
 
 
-if length(eventEphysTimes)~=length(eventSpikeTimes)
-    fprintf('WARNING: %i events in spike and %i events in openEphys...', length(eventSpikeTimes), length(eventEphysTimes))
+if length(syncEphysTimes)~=length(syncSpikeTimes)
+    fprintf('WARNING: %i events in spike and %i events in openEphys...', length(syncSpikeTimes), length(syncEphysTimes))
     
-    if length(eventEphysTimes) > length(eventSpikeTimes)
-        longString = eventEphysTimes;
-        shortString = eventSpikeTimes;
+    if length(syncEphysTimes) > length(syncSpikeTimes)
+        longString = syncEphysTimes;
+        shortString = syncSpikeTimes;
     else
-        longString = eventSpikeTimes;
-        shortString = eventEphysTimes;
+        longString = syncSpikeTimes;
+        shortString = syncEphysTimes;
     end
     
     if longString(1) > shortString(1)
@@ -76,12 +74,12 @@ if length(eventEphysTimes)~=length(eventSpikeTimes)
     fprintf('\n Found match position in longer string, match position is %i ', matchPosition)
     fprintf('\n The minimal sum of time shifts for match position is %4.2f seconds\n', minTimeDiff)
     
-    if length(eventEphysTimes) > length(eventSpikeTimes)
-        matchEventSpikeTimes = eventSpikeTimes;
-        matchEventEphysTimes = eventEphysTimes(matchPositionMatrix(:, matchPosition));
+    if length(syncEphysTimes) > length(syncSpikeTimes)
+        matchEventSpikeTimes = syncSpikeTimes;
+        matchEventEphysTimes = syncEphysTimes(matchPositionMatrix(:, matchPosition));
     else
-        matchEventEphysTimes = eventEphysTimes;
-        matchEventSpikeTimes = eventSpikeTimes(matchPositionMatrix(:, matchPosition));
+        matchEventEphysTimes = syncEphysTimes;
+        matchEventSpikeTimes = syncSpikeTimes(matchPositionMatrix(:, matchPosition));
     end
     
     
@@ -100,8 +98,8 @@ if length(eventEphysTimes)~=length(eventSpikeTimes)
 else
     % [validOpenEBins, validSpikeBins] = deal(true(1,length(openEphysObsOnTimes)));
     disp('correct number of events detected!')
-    matchEventSpikeTimes = eventSpikeTimes;
-    matchEventEphysTimes = eventEphysTimes;
+    matchEventSpikeTimes = syncSpikeTimes;
+    matchEventEphysTimes = syncEphysTimes;
 end
 
 
@@ -123,7 +121,6 @@ end
 [spkInds, unit_ids] = getGoodSpkInds(session);
 cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
 if ~all(cellData.unit_id==unit_ids); disp('WARNING: callData.csv unit_ids do not match those in ephysFolder'); keyboard; end
-ephysInfo = getSessionEphysInfo(session);
 
 % restrict to good units
 goodBins = logical([cellData.include]);
