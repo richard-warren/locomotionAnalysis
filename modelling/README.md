@@ -1,10 +1,17 @@
 # todo
-- [ ] rewrite formatEphysData
-  - [ ] one fcn for getFiring rates
-  - [ ] sync signal is spreadsheet somewhere...
-  - [ ] rework alignment algorithm
-  - [ ] recreate all runAnalyzed.mat
-  - [ ] make sure analysis is working for ALL sessions
+- [ ] ephys fixes
+  - [X] packContFiles (takes args again, and uses relative python path)
+  - [X] getGoodSpkInds (no longer finds best channel)
+  - [ ] getFiringRate
+  - [ ] formatEphysData (new alignment, plotting algo // )
+  - [ ] getBestChannels
+    - [ ] fix bugs
+    - [ ] one fcn for getFiring rates
+    - [ ] make sure analysis is working for ALL sessions
+    - [X] sync signal is spreadsheet somewhere...
+    - [X] rework alignment algorithm
+  - [ ] documentation
+
 - [ ] aggregate plots (first pass)
   - ordering:
     - event: avg response rate / overall avg rate

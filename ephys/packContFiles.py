@@ -2,7 +2,7 @@ import sys
 from importlib import import_module
 OpenEphys = import_module('analysis-tools.Python3.OpenEphys')
 
-# # get input arguments
+# get input arguments
 file_dir = sys.argv[1]
 source = sys.argv[2]
 fs = sys.argv[3]

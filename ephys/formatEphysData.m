@@ -109,7 +109,7 @@ openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get line
 % check that predictions are accurate
 predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
 if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .001
-    fprintf('OMG THERE WAS A PROBLEM MAPPING FROM OPEN EPHYS TO SPIKE TIMES!!! LOL\n');
+    fprintf('WARNING! Linear mapping from openephys to spike fails to fit all events!\n');
 end
     
 
@@ -135,20 +135,25 @@ end
 minTime = min(cellfun(@(x) x(1), spkTimes)); % latest spike across all neurons
 maxTime = max(cellfun(@(x) x(end), spkTimes)); % latest spike across all neurons
 
-if strcmp(s.kernel, 'doubleExp')
-    [~, timeStamps] = getFiringRateDoubleExp(spkTimes{1}, s.spkRateFs, s.kernelRise, s.kernelFall, [minTime maxTime]);
-elseif strcmp(s.kernel, 'gauss')
-    [~, timeStamps] = getFiringRateGaussian(spkTimes{1}, s.spkRateFs, s.kernelSig, [minTime maxTime]);
-end
+[~, timeStamps] = getFiringRate(spkTimes{1}, 'tLims', [minTime maxTime], 'fs', s.spkRateFs, ...
+    'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
 spkRates = nan(length(spkTimes), length(timeStamps));
 
 for i = 1:length(spkTimes)
     
+    [spkRates(i,:), timeStamps] = getFiringRate(spkTimes{i}, 'tLims', [minTime maxTime], 'fs', s.spkRateFs, ...
+        'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
+    
+    % temp
     if strcmp(s.kernel, 'doubleExp')
-        spkRates(i,:) = getFiringRateDoubleExp(spkTimes{i}, s.spkRateFs, s.kernelRise, s.kernelFall, [minTime maxTime]);
-    elseif strcmp(kernel, 'gauss')
-        spkRates(i,:) = getFiringRateGaussian(spkTimes{i}, s.spkRateFs, s.kernelSig, [minTime maxTime]);
+        [spkOld, tsOld] = getFiringRateDoubleExp(spkTimes{i}, s.spkRateFs, s.kernelRise, s.kernelFall, [minTime maxTime]);
+    elseif strcmp(s.kernel, 'gauss')
+        [spkOld, tsOld] = getFiringRateGaussian(spkTimes{i}, s.spkRateFs, s.kernelSig, [minTime maxTime]);
     end
+    figure('position', [124.00 534.00 1641.00 433.00]); hold on;
+    plot(timeStamps, spkRates(i,:));
+    plot(tsOld, spkOld); set(gca, 'xlim', [830 835])
+    
     
     % get min and max time for cell
     cellMinTime = polyval(openEphysToSpikeMapping, cellData.timeStart(i)*60);

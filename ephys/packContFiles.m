@@ -6,12 +6,13 @@ function packContFiles(sessions, varargin)
 s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
 s.highPassFreq = 0; % 0 to skip highpass
 s.referencing = 'med';
-s.verbose = false;
+
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 if isstr(sessions); sessions = {sessions}; end
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
+
 
 for i = 1:length(sessions)
     
@@ -33,13 +34,13 @@ for i = 1:length(sessions)
 %     connected = true(64,1);  % !!! temp (this line sets all channels to be connected)
     connected = [num2str(connected)]'; % string containing binary vector
 
-
     % run pack_2
     fprintf('%s: running pack_2...\n', sessions{i})
     fileName = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, ephysFolder);
     commandStr = [s.pythonPath ' ephys\packContFiles.py ' ...,
         fileName ' ' fileNameBase ' ' num2str(fs) ' ' num2str(s.highPassFreq) ' ' s.referencing ' ' connected];
-    system(commandStr)
+    tic; [~,~] = system(commandStr);
+    fprintf('%s: created .dat file in %.1f minutes\n', sessions{1}, toc/60)
 end
 
 
