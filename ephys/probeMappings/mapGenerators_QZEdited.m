@@ -128,7 +128,7 @@ fs = 30000; % sampling frequency
 
 % % probe C6CE
 % save('Z:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
-%     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+%     'chanMap', 'channelNum_OpenEphys', 'connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 % probe D55F // nine sites defective?
 connected([18 28 14 9 10 2 7 15 11]) = false;

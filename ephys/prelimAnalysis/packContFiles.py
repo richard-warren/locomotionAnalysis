@@ -5,10 +5,10 @@ from OpenEphys import pack_2
 
 
 # get input arguments
-file_dir = 'Z:\\obstacleData\\sessions\\191009_003\\ephys_2019-10-09_17-19-47'
+file_dir = 'Z:\\obstacleData\\sessions\\200626_000\\ephys_2020-06-26_14-12-02'
 source = 107
 fs = 30000
-highpass = 300
+highpass = 0
 dref = 'med'
 connected_channels = 'all'
 

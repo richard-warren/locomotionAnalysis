@@ -48,8 +48,21 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'forQual
     'xcoords', 'ycoords', 'channelNum_OpenEphys')
 
 % only for visualizatoon purpose (the waveform plot)
-xcoords = xcoords*0.25;
-ycoords = ycoords*0.25;
+switch mapFile
+    case 'ASSY77'        
+        xcoords = xcoords*0.25;
+        ycoords = ycoords*0.25;
+    case 'BDFD2'
+        xcoords = xcoords*0.13;
+        ycoords = ycoords*0.13;
+    case 'BDFD'
+        xcoords = xcoords*0.13;
+        ycoords = ycoords*0.13;
+    otherwise
+        xcoords = xcoords*0.25;
+        ycoords = ycoords*0.25;
+end
+        
 
 
 [allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
