@@ -2,14 +2,18 @@
 - [ ] ephys fixes
   - [X] packContFiles (takes args again, and uses relative python path)
   - [X] getGoodSpkInds (no longer finds best channel)
-  - [ ] getFiringRate
-  - [ ] formatEphysData (new alignment, plotting algo // )
-  - [ ] getBestChannels
-    - [ ] fix bugs
-    - [ ] one fcn for getFiring rates
-    - [ ] make sure analysis is working for ALL sessions
+  - [X] getFiringRate (now one function, slightly optimized)
+  - [ ] formatEphysData (new alignment, plotting algo // dft firing rate calculation)
+    - [ ] add sessionInfo to saved file
+    - [ ] try different interp method?
+    - [ ] check min and max time calculation... (check which clock it's with respect to)
+    - [X] one fcn for getFiring rates
     - [X] sync signal is spreadsheet somewhere...
     - [X] rework alignment algorithm
+  - [X] getSessionEphysInfo (now gets sync signal also)
+  - [ ] getBestChannels
+    - [ ] check whether qz solution works on old sessions as well...
+  - [ ] make sure packContFiles, and qualityMetrics plots for for qz and rw
   - [ ] documentation
 
 - [ ] aggregate plots (first pass)

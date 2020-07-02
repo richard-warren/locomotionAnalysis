@@ -143,10 +143,26 @@ close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bin
 for i = 1:length(ephysSessions)
     try
 %         prepPredictors(ephysSessions{i})
-        getNeuralResponses(ephysSessions{i})
-%         formatEphysData(ephysSessions{i})
+%         getNeuralResponses(ephysSessions{i})
+        formatEphysData(ephysSessions{i})
     catch
         fprintf('%s: problem with analysis\n', ephysSessions{i})
     end
 end
+
+
+%% create missing .dat files
+
+for i = 1:length(ephysSessions)
+    try
+        ephysFolder = dir(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'ephys_*'));
+        datFile = dir(fullfile(ephysFolder.folder, ephysFolder.name, '*.dat'));
+        if isempty(datFile)
+            packContFiles(ephysSessions{i});
+        end
+    catch
+        fprintf('%s: problem with analysis\n', ephysSessions{i})
+    end
+end
+
 

@@ -35,12 +35,12 @@ for i = 1:length(sessions)
     connected = [num2str(connected)]'; % string containing binary vector
 
     % run pack_2
-    fprintf('%s: running pack_2...\n', sessions{i})
+    fprintf('%s: running pack_2... ', sessions{i})
     fileName = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, ephysFolder);
     commandStr = [s.pythonPath ' ephys\packContFiles.py ' ...,
         fileName ' ' fileNameBase ' ' num2str(fs) ' ' num2str(s.highPassFreq) ' ' s.referencing ' ' connected];
     tic; [~,~] = system(commandStr);
-    fprintf('%s: created .dat file in %.1f minutes\n', sessions{1}, toc/60)
+    fprintf('created .dat file in %.1f minutes\n', toc/60)
 end
 
 

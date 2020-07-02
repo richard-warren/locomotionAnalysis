@@ -30,7 +30,7 @@ syncSpikeTimes = syncSpikeTimes.(ephysInfo.syncSignal).times(syncSpikeTimes.(eph
 
 
 if length(syncEphysTimes)~=length(syncSpikeTimes)
-    fprintf('%s: WARNING! %i events in spike and %i events in openEphys...\n', ...
+    fprintf('%s: WARNING! %i events in spike and %i events in openEphys.\n', ...
         session, length(syncSpikeTimes), length(syncEphysTimes))
     
     % find signal offset
@@ -59,6 +59,7 @@ if length(syncEphysTimes)~=length(syncSpikeTimes)
     
     % find matching events
     % --------------------
+    tic
     maxDiff = .1;
     matchedInds = nan(2,0);  % first row spike, second row ephys
     
@@ -75,7 +76,6 @@ if length(syncEphysTimes)~=length(syncSpikeTimes)
             break
         end
     end
-    
     
     % plot
     % ----
@@ -109,14 +109,14 @@ openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get line
 % check that predictions are accurate
 predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
 if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .001
-    fprintf('WARNING! Linear mapping from openephys to spike fails to fit all events!\n');
+    fprintf('%s: Linear mapping from openephys to spike fails to fit all events!\n', session)
 end
     
 
 % get spike times for good units
 [spkInds, unit_ids] = getGoodSpkInds(session);
 cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
-if ~all(cellData.unit_id==unit_ids); disp('WARNING: callData.csv unit_ids do not match those in ephysFolder'); keyboard; end
+if ~all(cellData.unit_id==unit_ids); disp('WARNING: cellData.csv unit_ids do not match those in ephysFolder'); keyboard; end
 
 
 % restrict to good units
@@ -142,18 +142,7 @@ spkRates = nan(length(spkTimes), length(timeStamps));
 for i = 1:length(spkTimes)
     
     [spkRates(i,:), timeStamps] = getFiringRate(spkTimes{i}, 'tLims', [minTime maxTime], 'fs', s.spkRateFs, ...
-        'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
-    
-    % temp
-    if strcmp(s.kernel, 'doubleExp')
-        [spkOld, tsOld] = getFiringRateDoubleExp(spkTimes{i}, s.spkRateFs, s.kernelRise, s.kernelFall, [minTime maxTime]);
-    elseif strcmp(s.kernel, 'gauss')
-        [spkOld, tsOld] = getFiringRateGaussian(spkTimes{i}, s.spkRateFs, s.kernelSig, [minTime maxTime]);
-    end
-    figure('position', [124.00 534.00 1641.00 433.00]); hold on;
-    plot(timeStamps, spkRates(i,:));
-    plot(tsOld, spkOld); set(gca, 'xlim', [830 835])
-    
+        'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);    
     
     % get min and max time for cell
     cellMinTime = polyval(openEphysToSpikeMapping, cellData.timeStart(i)*60);
@@ -173,7 +162,6 @@ end
 settings = s;
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
      'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping', 'settings')
-disp('all done!')
 
 
 
