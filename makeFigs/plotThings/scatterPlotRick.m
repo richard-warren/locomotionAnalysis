@@ -13,12 +13,13 @@ s.lineAlpha = 1; % line transparency
 s.maxScatterPoints = 2000; % don't show any more than this many scatter points
 s.conditionNames = {}; % cell array with names of conditions // user can specify this by passing in via 'opts' // if specified, a legend is added
 
+
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 % initializations
 x = x(:); y=y(:); conditions=conditions(:); % ensure similar orientation
-conditionNum = length(unique(conditions));
+conditionNum = length(unique(rmmissing(conditions)));
 if ischar(s.colors); s.colors = eval([s.colors '(conditionNum)']); end % set colorspace if color is specified as a string
 scatters = nan(1, conditionNum);
 lines = nan(1, conditionNum);
@@ -31,6 +32,7 @@ slopes = nan(1,conditionNum);
 for h = 1:conditionNum
     
     % get paw and obs height for bin
+
     bins = conditions==h & ~isnan(x) & ~isnan(y);
     binsSub = bins;
     if sum(bins)>scatterPointsPerCondition

@@ -7,7 +7,7 @@ function plotQualityMetrics(session)
 spkWindow = [-.3 .75]; % ms pre and post spike time to plot
 spkNum = 10000; % take this many of all spikes to analyze (to save system resources)
 showFigures = 'on';
-% highPassFreq = 300;
+highPassFreq = 300;
 
 % SNR settings
 snrYLims = [0 20];
@@ -44,19 +44,29 @@ fprintf('%s: collecting data... ', session)
 ephysInfo = getSessionEphysInfo(session);
 for i = fieldnames(ephysInfo)'; eval([i{1} '=ephysInfo.' i{1} ';']); end % extract field names as variables
 spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
-load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
-    'xcoords', 'ycoords')
+load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'forQualityMetricsPlot',[mapFile '.mat']), ...
+    'xcoords', 'ycoords', 'channelNum_OpenEphys')
 
-% only for visualizatoon purpose (the spike on probe plot)
-xcoords(33:64) = 21;
+% only for visualizatoon purpose (the waveform plot)
+switch mapFile
+    case 'ASSY77'        
+        xcoords = xcoords*0.25;
+        ycoords = ycoords*0.25;
+    case 'BDFD2'
+        xcoords = xcoords*0.13;
+        ycoords = ycoords*0.13;
+    case 'BDFD'
+        xcoords = xcoords*0.13;
+        ycoords = ycoords*0.13;
+    otherwise
+        xcoords = xcoords*0.25;
+        ycoords = ycoords*0.25;
+end
+        
+
 
 [allSpkInds, unit_ids, bestChannels] = getGoodSpkInds(session); % get spike times for good units
 % bestChannels = getBestChannels(session, ephysInfo);
-
-
-
-
-
 
 % function to extract voltage from binary file
 getVoltage = @(data, channel, inds) ...
@@ -67,9 +77,9 @@ data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolde
     'Format', {'int16', [channelNum, smps], 'Data'}, 'Writable', false);
 
 % create folder for figures, deleting old one if it already exists
-folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics', session);
-if isfolder(folder); cmd_rmdir(folder); end % delete folder if already exists
-mkdir(folder);
+folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics');
+% if isfolder(folder); cmd_rmdir(folder); end % delete folder if already exists
+% mkdir(folder);
 
 
 cellColors = hsv(length(unit_ids))*.8;
@@ -107,20 +117,20 @@ for c = 1:length(unit_ids)
     colors = getColors(timeBinNum, cellColors(c,:));
     sameShankInds = find(abs(xcoords - xcoords(bestChannels(c)))<50);
     
-    for j = 1:64
+    for j = 1:length(xcoords)
         for i = 1:timeBinNum
             firingRate = sum(timeBins==i) / (range(timeStamps)/timeBinNum);
             if firingRate>minFiringRate % don't plot average trace if rate of spikes in bin is too low, which happens when the unit is lost
                 trace = squeeze(mean(allWaveforms(timeBins==i,j,:),1));
                 plot(xcoords(j)*xSpacing + double(spkWindowInds), ...
-                    ycoords(j)*ySpacing + trace, ...
+                    ycoords(j)*ySpacing + trace*0.3, ...
                     'Color', colors(i,:), 'LineWidth', 2)
             end
         end
         if j==bestChannels(c); textColor='red'; else; textColor='black'; end
         text(double(xcoords(j)*xSpacing+spkWindowInds(1)), ...
                 ycoords(j)*ySpacing, ...
-                num2str(j), 'Color', textColor)
+                num2str(find(channelNum_OpenEphys == j)), 'Color', textColor)
     end
     set(gca, 'visible', 'off')
 

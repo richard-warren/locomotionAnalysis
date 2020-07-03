@@ -32,6 +32,7 @@ end
 load(fullfile(sessionFolder, 'neuralData.mat'), 'unit_ids');
 
 for cellNum = 1:length(unit_ids)
+
     
     % !!! load cell firing rate and times
     fprintf('%s: plotting cell %i/%i\n', session, cellNum, length(unit_ids))
@@ -41,7 +42,7 @@ for cellNum = 1:length(unit_ids)
     
     % reward delivery
     plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
-    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-1 1]});
+    plotPSTH2(session, cellNum, rewardTimes, {'xLims', [-0.5 1.5]});
     xlabel('reward delivery')
     
     % reward delivery -> reward delivery
@@ -164,7 +165,7 @@ for cellNum = 1:length(unit_ids)
     
     
     % ventral paw contacts
-    minTouchInds = 1; % paw must be touching for at least this many inds for trial to be included
+    minTouchInds = 5; % paw must be touching for at least this many inds for trial to be included
     contactsToInclude = {'fore_ventral', 'hind_ventral_low'};
 %     contactsToInclude = {'hind_ventral_low'};
     classInds = find(ismember(touchClassNames, contactsToInclude));
@@ -172,13 +173,21 @@ for cellNum = 1:length(unit_ids)
     for paw = 1:4
         plotInd = plotInd + 1; subplot(s.rows, s.cols, plotInd);
         times = [];
+        touchTrials = [];
         
         % get first contact for paw on each trial
         for i = 1:length(obsOnTimes)
             trialBins = frameTimeStamps>obsOnTimes(i) & frameTimeStamps<obsOffTimes(i);
-            pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
+            if size(ismember(touches, classInds), 1) == 1
+                pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds)';
+            else
+                pawTouchBins = trialBins & touchesPerPaw(:,paw) & ismember(touches, classInds);
+            end
             pawTouchInd = find(pawTouchBins, 1, 'first');
-            if sum(pawTouchBins)>=minTouchInds; times(end+1) = frameTimeStamps(pawTouchInd); end
+            if sum(pawTouchBins)>=minTouchInds
+                times(end+1) = frameTimeStamps(pawTouchInd); 
+                touchTrials = [touchTrials, i];
+            end
         end
         
         plotPSTH2(session, cellNum, times, {'colors', s.pawColors(paw,:)});

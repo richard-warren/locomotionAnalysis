@@ -13,7 +13,7 @@ s.xWiskPos = [];
 s.wiskScaling = [];
 s.wiskContrast = [.5 1];
 s.runContrast = [0 1];
-s.isPaddingWhite = true;  % otherwise padding is black
+s.isPaddingWhite = false;  % otherwise padding is black
 s.edgeFading = 50;  % (pixels) how much to fade out left and right side of frade
 
 
@@ -31,7 +31,7 @@ end
 frameRun = imadjust(frameRun, s.runContrast, [0 1]);
 
 % find wisk cam alignment if not provided
-if isempty(s.yWiskPos) || isempty(s.yWiskPos) || isempty(s.yWiskPos)
+if isempty(s.yWiskPos) || isempty(s.xWiskPos) || isempty(s.wiskScaling)
     [s.yWiskPos, s.xWiskPos, s.wiskScaling] = getSubFramePosition(frameRun(:,:), frameWisk(:,:), .35:.005:.45);
 end
 yWiskPos = s.yWiskPos;
@@ -67,4 +67,3 @@ end
 xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
 yInds = yWiskPosTemp:yWiskPosTemp+size(frameWisk,1)-1;
 frame(yInds, xInds) =  frameWisk;
-

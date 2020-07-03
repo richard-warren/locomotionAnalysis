@@ -120,34 +120,35 @@ for i = 1:length(rewardTimeBinsSelected)
     trialObsOnTimes = trialObsOnTimes - trialStartTime;
     trialObsOffTimes = trialObsOffTimes - trialStartTime;
     
-    for j = 1:length(trialObsOnTimes)       
-        x = linspace(trialObsOnTimes(j), trialObsOffTimes(j), 100);
-        y = repmat(max(spkRates(unit_idInd, :))+10, 1, length(x));
-        if trialIsLightOn(j) == 1
+    if length(trialObsOnTimes) ~= length(trialWiskContactTimes)
+        continue
+    else
+        for j = 1:length(trialObsOnTimes)
+            x = linspace(trialObsOnTimes(j), trialObsOffTimes(j), 100);
+            y = repmat(max(spkRates(unit_idInd, :))+10, 1, length(x));
+            if trialIsLightOn(j) == 1
+                hold on
+                h = area(x, y, 'FaceColor', s.lightOnColor);
+                set(h, 'LineStyle', 'none');
+                h.FaceAlpha = 0.5;
+                % set(h, 'Layer', 'bottom');
+            else
+                hold on
+                h = area(x, y, 'FaceColor', s.lightOffColor);
+                set(h, 'LineStyle', 'none');
+                h.FaceAlpha = 0.5;
+            end
             hold on
-            h = area(x, y, 'FaceColor', s.lightOnColor);
-            set(h, 'LineStyle', 'none');
-            h.FaceAlpha = 0.5;
-            % set(h, 'Layer', 'bottom');
-        else
-            hold on
-            h = area(x, y, 'FaceColor', s.lightOffColor);
-            set(h, 'LineStyle', 'none');
-            h.FaceAlpha = 0.5;
-            % set(h, 'Layer', 'bottom');
+            line([trialWiskContactTimes(j), trialWiskContactTimes(j)], [0,  max(spkRates(unit_idInd, :))+10], 'Color', s.wiskLineColor, 'LineWidth', 2);
+            
         end
-        
-        hold on
-        line([trialWiskContactTimes(j), trialWiskContactTimes(j)], [0,  max(spkRates(unit_idInd, :))+10], 'Color', s.wiskLineColor, 'LineWidth', 2);
-        
     end
-    
     
     hold on
     yyaxis right
     plot(x2, velocity, '-', 'Color', s.velocityColor, 'LineWidth', 1);
     box off
-    ylim([0 0.5]);
+    ylim([0 max(velocity)+0.1]);
     ax = gca;
     ax.YColor = s.velocityColor;
     % title(['trail ' num2str(i)]);

@@ -18,6 +18,7 @@ s.trialsToShow = 5; % how many random trials to show if specific trial numbers a
 s.vidType = 'showObsEvents'; % choose from 'showObsEvents' and 'showRewardEvents'.
 s.specificObsTrials = []; % pick specific trials to show. Time is from obsOn to obsOff. Trial number refers to obsOn and obsOff times.
 s.specificRewardTrials = []; % pick specific trials to show. Time is reward delivery +- timeBuffer. Trial number refers to reward times.
+s.specificTimeWindows = []; % put in specific start times and end times for generating videos.
 s.timeBuffer = [2, 2]; % how many seconds before and after reward delivery to show. Default is 2s before and 2s after.
 
 s.contrastLims = [.1 .9]; % pixels at these proportional values are mapped to 0 and 255
@@ -41,55 +42,64 @@ if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end;
 
 % set up video readers / writer
 disp('initializing...')
-vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
-vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
+% vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run_originalDimensions.mp4');
+vidName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4');
+if ~exist(vidName, 'file'); concatTopBotVids(session); end
+vid = VideoReader(vidName);
+
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
-initialFs = vidTop.FrameRate;
+initialFs = vid.FrameRate;
 vidWriter = vision.VideoFileWriter(fileName, ...
     'AudioInputPort', true, ...
     'FrameRate', round(initialFs*s.playbackSpeed));
 % vidWriter.VideoCompressor = 'MJPEG Compressor';
 
 % load spike data
+display('loading spike data...');
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'rewardTimes', 'wiskContactFrames', 'isLightOn', ...
     'obsPixPositions', 'frameTimeStampsWisk', 'wiskContactTimes')
 
-% get position where wisk frame should overlap with runTop frame
+% get position where wisk frame should overlap with run frame
 if s.includeWiskCam    
-    obsInWiskCamInds = find(obsPixPositions>vidTop.Width-50 & obsPixPositions<vidTop.Width);
-    
+    display('figuring out overlapping b/w runWisk and run vid...');
+    obsInWiskCamInds = find(obsPixPositions>vid.Width-50 & obsPixPositions<vid.Width);    
     % find first time point at which both wisk and run cams have a frame and obs is in wisk cam
     for i = obsInWiskCamInds
         wiskInd = find(frameTimeStampsWisk==frameTimeStamps(i));
         if ~isempty(wiskInd); topInd = i; break; end
     end
-
-    frameTop = rgb2gray(read(vidTop, topInd));
-    frameWisk = rgb2gray(read(vidWisk, wiskInd));
-    [yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop, frameWisk, .35:.005 :.45);
-    smpWiskFrame = imresize(frameWisk, wiskScaling);
+    
+    [wiskFrame, yWiskPos, xWiskPos, wiskScaling] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, topInd);
 end
 
 
 % determine frame dimensions
 if s.includeWiskCam
-    frameDim = round([vidTop.Height + vidBot.Height, xWiskPos+size(smpWiskFrame,2)]);
+    frameDim = size(wiskFrame);
 else
-    frameDim = [vidTop.Height + vidBot.Height, vidBot.Width];
+    frameDim = [vid.Height, vid.Width];
 end
 
 
 % get neural data
+display('getting neural data...');
 ephysInfo = getSessionEphysInfo(session);
-[bestChannels, unit_ids_all] = getBestChannels(session, ephysInfo);
-bestChannel = bestChannels(unit_id==unit_ids_all);
+% [~, unit_ids, bestChannels] = getGoodSpkInds(session);
+[~, unit_ids, bestChannels] = getGoodSpkInds_old(session);
+bestChannel = bestChannels(unit_id==unit_ids);
 getVoltage = @(data, channel, inds) data.Data.Data(channel,inds);
 data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.ephysFolder, [ephysInfo.fileNameBase '_CHs.dat']), ...
     'Format', {'int16', [ephysInfo.channelNum, ephysInfo.smps], 'Data'}, 'Writable', false);
 
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
+    'openEphysToSpikeMapping', 'spkRates', 'timeStamps', 'unit_ids', 'spkTimes')
+timeStampsMapped = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps);
+audioSmpsPerFrame = round((1/initialFs) * ephysInfo.fs);
+
 
 % create low pass filter
+display('creating low pass filter...');
 if s.lowPassFreq
     lp = s.lowPassFreq * 2 / ephysInfo.fs;
     ls = s.lowPassFreq * 4 / ephysInfo.fs; % one octave above pass band
@@ -99,14 +109,9 @@ if s.lowPassFreq
 end
 
 
-% other initializations
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'openEphysToSpikeMapping', 'spkRates', 'timeStamps', 'unit_ids', 'spkTimes')
-timeStampsMapped = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps);
-audioSmpsPerFrame = round((1/initialFs) * ephysInfo.fs);
-
 
 % set up figure
+display('setting up fig for vid...');
 fig = figure('color', [0 0 0], 'position', [50, 50, frameDim(2), frameDim(1)], 'menubar', 'none');
 traceLength = s.voltageWindow*ephysInfo.fs;
 
@@ -128,6 +133,7 @@ wiskLine = line(plotAxis, [0 0], s.yLims, 'linewidth', 2, 'color', s.lineColors)
 wiskText = text(plotAxis, 0, s.yLims(2), 'whisker contact', 'Color', 'white');
 rewardLine = line(plotAxis, [0 0], s.yLims, 'linewidth', 2, 'color', s.lineColors);
 rewardText = text(plotAxis, 0, s.yLims(2), 'reward', 'Color', 'white');
+
 
 % get timeEpochs for trials to display in the vid
 % current setup only supports 'showObsEvents' and 'showRewardEvents'
@@ -161,9 +167,24 @@ switch s.vidType
             trialsToShow = trialNum(ismember(trialNum, validTrials));
             timeEpochs = timeEpochs(trialsToShow, :);
         end
+        
+    case 'showSpecificTimeWindows'
+        timeEpochs = [];
+        timeWindows = s.specificTimeWindows;
+
+        minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
+        maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
+        for i = 1:size(timeWindows, 1)
+            if timeWindows(i, 1) < minTime || timeWindows(i, 2) > maxTime
+                disp(['WARNING: time windows ' num2str(i) ' you selected have exceeded the min/max unit time!!']);
+            else
+                timeEpochs = [timeEpochs; timeWindows(i, :)];       
+            end            
+        end
+        trialsToShow = 1:size(timeEpochs, 1);        
 end
-            
-            
+
+           
 
 
 % create video
@@ -187,66 +208,77 @@ for i = 1:length(trialsToShow)
     
     
     % update obstacle and whisker contact lines
-    if s.vidType == 'showObsEvents'
+
+    if strcmp(s.vidType, 'showObsEvents');
         if isLightOn(trialsToShow(i)); obsOnString = 'obstacle (light on)'; else; obsOnString = 'obstacle (light off)'; end
         updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
         updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
         updateTextAndLine(rewardText, rewardLine, rewardTimes)
-    else
-        updateTextAndLine(obsOnText, obsOnLine, obsOnTimes, obsOnString)
-        updateTextAndLine(wiskText, wiskLine, wiskContactTimes)
+    elseif strcmp(s.vidType, 'showRewardEvents')
         updateTextAndLine(rewardText, rewardLine, rewardTimes)
     end
-    
- 
-        
+   
     
     % get frames for trials
     for j = trialInds'
-
-        % get run frame
-        frame = uint8(zeros(frameDim));
-        topBotFrame = cat(1, rgb2gray(read(vidTop, j)), rgb2gray(read(vidBot, j)));
-        topBotFrame = imadjust(topBotFrame, s.contrastLims, [0 1]); % adjust contrast
-        frame(:,1:vidBot.Width) = topBotFrame;
         
-        % add trial number onto frames
-        position = [10, 10];
-        if s.vidType == 'showObsEvents'
-            textString = ['trial ', num2str(trialsToShow(i))];
-            RGB = insertText(frame, position, textString, 'TextColor','white');
-            frame = rgb2gray(RGB);
-        elseif s.vidType == 'showRewardEvents'
-            textString = ['Reward Trial ', num2str(trialsToShow(i))];
-            RGB = insertText(frame, position, textString, 'TextColor','white');
-            frame = rgb2gray(RGB);            
+        % get run frame with wisk frame matched to it
+        %         [frame, ~, ~, ~] = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
+        %             'yWiskPos', yWiskPos, 'xWiskPos', xWiskPos, 'wiskScaling', wiskScaling, 'isPaddingWhite', false);
+%         tic
+%         frameNumWisk = knnsearch(frameTimeStampsWisk, frameTimeStamps(j));
+%         toc
+      
+        frameNumWisk = find(frameTimeStampsWisk==frameTimeStamps(j), 1, 'first');
+        if ~isempty(frameNumWisk)
+            frameWisk = rgb2gray(read(vidWisk, frameNumWisk));
+            frameRun = rgb2gray(read(vid, j));
+            
+            edgeFading = 50;
+            fade = repmat([linspace(0,1,edgeFading) ones(1,vid.Width-2*edgeFading) linspace(1,0,edgeFading)], vid.Height, 1);
+            frameRun = uint8(double(frameRun) .* fade);
+            
+            runContrast = [0 1];
+            frameRun = imadjust(frameRun, runContrast, [0 1]);
+            
+            frameWisk = imresize(frameWisk, wiskScaling);
+            wiskContrast = [.5 1];
+            frameWisk = imadjust(frameWisk, wiskContrast, [0 1]);
+            frameWisk = 255 - frameWisk;
+            
+            % add border to frame
+            border = 5;
+            frameWisk([1:border, end-border:end], :) = 255;
+            frameWisk(:, [1:border, end-border:end]) = 255;
+            
+            % add to run frame (currently assumes padding is not necessary on the top)
+            isPaddingWhite = false;
+            rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
+            frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * isPaddingWhite);
+            
+            
+            xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
+            yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
+            frame(yInds, xInds) =  frameWisk;
         end
      
         
-        % get wisk frame
-        if s.includeWiskCam
-            wiskFrameInd = find(frameTimeStampsWisk==frameTimeStamps(j), 1, 'first');
-
-            if ~isempty(wiskFrameInd)
-
-                % get wisk frame
-                frameWisk = rgb2gray(read(vidWisk, wiskFrameInd));
-
-                % resize, adjust contrast, and draw border
-                frameWisk = imresize(frameWisk, wiskScaling);
-                frameWisk = imadjust(frameWisk, [.5 1], [0 1]);
-                frameWisk = 255 - frameWisk;
-                frameWisk([1:s.wiskBorder, end-s.wiskBorder:end], :) = 255;
-                frameWisk(:, [1:s.wiskBorder, end-s.wiskBorder:end]) = 255;
-                
-                % incorporate into frame
-                frame(yWiskPos:yWiskPos+size(frameWisk,1)-1, xWiskPos:xWiskPos+size(frameWisk,2)-1, :) = frameWisk;
-            end
+        % add trial number onto frames
+        position = [10, 10];
+        if strcmp(s.vidType, 'showObsEvents')
+            textString = ['trial ', num2str(trialsToShow(i))];
+            RGB = insertText(frame, position, textString, 'TextColor','white');
+            frame = rgb2gray(RGB);
+        elseif strcmp(s.vidType, 'showRewardEvents')
+            textString = ['Reward Trial ', num2str(trialsToShow(i))];
+            RGB = insertText(frame, position, textString, 'TextColor','white');
+            frame = rgb2gray(RGB);
         end
+        
         
         % update frame
         set(im, 'CData', frame);
-
+        
         % get voltage
         traceStartInd = find(timeStampsSub>(frameTimeStamps(j)-s.voltageWindow), 1, 'first');
         traceInds = traceStartInd:traceStartInd+traceLength-1;
@@ -254,7 +286,7 @@ for i = 1:length(trialsToShow)
         times = timeStampsSub(traceInds)';
         set(tracePlot, 'xdata', times, 'ydata', trace);
         set(gca, 'xlim', [times(1) times(end)])
-
+        
         % get audio
         audioStartInd = find(timeStampsSub>=frameTimeStamps(j), 1, 'first');
         audio = voltageRaw(audioStartInd:audioStartInd+audioSmpsPerFrame-1)';
@@ -266,11 +298,13 @@ for i = 1:length(trialsToShow)
         elseif i==length(trialsToShow) && j==trialInds(end)
             audio = int16(double(audio) .* linspace(1,0,length(audio))'); % fade out on last sample
         end
-            
-
+        
+        
         % write to file
+   
         frame = getframe(fig);
         vidWriter(frame.cdata, audio);
+
     end
 end
 release(vidWriter);
@@ -281,8 +315,8 @@ close(fig)
 if s.compressVideo
     baseDir = fileparts(fileName);
     [~,~] = system([fileName(1) ': & ffmpeg -i ' fileName ' -vcodec mpeg4 -vb 10M -y ' baseDir '\temp.avi']); % run ffmpeg to compress file
-    delete(fileName)
-    movefile([baseDir '\temp.avi'], fileName)
+    %delete(fileName)
+    %movefile([baseDir '\temp.avi'], fileName)
 end
 
 disp(' all done!')
@@ -304,5 +338,3 @@ function updateTextAndLine(text, line, eventTimes, textString)
 end
 
 end
-
-

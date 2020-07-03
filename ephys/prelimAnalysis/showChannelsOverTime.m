@@ -30,7 +30,7 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile
 sortedInds = [];
 for i = 1:64
     temp = find(channelNum_OpenEphys == i); 
-    sortedInds = [sortedInds; 65 - temp];
+    sortedInds = [sortedInds; length(channelNum_OpenEphys)+1 - temp];
 end
     
 
@@ -40,7 +40,7 @@ if showSortedSpikes
     spkWindowInds = int64((spkWindow(1)/1000*fs) : (spkWindow(2)/1000*fs));
     colors = hsv(length(spkInds));
 else
-    colors = hsv(channelNum);
+    colors = parula(channelNum);
 end
 
 
@@ -84,7 +84,7 @@ for i = 1:channelNum
         
         if connected(i); color='black'; else; color='red'; end
         hold on
-        text(timesSub(1), offsets(i), ['(' num2str(i) ')' num2str(65 - offsets(i)/1000)], 'Color', color)
+        text(timesSub(1), offsets(i), ['(' num2str(i-1) ')' num2str(65 - offsets(i)/1000)], 'Color', color)
     end
 end
 

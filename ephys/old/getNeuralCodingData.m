@@ -1,4 +1,4 @@
-function getNeuralCodingData()
+function getNeuralCodingData(session)
 
 % prepares data struct used to determine relationship between behavior and
 % other stimuli and neural activity // creates on row per session, and
@@ -8,7 +8,7 @@ function getNeuralCodingData()
 
 % temp
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
-sessionInfo = sessionInfo(sessionInfo.numGoodUnits>0,:); % keep only sessions with usable units
+sessionInfo = sessionInfo(strcmp(sessionInfo.session, session), :); % keep only sessions with usable units
 % sessionInfo = sessionInfo(1:2,:); % temptemp
 
 
@@ -32,10 +32,10 @@ for i = 1:height(sessionInfo)
     
     % trial metadata
     data(i).is_light_on = isLightOn;
-    data(i).obstacle_heights = obsHeightsVid';
+    data(i).obstacle_heights = obsHeights';
     
     % neural data
-    data(i).spike_times = spkTimes;
+    data(i).spike_times = spkTimes';
     data(i).unit_ids = unit_ids;
     
     
@@ -47,12 +47,10 @@ for i = 1:height(sessionInfo)
     
     
     % kinematics
-    obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPositions, frameTimeStamps, obsOnTimes, obsOffTimes, nosePos(1));
-    mToPixFactor = abs(mToPixMapping(1));
-    [locations, features] = fixTrackingDLC(locationsTable, frameTimeStamps);
+    [locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
 %     botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
     topPawBins = contains(features, 'paw') & contains(features, '_top');
-    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawBins), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, mToPixFactor);
+    stanceBins = getStanceBins(frameTimeStamps, locations(:,:,topPawBins), wheelPositions, wheelTimes, wheelCenter, wheelRadius, 250, pixelsPerM);
 %     [controlStepIdentities, modifiedStepIdentities, noObsStepIdentities] = ...
 %         getStepIdentities(stanceBins, locations(:,:,botPawInds), wiskContactTimes, frameTimeStamps, ...
 %         obsOnTimes, obsOffTimes, obsPixPositions, [], 2, 5); % last 2 arguments are number of control and no obstacle steps
@@ -70,7 +68,7 @@ for i = 1:height(sessionInfo)
     kinematics(:,2,:) = kinematics(:,2,:) - nosePos(2); % subtract midline from all y values
     kinematics(:,1,:) = kinematics(:,1,:) - nosePos(1); % subtract nose position from all x values
     kinematics(:,3,:) = (wheelCenter(2)-wheelRadius) - kinematics(:,3,:); % flip z and set s.t. top of wheel is zero
-    kinematics = kinematics/ mToPixFactor; % convert to meters
+    kinematics = kinematics/ pixelsPerM; % convert to meters
     
     data(i).kinematics = kinematics(validFrames,:,:);
     data(i).time_stamps = frameTimeStamps(validFrames);
@@ -113,8 +111,8 @@ end
 disp('saving results...')
 body_parts = featuresXyz;
 touch_class_names = touchClassNames(1:end-1); % remove no_touch class
-save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'ashokData', 'neuralCodingData.mat'), ...
-    'data', 'body_parts', 'touch_class_names', '-v7.3', '-nocompression'); clear data;
+fileName = fullfile(getenv('OBSDATADIR'), 'matlabData', 'ashokData', 'QZ_neuralData', [session, '.mat']);
+save(fileName, 'data', 'body_parts', 'touch_class_names', '-v7.3', '-nocompression'); clear data;
 disp('all done!')
 
 
