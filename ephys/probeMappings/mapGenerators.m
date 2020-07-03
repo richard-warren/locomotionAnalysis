@@ -1,4 +1,4 @@
-%% GENERATE MAPS FOR KILOSORT (I THINK THIS IS FOR VISUALIZATION PURPOSES ONLY)
+%% GENERATE MAPS FOR KILOSORT
 
 
 
@@ -26,9 +26,12 @@ for i = 1:64
 end
 
 % visualize final mapping results
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> upstream/master
 Nchannels = 64;
 connected = true(Nchannels, 1);
 chanMap   = 1:Nchannels;
@@ -39,6 +42,7 @@ kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
 
+<<<<<<< HEAD
 % % probe BDFD // original mapping
 % save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD.mat', ...
 %     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
@@ -50,6 +54,18 @@ save('Z:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
 
 
 
+=======
+% probe BDFD // original mapping
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD.mat'), ...
+    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+% probe BDFD // after right most shank broken
+connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD2.mat'), ...
+    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+
+>>>>>>> upstream/master
 close all; figure('Color', 'white', 'Position', [134 119 1595 807]);
 scatter(siteLocations(:,1)*0.1, siteLocations(:,2)*0.1)
 for i = 1:size(siteLocations,1)
@@ -105,6 +121,7 @@ ycoords   = siteLocationsRemapped(:,2);
 kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
+<<<<<<< HEAD
 % % probe C6CE
 % save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
 %     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
@@ -112,7 +129,83 @@ fs = 30000; % sampling frequency
 % probe D55F // nine sites defective?
 connected([18 28 14 9 10 2 7 15 11]) = false;
 save('Z:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
+=======
+% probe C6CE
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'C6CE.mat'), ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+% probe D55F // nine sites defective?
+connected([18 28 14 9 10 2 7 15 11]) = false;
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'D55F.mat'), ...
+>>>>>>> upstream/master
+    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+%% NeuroCambridge ASSY-H2 (32 channel per shank*2)
+
+% channelNum_OpenEphys is the order of openephys output .continuous files reflecting the
+% real physical location of the sites on the probe. First 32 is shankA and
+% 33-64 is shankB (refer to the cambridge neurotech map instruction)..
+channelNum_OpenEphys = [28 26 24 19 21 15 32 30 18 29 31 22 20 23 25 27 1 3 6 8 10 12 14 16 17 13 11 9 7 5 4 2 63 61 60 58 56 54 52 50 47 51 53 55 57 59 62 64 38 40 42 45 43 49 34 36 48 35 33 44 46 41 39 37];
+                    
+channelNum_OpenEphys_shank1 = [28 26 24 19 21 15 32 30 18 29 31 22 20 23 25 27 1 3 6 8 10 12 14 16 17 13 11 9 7 5 4 2 ];
+channelNum_OpenEphys_shank2 = [63 61 60 58 56 54 52 50 47 51 53 55 57 59 62 64 38 40 42 45 43 49 34 36 48 35 33 44 46 41 39 37];
+
+y = [775:-25:0]'; % y coordinates for both shanks.
+x_shank1 = repmat(1, 32, 1); % x coordinates for shankA.
+x_shank2 = repmat(251, 32, 1); % x coordinates for shankB.
+x = [x_shank1 x_shank2]; % x coordinates for both shanks.
+sitaLocation_shank1 = [x_shank1 y];
+siteLocation_shank2 = [x_shank2 y];
+siteLocation = [sitaLocation_shank1; siteLocation_shank2]; % xy coordinates for both shanks.
+
+% plot the probe channel map
+figure;
+scatter(siteLocation(:,1), siteLocation(:,2))
+for i = 1:size(siteLocation,1)
+    text(siteLocation(i,1), siteLocation(i,2), [num2str(i) ' (' num2str(channelNum_OpenEphys(i)) ')']) 
+end
+
+% save the channel map for kilosort
+kccords_shank1 = ones(32, 1); 
+kccords_shank2 = repmat(2, 32, 1); 
+
+Nchannels = 64; 
+connected = true(Nchannels, 1); 
+chanMap = 1:Nchannels; 
+chanMap0ind = chanMap - 1; 
+
+for i = 1:64
+    temp = find(channelNum_OpenEphys == i);
+    xcoords(i) = siteLocation(temp, 1);
+    ycoords(i) = siteLocation(temp, 2);
+end
+
+xcoords = xcoords';
+ycoords = ycoords';
+
+kcoords   = [kccords_shank1; kccords_shank2]; % grouping of channels (i.e. tetrode groups)
+fs = 30000; % sampling frequency
+
+% probe ASSY77
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'ASSY77.mat'), ...
+    'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

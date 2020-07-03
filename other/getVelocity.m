@@ -11,6 +11,7 @@ function velocity = getVelocity(positions, windowSize, fs)
     %
     % note: assumes positions are sampled at even intervals
     
+    % todo: make work on matrices in addition to vectors
 
     % compute window size in samples
     windowSmps = round(windowSize*fs);

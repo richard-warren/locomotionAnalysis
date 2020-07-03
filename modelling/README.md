@@ -1,0 +1,160 @@
+# todo
+- [ ] ephys fixes
+  - [X] packContFiles (takes args again, and uses relative python path)
+  - [X] getGoodSpkInds (no longer finds best channel)
+  - [X] getFiringRate (now one function, slightly optimized)
+  - [ ] formatEphysData (new alignment, plotting algo // dft firing rate calculation)
+    - [ ] add sessionInfo to saved file
+    - [ ] try different interp method?
+    - [ ] check min and max time calculation... (check which clock it's with respect to)
+    - [X] one fcn for getFiring rates
+    - [X] sync signal is spreadsheet somewhere...
+    - [X] rework alignment algorithm
+  - [X] getSessionEphysInfo (now gets sync signal also)
+  - [ ] getBestChannels
+    - [ ] check whether qz solution works on old sessions as well...
+  - [ ] make sure packContFiles, and qualityMetrics plots for for qz and rw
+  - [ ] documentation
+
+- [ ] aggregate plots (first pass)
+  - ordering:
+    - event: avg response rate / overall avg rate
+    - epoch: ?
+    - cont: ?
+- [ ] aggregate plots (smarter)
+  - how to compare MI for cont, epoch, event?
+  - characterize 'true' and residual responses
+- [ ] choose transformations, implement in prepDesignMatrix
+  - [ ] may need some mechanism for regressing away arbitrary predictors...
+  - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
+  - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
+  - [ ] use these plots to determine model transformations
+- [ ] write matlab code to handle to experiment conditions (surprise, omission)
+
+# analysis flow
+- prepPredictors
+  - untransformed predictors containing
+    - continuous: continuous signals
+    - logical: nX2 matrix of on/off times
+    - event: nX1 matrix of times
+- getNeuralResponses
+  - for each cell, compute tuning for each predictors in prepPredictors (not in design matrix)
+  - for each cell-predictor combo, compute (trial X time) matrix of firing rate responses, along with x axis values, and *maybe* condition of each row (e.g. is light on, is reward omission)
+    - event: true PSTHs
+    - logical: interpolated 'epoch' responses
+    - continuous: density estimates, along with x axis probability?
+  - each predictor will need associated x axis range
+  - will predictors need 'condition' labels, if i want to break down by e.g. isLightOn later?
+- prepDesignMatrix
+  - given predictors from prepPredictors, creates design matrix by
+    - including only user defined predictors
+    - applying transformation (e.g. convolve, raise to powers...)
+# predictors
+- [X] continuous
+  - [X] wheel velocity
+  - [X] paws (lh lf rf rh) (x y z)
+  - [X] body angle
+  - [X] whisker angle
+  - [X] butt height
+  - [X] jaw [along first PC]
+  - [X] ear [along first PC]
+  - [X] nose [along first PC]
+  - [X] satiation
+  - [X] vel for (almost) all variables above
+  - [X] whisker pad position (this actually moves during grooming...)
+  - potential additions:
+    - distance to obstacle [ramping signal]
+    - distance to reward [ramping signal]
+    - sound like predictor, obstacle velocity
+    - brightness like predictor, something ramping when light is on and decaying as passes eye position
+- [X] epoch
+  - [X] swing stance (lh lf rf rh)
+  - [X] obstacle (could also be event)
+  - [X] obstacle light (could also be event)
+  - [X] rewards
+  - [X] stride
+  - potential additions:
+    - one hot vector encoding whether mouse is: running, licking, grooming, doing nothing
+    - is eye closed (would require better tracking - currently confidence on eye tracking is low whenever light reflection at bottom of eye is occluded, which occurs during grooming and when eye is closed)
+- [X] event
+  - [X] whisker contact
+  - [X] licks
+  - [X] rewards (normal, surprise, omission)
+  - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
+
+# questions
+- when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
+- how to handle temporal discontinuities in old sessions?
+- some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
+- how to construct distance to obstacle and distance to reward ramping signals? // want something that want signal that goes from SAME small number to 0 at whisker contact, and then fall down again // perhaps should look at all ramping cells to figure out best shape for this predictor
+- how to handle moments when predictors are not known, e.g. occlusion
+- is there a quantitative index that tells the non-linearity of a relationship? eg fraction of variance explained non-linearly after regressing away linear relationship?
+- should maybe use continuous signal for licks instead of times, and have a 'home' position for the tongue in the mouth...
+- how to see if information being encoded varies over time
+- how to do these info theoretic 'bits per thing' metrics of utility of dft predictors
+
+# long term todo
+- [ ] i should probably be smoothing vel somehow, e.g. really using the local fitting method
+- [ ] should i mask out phase when not running? also, why do i need to high pass for phase to work??
+- [ ] how to handle nose in old sessions, which is out of view!
+- [ ] figure out how to filter out poorly behaving sessions (e.g. based on velocity)
+- [ ] make isSated variable, or some predictor that encodes how sated they are?
+- [ ] sliding window mutual information to find optimal leads/lags for predictors, sort of like a non-linear version of cross-correlations
+- [ ] should obstacle height be included somehow?
+- [ ] add isBlinking based on eye tracking confidence to analyzeSession?
+- [ ] housekeeping
+  - [ ] make sure getKinematicData works with new analysis... will we be using this in the new project at all?
+  - [ ] get rid of redundant video files
+  - should i be storing stanceBins in runAnalyzed.mat?
+- [ ] documentation for creating training data
+- [ ] add lick amplitude?
+- [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
+
+# todo(ne)
+- [X] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
+- [X] percentile limits for epochs
+- [X] check spike width is narrow enough for fast licking
+- [X] getNeuralResponses
+  - [X] initial draft
+  - [X] single cell plots
+  - [X] fix empty plots
+  - [X] add phase as to prepPredictors
+  - [X] add confidence and density estimates to continuous variables
+- [X] prepPredictors
+- [X] write autoAnalyze
+- [X] add omissionTimes and surpriseTimes to analyzeSession
+- [X] make scoreThresh dlc vs. dpk dependent
+  - [X] save metadata files for all sessions
+  - [X] read files whenever confidence is needed
+    - [X] fixTracking
+    - [X] paw contact in analyzeSession
+    - [X] getKinData
+    - [X] showTracking
+    - [X] showLeadingLagging
+    - [X] showSingleFrameTracking
+    - [X] paw contact (eddie - using low thresh for all sessions)
+    - [X] wisk contact (eddie - using low thresh for all sessions)
+    - [X] reanalyze all session paw contacts (without network analysis)
+  - [X] add to documentation
+- [X] make alignment frames automatic for problem sessions
+- [X] fine tune tracking
+  - [X] add to whisker training set and retrain
+  - [X] add to run training set and retrain (2 lick, 8 run errors per session)
+  - [X] re-analyze  and check (180917_002: 9330 15290 37888) and (200130_000)
+  - [X] re-analyze all vids
+  - [X] whisker contact
+  - [X] body angle
+  - [X] paw tracking
+  - [X] paw contacts
+  - [X] lick times
+  - [X] check grooming on old cropped sessions AND new sessions
+  - [X] whisker angle
+- [X] show lick times even for low confidence frames
+- [X] fix problem sessions
+
+# to clear disk space in the future we could:
+- get rid of runTop, runBot when run exists
+- get rid of originalDimensions for old sessions OR ...
+- get rid of cropped for old sessions and reanalyze: could potentially
+- analyze on cropped vids with old network, then shift the coordinates to accomodate the cropping, and throw away cropped vid, performing the rest of the analysis on the uncropped video
+- alternatively, see if old DLC can handle uncropped vids, and reanalyze like that...

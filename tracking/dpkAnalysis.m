@@ -31,3 +31,11 @@ else
     [~,~] = system([pathReset s.pythonPath ' tracking\deepposekit\analyze_video.py ' args]);
 end
 fprintf('deepposekit analysis finished in %.1f minutes\n', toc/60)
+
+% save metadata
+[~, nameNoExtension, ~] = fileparts(s.output);
+analysis = 'deepposekit';
+model = s.model;
+output = s.output;
+vid = s.vid;
+save(fullfile(getenv('OBSDATADIR'), 'sessions', session, [nameNoExtension '_metadata.mat']), 'analysis', 'model', 'output', 'vid')

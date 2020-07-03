@@ -1,3 +1,9 @@
+%% find ephysSessions
+
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
+ephysSessions = ephysInfo.session(ephysInfo.include==1);
+clear ephysInfo
+
 %% find out which sessions have 'originalDimensions' files
 
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
@@ -18,69 +24,11 @@ for i = 1:length(sessions)
 end
 disp('all done!')
 
-%% find ephysSessions
-
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
-ephysSessions = ephysInfo.session(ephysInfo.include==1);
-clear ephysInfo
-
-% %% find sessions with ephys folders
-% 
-% unusableSessions = {'181109_000', ...  % ephys folder only
-%                     '190923_003', ...  % ephys folder only
-%                     '190523_000', ...
-%                     '190523_001', ...
-%                     '190523_002', ...
-%                     '200118_000'};
-% 
-% files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
-% sessions = {files([files.isdir]).name};
-% ephysSessions = {};
-% 
-% hasEphysFolder = false(1,length(sessions));
-% fprintf('\n\n--------------------looking for ephys folders--------------------\n')
-% for i = 1:length(sessions)
-%     dirSub = dir(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}));
-%     dirSub = dirSub([dirSub.isdir]);
-%     bins = contains({dirSub.name}, 'ephys_');
-%     if any(bins)
-%         fprintf('%s: ', sessions{i})
-%         fprintf('%s ', dirSub(bins).name)
-%         fprintf('\n')
-%         ephysSessions{end+1} = sessions{i};
-%     end
-% end
-% disp('all done!')
-
-
-% %% get rid of cropped views and concat top and bot FOR EPHYS SESSIONS ONLY
-% % note: this does not delete the un-concatenated versions, which could optionally be done later to save disk space
-% 
-% for i = 1:length(ephysSessions)
-%     
-%     folder = fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i});
-%     dirSub = dir(fullfile(folder, '*.mp4'));
-%     
-%     % rename originalDimensions
-%     origInds = find(contains({dirSub.name}, '_originalDimensions'));
-%     if ~isempty(origInds)
-%         fprintf('%s: renaming files ', ephysSessions{i})
-%         for j = 1:length(origInds)
-%             fprintf('%s ', dirSub(origInds(j)).name)
-%             movefile(fullfile(folder, dirSub(origInds(j)).name), ...
-%                      fullfile(folder, erase(dirSub(origInds(j)).name, '_originalDimensions')));
-%         end
-%         fprintf('\n')
-%         
-%         % concatenate views if originally recorded un-concatenated
-%         if exist(fullfile(folder, 'runTop.mp4')); concatTopBotVids(ephysSessions{i}); end
-%         fprintf('\n')
-%     end
-% end
 
 %% reanalyze everything for ephys sessions
 
 problemSessions = {};
+% ephysSessions = {'180917_002', '200130_000'};  % temp
 
 for i = 1:length(ephysSessions)
     fprintf('\n___________%i/%i___________\n', i, length(ephysSessions))
@@ -109,28 +57,22 @@ disp('all done!')
 %% reanalyze single field in ephysSessions
 
 % settings
+close all
 skipSessions = {};
-vars = {'lickTimes'};
+vars = {''};
+args = {'showLickFig', true};  % passed to analyzeSession
 
+fprintf('\n_____ reanalyzing: '); fprintf('%s ', vars{:}); fprintf('_____\n')
 sessions = ephysSessions(~ismember(ephysSessions, skipSessions));
 for i = 1:length(sessions)
-    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true);
+    analyzeSession(sessions{i}, 'overwriteVars', vars, 'verbose', true, args{:});
     fprintf('\n')
 end
 disp('all done!')
 
-%% show tracking with continuous signal
-
-session = ephysSessions{1};
-
-locationsWisk = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'frameTimeStampsWisk')
-
-showTracking(session, 'sig', locationsWisk.tongue_1, 'sigTimes', frameTimeStampsWisk)
-
 
 %% reanalyze single sessions
-analyzeSession('191008_003', ...
+analyzeSession('999999_999', ...
             'overwriteVars', 'all', ...
             'verbose', true, ...
             'superVerbose', false, ...
@@ -141,7 +83,7 @@ analyzeSession('191008_003', ...
 
 %% recover broken session
 
-session = '191009_003'; % '200118_001', '191009_003'
+session = '200620_002'; % '200118_001', '191009_003'
 
 % figure out if any frames lost at the beginning of session
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'ledInds', 'ledIndsWisk', 'rewardTimes')
@@ -184,26 +126,43 @@ save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), '-s
 disp('data saved')
 
 
-%% to clear up disk space we could:
+%% check confidence statistics for new and old sessions
+
+new = readtable('Z:\loco\obstacleData\sessions\200311_000\trackedFeaturesRaw.csv');
+old = readtable('Z:\loco\obstacleData\sessions\200310_001\trackedFeaturesRaw.csv');
+
+newConf = table2array(new(:,contains(new.Properties.VariableNames, '_2')));
+oldConf = table2array(old(:,contains(old.Properties.VariableNames, '_2')));
+
+bins = 100;
+close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bins)
 
 
-% get rid of runTop, runBot when run exists
-
-% get rid of originalDimensions for old sessions OR ...
-
-% get rid of cropped for old sessions and reanalyze: could potentially
-% analyze on cropped vids with old network, then shift the coordinates to
-% accomodate the cropping, and throw away cropped vid, performing the rest
-% of the analysis on the uncropped video // alternatively, see if old DLC
-% can handle uncropped vids, and reanalyze like that...
-
-%% show sample whisker frame for each session
+%% modelling analyses on all sessions
 
 for i = 1:length(ephysSessions)
-    vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'runWisk.mp4'));
-    figure('name', ephysSessions{i}); imshow(read(vid,10000));
+    try
+%         prepPredictors(ephysSessions{i})
+%         getNeuralResponses(ephysSessions{i})
+        formatEphysData(ephysSessions{i})
+    catch
+        fprintf('%s: problem with analysis\n', ephysSessions{i})
+    end
 end
 
-%% play video while zooming in on face
+
+%% create missing .dat files
+
+for i = 1:length(ephysSessions)
+    try
+        ephysFolder = dir(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'ephys_*'));
+        datFile = dir(fullfile(ephysFolder.folder, ephysFolder.name, '*.dat'));
+        if isempty(datFile)
+            packContFiles(ephysSessions{i});
+        end
+    catch
+        fprintf('%s: problem with analysis\n', ephysSessions{i})
+    end
+end
 
 

@@ -38,7 +38,8 @@ fade = repmat(linspace(0,1,s.edgeFading), vid.Height, 1);
 % get kinematics in original pixel coordinates (kinData kinematics have
 % been transformed st they cannot be directly overlaid on frames)
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
+scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
+[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 clear locationsTable
 
 % choose trial(s)

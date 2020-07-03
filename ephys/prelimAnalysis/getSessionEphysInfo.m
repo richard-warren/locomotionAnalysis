@@ -5,8 +5,8 @@ function sessionEphysInfo = getSessionEphysInfo(session)
 % sampling frequency, number of samples, bitvols conversion factor
 
 % get name of ephys folder
-files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
-sessionEphysInfo.ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
+files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'ephys_*'));
+sessionEphysInfo.ephysFolder = files.name;
 
 % get source name (e.g. 100, 107) and number of channels
 contFiles = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, sessionEphysInfo.ephysFolder, '*.continuous'));
@@ -31,6 +31,9 @@ sessionEphysInfo.bitVolts = info.header.bitVolts;
 file = fullfile(getenv('OBSDATADIR'), 'sessions', session, sessionEphysInfo.ephysFolder, [sessionEphysInfo.fileNameBase '_CHs.dat']);
 temp = dir(file);
 sessionEphysInfo.smps = temp.bytes/2/sessionEphysInfo.channelNum; % 2 bytes per sample
+
+% channel used for synchronization
+sessionEphysInfo.syncSignal = ephysInfo.syncSignal{strcmp(session, ephysInfo.session)};
 
 
 

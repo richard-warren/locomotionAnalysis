@@ -24,7 +24,8 @@ vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPixPositions', 'pixelsPerM', 'frameTimeStampsWisk');
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
-[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM);
+scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
+[locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 
 
 % show image
