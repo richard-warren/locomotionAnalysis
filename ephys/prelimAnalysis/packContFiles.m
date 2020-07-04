@@ -5,7 +5,8 @@ function packContFiles(sessions, varargin)
 % settings
 s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
 s.highPassFreq = 0; % 0 to skip highpass
-s.referencing = 'med';
+s.referencing = 'med';  % 'ave' 'med' or 'none'
+s.verbose = false;
 
 
 % initializations
@@ -37,9 +38,14 @@ for i = 1:length(sessions)
     % run pack_2
     fprintf('%s: running pack_2... ', sessions{i})
     fileName = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, ephysFolder);
-    commandStr = [s.pythonPath ' ephys\packContFiles.py ' ...,
+    commandStr = [s.pythonPath ' ephys\prelimAnalysis\packContFiles.py ', ...
         fileName ' ' fileNameBase ' ' num2str(fs) ' ' num2str(s.highPassFreq) ' ' s.referencing ' ' connected];
-    tic; [~,~] = system(commandStr);
+    tic; 
+    if s.verbose
+        system(commandStr);
+    else
+        [~,~] = system(commandStr);
+    end
     fprintf('created .dat file in %.1f minutes\n', toc/60)
 end
 

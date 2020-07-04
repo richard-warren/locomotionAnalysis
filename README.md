@@ -56,3 +56,4 @@ kinData.mat | "trial-ized" struct, with each row containing many metrics for a t
 ephys_* folder | contains probe recordings
 neuralData.mat | processed neural data
 cellData.csv | spreadsheet containing information about sorted units
+modelling | folder containing intermediate results for ephys paper

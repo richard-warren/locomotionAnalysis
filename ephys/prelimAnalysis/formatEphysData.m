@@ -36,21 +36,19 @@ if length(syncEphysTimes)~=length(syncSpikeTimes)
     % find signal offset
     % ------------------
     
-    % make kernel
+    % turn times into delta functions
     fs = 1000;
-    sig = .1;  % (seconds) std for gaussian
-    kernel = arrayfun(@(x) (1/(sig*sqrt(2*pi))) * exp(-.5*(x/sig)^2), (-sig*10):(1/fs):(sig*10));
-    
-    % convolve
-    tLims = [syncSpikeTimes(1)-range(syncEphysTimes) syncSpikeTimes(end)+range(syncEphysTimes)];
+    tRng = max(range(syncSpikeTimes), range(syncEphysTimes));
+    tMin = min([syncEphysTimes; syncSpikeTimes]);
+    tMax = max([syncEphysTimes; syncSpikeTimes]);
+    tLims = [tMin-tRng tMax+tRng];
     t = tLims(1) : 1/fs : tLims(2);
-    spikeBins = histcounts(syncSpikeTimes, t);
-    spikeConv = conv(spikeBins, kernel, 'same');
-    ephysBins = histcounts(syncEphysTimes, t);
-    ephysConv = conv(ephysBins, kernel, 'same');
     
-    % align signals
-    [r, lags] = xcorr(spikeConv, ephysConv);
+    spikeBins = histcounts(syncSpikeTimes, t);
+    ephysBins = histcounts(syncEphysTimes, t);
+    
+    % cross correlate to align signals
+    [r, lags] = xcorr(spikeBins, ephysBins);
     [~, maxInd] = max(r);
     lag = lags(maxInd)/fs;
     syncEphysTemp = syncEphysTimes + lag;
@@ -59,7 +57,6 @@ if length(syncEphysTimes)~=length(syncSpikeTimes)
     
     % find matching events
     % --------------------
-    tic
     maxDiff = .1;
     matchedInds = nan(2,0);  % first row spike, second row ephys
     
@@ -67,7 +64,7 @@ if length(syncEphysTimes)~=length(syncSpikeTimes)
         
         diffs = abs(syncSpikeTimes - syncEphysTemp');  % abs(diffs) between each pair of events (spkInds X ephysInds)
         [minDiff, minInd] = min(diffs, [], 'all', 'linear');
-        if minDiff<maxDiff
+        if minDiff < maxDiff
             [spikeInd, ephysInd] = ind2sub(size(diffs), minInd);
             syncSpikeTemp(spikeInd) = nan;
             syncEphysTemp(ephysInd) = nan;
@@ -81,6 +78,7 @@ if length(syncEphysTimes)~=length(syncSpikeTimes)
     % ----
     figure('name', sprintf('%s: spike / openephys event alignment', session), ...
         'color', 'white', 'position', [90.00 654.00 1769.00 225.00]); hold on
+    
     plot([syncSpikeTimes(matchedInds(1,:)), syncEphysTimes(matchedInds(2,:))+lag], ...
         [1 0], 'LineWidth', 1, 'color', [0 0 0 .4])  % lines connecting matched events
     scatter(syncSpikeTimes(matchedInds(1,:)), ones(1,size(matchedInds,2)), 50, [0 0.44 0.74], 'filled')
@@ -103,38 +101,36 @@ end
 
 
 % linear mapping from open ephys to spike event time
-% todo: the mapping should maybe be piecewise, eg using interp1()
 openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get linear mapping from open ephys to spike
 
 % check that predictions are accurate
 predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
-if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .001
-    fprintf('%s: Linear mapping from openephys to spike fails to fit all events!\n', session)
+if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .002
+    fprintf('%s: WARNING! Linear mapping from openephys to spike fails to fit all events!\n', session)
 end
     
 
 % get spike times for good units
 [spkInds, unit_ids] = getGoodSpkInds(session);
 cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
-if ~all(cellData.unit_id==unit_ids); disp('WARNING: cellData.csv unit_ids do not match those in ephysFolder'); keyboard; end
+if ~isequal(cellData.unit_id(:), unit_ids(:)); disp('WARNING! cellData.csv unit_ids do not match those in ephysFolder'); keyboard; end
 
 
 % restrict to good units
-goodBins = logical([cellData.include]);
+goodBins = cellData.include==1;
 unit_ids = unit_ids(goodBins);
 spkInds = spkInds(goodBins);
 cellData = cellData(goodBins,:);
 
 spkTimes = cell(1, length(unit_ids));
 for i = 1:length(unit_ids)
-    spkTimes{i}  = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps(spkInds{i}));
+    spkTimes{i} = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps(spkInds{i}));
 end
 
 
 % convert to instantaneous firing rate
 minTime = min(cellfun(@(x) x(1), spkTimes)); % latest spike across all neurons
 maxTime = max(cellfun(@(x) x(end), spkTimes)); % latest spike across all neurons
-
 [~, timeStamps] = getFiringRate(spkTimes{1}, 'tLims', [minTime maxTime], 'fs', s.spkRateFs, ...
     'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
 spkRates = nan(length(spkTimes), length(timeStamps));

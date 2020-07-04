@@ -1,7 +1,8 @@
 function [spkInds, unit_ids] = getGoodSpkInds(session)
 
 % given session name, returns cell array where each entry is vector of
-% spike times for units marked as 'good' in kilosort
+% spike indices (with respect to open ephys clock) for units marked as 
+% 'good' in kilosort
 
 
 % initializations
@@ -13,14 +14,16 @@ allSpkInds = readNPY(fullfile(ephysFolder, 'spike_times.npy'));
 clusters = readNPY(fullfile(ephysFolder, 'spike_clusters.npy'));
 
 
-% find good units
-if exist(fullfile(ephysFolder, 'cluster_groups.csv'), 'file')  % old kilosort1 format
+% old kilosort format
+if exist(fullfile(ephysFolder, 'cluster_groups.csv'), 'file')
     clusterGroups = readtable(fullfile(ephysFolder, 'cluster_groups.csv'));
     unit_ids = clusterGroups.cluster_id(strcmp(clusterGroups.group, 'good'));
-    
+
+% new kilosort format
 elseif exist(fullfile(ephysFolder, 'cluster_group.tsv'), 'file')  % new kilosort1 format
-    clusterGroups = tdfread(fullfile(ephysFolder, 'cluster_group.tsv'));
-    unit_ids = clusterGroups.cluster_id(all(clusterGroups.group=='good',2));
+    clusterInfo = tdfread(fullfile(ephysFolder, 'cluster_info.tsv'));
+    bins = all(clusterInfo.group(:,1:4)=='good',2);  % this is a bit of a hack
+    unit_ids = clusterInfo.id(bins);
 end
 
 
@@ -29,9 +32,6 @@ spkInds = cell(1,length(unit_ids));
 for i = 1:length(unit_ids)
     spkInds{i} = allSpkInds(clusters==unit_ids(i));
 end
-
-
-
 
 
 

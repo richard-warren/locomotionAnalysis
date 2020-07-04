@@ -10,11 +10,11 @@ highpass = sys.argv[4]
 dref = sys.argv[5]
 connected_channels = sys.argv[6]
 
-# format input arguments appropriately
+# format input arguments
 fs = int(fs)
 highpass = int(highpass)
-if dref=='None': dref=None
-connected_channels = [i=='1' for i in connected_channels] # convert to binary vector
+if dref=='none': dref=None
+connected_channels = [i=='1' for i in connected_channels]  # convert to binary vector
 
 # pack!
 print('running pack_2...')

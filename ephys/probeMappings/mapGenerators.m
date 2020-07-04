@@ -38,7 +38,7 @@ fs = 30000; % sampling frequency
 
 % probe BDFD // original mapping
 save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD.mat'), ...
-    'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+    'chanMap', 'connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
 
 % probe BDFD // after right most shank broken
 connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
