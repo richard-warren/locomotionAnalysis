@@ -21,7 +21,7 @@
 % corresponding channel number used in openEphys, we generate parameters
 % for kilosort. 
 
-% xcoords and ycoords are the x and y coordinates for  each channel in 
+% xcoords and ycoords are the x and y coordinates for each channel in 
 % the openEphys order.  
 % kcoords is the shank number for each channel in the openEphys order.
 % Eg: for NeuronexusA4x16-Poly2, channel 1 (107_CH1.continuous) in the
