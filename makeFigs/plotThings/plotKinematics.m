@@ -67,10 +67,11 @@ for i = 1:max(conditions)
     end
     
     % plot median trajectory for condition
+
     kinMean = squeeze(nanmean(conditionTrajectories, 1));
     if isempty(s.errorFcn)
         plot(kinMean(1,:), kinMean(2,:), ...
-            'LineWidth', s.lineWidth, 'Color', [s.colors(i,:) s.lineAlpha]); hold on
+            'LineWidth', s.lineWidth, 'Color', s.colors(i,:)); hold on
     else
         shadedErrorBar(kinMean(1,:), squeeze(conditionTrajectories(:,2,:)), {@nanmean, s.errorFcn}, ...
             'lineprops', {'linewidth', s.lineWidth, 'color', [s.colors(i,:) s.lineAlpha]}, 'patchSaturation', s.errorAlpha); hold on;

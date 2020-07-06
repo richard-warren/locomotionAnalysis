@@ -75,10 +75,13 @@ daspect([1 1 1])
 
 
 
+<<<<<<< HEAD:ephys/probeMappings/mapGenerators_QZEdited.m
+=======
 % probe BDFD // after right most shank broken
 connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
 save('Y:\obstacleData\ephys\channelMaps\kilosort\BDFD2.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+>>>>>>> upstream/master:ephys/probeMappings/old/mapGenerators_rick.m
 
 
 %% NeuronexusA1x32Poly3, intan
@@ -130,6 +133,16 @@ ycoords   = siteLocationsRemapped(:,2);
 kcoords   = ones(Nchannels,1); % grouping of channels (i.e. tetrode groups)
 fs = 30000; % sampling frequency
 
+<<<<<<< HEAD:ephys/probeMappings/mapGenerators_QZEdited.m
+% % probe C6CE
+% save('Z:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
+%     'chanMap', 'channelNum_OpenEphys', 'connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+
+% probe D55F // nine sites defective?
+connected([18 28 14 9 10 2 7 15 11]) = false;
+save('Z:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
+    'chanMap', 'channelNum_OpenEphys', 'connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+=======
 % probe C6CE
 save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
@@ -138,6 +151,7 @@ save('Y:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
 connected([18 28 14 9 10 2 7 15 11]) = false;
 save('Y:\obstacleData\ephys\channelMaps\kilosort\D55F.mat', ...
     'chanMap','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+>>>>>>> upstream/master:ephys/probeMappings/old/mapGenerators_rick.m
 
 % % probe C6CE
 % save('Z:\obstacleData\ephys\channelMaps\kilosort\C6CE.mat', ...
@@ -250,4 +264,10 @@ end
 % probe C858
 save('Z:\obstacleData\ephys\channelMaps\kilosort\C858.mat', ...
     'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs')
+<<<<<<< HEAD:ephys/probeMappings/mapGenerators_QZEdited.m
+
+
+
+=======
+>>>>>>> upstream/master:ephys/probeMappings/old/mapGenerators_rick.m
 
