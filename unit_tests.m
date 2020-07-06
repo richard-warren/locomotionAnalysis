@@ -198,20 +198,39 @@ for i = 1:length(sessions)
     end
 end
 
-%% recompute stuff
 
-% [sessions, experiments] = getAllExperimentSessions('baselineNotes');
-[sessions, experiments] = getAllExperimentSessions();
-problemSessions = {};
+%% test that cellData is filled out
+
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+sessions = ephysInfo.session(ephysInfo.include==1);
+clear ephysInfo
 
 for i = 1:length(sessions)
-    fprintf('\n---------------session #%i (%s, %s)---------------\n', i, sessions{i}, experiments{i})
-    try 
-%         analyzeSession(sessions{i}, 'overwriteVars', 'all', 'plotObsTracking', false, 'verbose', false)
-        getKinematicData(sessions{i});
+    try
+        cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'cellData.csv'));
+        fprintf('%s: %i good cells\n', sessions{i}, sum(cellData.include))
     catch
-        fprintf('WARNING: %s failed to analyze...\n', sessions{i});
-        problemSessions{end+1} = sessions{i};
+        fprintf('%s: PROBLEM!\n', sessions{i})
+    end
+end
+
+
+%% test a function on all ephys sessions
+
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+sessions = ephysInfo.session(ephysInfo.include==1);
+clear ephysInfo
+
+% sessions = {'200113_000', '181030_000', '181115_000', '180922_001', '200311_000', '181020_001'}; % one session for each probe type
+
+
+for i = 1:length(sessions)
+    try
+%         formatEphysData(sessions{i});
+        plotQualityMetrics(sessions{i}, 'fastLoad', false);
+        close all
+    catch
+        fprintf('%s: PROBLEM!\n', sessions{i})
     end
 end
 

@@ -5,169 +5,140 @@ function formatEphysData(session, varargin)
 
 
 % settings
-s.spkRateFs = 1000;     % sampling frequency of instantaneous firing rate
-s.kernelRise = .005;  % rise and fall for double exponential kernel
-s.kernelFall = .02;
-s.kernelSig = .02;  % if a gaussian kernel is used
+s.spkRateFs = 1000;      % sampling frequency of instantaneous firing rate
+s.kernelRise = .005;     % (s) rise for double exponential kernel
+s.kernelFall = .02;      % (s) fall for double exponential kernel
+s.kernelSig = .02;       % (s) if a gaussian kernel is used
 s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
-s.event = 'reward'; % what event is openEphys using for syncing
-s.eventTimeName = 'rewardTimes'; % the name of paramters storing event(defined by s.event) time in spike clock
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
-
 addpath(fullfile(getenv('GITDIR'), 'analysis-tools'))
 addpath(fullfile(getenv('GITDIR'), 'npy-matlab'))
-files = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session));
-ephysFolder = files([files.isdir] & contains({files.name}, 'ephys_')).name;
-
-
-% figure out which sync signal was used
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-s.event = ephysInfo.syncSignal{strcmp(session, ephysInfo.session)};
-if strcmp(s.event, 'reward')
-    s.eventTimeName = 'rewardTimes';
-elseif strcmp(s.event, 'obsOn')
-    s.eventTimeName = 'obsOnTimes';
-else
-    fprintf('WARNING: CANNOT figure out sync signal for openEphys and spike');
-end
-    
+ephysFolder = dir(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'ephys_*'));
+ephysFolder = ephysFolder.name;
+ephysInfo = getSessionEphysInfo(session);
 
 % get mapping from open ephys to spike times
 [channel, eventTimes, info] = load_open_ephys_data_faster(...
-    fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));
-eventChannel = unique(channel); % assumes only one digital input is used!
-eventEphysTimes = eventTimes(logical(info.eventId) & channel==eventChannel); % only take rising edge of event channel // !!! is the first variablee returned from load_open_ephys_data_faster really the identity of the event channel???
-eventSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), s.eventTimeName); 
-eventSpikeTimes = cell2mat(struct2cell(eventSpikeTimes));
+    fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysFolder, 'all_channels.events'));  % load event data
+eventChannel = unique(channel);  % assumes only one digital input is used!
+syncEphysTimes = eventTimes(logical(info.eventId) & channel==eventChannel); % only take rising edge of event channel
+syncSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), ephysInfo.syncSignal);
+syncSpikeTimes = syncSpikeTimes.(ephysInfo.syncSignal).times(syncSpikeTimes.(ephysInfo.syncSignal).level==1);
 
 
-if length(eventEphysTimes)~=length(eventSpikeTimes)
-    fprintf('WARNING: %i events in spike and %i events in openEphys...', length(eventSpikeTimes), length(eventEphysTimes))
-
-
-    if length(eventEphysTimes) > length(eventSpikeTimes)
-        longString = eventEphysTimes;
-        shortString = eventSpikeTimes;
-    else
-        longString = eventSpikeTimes;
-        shortString = eventEphysTimes;
-    end
+if length(syncEphysTimes)~=length(syncSpikeTimes)
+    fprintf('%s: WARNING! %i events in spike and %i events in openEphys.\n', ...
+        session, length(syncSpikeTimes), length(syncEphysTimes))
     
-    if longString(1) > shortString(1)
-        sumDiff = [];
-        matchPositionMatrix = nan(length(shortString), length(longString));
-        shortStringMatrix = nan(length(shortString), length(longString));
-        for i = 1:length(longString)
-            difference = longString(i) - shortString(1);
-            shortString = shortString + difference;
-            shortStringMatrix(:, i) = shortString;
-            matchPositionMatrix(:, i) = knnsearch(longString, shortString); % each colomn is one round of knnsearch
-            sum = 0;
-            for j = 1:length(shortString); sum = sum + abs(shortString(j) - longString(matchPositionMatrix(j, i))); end
-            sumDiff(i) = sum;
+    % find signal offset
+    % ------------------
+    
+    % turn times into delta functions
+    fs = 1000;
+    tRng = max(range(syncSpikeTimes), range(syncEphysTimes));
+    tMin = min([syncEphysTimes; syncSpikeTimes]);
+    tMax = max([syncEphysTimes; syncSpikeTimes]);
+    tLims = [tMin-tRng tMax+tRng];
+    t = tLims(1) : 1/fs : tLims(2);
+    
+    spikeBins = histcounts(syncSpikeTimes, t);
+    ephysBins = histcounts(syncEphysTimes, t);
+    
+    % cross correlate to align signals
+    [r, lags] = xcorr(spikeBins, ephysBins);
+    [~, maxInd] = max(r);
+    lag = lags(maxInd)/fs;
+    syncEphysTemp = syncEphysTimes + lag;
+    syncSpikeTemp = syncSpikeTimes;
+    
+    
+    % find matching events
+    % --------------------
+    maxDiff = .1;
+    matchedInds = nan(2,0);  % first row spike, second row ephys
+    
+    while ~all(isnan(syncEphysTemp)) && ~all(isnan(syncSpikeTemp))
+        
+        diffs = abs(syncSpikeTimes - syncEphysTemp');  % abs(diffs) between each pair of events (spkInds X ephysInds)
+        [minDiff, minInd] = min(diffs, [], 'all', 'linear');
+        if minDiff < maxDiff
+            [spikeInd, ephysInd] = ind2sub(size(diffs), minInd);
+            syncSpikeTemp(spikeInd) = nan;
+            syncEphysTemp(ephysInd) = nan;
+            matchedInds(:,end+1) = [spikeInd; ephysInd];
+        else
+            break
         end
-    else
-        sumDiff = [];
-        matchPositionMatrix = nan(length(shortString), length(longString));
-        shortStringMatrix = nan(length(shortString), length(longString));
-        for i = 1:length(longString)
-            difference = shortString(1) - longString(i);
-            shortString = shortString - difference;
-            shortStringMatrix(:, i) = shortString;
-            matchPositionMatrix(:, i) = knnsearch(longString, shortString); % each colomn is one round of knnsearch
-            sum = 0;
-            for j = 1:length(shortString); sum = sum + abs(shortString(j) - longString(matchPositionMatrix(j, i))); end
-            sumDiff(i) = sum;
-        end
     end
     
-    % Get matched event time for both spike and ephys
-    matchPosition = find(sumDiff == min(sumDiff));
-    minTimeDiff = min(sumDiff);
-    fprintf('\n Found match position in longer string, match position is %i ', matchPosition)
-    fprintf('\n The minimal sum of time shifts for match position is %4.2f seconds\n', minTimeDiff)
+    % plot
+    % ----
+    figure('name', sprintf('%s: spike / openephys event alignment', session), ...
+        'color', 'white', 'position', [90.00 654.00 1769.00 225.00]); hold on
     
-    if length(eventEphysTimes) > length(eventSpikeTimes)
-        matchEventSpikeTimes = eventSpikeTimes;
-        matchEventEphysTimes = eventEphysTimes(matchPositionMatrix(:, matchPosition));
-    else
-        matchEventEphysTimes = eventEphysTimes;
-        matchEventSpikeTimes = eventSpikeTimes(matchPositionMatrix(:, matchPosition));
-    end
+    plot([syncSpikeTimes(matchedInds(1,:)), syncEphysTimes(matchedInds(2,:))+lag], ...
+        [1 0], 'LineWidth', 1, 'color', [0 0 0 .4])  % lines connecting matched events
+    scatter(syncSpikeTimes(matchedInds(1,:)), ones(1,size(matchedInds,2)), 50, [0 0.44 0.74], 'filled')
+    scatter(syncEphysTimes(matchedInds(2,:))+lag, zeros(1,size(matchedInds,2)), 50, [.85 .32 .10], 'filled')
+    
+    spkUnmatchedInds = find(~ismember(1:length(syncSpikeTimes), matchedInds(1,:)));
+    scatter(syncSpikeTimes(spkUnmatchedInds), ones(1,length(spkUnmatchedInds)), 100, 'red')
+    ephysUnmatchedInds = find(~ismember(1:length(syncEphysTimes), matchedInds(2,:)));
+    scatter(syncEphysTimes(ephysUnmatchedInds)+lag, zeros(1,length(ephysUnmatchedInds)), 100, 'red')
+    
+    set(gca, 'ytick', [0 1], 'YTickLabel', {'open ephys', 'spike'}, 'ylim', [-1 2])
+    xlabel('spike times (s)')
+    pause(.1)
     
     
-    % Validation Plot
-    x1 = 1:length(longString);
-    plot(x1, longString, '.', 'Color', [0.98 0.83 0.22], 'Markersize', 20)
-    hold on
-    x2 = 1:length(shortString);
-    plot(matchPositionMatrix(:, matchPosition), shortStringMatrix(:, matchPosition), 'o', 'Color', [0.07 0.62 1], 'MarkerSize', 5)
-    hold on
-    plot(matchPositionMatrix(:, matchPosition), longString(matchPositionMatrix(:, matchPosition)), '.', 'Color', [1 0.36 0.40], 'MarkerSize', 10)
-    legend('LongString-AllPoints', 'ShortString-AllPoints', 'LongString-MatchPoints');
-    xlabel('Event Number');
-    ylabel('Time');
-    
-else
-    % [validOpenEBins, validSpikeBins] = deal(true(1,length(openEphysObsOnTimes)));
-    disp('correct number of events detected!')
-    matchEventSpikeTimes = eventSpikeTimes;
-    matchEventEphysTimes = eventEphysTimes;
+    % update times
+    syncSpikeTimes = syncSpikeTimes(matchedInds(1,:));
+    syncEphysTimes = syncEphysTimes(matchedInds(2,:));
 end
 
 
-% Linear mapping from open ephys to spike event time
-openEphysToSpikeMapping = polyfit(matchEventEphysTimes, matchEventSpikeTimes, 1); % get linear mapping from open ephys to spike
+% linear mapping from open ephys to spike event time
+openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get linear mapping from open ephys to spike
 
 % check that predictions are accurate
-predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, matchEventEphysTimes);
-if max(abs(predictedEventSpikeTimes - matchEventSpikeTimes)) > .001
-    fprintf('OMG THERE WAS A PROBLEM MAPPING FROM OPEN EPHYS TO SPIKE TIMES!!! LOL\n');
-else
-    fprintf('MAPPING FROM OPEN EPHYS TO SPIKE TIMES SUCCESSFUL!!! LOL\n');
+predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
+if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .002
+    fprintf('%s: WARNING! Linear mapping from openephys to spike fails to fit all events!\n', session)
 end
     
 
-
 % get spike times for good units
-[spkInds, unit_ids, ~] = getGoodSpkInds(session);
+[spkInds, unit_ids] = getGoodSpkInds(session);
 cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
-if ~all(cellData.unit_id==unit_ids); disp('WARNING: callData.csv unit_ids do not match those in ephysFolder'); keyboard; end
-ephysInfo = getSessionEphysInfo(session);
+if ~isequal(cellData.unit_id(:), unit_ids(:)); disp('WARNING! cellData.csv unit_ids do not match those in ephysFolder'); keyboard; end
+
 
 % restrict to good units
-goodBins = logical([cellData.include]);
+goodBins = cellData.include==1;
 unit_ids = unit_ids(goodBins);
 spkInds = spkInds(goodBins);
 cellData = cellData(goodBins,:);
 
 spkTimes = cell(1, length(unit_ids));
 for i = 1:length(unit_ids)
-    spkTimes{i}  = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps(spkInds{i}));
+    spkTimes{i} = polyval(openEphysToSpikeMapping, ephysInfo.timeStamps(spkInds{i}));
 end
 
 
 % convert to instantaneous firing rate
 minTime = min(cellfun(@(x) x(1), spkTimes)); % latest spike across all neurons
 maxTime = max(cellfun(@(x) x(end), spkTimes)); % latest spike across all neurons
-
-if strcmp(s.kernel, 'doubleExp')
-    [~, timeStamps] = getFiringRateDoubleExp(spkTimes{1}, s.spkRateFs, s.kernelRise, s.kernelFall, [minTime maxTime]);
-elseif strcmp(s.kernel, 'gauss')
-    [~, timeStamps] = getFiringRateGaussian(spkTimes{1}, s.spkRateFs, s.kernelSig, [minTime maxTime]);
-end
+[~, timeStamps] = getFiringRate(spkTimes{1}, 'tLims', [minTime maxTime], 'fs', s.spkRateFs, ...
+    'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
 spkRates = nan(length(spkTimes), length(timeStamps));
 
 for i = 1:length(spkTimes)
     
-    if strcmp(s.kernel, 'doubleExp')
-        spkRates(i,:) = getFiringRateDoubleExp(spkTimes{i}, s.spkRateFs, s.kernelRise, s.kernelFall, [minTime maxTime]);
-    elseif strcmp(kernel, 'gauss')
-        spkRates(i,:) = getFiringRateGaussian(spkTimes{i}, s.spkRateFs, s.kernelSig, [minTime maxTime]);
-    end
+    [spkRates(i,:), timeStamps] = getFiringRate(spkTimes{i}, 'tLims', [minTime maxTime], 'fs', s.spkRateFs, ...
+        'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);    
     
     % get min and max time for cell
     cellMinTime = polyval(openEphysToSpikeMapping, cellData.timeStart(i)*60);
@@ -184,10 +155,9 @@ for i = 1:length(spkTimes)
     
 end
 
-
+settings = s;
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping')
-disp('all done!')
+     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping', 'settings')
 
 
 

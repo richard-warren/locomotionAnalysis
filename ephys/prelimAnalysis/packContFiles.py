@@ -1,23 +1,21 @@
 import sys
-sys.path.insert(0, 'D:\\DCN_project\\Github\\analysis-tools\\Python3')
-from OpenEphys import pack_2
-
-
+from importlib import import_module
+OpenEphys = import_module('analysis-tools.Python3.OpenEphys')
 
 # get input arguments
-file_dir = 'Z:\\obstacleData\\sessions\\200626_000\\ephys_2020-06-26_14-12-02'
-source = 107
-fs = 30000
-highpass = 0
-dref = 'med'
-connected_channels = 'all'
+file_dir = sys.argv[1]
+source = sys.argv[2]
+fs = sys.argv[3]
+highpass = sys.argv[4]
+dref = sys.argv[5]
+connected_channels = sys.argv[6]
 
-# format input arguments appropriately
+# format input arguments
 fs = int(fs)
 highpass = int(highpass)
-if dref=='None': dref=None
+if dref=='none': dref=None
+connected_channels = [i=='1' for i in connected_channels]  # convert to binary vector
 
-
+# pack!
 print('running pack_2...')
-pack_2(folderpath = file_dir, filename = '', channels = 'all', chprefix = 'CH',
-           dref = dref, session = '0', source = '107')
+OpenEphys.pack_2(file_dir, source=source, fs=fs, highpass=highpass, dref=dref, connected_channels=connected_channels)

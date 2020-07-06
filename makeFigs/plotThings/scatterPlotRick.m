@@ -32,7 +32,6 @@ slopes = nan(1,conditionNum);
 for h = 1:conditionNum
     
     % get paw and obs height for bin
-
     bins = conditions==h & ~isnan(x) & ~isnan(y);
     binsSub = bins;
     if sum(bins)>scatterPointsPerCondition
