@@ -4,8 +4,8 @@ function packContFiles(sessions, varargin)
 
 % settings
 s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
-s.highPassFreq = 0; % 0 to skip highpass
-s.referencing = 'med';  % 'ave' 'med' or 'none'
+s.highPassFreq = 0;         % 0 to skip highpass
+s.referencing = 'med';      % 'ave' 'med' or 'none'
 s.verbose = false;
 
 
@@ -32,13 +32,13 @@ for i = 1:length(sessions)
     warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
     mapFile = ephysInfo.map{strcmp(sessions{i}, ephysInfo.session)};
     load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), 'connected')
-%     connected = true(64,1);  % !!! temp (this line sets all channels to be connected)
     connected = [num2str(connected)]'; % string containing binary vector
 
     % run pack_2
     fprintf('%s: running pack_2... ', sessions{i})
     fileName = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, ephysFolder);
-    commandStr = [s.pythonPath ' ephys\prelimAnalysis\packContFiles.py ', ...
+    pythonFile = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'ephys', 'prelimAnalysis', 'packContFiles.py');
+    commandStr = [s.pythonPath ' ' pythonFile ' ', ...
         fileName ' ' fileNameBase ' ' num2str(fs) ' ' num2str(s.highPassFreq) ' ' s.referencing ' ' connected];
     tic; 
     if s.verbose

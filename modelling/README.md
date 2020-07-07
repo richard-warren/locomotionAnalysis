@@ -13,13 +13,12 @@
   - [X] getBestChannels
   - [X] incorporate new map generator
     - [X] check kcoords works in plotQualityMetrics
-  - [ ] **test all functions on all sessions**
-    - [ ] formatEphysData
+  - [X] test all functions on all sessions
+    - [X] formatEphysData
     - [X] plotQualityMetrics
-  - [ ] sync with qz
+  - [ ] make sure works for QZ
   - [ ] document prelimAnalysis
     - [ ] figure out exact highpass, med ref pipeline
-
 - [ ] aggregate plots (first pass)
   - ordering:
     - event: avg response rate / overall avg rate
