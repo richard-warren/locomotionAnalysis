@@ -58,6 +58,25 @@ connected = true(Nchannels, 1);
 chanMap = 1:Nchannels; 
 chanMap0ind = chanMap - 1; 
 
+[~, sortInds] = sort(channelNum_OpenEphys);
+kcoords = repelem(1:4, 16)';
+kcoords = kcoords(sortInds);
+xcoords = siteLocations(sortInds, 1);
+ycoords = siteLocations(sortInds, 2);
+
+fs = 30000; % sampling frequency
+
+
+% probe BDFD // original mapping
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD.mat'), ...
+    'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs');
+
+% probe BDFD // after right most shank broken
+connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
+save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD2.mat'), ...
+    'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs');
+
+%% old
 xcoords = nan(Nchannels, 1);
 ycoords = nan(Nchannels, 1);
 kcoords = nan(Nchannels, 1);
@@ -71,23 +90,12 @@ for i = 1:Nchannels
         kcoords(i, 1) = 1;
     elseif temp <= 32
         kcoords(i, 1) = 2;
-    elseif temp <= 48;
+    elseif temp <= 48
         kcoords(i, 1) = 3;
     else
         kcoords(i, 1) = 4;    
     end
 end
-fs = 30000; % sampling frequency
-
-
-% probe BDFD // original mapping
-save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD.mat'), ...
-    'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs');
-
-% probe BDFD // after right most shank broken
-connected([27 16 30 14 32 12 31 24 28 25 26 21 22 18 20 29]) = false;
-save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'BDFD2.mat'), ...
-    'chanMap','channelNum_OpenEphys','connected', 'xcoords', 'ycoords', 'kcoords', 'chanMap0ind', 'fs');
 
 
 

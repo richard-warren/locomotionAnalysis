@@ -1,20 +1,24 @@
 # todo
-- [ ] ephys fixes
+- [ ] ephys prelimAnalysis fixes
   - [X] packContFiles (takes args again, and uses relative python path)
   - [X] getGoodSpkInds (no longer finds best channel)
   - [X] getFiringRate (now one function, slightly optimized)
-  - [ ] formatEphysData (new alignment, plotting algo // dft firing rate calculation)
-    - [ ] add sessionInfo to saved file
-    - [ ] try different interp method?
-    - [ ] check min and max time calculation... (check which clock it's with respect to)
+  - [X] plotting functions
+  - [X] formatEphysData (new alignment, plotting algo // dft firing rate calculation)
+    - [X] check min and max time calculation... (in cellData it is wrt open ephys clock... it is converted to spike clock in formatEphysData)
     - [X] one fcn for getFiring rates
     - [X] sync signal is spreadsheet somewhere...
     - [X] rework alignment algorithm
   - [X] getSessionEphysInfo (now gets sync signal also)
-  - [ ] getBestChannels
-    - [ ] check whether qz solution works on old sessions as well...
-  - [ ] make sure packContFiles, and qualityMetrics plots for for qz and rw
-  - [ ] documentation
+  - [X] getBestChannels
+  - [X] incorporate new map generator
+    - [X] check kcoords works in plotQualityMetrics
+  - [ ] **test all functions on all sessions**
+    - [ ] formatEphysData
+    - [X] plotQualityMetrics
+  - [ ] sync with qz
+  - [ ] document prelimAnalysis
+    - [ ] figure out exact highpass, med ref pipeline
 
 - [ ] aggregate plots (first pass)
   - ordering:
@@ -151,6 +155,19 @@
   - [X] whisker angle
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
+
+# problem sessions
+session | problem
+------- | -------
+181019_002 | cellData_old and cellData (qz kept the old one, which was my sorting)
+181020_001 | cellData_old and cellData (qz kept the old one, which was my sorting)
+181103_000 | cellData_old only // ks1 and ks2 results need to be moved (looks good now)
+191007_003 | only KS2 results? and nothing in the main folder (looks good now)
+191009_003 | KS1 with and without HP, KS2, no results in main folder (qz fixed)
+191009_003 | empty cellData and cellData_withHighPass
+200113_000 | empty cellData
+200117_000 | cellData doesn't match spike sorted units
+
 
 # to clear disk space in the future we could:
 - get rid of runTop, runBot when run exists

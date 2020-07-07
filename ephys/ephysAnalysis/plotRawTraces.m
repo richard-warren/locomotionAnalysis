@@ -1,5 +1,8 @@
 function plotRawTraces(session, unit_id, varargin)
 
+
+
+
 % settings
 s.shadedArea = false; % in case I want to plot shaded area other than obs events.
 s.shadedAreaTimeInds = []; % n by 2 matrix, each row is one trial or event, the first colomn is start time ind, the second is stop time ind.
