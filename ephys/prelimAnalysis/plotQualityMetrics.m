@@ -9,6 +9,7 @@ spkNum = 5000; % take this many of all spikes to analyze (to save system resourc
 showFigures = 'on';
 s.unitsToPlot = [];  % if provided, only plot cells in unit_ids
 s.fastLoad = false;  % if true loads from .cont instead of .dat file, which is faster but lacks common reference subtraction
+s.showChannelsOverTime = false;  % whether to also call showChannelsOverTime()
 
 % SNR settings
 snrYLims = [0 20];
@@ -54,9 +55,11 @@ bestChannels = getBestChannels(session);
 
 % plotting all channels
 folder = fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics');  % figures will be saved here
-showChannelsOverTime(session, 'timeBinNum', 5, 'showSortedSpikes', true, ...
-    'figureName', fullfile(folder, [session 'allUnits.png']), 'bestChannels', bestChannels);
-pause(.1)
+if s.showChannelsOverTime
+    showChannelsOverTime(session, 'timeBinNum', 5, 'showSortedSpikes', true, ...
+        'figureName', fullfile(folder, [session 'allUnits.png']), 'bestChannels', bestChannels);
+    pause(.1)
+end
 
 
 % function to extract voltage from binary file
@@ -73,9 +76,10 @@ getColors = @(length, color) interp2(1:3, [1:2]', cat(1,[0 0 0], color), 1:3, li
 if isempty(s.unitsToPlot); s.unitsToPlot = unit_ids; end
 unitInds = find(ismember(unit_ids, s.unitsToPlot))';
 
+fprintf('%s: plotting cell ', session)
 for c = unitInds
 
-    fprintf('plotting cell %i... ', unit_ids(c))
+    fprintf('%i ', unit_ids(c))
     figure('Name', sprintf('%s cell %i', session, unit_ids(c)), 'Visible', showFigures, ...
         'Color', 'white', 'units', 'normalized', 'Position', [.1 .1 .8 .8]); hold on
     spkInds = allSpkInds{c};
@@ -104,9 +108,9 @@ for c = unitInds
     colors = getColors(timeBinNum, cellColors(c,:));
     traceX = double(spkWindowInds) * (traceWidth/range(double(spkWindowInds)));
     
-%     shankNum = kcoords(bestChannels(c));
-%     shankInds = find(kcoords==shankNum)';  % inds for channels on same shank as best channel
-    shankInds = find(abs(xcoords-xcoords(bestChannels(c))) < 50)';  % temporary hack until kcoords is accurate
+    shankNum = kcoords(bestChannels(c));
+    shankInds = find(kcoords==shankNum)';  % inds for channels on same shank as best channel
+%     shankInds = find(abs(xcoords-xcoords(bestChannels(c))) < 50)';  % temporary hack until kcoords is accurate
     
     for j = shankInds
         for i = 1:timeBinNum
@@ -123,10 +127,9 @@ for c = unitInds
                 num2str(find(channelNum_OpenEphys==j)), 'Color', textColor, ...
                 'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle')
     end
-%     text(mean(xcoords(shankInds)) + mean(traceX), max(ycoords)+25, ...
-%         sprintf('SHANK %i/%i', shankNum, length(unique(kcoords))), ...
-%         'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
-%     daspect([1 xScale 1])  % make x and y axis same scale
+    text(mean(xcoords(shankInds)) + mean(traceX), max(ycoords)+25, ...
+        sprintf('SHANK %i/%i', shankNum, length(unique(kcoords))), ...
+        'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
 
     xLims = [min(xcoords(shankInds)) + traceX(1) - .5*range(traceX), ...
              max(xcoords(shankInds)) + traceX(end) + .5*range(traceX)];
@@ -237,28 +240,8 @@ for c = unitInds
     
     
     % save figures
-%     savefig(fullfile(folder, [session 'cell' num2str(unit_ids(c))]))
     saveas(gcf, fullfile(folder, [session 'cell' num2str(unit_ids(c)) '.png']))
     pause(.01)
-end
-
-% check if these unit_ids have already been written to cellData.csv file
-fileName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv');
-alreadyWritten = false;
-if exist(fileName, 'file')
-    csvTable = readtable(fileName);
-    alreadyWritten = isequal(csvTable.unit_id, unit_ids);
-end
-
-% make new cellData.csv file if it doesn't already exist
-if ~alreadyWritten
-    disp('writing cellData.csv metadata file...')
-    csvTable = cell2table(cell(0,6), ...
-        'VariableNames', {'unit_id', 'include', 'timeStart', 'timeEnd', 'location', 'notes'});
-    warning('off', 'MATLAB:table:RowsAddedExistingVars')
-    csvTable(1:length(unit_ids),1) = table(unit_ids);
-    writetable(csvTable, fileName)
-    warning('on', 'MATLAB:table:RowsAddedExistingVars')
 end
 
 disp('all done!')

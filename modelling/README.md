@@ -11,12 +11,11 @@
     - [X] rework alignment algorithm
   - [X] getSessionEphysInfo (now gets sync signal also)
   - [X] getBestChannels
-  - [ ] **incorporate new map generator**
-    - [ ] check kcoords works in plotQualityMetrics
+  - [X] incorporate new map generator
+    - [X] check kcoords works in plotQualityMetrics
   - [ ] **test all functions on all sessions**
     - [ ] formatEphysData
-    - [ ] packContFiles
-    - [ ] plotQualityMetrics
+    - [X] plotQualityMetrics
   - [ ] sync with qz
   - [ ] document prelimAnalysis
     - [ ] figure out exact highpass, med ref pipeline
@@ -160,11 +159,11 @@
 # problem sessions
 session | problem
 ------- | -------
-181019_002 | cellData_old and cellData
-181020_001 | cellData_old and cellData
-181103_000 | cellData_old only // ks1 and ks2 results need to be moved
-191007_003 | only KS2 results? and nothing in the main folder
-191009_003 | KS1 with and without HP, KS2, no results in main folder
+181019_002 | cellData_old and cellData (qz kept the old one, which was my sorting)
+181020_001 | cellData_old and cellData (qz kept the old one, which was my sorting)
+181103_000 | cellData_old only // ks1 and ks2 results need to be moved (looks good now)
+191007_003 | only KS2 results? and nothing in the main folder (looks good now)
+191009_003 | KS1 with and without HP, KS2, no results in main folder (qz fixed)
 191009_003 | empty cellData and cellData_withHighPass
 200113_000 | empty cellData
 200117_000 | cellData doesn't match spike sorted units

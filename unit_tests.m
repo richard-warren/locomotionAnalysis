@@ -226,14 +226,14 @@ clear ephysInfo
 
 for i = 1:length(sessions)
     try
-%         formatEphysData(sessions{i});
-        plotQualityMetrics(sessions{i}, 'fastLoad', false);
-        close all
+        formatEphysData(sessions{i});
+%         plotQualityMetrics(sessions{i}, 'fastLoad', false);
+%         close all
     catch
         fprintf('%s: PROBLEM!\n', sessions{i})
     end
 end
-
+disp('all done!')
 
 
 

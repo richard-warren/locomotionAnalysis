@@ -19,9 +19,14 @@ loadBestChannels = exist(fullfile(ephysFolder, 'cluster_group.tsv'), 'file');
 
 if loadBestChannels
     clusterInfo = tdfread(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.ephysFolder, 'cluster_info.tsv'));
-    bins = all(clusterInfo.group(:,1:4)=='good',2);  % this is a bit of a hack
+    bins = all(clusterInfo.group(:,1:4)=='good',2);  % this is a bit of a hack // should really convert all rows to strings and use strcmp()
     unit_ids = clusterInfo.id(bins);
-    bestChannels = clusterInfo.ch(bins);
+    
+    if ismember('channel', fieldnames(clusterInfo))  % kilosort2
+        bestChannels = clusterInfo.channel(bins) + 1;
+    elseif ismember('ch', fieldnames(clusterInfo))  % kilosort1
+        bestChannels = clusterInfo.ch(bins) + 1;
+    end
 else
 
     % function to extract voltage from binary file, and load data
