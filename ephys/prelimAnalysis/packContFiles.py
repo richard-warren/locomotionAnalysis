@@ -5,7 +5,7 @@ from OpenEphys import pack_2
 
 
 # get input arguments
-file_dir = 'Z:\\obstacleData\\sessions\\200626_000\\ephys_2020-06-26_14-12-02'
+file_dir = 'Z:\\obstacleData\\sessions\\200703_000\\ephys_2020-07-03_13-48-14'
 source = 107
 fs = 30000
 highpass = 0
