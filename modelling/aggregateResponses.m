@@ -55,7 +55,7 @@ xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.binNum);
 aggregates.aggregate = repmat({nan(nUnits, s.binNum)}, height(predictors), 1);
 aggregates.mi = repmat({nan(nUnits, 1)}, height(predictors), 1);
 cellInfo = table(cell(nUnits,1), nan(nUnits,1), ...
-    'VariableNames', {'session', 'cell'});
+    'VariableNames', {'session', 'unit'});
 rowInd = 0;
 
 % for all sessions
@@ -74,7 +74,7 @@ for i = 1:length(sessions)
         cellStd = nanstd(spkRates(j,:));
 
         % for each predictor
-        for k = 1:height(cellResponses)
+        for k = 1:height(cellResponses) %% only those included...
 
             if cellResponses.type(k)=='event'
                 y = nanmean(cellResponses.response{k},1);
@@ -98,7 +98,9 @@ for i = 1:length(sessions)
                 if any(~isnan(y))
                     x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
                     xi = linspace(aggregates.xLims(k,1), aggregates.xLims(k,2), s.binNum);
-                    aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xi);
+                    temp = interp1(x, y, xi, 'linear', 'extrap');
+                    if all(isnan(temp)); keyboard; end
+                    aggregates.aggregate{k}(rowInd,:) = temp;
                 end
             end
             
@@ -109,21 +111,6 @@ for i = 1:length(sessions)
     cellInfo.unit(rowInd) = responses(j).cell;
     end
 end
-
-%% test plot
-
-
-pred = 'whiskerContact';
-
-img = aggregates.aggregate{pred,1};
-[~, sortInds] = sort(aggregates.mi{pred});
-
-close all;
-figure;
-imagesc(xEvent, 1:size(img,2), img(sortInds,:));
-set(gca, 'xlim', [-.2 .5])
-
-
 
 
 

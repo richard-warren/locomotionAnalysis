@@ -6,7 +6,7 @@ sessions = getEphysSessions();
 
 overwrite = true;
 
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     folder = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
     try
         % format ephys data
@@ -15,9 +15,9 @@ for i = 1:length(sessions)
 %         end
         
         % predictors
-        if overwrite || ~exist(fullfile(folder, 'modelling', 'predictors.mat'), 'file')
-            getPredictors(sessions{i})
-        end
+%         if overwrite || ~exist(fullfile(folder, 'modelling', 'predictors.mat'), 'file')
+%             getPredictors(sessions{i})
+%         end
         
         % neural responses
 %         if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')

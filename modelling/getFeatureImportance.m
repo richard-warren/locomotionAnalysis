@@ -31,10 +31,10 @@ for i = 1:length(unit_ids)
     
     % initialize table
     nRows = height(predictors);
-    cellImportance = table(nan(nRows,1), nan(nRows,1), predictors.type, ...
-        'VariableNames', {'mi', 'r2', 'type'}, 'RowNames', predictors.Properties.RowNames);
+    cellImportance = table(nan(nRows,1), nan(nRows,1), predictors.type, predictors.include, ...
+        'VariableNames', {'mi', 'r2', 'type', 'include'}, 'RowNames', predictors.Properties.RowNames);
     
-    for j = 1:height(predictors)
+    for j = find(predictors.include)'
         
         if predictors.type(j)=='event'
             response = responses(i).responses.response{j};

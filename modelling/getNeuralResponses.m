@@ -12,10 +12,10 @@ s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
 s.epochGridNum = 200;  % number of points in epoch x axis
 s.percentileLims = [.1 99.9];  % limits for continuous variables
-s.contGridNum = 500;    % number of points in continuous x axis
+s.contGridNum = 200;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
 s.plotResponses = true;  % whether to make and save plot of all responses
-s.maxEpochs = 1000;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
+s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
 
 
 % initializations
@@ -32,13 +32,16 @@ xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.epochGridNum);
 for i = 1:length(unit_ids)
     fprintf('%s, cell %i: computing neural responses...\n', session, unit_ids(i))
     
-    cellResponses = table({}, {}, {}, categorical({}, {'event', 'epoch', 'continuous'}), [], ...
-        'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {});
+    nRows = height(predictors);
+    cellResponses = table(cell(nRows,1), cell(nRows,1), cell(nRows,1), predictors.type, nan(nRows,2), predictors.include, ...
+        'VariableNames', {'response', 'std', 'density', 'type', 'xLims', 'include'}, ...
+        'RowNames', predictors.Properties.RowNames);
+    
     tLims = timeStamps([find(~isnan(spkRates(i,:)),1,'first') find(~isnan(spkRates(i,:)),1,'last')]);
     spkBins = ~isnan(spkRates(i,:));
     
     
-    for j = 1:height(predictors)
+    for j = find(predictors.include)'
         
         if predictors.type(j)=='event'
             events = predictors.data{j};
@@ -51,8 +54,8 @@ for i = 1:length(unit_ids)
                     response(k,:) = spkRates(i,startInd:startInd+length(xEvent)-1);
                 end
             end
-            cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'event', s.eventLims);
+            cellResponses.response{j} = response;
+            cellResponses.xLims(j,:) = s.eventLims;
 
             
         elseif predictors.type(j)=='epoch'
@@ -78,9 +81,9 @@ for i = 1:length(unit_ids)
                         linspace(epoch(1), epoch(2), s.epochGridNum), 'linear', 'extrap');
                 end
             end
-            cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'epoch', s.epochLims);
-                
+            cellResponses.response{j} = response;
+            cellResponses.xLims(j,:) = s.epochLims;
+            
         
         elseif predictors.type(j)=='continuous'
             spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
@@ -101,34 +104,19 @@ for i = 1:length(unit_ids)
                 end
             end
             density = density / sum(density);
-            cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'continuous', xLims, responseStd, density);
+            
+            cellResponses.response{j} = response;
+            cellResponses.xLims(j,:) = xLims;
+            cellResponses.std{j} = responseStd;
+            cellResponses.density{j} = density;
         end 
     end
     
-    % save cell responses somehow...
+    % save cell responses
     responses(i).cell = unit_ids(i);
     responses(i).responses = cellResponses;
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses')
 disp('all done!')
-
-
-
-function responses = addResponse(responses, name, response, type, xLims, responseStd, density)
-    % extend predictors table by adding new row
-    
-    % conly continuous variables have the following fields
-    if ~exist('responseStd', 'var'); responseStd= []; end
-    if ~exist('density', 'var'); density = []; end
-    
-    newRow = table({response}, {responseStd}, {density}, categorical({type}, {'event', 'epoch', 'continuous'}), xLims, ...
-        'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {name});
-    responses = [responses; newRow];
-end
-
-end
-
-
 

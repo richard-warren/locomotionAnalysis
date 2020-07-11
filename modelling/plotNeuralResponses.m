@@ -41,56 +41,50 @@ for i = 1:length(unit_ids)
 
     
     for j = 1:height(cellResponses)
-        
-        response = cellResponses.response{j};
+        subplot(rows, rows, j); hold on
         name = cellResponses.Properties.RowNames{j};
-        xLims = cellResponses.xLims(j,:);
-        x = linspace(xLims(1), xLims(2), size(response,2));
+        xlabel(name, 'Interpreter', 'none')
         
-        if cellResponses.type(j)=='event'
-            subplot(rows, rows, j); hold on
-            plot([0 0], [0 yMax], 'color', [0 0 0 .4])
-            respMean = nanmean(response,1);
-            respStd = nanstd(response,1);
-            plot(x, respMean, 'LineWidth', 3, 'color', s.eventColor)
-            plot(x, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.eventColor .4])
-            xlabel(name, 'Interpreter', 'none')
-            set(gca, 'xlim', xLims, 'ylim', [0 yMax])
-            
-        elseif cellResponses.type(j)=='epoch'
-            subplot(rows, rows, j); hold on
-            plot([0 0; 1 1]', [0 yMax; 0 yMax]', 'color', [0 0 0 .4])
-            respMean = nanmean(response,1);
-            respStd = nanstd(response,1);
-            plot(x, respMean, 'LineWidth', 3, 'color', s.epochColor)
-            plot(x, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.epochColor .4])
-            xlabel(name, 'Interpreter', 'none')
-            set(gca, 'xlim', xLims, 'ylim', [0 yMax])
+        if cellResponses.include(j)
         
-        elseif cellResponses.type(j)=='continuous'
-            subplot(rows, rows, j); hold on
-            density = cellResponses.density{j};
-            spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
-            
-            density = density * (yMax/max(density));
-            fill([xLims(1) x xLims(2) xLims(1)]', ...
-                [0 density 0 0]', [0 0 0], ...
-                'EdgeColor', [1 1 1]*.6, 'FaceAlpha', .1)
-            inds = randperm(length(spkRate), 1000);
-            scatter(predictors.data{j}(inds), spkRate(inds), 5, s.contColor, 'filled', 'markerfacealpha', .25)
+            response = cellResponses.response{j};
+            xLims = cellResponses.xLims(j,:);
+            x = linspace(xLims(1), xLims(2), size(response,2));
 
-            plot(x, response, 'LineWidth', 3, 'color', s.contColor)
-            xlabel(name, 'Interpreter', 'none')
-            if xLims(1)~=xLims(2)  % somewhat of a hack to avoid constant predictors, which occur when feature is not successfully tracked...
-                set(gca, 'xlim', xLims, 'ylim', [0 yMax])
+            if cellResponses.type(j)=='event'
+                plot([0 0], [0 yMax], 'color', [0 0 0 .4])
+                respMean = nanmean(response,1);
+                respStd = nanstd(response,1);
+                plot(x, respMean, 'LineWidth', 3, 'color', s.eventColor)
+                plot(x, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.eventColor .4])
+
+            elseif cellResponses.type(j)=='epoch'
+                plot([0 0; 1 1]', [0 yMax; 0 yMax]', 'color', [0 0 0 .4])
+                respMean = nanmean(response,1);
+                respStd = nanstd(response,1);
+                plot(x, respMean, 'LineWidth', 3, 'color', s.epochColor)
+                plot(x, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.epochColor .4])
+
+            elseif cellResponses.type(j)=='continuous'
+                density = cellResponses.density{j};
+                spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
+                density = density * (yMax/max(density));
+                fill([xLims(1) x xLims(2) xLims(1)]', ...
+                    [0 density 0 0]', [0 0 0], ...
+                    'EdgeColor', [1 1 1]*.6, 'FaceAlpha', .1)
+                inds = randperm(length(spkRate), 1000);
+                scatter(predictors.data{j}(inds), spkRate(inds), 5, s.contColor, 'filled', 'markerfacealpha', .25)
+                plot(x, response, 'LineWidth', 3, 'color', s.contColor)
             end
-        end
-        
-        % plot mutual information
-        if s.showImportance
-            mi = table2array(importance(i).importance(name,'mi'));
-            text(xLims(2), yMax, sprintf('%.2f', mi), ...
-                'HorizontalAlignment', 'right', 'VerticalAlignment', 'top');
+            
+            set(gca, 'xlim', xLims, 'ylim', [0 yMax])
+
+            % plot mutual information
+            if s.showImportance
+                mi = table2array(importance(i).importance(name,'mi'));
+                text(xLims(2), yMax, sprintf('%.2f', mi), ...
+                    'HorizontalAlignment', 'right', 'VerticalAlignment', 'top');
+            end
         end
     end
     

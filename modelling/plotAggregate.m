@@ -1,16 +1,17 @@
-% function plotAggregate(aggregate)
+%% prepare predictor
 
 % temp
-aggregate = aggregates('paw1LH_phase',:);
+aggregate = aggregates('velocity',:);
 
 % settings
 % s.sort
 
 % initialiaztions
 img = aggregate.aggregate{1};
-% img = img - img(:,1);  % subtract baseline
-img = zscore(img,0,2);  % z score rows
+img = img - img(:,1);  % subtract baseline
+% img = zscore(img,0,2);  % z score rows
 x = linspace(aggregate.xLims(1), aggregate.xLims(2), size(img,2));
+figure; imagesc(img)
 
 %% pca
 [coeff, score, ~, ~, explained] = pca(img);
@@ -18,6 +19,8 @@ figure;
 pcsToShow = 5;
 subplot(2,1,1); plot(cumsum(explained));
 subplot(2,1,2); plot(coeff(:,1:pcsToShow), 'LineWidth', 2);
+
+% todo: for each feature, only project portion in the meat of distribution?
 
 %% fit gmms
 maxGroups = 10;
@@ -27,7 +30,8 @@ gmm = cell(1, maxGroups);
 pcs = 5;
 
 for i = 1:maxGroups
-    gmm{i} = fitgmdist(score(:,1:pcs), i, 'RegularizationValue', .01, 'Replicates', 10, 'Start', 'plus');
+    gmm{i} = fitgmdist(score(:,1:pcs), i, ...
+        'RegularizationValue', .01, 'Replicates', 10, 'Start', 'randSample');
     aic(i) = gmm{i}.AIC;
     bic(i) = gmm{i}.BIC;
 end
@@ -53,10 +57,14 @@ title('group means')
 
 
 
-%% order
+%% sort
+[~, maxInd] = max(img,[],2);
+
 % [~, sortInds] = sort(score(:,1));  % first pc projection
 % [~, sortInds] = sort(aggregate.mi{1});  % mutual information
-[~, sortInds] = sort(groups);  % gmm groups
+% [~, sortInds] = sort(groups);  % gmm groups
+[~, sortInds] = sort(maxInd, 'descend');  % peak response time
+
 
 
 %% plot
