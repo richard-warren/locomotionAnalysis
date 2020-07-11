@@ -7,7 +7,7 @@ function autoAnalyze(varargin)
 
 % settings
 s.plotDiagnostics = true;
-s.checkFrequency = 60; % seconds
+s.checkFrequency = 60; % (seconds)
 
 % initializations
 analyzedFile = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'tracking', 'autoAnalyze', 'analyzedSessions.mat');

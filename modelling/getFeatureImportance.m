@@ -8,6 +8,8 @@ function getFeatureImportance(session, varargin)
 
 % settings
 s.contSmps = 10000;  % randomly sample s.contSmps of continuous data for mutual information
+s.eventLims = [-1 1];  % (s) for mutual information only compute within these limits
+s.epochLims = [-.5 1.5];  % (fraction of epoch) for mutual information only compute within these limits
 
 
 % initializations
@@ -38,6 +40,12 @@ for i = 1:length(unit_ids)
             response = responses(i).responses.response{j};
             xLims = responses(i).responses.xLims(j,:);
             x = linspace(xLims(1), xLims(2), size(response,2));
+            
+            % restrict x axis
+            bins = x>=s.eventLims(1) & x<=s.eventLims(2);
+            x = x(bins);
+            response = response(:, bins);
+            
             x = repmat(x, 1, size(response,1));
             y = reshape(response', [], 1);
             cellImportance.mi(j) = computeMI(x, y);
@@ -46,6 +54,12 @@ for i = 1:length(unit_ids)
             response = responses(i).responses.response{j};
             xLims = responses(i).responses.xLims(j,:);
             x = linspace(xLims(1), xLims(2), size(response,2));
+            
+            % restrict x axis
+            bins = x>=s.epochLims(1) & x<=s.epochLims(2);
+            x = x(bins);
+            response = response(:, bins);
+            
             x = repmat(x, 1, size(response,1));
             y = reshape(response', [], 1);
             cellImportance.mi(j) = computeMI(x, y);

@@ -1,17 +1,12 @@
 function getPredictors(session, varargin)
 
 % prepares table containing all predictors used for neural encoding models
-% // data are either events, epochs (e.g. isObsOn), or continuous
-
-% todo: should have the interpolation be optional... it's perhaps not
-% necessary to do the interpolation at this stage...
-% todo: should perhaps have dft colums for cont, event, and epoch data,
-% which would allow much easier indexing (they could be stored as arrays
-% rather than cell arrays...)
+% // data are either events, epochs (e.g. isObsOn), or continuous // if
+% predictor is unusable, 'include' is set to 0
 
 
 % settings
-s.dt = .002;
+s.dt = .002;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plotPredictors = true;
@@ -26,7 +21,7 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'bodyAngles', 'whiskerAngle', 'pixelsPerM', 'wheelCenter', 'wheelRadius', ...
     'lickTimes', 'touchesPerPaw', 'touchClassNames', 'obsOnTimes', 'obsOffTimes', ...
     'rewardTimes', 'isRewardSurprise', 'omissionTimes', 'wiskContactTimes', ...
-    'obsLightOnTimes', 'obsLightOffTimes', 'isLightOn');
+    'obsLightOnTimes', 'obsLightOffTimes');
 locationsRun = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
 locationsWisk = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'));
 pawNames = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'};
@@ -35,9 +30,8 @@ fps = 1/nanmedian(diff(frameTimeStamps));
 scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
 validTimes = ~isnan(frameTimeStamps);
 validTimesWisk = ~isnan(frameTimeStampsWisk);
-predictors = table({}, categorical({}, {'event', 'epoch', 'continuous'}), {}, ...
-    'VariableNames', {'data', 'type', 't'}, 'RowNames', {});
-
+predictors = table({}, categorical({}, {'event', 'epoch', 'continuous'}), {}, [], ...
+    'VariableNames', {'data', 'type', 't', 'include'}, 'RowNames', {});
 
 
 
@@ -53,7 +47,7 @@ t = tMin:s.dt:tMax;
 % wheel velocity
 vel = getVelocity(wheelPositions, s.velTime, 1/nanmedian(diff(wheelTimes)));
 vel = interp1(wheelTimes, vel, t);
-addPredictor('velocity', vel(:)', 'continuous', t)
+addPredictor('velocity', vel(:)', 'continuous', true, t)
 
 % paw position and pahse
 [pawXYZ, pawXYZ_pixels] = getPawXYZ(session);
@@ -62,24 +56,24 @@ for i = 1:length(pawNames)
         % position
         pos = pawXYZ.(pawNames{i})(:,j);
         pos = interp1(frameTimeStamps(validTimes), pos(validTimes), t);
-        addPredictor([pawNames{i} '_' dimensions{j}], pos, 'continuous', t)
+        addPredictor([pawNames{i} '_' dimensions{j}], pos, 'continuous', true, t)
         
         % phase
         if j==1
             pos = highpass(pos, .1, 1/median(diff(t)));
             phase = angle(hilbert(pos));
-            addPredictor([pawNames{i} '_phase'], phase, 'continuous', t)
+            addPredictor([pawNames{i} '_phase'], phase, 'continuous', true, t)
         end
     end
 end
 
 % body angle
 bodyAngle = interp1(frameTimeStamps(validTimes), bodyAngles(validTimes), t)';
-addPredictor('bodyAngle', bodyAngle, 'continuous', t)
+addPredictor('bodyAngle', bodyAngle, 'continuous', true, t)
 
 % whisker angle
 whiskerAngle = interp1(frameTimeStampsWisk(validTimesWisk), whiskerAngle(validTimesWisk), t)';
-addPredictor('whiskerAngle', whiskerAngle, 'continuous', t)
+addPredictor('whiskerAngle', whiskerAngle, 'continuous', true, t)
 
 % butt height
 [buttHeight, buttConfidence] = deal(locationsRun.tailBase_top_1, locationsRun.tailBase_top_2);
@@ -87,44 +81,38 @@ buttHeight(buttConfidence<scoreThresh) = nan;
 buttHeight = fillmissing(buttHeight, 'pchip');
 buttHeight = ((wheelCenter(2)-wheelRadius) - buttHeight) / pixelsPerM; % flip z and set s.t. top of wheel is zero
 buttHeight = interp1(frameTimeStamps(validTimes), buttHeight(validTimes), t);
-addPredictor('buttHeight', buttHeight, 'continuous', t)
+addPredictor('buttHeight', buttHeight, 'continuous', true, t)
 
 % jaw (first pc projection)
 [jawX, jawZ, jawConfidence] = deal(locationsWisk.jaw, locationsWisk.jaw_1, locationsWisk.jaw_2);
-jaw = pcProject([jawX, jawZ], jawConfidence, true, 'jaw');
+[jaw, include] = pcProject([jawX, jawZ], jawConfidence, true, 'jaw');
 jaw = interp1(frameTimeStampsWisk(validTimesWisk), jaw(validTimesWisk), t);
-addPredictor('jaw', jaw, 'continuous', t)
+addPredictor('jaw', jaw, 'continuous', include, t)
 
 % ear (first pc projection)
 [earX, earZ, earConfidence] = deal(locationsRun.ear, locationsRun.ear_1, locationsRun.ear_2);
-ear = pcProject([earX, earZ], earConfidence, true, 'ear');
+[ear, include] = pcProject([earX, earZ], earConfidence, true, 'ear');
 ear = interp1(frameTimeStamps(validTimes), ear(validTimes), t);
-addPredictor('ear', ear, 'continuous', t)
+addPredictor('ear', ear, 'continuous', include, t)
 
 % nose (first pc projection)
 [noseX, noseZ, noseConfidence] = deal(locationsWisk.nose, locationsWisk.nose_1, locationsWisk.nose_2);
-nose = pcProject([noseX, noseZ], noseConfidence, true, 'nose');
+[nose, include] = pcProject([noseX, noseZ], noseConfidence, true, 'nose');
 nose = interp1(frameTimeStampsWisk(validTimesWisk), nose(validTimesWisk), t);
-addPredictor('nose', nose, 'continuous', t)
-
-% % whisker pad (first pc projection)
-% [padX, padZ, padConfidence] = deal(locationsWisk.wisk_pad, locationsWisk.wisk_pad_1, locationsWisk.wisk_pad_2);
-% pad = pcProject([padX, padZ], padConfidence, true, 'pad');
-% pad = interp1(frameTimeStampsWisk(validTimesWisk), pad(validTimesWisk), t);
-% addPredictor('pad', pad, 'continuous', t)
+addPredictor('nose', nose, 'continuous', include, t)
 
 % satiation
 lickBins = histcounts(lickTimes, [t (t(end)+s.dt)]);
 satiation = cumsum(lickBins) / sum(lickBins);
-addPredictor('satiation', satiation, 'continuous', t)
+addPredictor('satiation', satiation, 'continuous', true, t)
 
 % velocity for continuous predictors
 % (expect for those listed in 'exclude')
-exclude = {'velocity', 'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
+excludeVars = {'velocity', 'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
 for row = predictors.Properties.RowNames'
-    if ~ismember(row{1}, exclude)
+    if ~ismember(row{1}, excludeVars)
         vel = getVelocity(predictors{row{1}, 'data'}{1}, s.velTime, 1/s.dt);
-        addPredictor([row{1} '_vel'], vel, 'continuous', t)
+        addPredictor([row{1} '_vel'], vel, 'continuous', true, t)
     end
 end
 
@@ -180,11 +168,11 @@ addPredictor('reward_surprise', rewardTimes(isRewardSurprise), 'event')
 medianFiltering = 5;  % (samples) window size for median filtering to remove 'blips'
 minDif = 1;  % (seconds) paw contacts must be at least this far apart in time
 touchesPerPaw(touchesPerPaw==0) = find(strcmp(touchClassNames, 'no_touch'));  % recode no_touch class
-include = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
+includeTouches = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
 for i = 1:4
     for j = {'dorsal', 'ventral'}
         touchTypes = touchClassNames(touchesPerPaw(:,i));
-        touchBins = contains(touchTypes, j{1}) & ismember(touchTypes, include);
+        touchBins = contains(touchTypes, j{1}) & ismember(touchTypes, includeTouches);
         touchBins = logical(medfilt1(single(touchBins), medianFiltering));
         touchTimes = frameTimeStamps(find(diff(touchBins)==1)+1);
         if ~isempty(touchTimes)
@@ -271,7 +259,7 @@ end
 % FUNCTIONS
 % ---------
 
-function projection = pcProject(sig, confidence, normalize, name)
+function [projection, include] = pcProject(sig, confidence, normalize, name)
     % project signal onto first principal component
     % signal is (time X dimension) matrix
     
@@ -283,12 +271,14 @@ function projection = pcProject(sig, confidence, normalize, name)
         lims = prctile(projection, s.percentileLims);
         projection(projection<lims(1) | projection>lims(2)) = nan;
         projection = fillmissing(projection, 'pchip');
+        include = true;
     
         if normalize
             projection = (projection-nanmean(projection)) / pixelsPerM;
         end
     else
-        projection = zeros(1,length(confidence));
+        projection = nan(1,length(confidence));
+        include = false;
         fprintf('  %s tracking unsuccessful\n', name)
     end
 end
@@ -309,9 +299,10 @@ function epochs = logicalToEpochs(logical, logicalTimes)
 end
 
 
-function addPredictor(name, data, type, t)
+function addPredictor(name, data, type, include, t)
     % extends predictors tabel by add a new row
     
+    if ~exist('include', 'var'); include = true; end
     if ~exist('t', 'var'); t = []; end
     
     % ensure homogeneous orientation
@@ -321,8 +312,8 @@ function addPredictor(name, data, type, t)
         data=data(:)';
     end
     
-    newRow = table({data}, categorical({type}, {'event', 'epoch', 'continuous'}), {t}, ...
-        'VariableNames', {'data', 'type', 't'}, 'RowNames', {name});
+    newRow = table({data}, categorical({type}, {'event', 'epoch', 'continuous'}), {t}, include, ...
+        'VariableNames', {'data', 'type', 't', 'include'}, 'RowNames', {name});
     predictors = [predictors; newRow];
 end
 

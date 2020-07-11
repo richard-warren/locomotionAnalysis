@@ -8,14 +8,17 @@ colors = lines(3);
 s.eventColor = colors(1,:);
 s.epochColor = colors(2,:);
 s.contColor = colors(3,:);
+s.showImportance = true;  % whether to show mutual information as text in figure
+s.visible = true;  % whether figure is visible
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses');
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-    'unit_ids', 'spkRates', 'timeStamps');
+folder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
+load(fullfile(folder, 'modelling', 'predictors.mat'), 'predictors');
+load(fullfile(folder, 'modelling', 'responses.mat'), 'responses');
+if s.showImportance; load(fullfile(folder, 'modelling', 'importance.mat'), 'importance'); end
+load(fullfile(folder, 'neuralData.mat'), 'unit_ids', 'spkRates', 'timeStamps');
 
 
 
@@ -31,8 +34,8 @@ for i = 1:length(unit_ids)
     
     % initialize figure
     cellResponses = responses(i).responses;
-    figure('color', 'white', 'name', sprintf('%s_cell%i', session, unit_ids(i)), ...
-        'position', [185.00 58.00 1583.00 915.00]);
+    fig = figure('color', 'white', 'name', sprintf('%s_cell%i', session, unit_ids(i)), ...
+        'position', [185.00 58.00 1583.00 915.00], 'Visible', s.visible);
     rows = ceil(sqrt(height(cellResponses)));  % same num row and cols
     yMax = prctile(spkRates(i,:), 99);
 
@@ -82,12 +85,20 @@ for i = 1:length(unit_ids)
                 set(gca, 'xlim', xLims, 'ylim', [0 yMax])
             end
         end
+        
+        % plot mutual information
+        if s.showImportance
+            mi = table2array(importance(i).importance(name,'mi'));
+            text(xLims(2), yMax, sprintf('%.2f', mi), ...
+                'HorizontalAlignment', 'right', 'VerticalAlignment', 'top');
+        end
     end
     
     % save figure
     pause(.1)
     saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'responses', ...
         sprintf('%s cell%i responses.png', session, unit_ids(i))));
+    if ~s.visible; close(fig); end
 end
 disp('all done!')
 

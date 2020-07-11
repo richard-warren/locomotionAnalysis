@@ -1,4 +1,4 @@
-function getNeuralResponses(session)
+function getNeuralResponses(session, varargin)
 
 % for each predictor in predictors.mat, save (trial X xaxis) matrix of
 % responses to that predictor // responses are handled differently for
@@ -17,15 +17,9 @@ s.contWindowSz = .05;  % width of moving average window, expressed as fraction o
 s.plotResponses = true;  % whether to make and save plot of all responses
 s.maxEpochs = 1000;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
 
-% plots
-colors = lines(3);
-s.eventColor = colors(1,:);
-s.epochColor = colors(2,:);
-s.contColor = colors(3,:);
-
 
 % initializations
-cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'unit_ids', 'spkRates', 'timeStamps');
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
@@ -36,19 +30,13 @@ xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.epochGridNum);
 
 % for each cell
 for i = 1:length(unit_ids)
-    fprintf('%s, cell %i: computing neural responses...\n', session, cellData.unit_id(i))
+    fprintf('%s, cell %i: computing neural responses...\n', session, unit_ids(i))
     
     cellResponses = table({}, {}, {}, categorical({}, {'event', 'epoch', 'continuous'}), [], ...
         'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {});
     tLims = timeStamps([find(~isnan(spkRates(i,:)),1,'first') find(~isnan(spkRates(i,:)),1,'last')]);
     spkBins = ~isnan(spkRates(i,:));
     
-    if s.plotResponses
-        figure('color', 'white', 'name', sprintf('%s_cell%i', session, cellData.unit_id(i)), 'position', [185.00 58.00 1583.00 915.00]);
-        rows = ceil(sqrt(height(predictors)));  % same num row and cols
-        yMax = prctile(spkRates(i,:), 99);
-    end
-
     
     for j = 1:height(predictors)
         
@@ -57,26 +45,15 @@ for i = 1:length(unit_ids)
             
             response = nan(length(events), length(xEvent));
             for k = 1:length(events)
-                startInd = find(timeStamps>=events(k)+s.eventLims(1),1,'first');
-                if ~isempty(startInd)
+                startInd = find(timeStamps>=(events(k)+s.eventLims(1)),1,'first');
+                endInd = startInd+length(xEvent)-1;
+                if ~isempty(startInd) && endInd<=size(spkRates,2)
                     response(k,:) = spkRates(i,startInd:startInd+length(xEvent)-1);
                 end
             end
             cellResponses = addResponse(cellResponses, ...
                 predictors.Properties.RowNames{j}, response, 'event', s.eventLims);
-            
-            if s.plotResponses
-                subplot(rows, rows, j); hold on
-                plot([0 0], [0 yMax], 'color', [0 0 0 .4])
-                respMean = nanmean(response,1);
-                respStd = nanstd(response,1);
-                plot(xEvent, respMean, 'LineWidth', 3, 'color', s.eventColor)
-                plot(xEvent, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.eventColor .4])
-                xlabel(predictors.Properties.RowNames{j}, 'Interpreter', 'none')
-                set(gca, 'xlim', s.eventLims, 'ylim', [0 yMax])
-                pause(.01)
-            end
-            
+
             
         elseif predictors.type(j)=='epoch'
             epochs = predictors.data{j};
@@ -103,18 +80,6 @@ for i = 1:length(unit_ids)
             end
             cellResponses = addResponse(cellResponses, ...
                 predictors.Properties.RowNames{j}, response, 'epoch', s.epochLims);
-            
-            if s.plotResponses
-                subplot(rows, rows, j); hold on
-                plot([0 0; 1 1]', [0 yMax; 0 yMax]', 'color', [0 0 0 .4])
-                respMean = nanmean(response,1);
-                respStd = nanstd(response,1);
-                plot(xEpoch, respMean, 'LineWidth', 3, 'color', s.epochColor)
-                plot(xEpoch, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.epochColor .4])
-                xlabel(predictors.Properties.RowNames{j}, 'Interpreter', 'none')
-                set(gca, 'xlim', s.epochLims, 'ylim', [0 yMax])
-                pause(.01)
-            end
                 
         
         elseif predictors.type(j)=='continuous'
@@ -138,33 +103,12 @@ for i = 1:length(unit_ids)
             density = density / sum(density);
             cellResponses = addResponse(cellResponses, ...
                 predictors.Properties.RowNames{j}, response, 'continuous', xLims, responseStd, density);
-            
-            if s.plotResponses
-                subplot(rows, rows, j); hold on
-                density = density * (yMax/max(density));
-                fill([xLims(1) xGrid xLims(2) xLims(1)]', ...
-                    [0 density 0 0]', [0 0 0], ...
-                    'EdgeColor', [1 1 1]*.6, 'FaceAlpha', .1)
-                inds = randperm(length(spkRate), 1000);
-                scatter(predictors.data{j}(inds), spkRate(inds), 5, s.contColor, 'filled', 'markerfacealpha', .25)
-                
-                plot(xGrid, response, 'LineWidth', 3, 'color', s.contColor)
-                xlabel(predictors.Properties.RowNames{j}, 'Interpreter', 'none')
-                if xLims(1)~=xLims(2)  % somewhat of a hack to avoid constant predictors, which occur when feature is not successfully tracked...
-                    set(gca, 'xlim', xLims, 'ylim', [0 yMax])
-                end
-                pause(.01)
-            end
         end 
     end
     
     % save cell responses somehow...
-    responses(i).cell = cellData.unit_id(i);
+    responses(i).cell = unit_ids(i);
     responses(i).responses = cellResponses;
-    if s.plotResponses
-        saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'responses', ...
-            sprintf('%s cell%i responses.png', session, cellData.unit_id(i))));
-    end
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses')
