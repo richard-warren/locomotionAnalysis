@@ -1,37 +1,45 @@
-% function aggregateResponses(varargin)
+function aggregateResponses(varargin)
 
-% for each predictor, want matrices: response, std, density
-% and vectors: mutual information
+% aggregates responses to all predictors for all cells! every aggregate
+% response is a matrix, where the rows are cells and the colums are the x
+% axis (determined by predictor type) // also stores metadata for each
+% cell in 'cellInfo', eg session and unit_number, as well as mutual
+% information for each cell for each predictor
 
+% x limits for continuous variables are the 'median' for the x limits for
+% each predictor across sessions
 
-s.binNum = 100;
+% settings
+s.binNum = 100;  % x axis resolution
 s.eventLims = [-.25 .5];
 s.epochLims = [-.25 1.25];
 
-% todo: determine total number of cells in advance? // figure out xLims in
-% advance or manually define per predictor... // each heatmap has table
-% with metadata, eg MI, correlation, std, x confidence...
-% todo: check that everyone has the same predictors!!!
+% todo: add std, density... // check that everyone has the same
+% predictors!!! // utilize 'include' field
 
-% initialize table
+
+% initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 sessions = getEphysSessions();
 load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{1}, 'modelling', 'predictors.mat'), 'predictors');  % load sample session
 nRows = height(predictors);
 aggregates = table(cell(nRows,1), cell(nRows,1), nan(nRows,2), ...
-    repmat({nan(length(sessions),2)}, nRows, 1), predictors.type, ...
-    'VariableNames', {'aggregate', 'mi', 'xLims', 'xLimsAll', 'type'}, ...
+    repmat({nan(length(sessions),2)}, nRows, 1), predictors.type, cell(nRows,1), ...
+    'VariableNames', {'aggregate', 'mi', 'xLims', 'xLimsAll', 'type', 'include'}, ...
     'RowNames', predictors.Properties.RowNames);
 
+
 % find x limits for each continuous variable for each session
-% these will be used to compute global x limits for each predictor
-% also compute total number of units
+% (these will be used to compute global x limits for each predictor also compute total number of units)
 sessions = getEphysSessions();
-% sessions = sessions(1:6);  % temp
+fprintf('getting xLims and nUnits for %i sessions: ', length(sessions))
 nUnits = 0;
 for i = 1:length(sessions)
-    disp(i)
+    fprintf('%i ', i)
+    warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'modelling', 'responses.mat'), 'responses');
+    warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+    
     nUnits = nUnits + length(responses);
     
     for j = 1:height(responses(1).responses)  % loop over predictors
@@ -48,20 +56,24 @@ for i = 1:height(aggregates)
         aggregates.xLims(i,:) = nanmedian(aggregates.xLimsAll{i},1);
     end
 end
+fprintf('\n')
 
-%%
+
+% initializations
 xEvent = linspace(s.eventLims(1), s.eventLims(2), s.binNum);
 xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.binNum);
 aggregates.aggregate = repmat({nan(nUnits, s.binNum)}, height(predictors), 1);
 aggregates.mi = repmat({nan(nUnits, 1)}, height(predictors), 1);
+aggregates.include = repmat({nan(nUnits, 1)}, height(predictors), 1);
 cellInfo = table(cell(nUnits,1), nan(nUnits,1), ...
     'VariableNames', {'session', 'unit'});
 rowInd = 0;
 
+keyboard
 % for all sessions
 for i = 1:length(sessions)
     
-    fprintf('%s: adding responses from session...\n', sessions{i})
+    fprintf('%s: adding responses...\n', sessions{i})
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'neuralData.mat'), 'spkRates');
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'modelling', 'responses.mat'), 'responses');
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'modelling', 'importance.mat'), 'importance');
@@ -74,37 +86,41 @@ for i = 1:length(sessions)
         cellStd = nanstd(spkRates(j,:));
 
         % for each predictor
-        for k = 1:height(cellResponses) %% only those included...
+        for k = 1:height(cellResponses)
+            
+            aggregates.include{k}(rowInd) = cellResponses.include(k);
+            
+            if cellResponses.include(k)
+                if cellResponses.type(k)=='event'
+                    y = nanmean(cellResponses.response{k},1);
+                    y = (y-cellMean) / cellStd;
+                    if any(~isnan(y))
+                        x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
+                        aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xEvent);
+                    end
 
-            if cellResponses.type(k)=='event'
-                y = nanmean(cellResponses.response{k},1);
-                y = (y-cellMean) / cellStd;
-                if any(~isnan(y))
-                    x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
-                    aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xEvent);
+                elseif cellResponses.type(k)=='epoch'
+                    y = nanmean(cellResponses.response{k},1);
+                    y = (y-cellMean) / cellStd;
+                    if any(~isnan(y))
+                        x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
+                        aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xEpoch);
+                    end
+
+                elseif cellResponses.type(k)=='continuous'
+                    y = cellResponses.response{k};
+                    y = (y-cellMean) / cellStd;
+                    if any(~isnan(y))
+                        x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
+                        xi = linspace(aggregates.xLims(k,1), aggregates.xLims(k,2), s.binNum);
+                        validInds = ~isnan(y);
+                        temp = interp1(x(validInds), y(validInds), xi, 'linear');
+                        temp = fillmissing(temp, 'linear', 'EndValues', 'nearest');  % in case response doesn't cover domain, extend on left and right...
+                        aggregates.aggregate{k}(rowInd,:) = temp;
+                    end
                 end
-            
-            elseif cellResponses.type(k)=='epoch'
-                y = nanmean(cellResponses.response{k},1);
-                y = (y-cellMean) / cellStd;
-                if any(~isnan(y))
-                    x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
-                    aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xEpoch);
-                end
-                
-            elseif cellResponses.type(k)=='continuous'
-                y = cellResponses.response{k};
-                y = (y-cellMean) / cellStd;
-                if any(~isnan(y))
-                    x = linspace(cellResponses.xLims(k,1), cellResponses.xLims(k,2), length(y));  % original x axis
-                    xi = linspace(aggregates.xLims(k,1), aggregates.xLims(k,2), s.binNum);
-                    temp = interp1(x, y, xi, 'linear', 'extrap');
-                    if all(isnan(temp)); keyboard; end
-                    aggregates.aggregate{k}(rowInd,:) = temp;
-                end
+                aggregates.mi{k}(rowInd) = importance(j).importance.mi(k);
             end
-            
-            aggregates.mi{k}(rowInd) = importance(j).importance.mi(k);
         end
         
     cellInfo.session{rowInd} = sessions{i};
@@ -112,5 +128,8 @@ for i = 1:length(sessions)
     end
 end
 
+file = fullfile(getenv('OBSDATADIR'), 'matlabData', 'modelling', 'aggregates.mat');
+fprintf('saving results to: %s', file);
+save(file, 'aggregates', 'cellInfo');
 
 

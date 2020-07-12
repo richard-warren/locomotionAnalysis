@@ -8,8 +8,8 @@ function getFeatureImportance(session, varargin)
 
 % settings
 s.contSmps = 10000;  % randomly sample s.contSmps of continuous data for mutual information
-s.eventLims = [-1 1];  % (s) for mutual information only compute within these limits
-s.epochLims = [-.5 1.5];  % (fraction of epoch) for mutual information only compute within these limits
+s.eventLims = [-.25 .5];  % (s) for mutual information only compute within these limits
+s.epochLims = [-.25 1.25];  % (fraction of epoch) for mutual information only compute within these limits
 
 
 % initializations

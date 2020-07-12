@@ -4,30 +4,30 @@ sessions = getEphysSessions();
 
 %% perform various analyses on all sessions
 
-overwrite = true;
-
-parfor i = 1:length(sessions)
+overwrite = false;
+tic
+for i = 1:length(sessions)
     folder = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
     try
         % format ephys data
-%         if overwrite || ~exist(fullfile(folder, 'neuralData.mat'), 'file')
-%             formatEphysData(sessions{i})
-%         end
+        if overwrite || ~exist(fullfile(folder, 'neuralData.mat'), 'file')
+            formatEphysData(sessions{i})
+        end
         
         % predictors
-%         if overwrite || ~exist(fullfile(folder, 'modelling', 'predictors.mat'), 'file')
-%             getPredictors(sessions{i})
-%         end
+        if overwrite || ~exist(fullfile(folder, 'modelling', 'predictors.mat'), 'file')
+            getPredictors(sessions{i})
+        end
         
         % neural responses
-%         if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')
-%             getNeuralResponses(sessions{i})
-%         end
+        if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')
+            getNeuralResponses(sessions{i})
+        end
         
         % feature importance
-%         if overwrite || ~exist(fullfile(folder, 'modelling', 'importance.mat'), 'file')
-%             getFeatureImportance(sessions{i})
-%         end
+        if overwrite || ~exist(fullfile(folder, 'modelling', 'importance.mat'), 'file')
+            getFeatureImportance(sessions{i})
+        end
         
         % plot neural responses
 %         plotNeuralResponses(sessions{i}, 'visible', false)
@@ -38,6 +38,7 @@ parfor i = 1:length(sessions)
         fprintf('%s: problem with analysis\n', sessions{i})
     end
 end
+toc
 
 
 %% create missing .dat files

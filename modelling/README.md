@@ -1,14 +1,18 @@
 # todo
-- [ ] *add `include` field to pipeline*
-- [ ] *save spreadsheet with predictors xLims, other settings...*
-- [ ] make sure no NaNs anywhere!!!
+- [ ] *wrap and plot all predictors*
+  - [ ] add `include` to aggregateResponses, plotAggregate, getFeatureImportance
+  - [X] showPlots option
+- [ ] get all unit getNeuralResponses at the same time!
+- [X] include 'unclustered' cells with high maha distance
+- [X] figure out why 'reward' such extreme values for some cells...
+- [X] figure out x limits for continuous vars...
 - [ ] aggregate plots
   - [X] compute MI for everybody
     - [X] 'window' option for event and epoch vars
     - [X] visualize and sanity-check MI
     - [X] cluster
     - [ ] figure out how to include cells...
-    - [ ] how to sort
+    - [ ] sort by group *then by something else* (mi, peak time, integral, maha distance)
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here

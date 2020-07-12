@@ -7,6 +7,7 @@ function getNeuralResponses(session, varargin)
 % stretched over a common x axis // for continuous vars, TBD!!!
 
 
+
 % settings
 s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
@@ -54,8 +55,10 @@ for i = 1:length(unit_ids)
                     response(k,:) = spkRates(i,startInd:startInd+length(xEvent)-1);
                 end
             end
+            response = fillmissing(response, 'linear', 'EndValues', 'nearest');  % i don't think it's possible for NaNs to appear here, but just to be safe...
             cellResponses.response{j} = response;
             cellResponses.xLims(j,:) = s.eventLims;
+            if all(isnan(response(:))); cellResponses.include(j) = 0; end  % this will happen when no events occur during the unit's usable period
 
             
         elseif predictors.type(j)=='epoch'
@@ -78,11 +81,13 @@ for i = 1:length(unit_ids)
                 epochBins = timeStamps>=epoch(1) & timeStamps<=epoch(2) * spkBins;
                 if any(epochBins)
                     response(k,:) = interp1(timeStamps(epochBins), spkRates(i,epochBins), ...
-                        linspace(epoch(1), epoch(2), s.epochGridNum), 'linear', 'extrap');
+                        linspace(epoch(1), epoch(2), s.epochGridNum), 'linear');
+                    response(k,:) = fillmissing(response(k,:), 'linear', 'EndValues', 'nearest');
                 end
             end
             cellResponses.response{j} = response;
             cellResponses.xLims(j,:) = s.epochLims;
+            if all(isnan(response(:))); cellResponses.include(j) = 0; end  % this will happen when no events occur during the unit's usable period
             
         
         elseif predictors.type(j)=='continuous'
@@ -100,9 +105,10 @@ for i = 1:length(unit_ids)
                 if any(bins)
                     response(k) = sum(spkRate(bins)) / sum(bins);
                     responseStd(k) = std(spkRate(bins));
-                    density(k) = sum(bins);
+                    density(k) = sum(bins);  % !!! density should not be affected by spkRatebins
                 end
             end
+            response = fillmissing(response, 'linear', 'EndValues', 'nearest');
             density = density / sum(density);
             
             cellResponses.response{j} = response;
@@ -117,6 +123,6 @@ for i = 1:length(unit_ids)
     responses(i).responses = cellResponses;
 end
 
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses')
+save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses', '-v7.3')
 disp('all done!')
 
