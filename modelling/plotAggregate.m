@@ -14,13 +14,24 @@ s.plotPcs = false;  % whether to plot PCA analysis
 s.plotClustering = false;  % whether to plot GMM clustering
 s.hideUnclustered = false;  % whether to hide units that are > s.mahaMax away from their supposed group
 s.visible = true;  % whether figure is visible
+s.suppressWarning = false;  % whether to suppress warnings when fitting GMM
+
 
 % initialiaztions
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
+
 miBins = aggregate.mi{1} >= s.miMin;
-img = aggregate.aggregate{1}(miBins & aggregate.include{1},:);
+validBins = all(~isnan(aggregate.aggregate{1}),2);  % !!! this shouldn't really be necessary... something got screwed up 'upstream'
+
+img = aggregate.aggregate{1}(miBins & aggregate.include{1} & validBins,:);
 if s.zscoreRows; img = zscore(img,0,2); end
 x = linspace(aggregate.xLims(1), aggregate.xLims(2), size(img,2));
+
+if s.suppressWarning
+    warning('off', 'stats:pca:ColRankDefX');
+    warning('off', 'stats:gmdistribution:FailedToConvergeReps');
+end
+
 
 % pca
 [coeff, score, ~, ~, explained] = pca(img);
@@ -30,6 +41,7 @@ if s.plotPcs
     subplot(2,1,1); plot(cumsum(explained));
     subplot(2,1,2); plot(coeff(:,1:pcsToShow), 'LineWidth', 2);
 end
+
 
 % fit gmms
 maxGroups = 8;
@@ -44,18 +56,23 @@ for i = 1:maxGroups
     bic(i) = gmm{i}.BIC;
 end
 
-% select best number of groups
-if isempty(s.nGroups)
-    [~, s.nGroups] = min(bic);
-    fprintf('BIC groups number: %i\n', s.nGroups)
+if s.suppressWarning
+    warning('on', 'stats:pca:ColRankDefX');
+    warning('on', 'stats:gmdistribution:FailedToConvergeReps');
 end
+
+
+% select best number of groups
+if isempty(s.nGroups); [~, s.nGroups] = min(bic); end
 [groups, ~, ~, ~, maha] = gmm{s.nGroups}.cluster(score(:,1:s.gmmPcs));
+
 
 % uncluster unlikely units
 maha = maha(sub2ind(size(maha), [1:size(maha,1)]', groups));
 groups(maha>s.mahaMax) = s.nGroups+1;
 
-% plot results
+
+% show clustering
 if s.plotClustering
     figure('color', 'white', 'position', [680.00 190.00 424.00 788.00]);
     subplot(2,1,1); hold on
@@ -73,7 +90,7 @@ end
 
 
 
-% plot
+% plot aggregate
 if s.visible; vis = 'on'; else; vis = 'off'; end
 fig = figure('color', 'white', 'Position', [1338.00 78.00 300.00 859.00], 'visible', vis);
 groupColors = [lines(s.nGroups); 0 0 0];
@@ -83,7 +100,6 @@ groupColors = [lines(s.nGroups); 0 0 0];
 [~, sortInds] = sortrows([groups, -maxInd]);  % sort by group, then time of peak
 % [~, sortInds] = sortrows([groups, -maha]);  % sort by group, then maha distance to group mean
 % [~, sortInds] = sortrows([groups, aggregate.mi{1}(miBins & aggregate.include{1})]);  % sort by group, then mutual information
-
 
 
 % cluster averages
@@ -98,15 +114,15 @@ for i = 1:s.nGroups
         groupColors(i,:), 'facealpha', .2, 'edgecolor', 'none')
 end
 
+yLims = get(gca, 'ylim');
 if aggregate.type=='event'
-    plot([0 0], get(gca, 'ylim'), 'color', [1 1 1]*.2)
+    plot([0 0], yLims, 'color', [1 1 1]*.2)
 elseif aggregate.type=='epoch'
-    plot([0 0], get(gca, 'ylim'), 'color', [1 1 1]*.2)
-    plot([1 1], get(gca, 'ylim'), 'color', [1 1 1]*.2)
+    plot([0 0], yLims, 'color', [1 1 1]*.2)
+    plot([1 1], yLims, 'color', [1 1 1]*.2)
 end
-set(gca, 'xlim', [x(1) x(end)])
+set(gca, 'xlim', [x(1) x(end)], 'ylim', yLims)
 title(sprintf('%i/%i units with MI>%.2f', sum(miBins), length(miBins), s.miMin))
-
 
 % heatmap
 colormap parula
@@ -122,13 +138,14 @@ for i = 1:s.nGroups
     scatter(xScat, yScat, 20, clr, 'filled')
 end
 
+yLims = [.5 sum(bins)+.5];
 if aggregate.type=='event'
-    plot([0 0], get(gca, 'ylim'), 'color', [1 1 1]*.2)
+    plot([0 0], yLims, 'color', [1 1 1]*.2)
 elseif aggregate.type=='epoch'
-    plot([0 0], get(gca, 'ylim'), 'color', [1 1 1]*.2)
-    plot([1 1], get(gca, 'ylim'), 'color', [1 1 1]*.2)
+    plot([0 0], yLims, 'color', [1 1 1]*.2)
+    plot([1 1], yLims, 'color', [1 1 1]*.2)
 end
-set(gca, 'xlim', [x(1) x(end)], 'ylim', [.5 sum(bins)+.5])
+set(gca, 'xlim', [x(1) x(end)], 'ylim', yLims)
 xlabel(aggregate.Properties.RowNames{1}, 'Interpreter', 'none')
 
 

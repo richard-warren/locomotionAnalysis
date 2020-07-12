@@ -36,9 +36,7 @@ fprintf('getting xLims and nUnits for %i sessions: ', length(sessions))
 nUnits = 0;
 for i = 1:length(sessions)
     fprintf('%i ', i)
-    warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'modelling', 'responses.mat'), 'responses');
-    warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
     
     nUnits = nUnits + length(responses);
     
@@ -69,11 +67,11 @@ cellInfo = table(cell(nUnits,1), nan(nUnits,1), ...
     'VariableNames', {'session', 'unit'});
 rowInd = 0;
 
-keyboard
+
 % for all sessions
 for i = 1:length(sessions)
     
-    fprintf('%s: adding responses...\n', sessions{i})
+    fprintf('%s: (%i/%i) adding responses...\n', sessions{i}, i, length(sessions))
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'neuralData.mat'), 'spkRates');
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'modelling', 'responses.mat'), 'responses');
     load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'modelling', 'importance.mat'), 'importance');
@@ -129,7 +127,7 @@ for i = 1:length(sessions)
 end
 
 file = fullfile(getenv('OBSDATADIR'), 'matlabData', 'modelling', 'aggregates.mat');
-fprintf('saving results to: %s', file);
+fprintf('saving results to: %s\n', file);
 save(file, 'aggregates', 'cellInfo');
 
 

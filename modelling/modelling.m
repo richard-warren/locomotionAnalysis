@@ -22,11 +22,13 @@ for i = 1:length(sessions)
         % neural responses
         if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')
             getNeuralResponses(sessions{i})
+%             plotNeuralResponses(sessions{i}, 'visible', false)
         end
         
         % feature importance
         if overwrite || ~exist(fullfile(folder, 'modelling', 'importance.mat'), 'file')
             getFeatureImportance(sessions{i})
+            plotNeuralResponses(sessions{i}, 'visible', false)
         end
         
         % plot neural responses

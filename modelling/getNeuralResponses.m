@@ -31,7 +31,7 @@ xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.epochGridNum);
 
 % for each cell
 for i = 1:length(unit_ids)
-    fprintf('%s, cell %i: computing neural responses...\n', session, unit_ids(i))
+    fprintf('%s: unit (%i/%i) %i: computing neural responses...\n', session, i, length(unit_ids), unit_ids(i))
     
     nRows = height(predictors);
     cellResponses = table(cell(nRows,1), cell(nRows,1), cell(nRows,1), predictors.type, nan(nRows,2), predictors.include, ...
@@ -68,10 +68,10 @@ for i = 1:length(unit_ids)
             durations = diff(epochs,1,2);
             
             % if too many epochs find the elements of central duration
-            if size(epochs,1)>s.maxEpochs    
-                middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (0:s.maxEpochs-1);
+            if size(epochs,1)>s.maxEpochs
+                middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (1:s.maxEpochs);
                 [~, sortInds] = sort(durations);
-                inds = sortInds(middleIndsSorted)';
+                inds = sortInds(middleIndsSorted)';  % !!! should maybe pick random intead of central-duration epochs
             else
                 inds = 1:length(epochs);
             end
@@ -109,6 +109,7 @@ for i = 1:length(unit_ids)
                 end
             end
             response = fillmissing(response, 'linear', 'EndValues', 'nearest');
+            if all(isnan(response)); cellResponses.include(j) = 0; end  % not sure if this should every happen really...
             density = density / sum(density);
             
             cellResponses.response{j} = response;

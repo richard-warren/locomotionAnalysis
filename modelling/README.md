@@ -1,12 +1,13 @@
 # todo
-- [ ] *wrap and plot all predictors*
-  - [ ] add `include` to aggregateResponses, plotAggregate, getFeatureImportance
-  - [X] showPlots option
+- [ ] recmopute all plots and see if still getting nan, not included rows in aggregates... if yes, perhaps need to catch these in getNeuralResponses...
 - [ ] get all unit getNeuralResponses at the same time!
 - [X] include 'unclustered' cells with high maha distance
 - [X] figure out why 'reward' such extreme values for some cells...
 - [X] figure out x limits for continuous vars...
 - [ ] aggregate plots
+  - [ ] *wrap and plot all predictors*
+    - [X] add `include` to aggregateResponses, plotAggregate, getFeatureImportance
+    - [X] showPlots option
   - [X] compute MI for everybody
     - [X] 'window' option for event and epoch vars
     - [X] visualize and sanity-check MI
@@ -72,6 +73,7 @@
   - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
 
 # questions
+- number of trials appears to impact MI - it is high for small trial nums, eg paw contacts... how can i compare MI when trial nums are very dft, eg normal and surprise rewards
 - when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
 - how to handle temporal discontinuities in old sessions?
 - some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
