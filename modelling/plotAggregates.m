@@ -14,7 +14,7 @@ s.noPawGroups = true;  % whether to NOT group paw variables
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'modelling', 'aggregates.mat'), 'aggregates', 'cellInfo')
+load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'modelling', 'aggregates.mat'), 'aggregates')
 
 for i = 1:height(aggregates)
     predictor = aggregates.Properties.RowNames{i};

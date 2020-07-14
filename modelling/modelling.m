@@ -4,9 +4,9 @@ sessions = getEphysSessions();
 
 %% perform various analyses on all sessions
 
-overwrite = false;
+overwrite = true;
 tic
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     folder = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
     try
         % format ephys data
@@ -28,14 +28,14 @@ for i = 1:length(sessions)
         % feature importance
         if overwrite || ~exist(fullfile(folder, 'modelling', 'importance.mat'), 'file')
             getFeatureImportance(sessions{i})
-            plotNeuralResponses(sessions{i}, 'visible', false)
+%             plotNeuralResponses(sessions{i}, 'visible', false)
         end
         
         % plot neural responses
-%         plotNeuralResponses(sessions{i}, 'visible', false)
+        plotNeuralResponses(sessions{i}, 'visible', false)
         
         % close figures
-%         close all
+        close all
     catch
         fprintf('%s: problem with analysis\n', sessions{i})
     end
@@ -43,18 +43,22 @@ end
 toc
 
 
-%% create missing .dat files
+%% test PSTH function
 
-for i = 1:length(ephysSessions)
-    try
-        ephysFolder = dir(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'ephys_*'));
-        datFile = dir(fullfile(ephysFolder.folder, ephysFolder.name, '*.dat'));
-        if isempty(datFile)
-            packContFiles(ephysSessions{i});
-        end
-    catch
-        fprintf('%s: problem with analysis\n', ephysSessions{i})
-    end
-end
+session = '181030_000';
+unit = 132;
+predictor = 'paw1LH_stride';
+
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
+events = table2array(predictors(predictor, 'data')); events = events{1};
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'spkTimes', 'unit_ids');
+spkTimes = spkTimes{unit_ids==unit};
+
+%%
+plotPSTH(spkTimes, events, 'removeNoSpikeTrials', true, ...
+    'eventLims', [-1 1], 'epochLims', [0 1], 'xlabel', predictor, 'epochDurationLims', [20 80]);
+
+
+
 
 

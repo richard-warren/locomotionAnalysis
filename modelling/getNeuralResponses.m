@@ -15,7 +15,6 @@ s.epochGridNum = 200;  % number of points in epoch x axis
 s.percentileLims = [.1 99.9];  % limits for continuous variables
 s.contGridNum = 200;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
-s.plotResponses = true;  % whether to make and save plot of all responses
 s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
 
 

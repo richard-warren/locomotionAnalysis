@@ -1,25 +1,24 @@
+# lab meeting
+- [X] epoch restrictions
+- [ ] movAvg functions
+- plotPredictor wrapper
+
 # todo
-- [ ] recmopute all plots and see if still getting nan, not included rows in aggregates... if yes, perhaps need to catch these in getNeuralResponses...
+- [ ] 180922_0001: look into difference btwn plotPSTH and plotResponses for licks, which look nice in plotPSTH...
+- [ ] recompute all vars and see if still getting nan in included rows in aggregates... if yes, perhaps need to catch these in getNeuralResponses...
 - [ ] get all unit getNeuralResponses at the same time!
-- [X] include 'unclustered' cells with high maha distance
-- [X] figure out why 'reward' such extreme values for some cells...
-- [X] figure out x limits for continuous vars...
-- [ ] aggregate plots
-  - [ ] *wrap and plot all predictors*
-    - [X] add `include` to aggregateResponses, plotAggregate, getFeatureImportance
-    - [X] showPlots option
-  - [X] compute MI for everybody
-    - [X] 'window' option for event and epoch vars
-    - [X] visualize and sanity-check MI
-    - [X] cluster
-    - [ ] figure out how to include cells...
-    - [ ] sort by group *then by something else* (mi, peak time, integral, maha distance)
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
   - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
   - [ ] use these plots to determine model transformations
 - [ ] write matlab code to handle to experiment conditions (surprise, omission)
+
+# relevant papers
+- kinematics in cer
+  - https://pubmed.ncbi.nlm.nih.gov/21795616/
+  - https://pubmed.ncbi.nlm.nih.gov/16733704/
+
 
 # analysis flow
 - prepPredictors
@@ -41,6 +40,7 @@
     - applying transformation (e.g. convolve, raise to powers...)
 # predictors
 - [X] continuous
+  - [ ] whisker phase
   - [X] wheel velocity
   - [X] paws (lh lf rf rh) (x y z)
   - [X] body angle
@@ -58,6 +58,7 @@
     - sound like predictor, obstacle velocity
     - brightness like predictor, something ramping when light is on and decaying as passes eye position
 - [X] epoch
+  - [ ] obs start to whisker contact
   - [X] swing stance (lh lf rf rh)
   - [X] obstacle (could also be event)
   - [X] obstacle light (could also be event)
@@ -73,6 +74,7 @@
   - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
 
 # questions
+- how to cluster *correlated* varialbes (eg to find predictor groups)
 - number of trials appears to impact MI - it is high for small trial nums, eg paw contacts... how can i compare MI when trial nums are very dft, eg normal and surprise rewards
 - when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
 - how to handle temporal discontinuities in old sessions?
@@ -161,6 +163,19 @@
     - [X] plotQualityMetrics
   - [X] make sure works for QZ
   - [X] document prelimAnalysis
+- [X] include 'unclustered' cells with high maha distance
+- [X] figure out why 'reward' such extreme values for some cells...
+- [X] figure out x limits for continuous vars...
+- [X] aggregate plots
+  - [X] wrap and plot all predictors
+    - [X] add `include` to aggregateResponses, plotAggregate, getFeatureImportance
+    - [X] showPlots option
+  - [X] compute MI for everybody
+    - [X] 'window' option for event and epoch vars
+    - [X] visualize and sanity-check MI
+    - [X] cluster
+    - [X] figure out how to include cells...
+    - [X] sort by group then by something else (mi, peak time, integral, maha distance)
 
 # to clear disk space in the future we could:
 - get rid of runTop, runBot when run exists
