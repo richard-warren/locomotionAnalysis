@@ -140,6 +140,9 @@ addPredictor('light', [obsLightOnTimes(:) obsLightOffTimes(:)], 'epoch')
 % reward
 addPredictor('reward', [rewardTimes(1:end-1), rewardTimes(2:end)], 'epoch')
 
+% obsOn -> wisk (start at obstacle on and end at moment of whisker contact)
+addPredictor('obsToWisk', rmmissing([obsOnTimes(:) wiskContactTimes(:)]), 'epoch');
+
 % stride (start of swing to start of next swing)
 for i = 1:4
     swingStartTimes = frameTimeStamps(find(diff(stanceBins(:,i))==-1)+1);
@@ -154,6 +157,10 @@ end
 
 % whisker contact
 addPredictor('whiskerContact', wiskContactTimes, 'event')
+
+% obs on/off
+addPredictor('obsOn', obsOnTimes, 'event')
+addPredictor('obsOff', obsOffTimes, 'event')
 
 % licks
 addPredictor('lick', lickTimes, 'event')
