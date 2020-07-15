@@ -1,5 +1,5 @@
 # lab meeting
-- [ ] *predictors in order...*
+- [ ] recompute neuralData, featureImportance, figs...
 - [ ] tracking vid
 - [ ] mi fix, r, p
 - [ ] fix mutual info for small sample sizes...
@@ -13,7 +13,8 @@
 
 
 # todo
-- [ ] speed up getNeuralResponses, fml
+- [X] speed up getNeuralResponses by computing all neurons at once!
+- [ ] move analyses to SSD :)
 - [ ] figure out how to handle missing whisker contact times in model
 - [ ] 180922_0001: look into difference btwn plotPSTH and plotResponses for licks, which look nice in plotPSTH...
 - [ ] recompute all vars and see if still getting nan in included rows in aggregates... if yes, perhaps need to catch these in getNeuralResponses...

@@ -33,8 +33,8 @@ s.predictors = s.predictors(allInds,:);  % restrict to desired predictors and sh
 
 
 % determine x axis
-t = s.predictors{find(s.predictors.type=='continuous',1,'first'), 't'}{1};
-tMax = t(end);  % last time in first continuous predictor (assumes same time grid for all predictors!)
+t = s.predictors{find(s.predictors.type=='continuous',1,'first'), 't'}{1};  % (assumes same time grid for all predictors!)
+tMax = t(end);  % last time in first continuous predictor
 if isempty(s.xLims); s.xLims = [0 s.xWidth] + randi(round(tMax-s.xWidth*2)); end
 
 colors = lines(length(allInds));

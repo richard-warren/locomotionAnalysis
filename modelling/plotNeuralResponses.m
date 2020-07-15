@@ -27,46 +27,51 @@ for i = 1:length(unit_ids)
     fprintf('%s, cell %i: plotting neural responses...\n', session, unit_ids(i))
     
     % check that 'predictors' and 'responses' have same rows
-    if ~isequal(predictors.Properties.RowNames, responses(i).responses.Properties.RowNames)
+    if ~isequal(predictors.Properties.RowNames, responses.Properties.RowNames)
         disp('WARNING! predictors and responses have different row names!')
-        break;
+        return;
     end
     
     % initialize figure
-    cellResponses = responses(i).responses;
     fig = figure('color', 'white', 'name', sprintf('%s_cell%i', session, unit_ids(i)), ...
         'position', [185.00 58.00 1583.00 915.00], 'Visible', s.visible);
-    rows = ceil(sqrt(height(cellResponses)));  % same num row and cols
+    rows = ceil(sqrt(height(responses)));  % same num row and cols
     yMax = prctile(spkRates(i,:), 99);
 
     
-    for j = 1:height(cellResponses)
+    for j = 1:height(responses)
         subplot(rows, rows, j); hold on
-        name = cellResponses.Properties.RowNames{j};
+        name = responses.Properties.RowNames{j};
         xlabel(name, 'Interpreter', 'none')
         
-        if cellResponses.include(j)
-        
-            response = cellResponses.response{j};
-            xLims = cellResponses.xLims(j,:);
-            x = linspace(xLims(1), xLims(2), size(response,2));
+        if responses.include(j)
+            xLims = responses.xLims(j,:);
 
-            if cellResponses.type(j)=='event'
+            if responses.type(j)=='event'
                 plot([0 0], [0 yMax], 'color', [0 0 0 .4])
+                response = responses.response{j}(:,:,i);
+                x = linspace(xLims(1), xLims(2), size(response,2));
+                
                 respMean = nanmean(response,1);
                 respStd = nanstd(response,1);
                 plot(x, respMean, 'LineWidth', 3, 'color', s.eventColor)
                 plot(x, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.eventColor .4])
 
-            elseif cellResponses.type(j)=='epoch'
+            elseif responses.type(j)=='epoch'
                 plot([0 0; 1 1]', [0 yMax; 0 yMax]', 'color', [0 0 0 .4])
+                response = responses.response{j}(:,:,i);
+                x = linspace(xLims(1), xLims(2), size(response,2));
+                
                 respMean = nanmean(response,1);
                 respStd = nanstd(response,1);
                 plot(x, respMean, 'LineWidth', 3, 'color', s.epochColor)
                 plot(x, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.epochColor .4])
 
-            elseif cellResponses.type(j)=='continuous'
-                density = cellResponses.density{j};
+            elseif responses.type(j)=='continuous'
+                response = responses.response{j}(:,i)';
+                x = linspace(xLims(1), xLims(2), size(response,2));
+                
+                density = responses.density{j};
                 spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
                 density = density * (yMax/max(density));
                 fill([xLims(1) x xLims(2) xLims(1)]', ...
@@ -81,7 +86,7 @@ for i = 1:length(unit_ids)
 
             % plot mutual information
             if s.showImportance
-                mi = table2array(importance(i).importance(name,'mi'));
+                mi = importance{name,'mi'}(i);
                 text(xLims(2), yMax, sprintf('%.2f', mi), ...
                     'HorizontalAlignment', 'right', 'VerticalAlignment', 'top');
             end

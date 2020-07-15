@@ -10,8 +10,8 @@ sessions = sessions(1:33);  % temp
 overwrite = true;
 tic
 
-parpool('local', 4);  % set number of workers
-parfor i = 1:length(sessions)
+% parpool('local', 4);  % set number of workers
+for i = 1:length(sessions)
     folder = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
     try
         % format ephys data
@@ -48,20 +48,26 @@ end
 toc
 
 
-%% test PSTH function
+%% look into MI
 
-session = '181030_000';
-unit = 132;
-predictor = 'paw1LH_stride';
+session = '200703_000';  % reward_all
+unitLow = 170;
+unitHigh = 275;
 
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
-events = table2array(predictors(predictor, 'data')); events = events{1};
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'spkTimes', 'unit_ids');
-spkTimes = spkTimes{unit_ids==unit};
-
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses');
+responseLow = responses([responses.cell]==unitLow).responses{'reward_all', 'response'}{1};
+responseHigh = responses([responses.cell]==unitHigh).responses{'reward_all', 'response'}{1};
 %%
-plotPSTH(spkTimes, events, 'removeNoSpikeTrials', true, ...
-    'eventLims', [-1 1], 'epochLims', [0 1], 'xlabel', predictor, 'epochDurationLims', [20 80]);
+
+contact = responses([responses.cell]==261).responses{'paw1LH_contact_ventral', 'response'}{1};
+
+
+
+
+
+
+
+
 
 
 
