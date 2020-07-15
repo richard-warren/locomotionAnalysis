@@ -8,18 +8,23 @@ function plotMovingAvg(x, y, varargin)
 % --------
 
 % moving average
-s.percentileLims = [.1 99.9];  % (percentiles) x axis limits
+s.percentileLims = [1 99];  % (percentiles) x axis limits
 s.binNum = 500;  % number of points on the x axis
 s.windowSize = .05;  % (fraction of x axis) width of moving average window
 s.smoothing = .05;  % (fraction of x axis) width of moving average smoothing
 
 % plot
-s.scatters = 1000;  % max number of scatter points to show
+s.newFig = true;  % whether to create new figure for the plot
+s.scatters = 2000;  % max number of scatter points to show
 s.color = [.15 .15 .15];
 s.ylabel = '';
 s.xlabel = '';
 s.plotDensity = true;  % whether to plot pdf in background
-s.colorDensity = [.4 .4 1];;
+s.colorDensity = [.4 .4 1];
+s.yLims = [];
+
+% scatter
+s.showScatter = true;
 
 
 % initializations
@@ -60,8 +65,8 @@ end
 % plot
 % ----
 
-close all
-figure('color', 'white', 'menubar', 'none'); hold on
+if s.newFig; figure('color', 'white', 'menubar', 'none'); end
+hold on
 
 % error bars
 patch([xGrid(1) xGrid fliplr(xGrid)], ...
@@ -69,25 +74,33 @@ patch([xGrid(1) xGrid fliplr(xGrid)], ...
     s.color, 'EdgeColor', 'none', 'FaceAlpha', .2)
 
 % mean
-plot(xGrid, movMean, 'Color', s.color, 'LineWidth', 2)
+s.lineWidth = .05 * range(s.yLims);
+thickness = (density-min(density)) * (s.lineWidth / range(density)) * .5;
+patch([xGrid(1) xGrid fliplr(xGrid)], ...
+    [movMean(1)-thickness(1) movMean+thickness fliplr(movMean-thickness)], ...
+    s.color, 'EdgeColor', 'none');
+
+% plot(xGrid, movMean, 'Color', s.color, 'LineWidth', 2)
 
 % scatter
-xy = [x y];
-xy = datasample(rmmissing(xy), s.scatters);
-scatter(xy(:,1), xy(:,2), 10, s.color, 'filled', ...
-    'MarkerEdgeColor', 'none', 'MarkerFaceAlpha', .4)
-yLims = get(gca, 'YLim');
+if s.showScatter
+    xy = [x y];
+    xy = datasample(rmmissing(xy), s.scatters);
+    scatter(xy(:,1), xy(:,2), 10, s.color, 'filled', ...
+        'MarkerEdgeColor', 'none', 'MarkerFaceAlpha', .4)
+    if isempty(s.yLims); s.yLims = get(gca, 'YLim'); end
+end
 
 % density
 if s.plotDensity
-    densityScaled = density * (range(yLims) / max(density)) - -yLims(1);
+    densityScaled = density * (range(s.yLims)*.6 / max(density)) - s.yLims(1);
     patch([xGrid(1) xGrid xGrid(end)], ...
-        [yLims(1) densityScaled yLims(1)], ...
-        s.colorDensity, 'FaceAlpha', .2, 'EdgeColor', 'none') 
+        [s.yLims(1) densityScaled s.yLims(1)], ...
+        s.colorDensity, 'FaceAlpha', .15, 'EdgeColor', 'none') 
 end
 
 % fancify
-set(gca, 'xlim', xLims, 'ylim', yLims)
-if ~isempty(s.xlabel); xlabel(s.xlabel); end
-if ~isempty(s.ylabel); ylabel(s.ylabel); end
+set(gca, 'xlim', xLims, 'ylim', s.yLims)
+if ~isempty(s.xlabel); xlabel(s.xlabel, 'Interpreter', 'none'); end
+if ~isempty(s.ylabel); ylabel(s.ylabel, 'Interpreter', 'none'); end
 

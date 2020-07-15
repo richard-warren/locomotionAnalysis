@@ -35,13 +35,14 @@ s.conditionNames = {};
 s.epochDurationLims = [];  % (percentiles) only include epochs of duration within these limits
 s.xlabel = '';
 s.removeNoSpikeTrials = false;  % whether to automatically remove trials with no spikes
-
+s.maxEpochs = 2000;  % if using epoch events and there are more than maxEpochs, limit to epochs of central duration // set to 0 to bypass
 
 
 % initializations
 % ---------------
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 conditions = unique(s.conditions);
+
 if isempty(s.colors)
     if length(conditions)>1
         s.colors = lines(length(conditions));
@@ -49,12 +50,25 @@ if isempty(s.colors)
         s.colors = [1 1 1]*.15;  % gray if only one condition
     end
 end
+
 isEpoch = size(events,2)==2;  % whether event or epoch
 [spkRates, spkRatesTimes] = getFiringRate(spkTimes, 'fs', 2000, ...
     'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
 if isEpoch; xLims = s.epochLims; else; xLims = s.eventLims; end
 x = linspace(xLims(1), xLims(2), s.binNum);
 
+% if too many epochs find the elements of central duration
+if isEpoch && s.maxEpochs
+    durations = diff(events,1,2);
+    if size(events,1)>s.maxEpochs
+        middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (1:s.maxEpochs);
+        [~, sortInds] = sort(durations);
+        inds = sortInds(middleIndsSorted)';  % !!! should maybe pick random intead of central-duration epochs
+        
+        events = events(inds,:);
+        s.conditions = s.conditions(inds);
+    end
+end
 
 
 % get responses
@@ -137,7 +151,6 @@ if ~isempty(s.conditionNames)
     legend(meanLines, s.conditionNames, 'Location', 'best', 'Box', 'off')
 end
 ylabel('firing rate (hz)')
-if ~isempty(s.xlabel); xlabel(s.xlabel); end
 
 % histogram
 subplot(3,1,2:3); hold on
@@ -151,9 +164,9 @@ scatter(xScat, yScat, s.scatSize, s.colors(spkConditions,:), 'filled', ...
 
 yLims = [1 size(events,1)];
 addVerticalLines(isEpoch, xLims, yLims);
-ylabel('firing rate (hz)')
 set(gca, 'xlim', xLims, 'ylim', yLims, 'YTick', [], 'TickDir', 'out', 'YDir', 'normal')
 ylabel('spikes')
+if ~isempty(s.xlabel); xlabel(s.xlabel, 'Interpreter', 'none'); end
 
 
 
@@ -162,8 +175,8 @@ ylabel('spikes')
 
 function addVerticalLines(isEpoch, xLims, yLims)
     if isEpoch
-        if xLims(1)>0; plot([0 0], yLims, 'LineWidth', 1, 'Color', [0 0 0 .4]); end
-        if xLims(2)<1; plot([1 1], yLims, 'LineWidth', 1, 'Color', [0 0 0 .4]); end
+        if xLims(1)<0; plot([0 0], yLims, 'LineWidth', 1, 'Color', [0 0 0 .4]); end
+        if xLims(2)>1; plot([1 1], yLims, 'LineWidth', 1, 'Color', [0 0 0 .4]); end
     else
         plot([0 0], yLims, 'LineWidth', 1, 'Color', [0 0 0 .4]);
     end
