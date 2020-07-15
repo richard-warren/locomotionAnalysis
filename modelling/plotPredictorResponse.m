@@ -1,4 +1,4 @@
-function plotPredictor(session, unit, predictor, varargin)
+function plotPredictorResponse(session, unit, predictor, varargin)
 
 % plot a single predictor for a single session and unit // this is a
 % wrapper for plotMovingAvg (for continuous variables) and plotPSTH (for

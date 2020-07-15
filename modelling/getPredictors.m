@@ -198,53 +198,7 @@ end
 
 % make nice little plot
 if s.plotPredictors
-    
-    % settings
-    dz = 6;  % (standard deviation) vertical separation
-    xWidth = 40;  % (seconds) range of x axis
-    xLims = [0 xWidth] + randi(round(tMax-xWidth*2));
-    ommit = {'paw1LH_stride', 'paw2LF_stride', 'paw3RF_stride', 'paw4RH_stride', ...
-        'reward', 'reward_surprise', 'reward_omission', 'reward_normal'};
-    
-    % initialiations
-    set(0, 'DefaultAxesTickLabelInterpreter', 'none')
-    figure('name', session, 'color', 'white', 'position', [125.00 93.00 1666.00 886.00]); hold on
-    allInds = find(~ismember(predictors.Properties.RowNames, ommit));
-    colors = lines(length(allInds));
-    y = 0:dz:dz*length(allInds)-1;
-    
-    % epoch
-    epochInds = allInds(predictors.type(allInds)=='epoch');
-    plot(xLims, repmat(y(1:length(epochInds)),2,1)', 'color', [.4 .4 .4])  % horizontal lines for each epoch predictor
-    for i = 1:length(epochInds)
-        epoch = predictors{epochInds(i),'data'}{1};
-        epoch = epoch(any(epoch>xLims(1) & epoch<xLims(2),2),:);  % only plot epochs within xLims
-        if ~isempty(epoch)
-            plot(epoch', repelem(y(i), 2), 'LineWidth', 5, 'color', colors(i,:))
-        end
-    end
-    
-    % continuous
-    contInds = allInds(predictors.type(allInds)=='continuous');
-    bins = t>xLims(1) & t<xLims(2);
-    yOffsets = y((1:length(contInds))+length(epochInds));
-    allCont = cat(1,predictors{predictors.type=='continuous','data'}{:});
-    plot(t(bins), zscore(allCont(:,bins)') + yOffsets);
-    
-    % events
-    eventInds = allInds(predictors.type(allInds)=='event');
-    dy = length(epochInds) + length(contInds);
-    plot(xLims, repmat(y((1:length(eventInds))+dy),2,1)', 'color', [.4 .4 .4])  % horizontal lines for each event predictor
-    for i = 1:length(eventInds)
-        x = predictors{eventInds(i),'data'}{1};
-        x = x(x>xLims(1) & x<xLims(2));
-        scatter(x, repelem(y(i+dy), length(x)), 20, colors(i+dy,:), 'filled')
-    end
-    
-    % fancify
-    set(gca, 'xlim', xLims, 'ytick', y, ...
-        'YTickLabel', predictors.Properties.RowNames([epochInds; contInds; eventInds]), ...
-        'YLim', [y(1) y(end)], 'TickDir', 'out')
+    plotNeuralPredictors(session, 'predictors', predictors)
 end
 
 
@@ -329,6 +283,5 @@ function addPredictor(name, data, type, t)
 end
 
 end
-
 
 

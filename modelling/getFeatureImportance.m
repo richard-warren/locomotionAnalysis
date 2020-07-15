@@ -31,8 +31,8 @@ for i = 1:length(unit_ids)
     
     % initialize table
     nRows = height(predictors);
-    cellImportance = table(nan(nRows,1), nan(nRows,1), predictors.type, predictors.include, ...
-        'VariableNames', {'mi', 'r2', 'type', 'include'}, 'RowNames', predictors.Properties.RowNames);
+    cellImportance = table(nan(nRows,1), nan(nRows,1), nan(nRows,1), predictors.type, predictors.include, ...
+        'VariableNames', {'mi', 'r', 'p',  'type', 'include'}, 'RowNames', predictors.Properties.RowNames);
     
     for j = find(predictors.include)'
         
@@ -46,9 +46,11 @@ for i = 1:length(unit_ids)
             x = x(bins);
             response = response(:, bins);
             
-            x = repmat(x, 1, size(response,1));
-            y = reshape(response', [], 1);
-            cellImportance.mi(j) = computeMI(x, y);
+            % mutual information
+            xFlat = repmat(x, 1, size(response,1));
+            yFlat = reshape(response', [], 1);
+            cellImportance.mi(j) = computeMI(xFlat, yFlat, true);
+
             
         elseif predictors.type(j)=='epoch'
             response = responses(i).responses.response{j};
@@ -60,13 +62,20 @@ for i = 1:length(unit_ids)
             x = x(bins);
             response = response(:, bins);
             
-            x = repmat(x, 1, size(response,1));
-            y = reshape(response', [], 1);
-            cellImportance.mi(j) = computeMI(x, y);
+            % mutual information
+            xFlat = repmat(x, 1, size(response,1));
+            yFlat = reshape(response', [], 1);
+            cellImportance.mi(j) = computeMI(xFlat, yFlat, true);
+            
             
         elseif predictors.type(j)=='continuous'
+            % mutual information
             spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
-            cellImportance.mi(j) = computeMI(spkRate, predictors.data{j});
+            cellImportance.mi(j) = computeMI(spkRate, predictors.data{j}, false);
+            
+            % correlation
+            temp = rmmissing([spkRate', predictors.data{j}']);
+            cellImportance.r(j) = corr(temp(:,1), temp(:,2));
         end
     end
     
@@ -84,15 +93,16 @@ disp('all done!')
 % FUNCTIONS
 % ---------
 
-function mi = computeMI(x, y)
-    % compute mutual information between continuous variables x and y
+function mi = computeMI(x, y, discrete)
+    % compute mutual information between continuous variables x and y //
+    % 'discrete' is whether predictor is continuous or discrete
     
     xy = rmmissing([x(:), y(:)]);
     if ~isempty(xy)
         xy = datasample(xy, min(size(xy,1), s.contSmps), 'Replace', false);
         x = py.numpy.array(xy(:,1)).reshape(int8(-1), int8(1));
         y = xy(:,2);
-        mi = double(py.sklearn.feature_selection.mutual_info_regression(x,y));
+        mi = double(py.sklearn.feature_selection.mutual_info_regression(x,y,discrete));
     else
         mi = nan;
     end

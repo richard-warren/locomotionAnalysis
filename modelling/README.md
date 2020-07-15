@@ -1,11 +1,11 @@
 # lab meeting
-- [X] epoch restrictions
-- [X] movAvg functions
-- [X] plotPredictor wrapper
-- [ ] whisker ramp up predictor
+- [ ] *predictors in order...*
+- [ ] tracking vid
+- [ ] mi fix, r, p
+- [ ] fix mutual info for small sample sizes...
 - [ ] mods
   - colored by nucleus
-  - [ ] r^2 for continuous
+  - [X] r^2 for continuous
   - [X] raw traces
   - [X] line thickness density
   - [X] xLims for paw stride
@@ -13,6 +13,7 @@
 
 
 # todo
+- [ ] speed up getNeuralResponses, fml
 - [ ] figure out how to handle missing whisker contact times in model
 - [ ] 180922_0001: look into difference btwn plotPSTH and plotResponses for licks, which look nice in plotPSTH...
 - [ ] recompute all vars and see if still getting nan in included rows in aggregates... if yes, perhaps need to catch these in getNeuralResponses...
