@@ -13,7 +13,7 @@ function getNeuralResponses(session, varargin)
 % settings
 s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
-s.epochGridNum = 200;  % number of points in epoch x axis
+s.gridNum = 200;  % number of points in epoch and event x axis
 s.percentileLims = [1 99];  % limits for continuous variables
 s.contGridNum = 100;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
@@ -25,34 +25,42 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'unit_ids', 'spkRates', 'timeStamps');
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
-dt = median(diff(timeStamps));
-xEvent = s.eventLims(1) : dt : s.eventLims(2);
-xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.epochGridNum);
 
-
-% for each cell
+% initialize table
 nRows = height(predictors);
 responses = table(cell(nRows,1), cell(nRows,1), cell(nRows,1), predictors.type, nan(nRows,2), predictors.include, ...
     'VariableNames', {'response', 'std', 'density', 'type', 'xLims', 'include'}, ...
     'RowNames', predictors.Properties.RowNames);
 t = predictors{find(predictors.type=='continuous',1,'first'), 't'}{1};  % (assumes same time grid for all predictors!)
-spkRates  = interp2(timeStamps, [1:length(unit_ids)]', spkRates, t, [1:length(unit_ids)]', 'linear');
 
-fprintf('%s: computing response ', session)
+% put spikes on same time grid as predictors
+nUnits = length(unit_ids);
+if nUnits==1
+    spkRates = interp1(timeStamps, spkRates, t, 'linear');
+else
+    spkRates = interp2(timeStamps, [1:nUnits]', spkRates, t, [1:nUnits]', 'linear');
+end
+clear timeStamps
+
+% define x axes
+xEvent = linspace(s.eventLims(1), s.eventLims(2), s.gridNum);
+xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.gridNum);
+
+
+
+fprintf('%s: getting neural responses...\n', session)
 for i = find(predictors.include)'
-    fprintf('%i ', i)
 
     if predictors.type(i)=='event'
         events = predictors.data{i};
-        response = nan(length(events), length(xEvent), length(unit_ids));
+        response = nan(length(events), length(xEvent), nUnits);
         
-        for j = 1:length(events)  % could maybe do this without a loop
-            startInd = find(timeStamps>=(events(j)+s.eventLims(1)),1,'first');
-            endInd = startInd+length(xEvent)-1;
-            if ~isempty(startInd) && endInd<=size(spkRates,2)
-                response(j,:,:) = spkRates(:,startInd:startInd+length(xEvent)-1)';
-            end
+        % temp
+        eventBins = events+s.eventLims(1)>t(1) & events+s.eventLims(2)<t(end);  % only include events with windows falling inside range of t
+        for j = 1:nUnits
+            response(eventBins,:,j) = interp1(t, spkRates(j,:), xEvent+events(eventBins));  % compute firing rate for all trials in one shot
         end
+        
         response = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');  % i don't think it's possible for NaNs to appear here, but just to be safe...
         responses.response{i} = response;
         responses.xLims(i,:) = s.eventLims;
@@ -61,7 +69,7 @@ for i = find(predictors.include)'
 
     elseif predictors.type(i)=='epoch'
         epochs = predictors.data{i};
-        response = nan(size(epochs,1), length(xEpoch), length(unit_ids));
+        response = nan(size(epochs,1), length(xEpoch), nUnits);
         durations = diff(epochs,1,2);
 
         % if too many epochs find the elements of central duration
@@ -79,11 +87,14 @@ for i = find(predictors.include)'
             epoch = durations(j)*s.epochLims + epochs(j,1);  % start and end times for this epoch
             epochBins = t>=epoch(1) & t<=epoch(2);
             if any(epochBins)
-                response(j,:,:) = interp2(t(epochBins), ...
-                    [1:length(unit_ids)]', ...
-                    spkRates(:,epochBins), ...
-                    linspace(epoch(1), epoch(2), s.epochGridNum), ...
-                    [1:length(unit_ids)]', 'linear')';
+                if nUnits==1
+                    response(j,:,:) = interp1(t(epochBins), spkRates(:,epochBins), ...
+                        linspace(epoch(1), epoch(2), s.gridNum));
+                else
+                    response(j,:,:) = interp2(t(epochBins), ...
+                        [1:nUnits]', spkRates(:,epochBins), ...
+                        linspace(epoch(1), epoch(2), s.gridNum), [1:nUnits]', 'linear')';
+                end
             end
         end
         response = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');
@@ -97,7 +108,7 @@ for i = find(predictors.include)'
         xGrid = linspace(xLims(1), xLims(2), s.contGridNum);
         winSz = s.contWindowSz*diff(xLims);
 
-        [response, responseStd] = deal(nan(length(xGrid), length(unit_ids)));
+        [response, responseStd] = deal(nan(length(xGrid), nUnits));
         density = nan(1, length(xGrid));
         for j = 1:length(xGrid)  % could this be sped up with hist?
             xBins = predictors.data{i} >= (xGrid(j)-.5*winSz) & ...
@@ -120,7 +131,6 @@ for i = find(predictors.include)'
     end 
 end
 
-
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses', '-v7.3')
-disp('- all done!')
+fprintf('%s: all done getting neural responses :)\n', session)
 

@@ -10,8 +10,8 @@ sessions = sessions(1:33);  % temp
 overwrite = true;
 tic
 
-% parpool('local', 4);  % set number of workers
-for i = 1:length(sessions)
+% parpool('local', 2);  % set number of workers
+parfor i = 1:length(sessions)
     folder = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
     try
         % format ephys data
@@ -24,25 +24,26 @@ for i = 1:length(sessions)
 %             getPredictors(sessions{i})
 %         end
         
-%         % neural responses
-%         if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')
-%             getNeuralResponses(sessions{i})
-%             plotNeuralResponses(sessions{i}, 'visible', false)
-%         end
-%         
-%         % feature importance
+        % neural responses
+        if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')
+            getNeuralResponses(sessions{i})
+        end
+        
+        % feature importance
         if overwrite || ~exist(fullfile(folder, 'modelling', 'importance.mat'), 'file')
             getFeatureImportance(sessions{i})
-            plotNeuralResponses(sessions{i}, 'visible', false)
         end
-%         
-%         % plot neural responses
-%         plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
-%         
-%         % close figures
+        
+        % plot neural responses
+        plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', true)
+        
+        % close figures
 %         close all
-    catch
-        fprintf('%s: problem with analysis\n', sessions{i})
+        
+        fprintf('----------- %s complete! -----------\n', sessions{i})
+    
+    catch exception
+        fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
     end
 end
 toc
@@ -50,17 +51,12 @@ toc
 
 %% look into MI
 
-session = '200703_000';  % reward_all
-unitLow = 170;
-unitHigh = 275;
+session = '180922_001';  % reward_all
+unitLow = 84;
 
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses');
-responseLow = responses([responses.cell]==unitLow).responses{'reward_all', 'response'}{1};
-responseHigh = responses([responses.cell]==unitHigh).responses{'reward_all', 'response'}{1};
-%%
-
-contact = responses([responses.cell]==261).responses{'paw1LH_contact_ventral', 'response'}{1};
-
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
+response = responses{'reward_all', 'response'}{1};
 
 
 

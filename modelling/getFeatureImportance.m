@@ -88,7 +88,7 @@ for i = 1:length(unit_ids)
 end
 
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'importance.mat'), 'importance')
-disp('all done!')
+fprintf('%s: all done getting feature importance :)\n', session)
 
 
 

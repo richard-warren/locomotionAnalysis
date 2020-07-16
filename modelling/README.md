@@ -1,7 +1,7 @@
 # lab meeting
-- [ ] recompute neuralData, featureImportance, figs...
+- [ ] *recompute neuralData, featureImportance, figs...*
+- [ ] aggregate neural responses
 - [ ] tracking vid
-- [ ] mi fix, r, p
 - [ ] fix mutual info for small sample sizes...
 - [ ] mods
   - colored by nucleus

@@ -11,7 +11,7 @@ nBest = 5;
 predictors = aggregates.Properties.RowNames;
 slowPredictors = {'velocity', 'bodyAngle', 'whiskerAngle', 'buttHeight', 'satiation'};
 
-for i = 57:length(predictors)
+for i = 1:length(predictors)
     [~, sortInds] = sort(mi(i,:), 'descend');
     
     % predictor specific settings

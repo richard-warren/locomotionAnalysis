@@ -127,7 +127,6 @@ end
 
 % plot
 % ----
-close all
 figure('color', 'white', 'menubar', 'none', 'position', [1380.00 157.00 331.00 847.00])
 meanLines = nan(length(conditions), 1);
 

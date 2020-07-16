@@ -19,12 +19,12 @@ load(fullfile(folder, 'modelling', 'predictors.mat'), 'predictors');
 load(fullfile(folder, 'modelling', 'responses.mat'), 'responses');
 if s.showImportance; load(fullfile(folder, 'modelling', 'importance.mat'), 'importance'); end
 load(fullfile(folder, 'neuralData.mat'), 'unit_ids', 'spkRates', 'timeStamps');
-
+fprintf('%s: plotting neural responses...\n', session)
 
 
 % for each cell
 for i = 1:length(unit_ids)
-    fprintf('%s, cell %i: plotting neural responses...\n', session, unit_ids(i))
+    
     
     % check that 'predictors' and 'responses' have same rows
     if ~isequal(predictors.Properties.RowNames, responses.Properties.RowNames)
@@ -99,5 +99,4 @@ for i = 1:length(unit_ids)
         sprintf('%s cell%i responses.png', session, unit_ids(i))));
     if ~s.visible; close(fig); end
 end
-disp('all done!')
 
