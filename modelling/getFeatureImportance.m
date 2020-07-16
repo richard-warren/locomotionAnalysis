@@ -15,8 +15,8 @@ s.epochLims = [-.25 1.25];  % (fraction of epoch) for mutual information only co
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses');
+load(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+load(fullfile(getenv('SSD'), 'modelling', 'responses', [session '_responses.mat']), 'responses');
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'spkRates', 'timeStamps', 'unit_ids');
 
@@ -50,10 +50,10 @@ for i = 1:length(unit_ids)
             response = rmmissing(response(:, bins));
             
             % mutual information
-            if size(response,1) > 1
+            if size(response,1) > 1  % mi not meaningful if only one trial
                 xFlat = repmat(x, 1, size(response,1));
                 yFlat = reshape(response', [], 1);
-                importance.mi(j,i) = computeMI(xFlat, yFlat, true);  % if more than one trial, treat predictor as 'discrete' (see sklearn docs)
+                importance.mi(j,i) = computeMI(xFlat, yFlat, true);
             end
 
             
@@ -68,7 +68,7 @@ for i = 1:length(unit_ids)
             response = rmmissing(response(:, bins));
             
             % mutual information
-            if size(response,1) > 1
+            if size(response,1) > 1  % mi not meaningful if only one trial
                 xFlat = repmat(x, 1, size(response,1));
                 yFlat = reshape(response', [], 1);
                 importance.mi(j,i) = computeMI(xFlat, yFlat, true);
@@ -87,7 +87,7 @@ for i = 1:length(unit_ids)
     end
 end
 
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'importance.mat'), 'importance')
+save(fullfile(getenv('SSD'), 'modelling', 'importance', [session '_importance.mat']), 'importance')
 fprintf('%s: all done getting feature importance :)\n', session)
 
 

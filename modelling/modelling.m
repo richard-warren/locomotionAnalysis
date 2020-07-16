@@ -7,40 +7,37 @@ sessions = getEphysSessions();
 sessions = getEphysSessions;
 sessions = sessions(1:33);  % temp
 
-overwrite = true;
+overwrite = false;
 tic
 
-% parpool('local', 2);  % set number of workers
+% parpool('local', 4);  % set number of workers
 parfor i = 1:length(sessions)
-    folder = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
+    folderSes = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
+    folder = fullfile(getenv('SSD'), 'modelling');
+    
     try
         % format ephys data
-%         if overwrite || ~exist(fullfile(folder, 'neuralData.mat'), 'file')
-%             formatEphysData(sessions{i})
-%         end
+        if overwrite || ~exist(fullfile(folderSes, 'neuralData.mat'), 'file')
+            formatEphysData(sessions{i})
+        end
         
         % predictors
-%         if overwrite || ~exist(fullfile(folder, 'modelling', 'predictors.mat'), 'file')
-%             getPredictors(sessions{i})
-%         end
+        if overwrite || ~exist(fullfile(folder, 'predictors', [sessions{i} '_predictors.mat']), 'file')
+            getPredictors(sessions{i}, 'plotPredictors', true, 'visible', 'off')
+        end
         
         % neural responses
-        if overwrite || ~exist(fullfile(folder, 'modelling', 'responses.mat'), 'file')
+        if overwrite || ~exist(fullfile(folder, 'responses', [sessions{i} '_responses.mat']), 'file')
             getNeuralResponses(sessions{i})
         end
         
         % feature importance
-        if overwrite || ~exist(fullfile(folder, 'modelling', 'importance.mat'), 'file')
+        if overwrite || ~exist(fullfile(folder, 'importance', [sessions{i} '_importance.mat']), 'file')
             getFeatureImportance(sessions{i})
         end
         
         % plot neural responses
-        plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', true)
-        
-        % close figures
-%         close all
-        
-        fprintf('----------- %s complete! -----------\n', sessions{i})
+%         plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', true)
     
     catch exception
         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)

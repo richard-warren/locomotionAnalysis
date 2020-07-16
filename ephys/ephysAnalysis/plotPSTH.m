@@ -18,7 +18,7 @@ s.epochLims = [-.25 1.25];  % (fraction of epoch) x limits for epochs
 s.binNum = 500;  % number of points on the axis
 
 % raster
-s.scatSize = 3;
+s.scatSize = 3.5;
 
 % instantaneous firing rate kernel
 s.kernelRise = .005;     % (s) rise for double exponential kernel
@@ -28,7 +28,7 @@ s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
 
 % condition info
 s.conditions = ones(size(events,1),1);  % vector of trial condition numbers
-s.colors = [];  % colors for each condition
+s.color = [];  % colors for each condition
 s.conditionNames = {};
 
 % other
@@ -43,17 +43,17 @@ s.maxEpochs = 2000;  % if using epoch events and there are more than maxEpochs, 
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 conditions = unique(s.conditions);
 
-if isempty(s.colors)
+if isempty(s.color)
     if length(conditions)>1
-        s.colors = lines(length(conditions));
+        s.color = lines(length(conditions));
     else
-        s.colors = [1 1 1]*.15;  % gray if only one condition
+        s.color = [1 1 1]*.15;  % gray if only one condition
     end
 end
 
 isEpoch = size(events,2)==2;  % whether event or epoch
 [spkRates, spkRatesTimes] = getFiringRate(spkTimes, 'fs', 2000, ...
-    'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'sig', s.kernelSig);
+    'kernel', s.kernel, 'kernelRise', s.kernelRise, 'kernelFall', s.kernelFall, 'kernelSig', s.kernelSig);
 if isEpoch; xLims = s.epochLims; else; xLims = s.eventLims; end
 x = linspace(xLims(1), xLims(2), s.binNum);
 
@@ -137,10 +137,10 @@ for i = 1:length(conditions)
     condMean = nanmean(responseRate(bins,:),1);
     condStd = nanstd(responseRate(bins,:),1);
     
-    meanLines(i) = plot(x, condMean, 'color', s.colors(i,:), 'LineWidth', 3);
+    meanLines(i) = plot(x, condMean, 'color', s.color(i,:), 'LineWidth', 3);
     patch([x(1) x fliplr(x)], ...
         [condMean(1)-condStd(1), condMean+condStd fliplr(condMean-condStd)], ...
-        s.colors(i,:), 'facealpha', .2, 'edgecolor', 'none')
+        s.color(i,:), 'facealpha', .2, 'edgecolor', 'none')
 end
 
 yLims = max(get(gca, 'YLim'), 0);
@@ -158,8 +158,8 @@ responseSpksSorted = responseSpks(sortInds);
 xScat = cat(1, responseSpksSorted{:});
 yScat = repelem(1:size(events,1), cellfun(@length, responseSpks));
 spkConditions = repelem(conditionsSorted, cellfun(@length, responseSpks));
-scatter(xScat, yScat, s.scatSize, s.colors(spkConditions,:), 'filled', ...
-    'MarkerEdgeColor', 'none', 'MarkerFaceAlpha', .4)
+scatter(xScat, yScat, s.scatSize, s.color(spkConditions,:), 'filled', ...
+    'MarkerEdgeColor', 'none', 'MarkerFaceAlpha', .6)
 
 yLims = [1 size(events,1)];
 addVerticalLines(isEpoch, xLims, yLims);

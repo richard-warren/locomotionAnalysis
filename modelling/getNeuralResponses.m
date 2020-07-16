@@ -15,7 +15,7 @@ s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
 s.gridNum = 200;  % number of points in epoch and event x axis
 s.percentileLims = [1 99];  % limits for continuous variables
-s.contGridNum = 100;    % number of points in continuous x axis
+s.contGridNum = 200;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
 s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
 
@@ -24,7 +24,7 @@ s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.ma
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'unit_ids', 'spkRates', 'timeStamps');
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
+load(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 
 % initialize table
 nRows = height(predictors);
@@ -131,6 +131,6 @@ for i = find(predictors.include)'
     end 
 end
 
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses', '-v7.3')
+save(fullfile(getenv('SSD'), 'modelling', 'responses', [session '_responses.mat']), 'responses', '-v7.3');
 fprintf('%s: all done getting neural responses :)\n', session)
 

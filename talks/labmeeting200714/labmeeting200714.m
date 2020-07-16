@@ -1,8 +1,11 @@
 %% load cell feature importance
 load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'modelling', 'aggregates.mat'), 'aggregates', 'cellInfo');
 mi = cat(2, aggregates.mi{:})';  % (predictor X cells) matrix of mutual information
-aggregates.aggregate
 
+% % find location of each cell
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
+% [~, inds] = ismember(unique(cellInfo.session, 'stable'), ephysInfo.session);
+% nucleus = ephysInfo.target(inds);
 
 %% plot n best cells per predictor
 
@@ -10,8 +13,13 @@ folder = 'Z:\loco\obstacleData\figures\modelling\cellExamples';
 nBest = 5;
 predictors = aggregates.Properties.RowNames;
 slowPredictors = {'velocity', 'bodyAngle', 'whiskerAngle', 'buttHeight', 'satiation'};
+% nucleiColors = [lines(3); .2 .2 .2]*.8;
+nucleiColors = repmat([.15 .15 .15], 4, 1);
+nuclei = {'fastigial', 'interpositus', 'dentate', ''};
 
-for i = 1:length(predictors)
+
+
+for i = 43:length(predictors)
     [~, sortInds] = sort(mi(i,:), 'descend');
     
     % predictor specific settings
@@ -24,22 +32,28 @@ for i = 1:length(predictors)
         kernelFall = .02;
     end
     
-    try
-        for j = 1:nBest
+    for j = 1:20
+        try
             session = cellInfo{sortInds(j), 'session'}{1};
             unit = cellInfo{sortInds(j), 'unit'};
-            plotPredictorResponse(session, unit, predictors{i}, ... can i really put anything i 
-                'epochLims', epochLims, 'traceLims', traceLims, 'kernelFall', kernelFall)
+            
+            sesNucleus = ephysInfo.target{strcmp(ephysInfo.session, session)};
+            color = nucleiColors(strcmp(nuclei, sesNucleus),:);
+            
+            plotPredictorResponse(session, unit, predictors{i}, ...
+                'epochLims', epochLims, 'traceLims', traceLims, 'kernelFall', kernelFall, ...
+                'color', color)
 
             name = sprintf('%s, session %s, unit %i', predictors{i}, session, unit);
             set(gcf, 'name', name)
+            title(sesNucleus)
             saveas(gcf, fullfile(folder, [name '.png']));
             pause(.1)
+        catch
+            fprintf('%s: problem!\n', predictors{i})
         end
-        close all
-    catch
-        fprintf('%s: problem!\n', predictors{i})
     end
+    close all
 end
 
 %% plot predictors in a nice order
@@ -69,6 +83,7 @@ predictorList = [limb, gross, facial, whisker, reward, visual, auditory, ramps, 
 plotNeuralPredictors(session, 'predictorList', predictorList, 'xLims', xLims)
 
 
+%% mi distribution by nucleus
 
 
 

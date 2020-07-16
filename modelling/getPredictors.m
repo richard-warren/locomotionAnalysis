@@ -10,6 +10,7 @@ s.dt = .002;  % (s) everything interpolated onto new time axis with this tempora
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plotPredictors = true;
+s.visible = 'on';  % whether predictors plot is visible
 
 
 
@@ -191,27 +192,15 @@ end
 
 
 
-
-% -----
-% PLOT!
-% -----
-
-% make nice little plot
-if s.plotPredictors
-    plotNeuralPredictors(session, 'predictors', predictors)
-end
-
-
-
 % ----
 % SAVE
 % ----
-
-dirName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling');
-if ~exist(dirName, 'dir'); mkdir(dirName); end
-save(fullfile(dirName, 'predictors.mat'), 'predictors')
+save(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 if s.plotPredictors
-    saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', sprintf('%s predictors.png', session)));
+    fig = plotNeuralPredictors(session, 'predictors', predictors, 'visible', s.visible);
+    saveas(fig, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', ...
+        sprintf('%s predictors.png', session)));
+    if strcmp(s.visible, 'off'); close(fig); end
 end
 
 

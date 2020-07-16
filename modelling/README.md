@@ -1,30 +1,15 @@
-# lab meeting
-- [ ] *recompute neuralData, featureImportance, figs...*
-- [ ] aggregate neural responses
-- [ ] tracking vid
-- [ ] fix mutual info for small sample sizes...
-- [ ] mods
-  - colored by nucleus
-  - [X] r^2 for continuous
-  - [X] raw traces
-  - [X] line thickness density
-  - [X] xLims for paw stride
-  - [X] limit epoch numbers
-
-
 # todo
-- [X] speed up getNeuralResponses by computing all neurons at once!
-- [ ] move analyses to SSD :)
-- [ ] figure out how to handle missing whisker contact times in model
-- [ ] 180922_0001: look into difference btwn plotPSTH and plotResponses for licks, which look nice in plotPSTH...
-- [ ] recompute all vars and see if still getting nan in included rows in aggregates... if yes, perhaps need to catch these in getNeuralResponses...
-- [ ] get all unit getNeuralResponses at the same time!
+- [ ] *move all analyses to SSD :)*
+- [ ] fix dpkAnalysis
+- [ ] add real PSTH to plotPSTH
+- [ ] cluster cells
+  - [ ] mi by brain region
+  - [ ] how can i cluster predictors?
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
   - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
-  - [ ] use these plots to determine model transformations
-- [ ] write matlab code to handle to experiment conditions (surprise, omission)
+- [ ] build models!
 
 # relevant papers
 - kinematics in cer
@@ -53,6 +38,7 @@
 # predictors
 - [X] continuous
   - [ ] whisker phase
+  - [ ] distance and time to contact
   - [X] wheel velocity
   - [X] paws (lh lf rf rh) (x y z)
   - [X] body angle
@@ -99,6 +85,7 @@
 - how to do these info theoretic 'bits per thing' metrics of utility of dft predictors
 
 # long term todo
+- [ ] figure out how to handle missing whisker contact times in model
 - [ ] i should probably be smoothing vel somehow, e.g. really using the local fitting method
 - [ ] should i mask out phase when not running? also, why do i need to high pass for phase to work??
 - [ ] how to handle nose in old sessions, which is out of view!
@@ -116,6 +103,8 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] write matlab code to handle to experiment conditions (surprise, omission)
+- [X] speed up getNeuralResponses by computing all neurons at once!
 - [X] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
 - [X] percentile limits for epochs
 - [X] check spike width is narrow enough for fast licking
