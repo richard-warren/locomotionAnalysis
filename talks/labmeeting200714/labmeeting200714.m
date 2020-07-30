@@ -1,11 +1,11 @@
 %% load cell feature importance
-load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'modelling', 'aggregates.mat'), 'aggregates', 'cellInfo');
+load(fullfile(getenv('SSD'), 'modelling', 'aggregates', 'aggregates.mat'), 'aggregates', 'cellInfo');
 mi = cat(2, aggregates.mi{:})';  % (predictor X cells) matrix of mutual information
 
 % % find location of each cell
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
-% [~, inds] = ismember(unique(cellInfo.session, 'stable'), ephysInfo.session);
-% nucleus = ephysInfo.target(inds);
+[~, inds] = ismember(unique(cellInfo.session, 'stable'), ephysInfo.session);
+nucleus = ephysInfo.target(inds);
 
 %% plot n best cells per predictor
 
@@ -81,12 +81,4 @@ predictionError = {'paw1LH_contact_dorsal', 'paw1LH_contact_ventral', ...
 
 predictorList = [limb, gross, facial, whisker, reward, visual, auditory, ramps, cutaneous, predictionError];
 plotNeuralPredictors(session, 'predictorList', predictorList, 'xLims', xLims)
-
-
-%% mi distribution by nucleus
-
-
-
-
-
 

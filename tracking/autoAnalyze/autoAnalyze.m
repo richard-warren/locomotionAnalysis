@@ -7,7 +7,8 @@ function autoAnalyze(varargin)
 
 % settings
 s.plotDiagnostics = true;
-s.checkFrequency = 60; % (seconds)
+s.checkFrequency = 60; % (s)
+s.engramPause = 120;  % (s) wait engramPause seconds before analyzing a detected session // ensures session is fully transferred to engram before analysis begins
 
 % initializations
 analyzedFile = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'tracking', 'autoAnalyze', 'analyzedSessions.mat');
@@ -27,7 +28,7 @@ while true
     if ~isempty(newSessions)
         for i = 1:length(newSessions)
             fprintf('\n\n---------%s: deteceted new session---------\n', newSessions{i});
-            pause(120);  % wait to make sure data are fully transfered to engram
+            pause(s.engramPause);  % wait to make sure data are fully transfered to engram
             
             try
                 analyzeSession(newSessions{i}, 'plotDiagnostics', s.plotDiagnostics)

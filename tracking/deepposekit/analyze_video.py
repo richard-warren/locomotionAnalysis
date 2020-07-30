@@ -7,7 +7,9 @@ import os
 
 # parse input arguments
 video, model_name, skeleton, output = sys.argv[1:]
-# video = r'Z:\loco\obstacleData\sessions\200308_000\run_originalDimensions.mp4'
+
+# for debugging
+# video = r'Z:\loco\obstacleData\sessions\200308_000\run.mp4'
 # model_name = r'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5'
 # skeleton = r'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv'
 # output = 'trackedFeatures_run.csv'

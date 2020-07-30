@@ -1,6 +1,5 @@
 # todo
-- [ ] *move all analyses to SSD :)*
-- [ ] fix dpkAnalysis
+- [ ] *fix dpkAnalysis // check merged dpk still works...*
 - [ ] add real PSTH to plotPSTH
 - [ ] cluster cells
   - [ ] mi by brain region
@@ -103,6 +102,7 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] move all analyses to SSD :)
 - [X] write matlab code to handle to experiment conditions (surprise, omission)
 - [X] speed up getNeuralResponses by computing all neurons at once!
 - [X] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
