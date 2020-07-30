@@ -1,3 +1,4 @@
+%% import tiff stack mask files
 mouseID = 'cmu3';
 folder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'TiffStack');
 files = dir(fullfile(folder, '*.tif'));
@@ -125,7 +126,7 @@ view(3)
 title('3D Plot of Traced Features');
 
 
-%% fit a line for the probe 
+%% fit a line for the probe traces
 
 for i = 1:length(probe)
 
@@ -150,7 +151,8 @@ end
 
 
 
-%% For probes with DiI
+%% For probes with DiI, calculate brain surface cross points and PC layer cross points
+%  For probes with DiI, add good channel points 
 
 mouseID = 'cmu3';
 
