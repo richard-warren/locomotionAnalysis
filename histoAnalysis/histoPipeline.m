@@ -10,6 +10,8 @@ includeInt = false;
 includeFastigial = false;
 includePCL_and_BS = true;
 
+saveFiles = false;
+
 % brain regions
 if includeInt
     disp('Reformatting Int...');
@@ -51,7 +53,9 @@ end
 
 
 resultsFolder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'Reconstruction');
-save(fullfile(resultsFolder, 'brain.mat' ));
+if saveFiles
+    save(fullfile(resultsFolder, 'brain.mat' ));
+end
 disp('All Done!');
 
 
