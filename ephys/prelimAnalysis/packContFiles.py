@@ -1,5 +1,6 @@
 import sys
 from importlib import import_module
+print(sys.path)
 OpenEphys = import_module('analysis-tools.Python3.OpenEphys')
 
 # get input arguments

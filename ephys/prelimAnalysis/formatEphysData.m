@@ -112,13 +112,16 @@ end
 
 % get spike times for good units
 [spkInds, unit_ids] = getGoodSpkInds(session);
+[bestChannels, ~] = getBestChannels(session, 'returnPhysicalLayout', true);
 cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
 if ~isequal(cellData.unit_id(:), unit_ids(:)); disp('WARNING! cellData.csv unit_ids do not match those in ephysFolder'); keyboard; end
+if ~isequal(length(unit_ids), length(bestChannels)); disp('WARNING! bestChannels do not match unit_ids'); keyboard; end
 
 
 % restrict to good units
 goodBins = cellData.include==1;
 unit_ids = unit_ids(goodBins);
+bestChannels = bestChannels(goodBins);
 spkInds = spkInds(goodBins);
 cellData = cellData(goodBins,:);
 
@@ -157,7 +160,7 @@ end
 
 settings = s;
 save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'openEphysToSpikeMapping', 'settings')
+     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'bestChannels', 'openEphysToSpikeMapping', 'settings')
 
 
 

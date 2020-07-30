@@ -1,7 +1,6 @@
-function [BS_crossPoint, PC_crossPoint, goodChannelPoint, isStepModulated] = addPointsToProbe(session, LM, BSCoords, offset, shankNum, opts)
+function [BS_crossPoint, PC_crossPoint, goodChannelPoint] = addPointsToProbe(session, LM, BSCoords, shankNum, offset, opts)
 
 
-if ~exist('offset', 'var'); offset = 0; end
 if ~exist('shankNum', 'var'); shankNum = 1; end
 
 % settings
@@ -13,62 +12,52 @@ s.noDiIMode = false;
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
 
 
+disp(['processing ' session ', shank = ' num2str(shankNum)]);
 % get probe mapping file
-disp('getting probe mapping...');
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-mapFile = ephysInfo.map{strcmp(session, ephysInfo.session)};
+ephysHistoInfo = getEphysSessionHistoInfo(session);
 
-load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
-    'xcoords', 'ycoords', 'channelNum_OpenEphys', 'connected');
 
-probeDepth = [];
-for i = 1:length(ycoords)
-    ind = find(channelNum_OpenEphys == i);
-    probeDepth(ind, 1) = ind;
-    probeDepth(ind, 2) = ycoords(i);
+% load ephysChannelsInfo spreadsheet
+warning('off')
+ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysChannelsInfo.xlsx'), 'Sheet', 'EphysChannelsInfo');
+warning('on')
+
+% automatically figure out offset if users didn't assign any values for it
+if ~any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session))) & (~exist('offset', 'var'))
+    offset = 0;
+    disp('offset = 0');
+elseif any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session))) & (~exist('offset', 'var'))
+    offset = unique(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)));
+    disp(['offset = ', num2str(offset)]);
+    if length(offset) ~= 1
+        warning('Multiple offsets detected for the same probe trace! Offset will be temporarily set to 0!')
+        offset = 0;
+    end        
 end
 
-
-% get channel info of the recording session
-disp('getting ephys channel info...');
-
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysChannelsInfo.xlsx'), 'Sheet', 'EphysChannelsInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-
+% get PC channel info of the recording session
 PCShankNum =  ephysChannelsInfo.PCShankNum(strcmp(session, ephysChannelsInfo.session));
 PCProbeDepth = ephysChannelsInfo.PCProbeDepth(strcmp(session, ephysChannelsInfo.session));
 PCChannels = ephysChannelsInfo.PCChannels(strcmp(session, ephysChannelsInfo.session));
 
-GCShankNum = ephysChannelsInfo.GCShankNum(strcmp(session, ephysChannelsInfo.session));
-GCProbeDepth = ephysChannelsInfo.GCProbeDepth(strcmp(session, ephysChannelsInfo.session));
-GCChannels = ephysChannelsInfo.GCChannels(strcmp(session, ephysChannelsInfo.session));
-
-isStepModulated = ephysChannelsInfo.stepModulated(strcmp(session, ephysChannelsInfo.session));
-
-
-% get rid of nans 
 PCShankNum = PCShankNum(~isnan(PCShankNum));
-PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth));
+PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth)); % probeDepth: the manipulator readings at where I see PC signals, indicating the most ventral point of the probe
 PCChannels = PCChannels(~isnan(PCChannels));
-GCShankNum = GCShankNum(~isnan(GCShankNum));
-GCProbeDepth = GCProbeDepth(~isnan(GCProbeDepth));
-GCChannels = GCChannels(~isnan(GCChannels));
-isStepModulated = isStepModulated(~isnan(isStepModulated));
 
-% calculate the actual depth for where I got Perkinje cell signals and for channels that have
-% good signals.
-PCDepth = zeros(size(PCProbeDepth, 1), 1);
-for i = 1:length(PCProbeDepth)
-    PCDepth(i, 1) = PCProbeDepth(i, 1) - probeDepth(PCChannels(i, 1), 2); 
-end
+PCDepth = PCProbeDepth - ephysHistoInfo.channelDepth(PCChannels); % PCDepth: the actual depth of the channels on which I see PC signals 
 
-GCDepth = zeros(size(GCProbeDepth, 1), 1);
-for i = 1:length(GCProbeDepth)
-    GCDepth(i, 1) = GCProbeDepth(i, 1) - probeDepth(GCChannels(i, 1), 2);
+
+
+% get good channels info of the recording session
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');
+if ~exist('bestChannels', 'var')
+    disp('bestChannels not found; format ephysData again to include bestChannels...');
+    formatEphysData(session);
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');   
 end
+GCChannels = bestChannels; clear bestChannels;
+GCShankNum = ephysHistoInfo.shankNum(GCChannels);
+GCDepth = ephysHistoInfo.probeFinalDepth * 1000 - ephysHistoInfo.channelDepth(GCChannels); % GCDepth: the actual depth of the channels on which there are good (single) unit signals after spike sorting
 
 
 % plot brain surface cross point
@@ -89,7 +78,6 @@ if ~s.noDiIMode
     
     
     % coarsely determine the location of the brain surface cross point
-    disp('adding brain surface cross point...');
     MLCoord = avg(1, 1);
     BS_MLCoords = unique(BSCoords(:, 1));
     MLCoord = BS_MLCoords(knnsearch(BS_MLCoords, MLCoord), 1);
@@ -172,10 +160,9 @@ if ~s.noDiIMode; points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2),
 
 % plot PC layer cross points
 if s.showPCPoints
-    disp('plotting PC cross points...');
     PC_inds = find(PCShankNum == shankNum);
-    PCChannels = PCChannels(PC_inds, :);
-    PCDepth = PCDepth(PC_inds, :);
+    PCChannels = PCChannels(PC_inds);
+    PCDepth = PCDepth(PC_inds);
     if dirV(1, 3) < 0; dirV = -dirV; end
      
     PC_crossPoint = nan(length(PCDepth), 3);
@@ -185,34 +172,26 @@ if s.showPCPoints
         plot3(PC_crossPoint(i, 1), PC_crossPoint(i, 2), PC_crossPoint(i, 3), '.r', 'MarkerSize', 30)   
         points = [PC_crossPoint(i, :); BS_crossPoint];
         plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
-    end
-
-    disp('Done');    
+    end  
 end
 
 
 % plot good channel points
-if s.showGCPoints
-    disp('plotting GC points...');
-    
+if s.showGCPoints    
     inds = find(GCShankNum == shankNum);
-    GCChannels = GCChannels(inds, :);
-    GCDepth = GCDepth(inds, :);
-    isStepModulated = isStepModulated(inds, :);
+    GCChannels = GCChannels(inds); 
+    GCDepth = GCDepth(inds);
     
     goodChannelPoint = nan(length(GCDepth), 3);
-    for i = 1:length(GCDepth)
-        
+    for i = 1:length(GCDepth)        
         goodChannelPoint(i, :) = (GCDepth(i) + offset)*dirV + BS_crossPoint;
         hold on
         plot3(goodChannelPoint(i, 1), goodChannelPoint(i, 2), goodChannelPoint(i, 3), '.c', 'Markersize', 30);
         points = [goodChannelPoint(i, :); BS_crossPoint];
         plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
-        
     end    
-    disp('Done');
 end
 
-
+disp('Done');
 
 end

@@ -191,8 +191,7 @@ save(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', 'C858.ma
 %% NeuroCambridge ASSY-H2 (32 channel per shank*2)
 
 channelNum_OpenEphys = [28 26 24 19 21 15 32 30 18 29 31 22 20 23 25 27 1 3 6 8 10 12 14 16 17 13 11 9 7 5 4 2 63 61 60 58 56 54 52 50 47 51 53 55 57 59 62 64 38 40 42 45 43 49 34 36 48 35 33 44 46 41 39 37];  
-channelNum_OpenEphys_shank1 = [28 26 24 19 21 15 32 30 18 29 31 22 20 23 25 27 1 3 6 8 10 12 14 16 17 13 11 9 7 5 4 2 ];
-channelNum_OpenEphys_shank2 = [63 61 60 58 56 54 52 50 47 51 53 55 57 59 62 64 38 40 42 45 43 49 34 36 48 35 33 44 46 41 39 37];
+
 
 % get probe physical layout
 shankSeparation = 250; % The left shank and right shank are separated by 250um.

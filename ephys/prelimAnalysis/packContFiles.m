@@ -3,7 +3,7 @@ function packContFiles(sessions, varargin)
 % wrapper function that calls python pack_2 script
 
 % settings
-s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
+s.pythonPath = 'C:\Anaconda3\envs\phy2\python.exe';
 s.highPassFreq = 0; % 0 to skip highpass
 s.referencing = 'med';  % 'ave' 'med' or 'none'
 s.verbose = false;
@@ -38,8 +38,10 @@ for i = 1:length(sessions)
     % run pack_2
     fprintf('%s: running pack_2... ', sessions{i})
     fileName = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, ephysFolder);
-    commandStr = [s.pythonPath ' ephys\prelimAnalysis\packContFiles.py ', ...
+    pythonFile = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'ephys', 'prelimAnalysis', 'packContFiles.py');
+    commandStr = [s.pythonPath ' ' pythonFile ' ', ...
         fileName ' ' fileNameBase ' ' num2str(fs) ' ' num2str(s.highPassFreq) ' ' s.referencing ' ' connected];
+
     tic; 
     if s.verbose
         system(commandStr);

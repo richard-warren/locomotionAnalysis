@@ -7,7 +7,7 @@ function showChannelsOverTime(session, varargin)
 
 % settings
 s.yLims = [-500 500];             % (microvolts)
-s.timeBinNum = 4;                 % number of time periods to show
+s.timeBinNum = 5;                 % number of time periods to show
 s.showSortedSpikes = false;       % whether to overlay sorted spikes
 s.windowSize = 2.0/s.timeBinNum;  % (s) width of each time window
 s.spkWindow = [-.5 1];            % (ms) pre and post spike time to plot for spike overlays
@@ -25,7 +25,7 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [info.ma
 % transfer the openephys channel order into its physical location order on the probe
 % in order to determine the spacing offset for every channel for the drift plots.
 [~, sortedInds] = sort(channelNum_OpenEphys);
-sortedInds = length(channelNum_OpenEphys) - sortedInds + 1;  % dorsal at the top, ventral at the bottom
+% sortedInds = length(channelNum_OpenEphys) - sortedInds + 1;  % dorsal at the top, ventral at the bottom
 
 if s.showSortedSpikes
     [spkInds, unit_ids] = getGoodSpkInds(session);
@@ -63,14 +63,14 @@ end
 
 % plot traces
 timesSub = linspace(0, s.windowSize, s.windowSize*info.fs); % xlim for plotting the traces
-offsets = sortedInds*(range(s.yLims)); % set offsets for every channel based on its physical location on the probe
+offsets = (info.channelNum - sortedInds + 1)*range(s.yLims); % set offsets for every channel based on its physical location on the probe
 for i = 1:info.channelNum
     for j = 1:length(timeStarts)
         subplot(1,length(timeStarts),j); hold on
         if s.showSortedSpikes; color=[.5 .5 .5]; else; color=colors(i,:); end        
         plot(timesSub, squeeze(traces(i,j,:)) + offsets(i), 'Color', color);
         if connected(i); color='black'; else; color='red'; end
-        text(timesSub(1), offsets(i), ['(' num2str(i-1) ')' num2str(65 - offsets(i)/1000)], 'Color', color)
+        text(timesSub(1), offsets(i), ['(' num2str(i) ')' num2str(sortedInds(i))], 'Color', color)
     end
 end
 
