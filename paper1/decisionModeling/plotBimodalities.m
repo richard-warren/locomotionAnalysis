@@ -1,4 +1,4 @@
-function [likelihoodRatios, distributions] = plotBimodalities(flat, varargin)
+function [bimodalities, distributions] = plotBimodalities(flat, varargin)
 
 % plots log likelihood ratios for one and two component GMMs on the landing
 % position of the paw relative to the obstacle // higher numbers mean the
@@ -82,7 +82,7 @@ end
 
 % compute log likelihood ratios
 args = {'Replicates', 1, 'RegularizationValue', 1e-6, 'options', statset('MaxIter', 1000)};
-likelihoodRatios = nan(cNum, 2, length(mice));  % (control dist vs dist) X (condition) X (shuffled vs. non-shuffled) X (mice)
+bimodalities = nan(cNum, 2, length(mice));  % (control dist vs dist) X (condition) X (shuffled vs. non-shuffled) X (mice)
 
 for i = 1:length(mice)
     mouseBins = strcmp(flat.mouse, mice{i});
@@ -92,18 +92,27 @@ for i = 1:length(mice)
         conditionBins = condition==j;
         bins = mouseBins & conditionBins;
         
+        ctl = flat.modPawPredictedDistanceToObs(bins);
+        mod = flat.modPawDistanceToObs(bins);
+%         ctl = flat.preModPawDeltaLength(bins);
+%         mod = flat.modPawDeltaLength(bins);
+                
         % fit one and two component gmms for control and mod steps
-        ctl1 = fitgmdist(flat.modPawPredictedDistanceToObs(bins), 1, args{:});
-        ctl2 = fitgmdist(flat.modPawPredictedDistanceToObs(bins), 2, args{:});
-        mod1 = fitgmdist(flat.modPawDistanceToObs(bins), 1, args{:});
-        mod2 = fitgmdist(flat.modPawDistanceToObs(bins), 2, args{:});
+        ctl1 = fitgmdist(ctl, 1, args{:});
+        ctl2 = fitgmdist(ctl, 2, args{:});
+        mod1 = fitgmdist(mod, 1, args{:});
+        mod2 = fitgmdist(mod, 2, args{:});
         
         if ~s.bic
+            % log likelihood ratios (LR)
             ctlLR =  ctl1.NegativeLogLikelihood - ctl2.NegativeLogLikelihood;
             modLR =  mod1.NegativeLogLikelihood - mod2.NegativeLogLikelihood;
-            likelihoodRatios(j,:,i) = [ctlLR, modLR];
+            bimodalities(j,:,i) = [ctlLR, modLR];
         else
-            keyboard
+            % bayesian information criterion differences (BD)
+            ctlBD = ctl1.BIC - ctl2.BIC;
+            modBD = mod1.BIC - mod2.BIC;
+            bimodalities(j,:,i) = [ctlBD, modBD];
         end
     end
 end
@@ -112,7 +121,7 @@ end
 
 % plot
 figure('position', [200 703.00 300 255.00], 'color', 'white', 'menubar', 'none')
-barFancy(likelihoodRatios, 'ylabel', 'bimodality', 'levelNames', {s.levels}, ...
+barFancy(bimodalities, 'ylabel', 'bimodality', 'levelNames', {s.levels}, ...
     'colors', repelem(s.colors,2,1) .* repmat([.25;1],length(s.levels),1), s.barProps{:})
 if ~isempty(s.saveLocation); saveas(gcf, s.saveLocation, 'svg'); end
 
