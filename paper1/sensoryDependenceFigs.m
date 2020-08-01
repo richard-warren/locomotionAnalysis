@@ -9,7 +9,7 @@ mice = unique(sessionInfo.mouse);
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-fprintf('saving...'); save(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
+fprintf('saving...'); save(fullfile(getenv('SSD'), 'paper1', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
 
 
 
@@ -275,15 +275,12 @@ flat = flattenData(data, ...
 %% set no whisker contact positions to constant...
 
 noWiskBins = ismember({flat.sensoryCondition}, {'L', '-'});
-% medContactPosition = nanmedian([flat(~noWiskBins).wiskContactPosition]);
-% [flat(noWiskBins).wiskContactPosition] = deal(medContactPosition);
-
-close all; figure; hold on
-histogram([flat(noWiskBins).wiskContactPosition])
-histogram([flat(~noWiskBins).wiskContactPosition])
-%%
 xy = rmmissing([[flat(~noWiskBins).trialVel]', [flat(~noWiskBins).wiskContactPosition]']);
 corr(xy(:,1), xy(:,2))
+
+figure;
+histogram([flat(noWiskBins).wiskContactPosition]); hold on;
+histogram([flat(~noWiskBins).wiskContactPosition]); 
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
@@ -323,7 +320,7 @@ plotPredictors(flat, [m.predictors {'modPawPredictedDistanceToObs'}], 'isModPawL
 
 %% bimodality
 plotBimodalities(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
-    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', sensColors, 'xLims', [-20 15], 'normalize', 'col', ...
     'subplotDims', [4 1], 'barProps', [barProperties, 'yLim', [0 300], 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceBimodality'));

@@ -116,7 +116,8 @@ for j = 1:length(obsOnTimes)
     % get kinematic data for trial
     try
         % determine whether left and right forepaws are in swing at obsPos moment
-        contactInd = find(trialTimes==wiskContactTimes(j)); % ind within trial at which contact occurs
+        contactInd = knnsearch(trialTimes, wiskContactTimes(j)); % ind within trial at which contact occurs
+        if isnan(wiskContactTimes(j)); contactInd = nan; end  % this is a hack to account for the fact that knnsearch returns 1 for nan values... this assignment will throw an error for the trial, which is the desired behavior
         isSwinging = ~isnan(trialModStepIds);
         isLeftSwingAtContact = isSwinging(contactInd,2);
         isRightSwingAtContact = isSwinging(contactInd,3);

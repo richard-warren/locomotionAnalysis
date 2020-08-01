@@ -12,6 +12,7 @@ Scripts in this folder can be used to create the figures for the first paper.
 
 ## todo
 - [X] plotBimodalities
+- [ ] *recompute no whisker sessions: analyzeSession, genKinData, get ExperimentData*
 - [ ] decide on interpretation of light on predictability
   - can i assess decision when no whiskers?
 - [ ] clamp whisker contact position for no whiskers conditions?

@@ -9,6 +9,7 @@ s.condition = '';  % name of field in 'data' that contains different experimenta
 s.levels = {''};  % levels of s.condition to plot
 s.colors = [];
 s.poolMice = false;  % whether to pool distributions across all mice
+s.bic = true;  % if true, compute BIC difference instead of log likelihood ratio
 
 s.successOnly = false;  % whether to only include successful trials
 s.modPawOnlySwing = false;  % if true, only include trials where the modified paw is the only one in swing
@@ -97,9 +98,13 @@ for i = 1:length(mice)
         mod1 = fitgmdist(flat.modPawDistanceToObs(bins), 1, args{:});
         mod2 = fitgmdist(flat.modPawDistanceToObs(bins), 2, args{:});
         
-        ctlLR =  ctl1.NegativeLogLikelihood - ctl2.NegativeLogLikelihood;
-        modLR =  mod1.NegativeLogLikelihood - mod2.NegativeLogLikelihood;
-        likelihoodRatios(j,:,i) = [ctlLR, modLR];
+        if ~s.bic
+            ctlLR =  ctl1.NegativeLogLikelihood - ctl2.NegativeLogLikelihood;
+            modLR =  mod1.NegativeLogLikelihood - mod2.NegativeLogLikelihood;
+            likelihoodRatios(j,:,i) = [ctlLR, modLR];
+        else
+            keyboard
+        end
     end
 end
 

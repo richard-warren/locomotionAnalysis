@@ -21,6 +21,8 @@ function analyzeSession(session, varargin)
     s.rerunWiskNetwork = false;
     s.rerunWiskContactNetwork = false;
     s.rerunPawContactNetwork = false;
+    
+    s.noWiskExperiments = {'senLesionNotes', 'sensoryDependenceNotes'};
 
     % rig characteristics
     s.whEncoderSteps = 2880; % 720cpr * 4t
@@ -45,7 +47,6 @@ function analyzeSession(session, varargin)
     end
     computedVars = fieldnames(data);
 
-
     
     
     % run tracking
@@ -56,19 +57,17 @@ function analyzeSession(session, varargin)
             'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_run.csv', ...
             'output', 'trackedFeaturesRaw.csv')
     end
+     
     
-    
-    
-    
-    % face tracking
-    if (~exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file') || s.rerunWiskNetwork) && isWiskVid
-        dpkAnalysis(session, 'verbose', s.superVerbose, ...
-            'vid', 'runWisk.mp4', ...
-            'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk_StackedDenseNet.h5', ...
-            'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv', ...
-            'output', 'trackedFeaturesRaw_wisk.csv')
-    end
-    
+   
+%     % face tracking
+%     if (~exist(fullfile(sessionDir, 'trackedFeaturesRaw_wisk.csv'), 'file') || s.rerunWiskNetwork) && isWiskVid
+%         dpkAnalysis(session, 'verbose', s.superVerbose, ...
+%             'vid', 'runWisk.mp4', ...
+%             'model', 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_wisk_StackedDenseNet.h5', ...
+%             'skeleton', 'D:\github\locomotionAnalysis\tracking\label\training_sets\skeleton_wisk.csv', ...
+%             'output', 'trackedFeaturesRaw_wisk.csv')
+%     end
     
     
     
@@ -161,7 +160,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % led indices (run camera)
     if analyzeVar('ledInds') && isRunVid && isWiskVid
         
@@ -184,7 +182,6 @@ function analyzeSession(session, varargin)
         
         saveVars('ledInds', ledInds)
     end
-    
     
     
     
@@ -214,7 +211,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % decode obstacle position (based on obstacle track rotary encoder)
     if analyzeVar('obsPositions', 'obsTimes')
         
@@ -232,7 +228,6 @@ function analyzeSession(session, varargin)
         
         saveVars('obsPositions', obsPositions, 'obsTimes', obsTimes, 'targetFs', s.targetFs);
     end
-
 
 
 
@@ -267,7 +262,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % compute whether each trial had a wheel break or not
     if analyzeVar('isWheelBreak')
         
@@ -281,7 +275,6 @@ function analyzeSession(session, varargin)
         
         saveVars('isWheelBreak', isWheelBreak);
     end
-    
     
     
     
@@ -339,7 +332,6 @@ function analyzeSession(session, varargin)
     end
     
 
-
     
     % get obstacle light on and off times
     % (ensuring that first event is obs turning ON and last is obs turning OFF)
@@ -387,7 +379,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % determine whether light was on or off for every trial
     if analyzeVar('isLightOn')
         
@@ -407,7 +398,6 @@ function analyzeSession(session, varargin)
 
         saveVars('isLightOn', isLightOn)
     end
-
 
 
 
@@ -434,7 +424,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % get wisk frame timeStamps
     if analyzeVar('frameTimeStampsWisk') && exist(fullfile(sessionDir, 'wisk.csv'), 'file')
             
@@ -455,7 +444,6 @@ function analyzeSession(session, varargin)
 
         saveVars('frameTimeStampsWisk', frameTimeStampsWisk)
     end
-    
     
     
     
@@ -517,7 +505,6 @@ function analyzeSession(session, varargin)
 
 
 
-
     % get webCam timeStamps if webCam data exist
     if analyzeVar('webCamTimeStamps') && ...
             exist(fullfile(sessionDir, 'webCam.csv'), 'file') &&...
@@ -552,7 +539,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % get nose position
     if analyzeVar('nosePos') && exist(fullfile(sessionDir, 'trackedFeaturesRaw.csv'), 'file')
 
@@ -564,7 +550,6 @@ function analyzeSession(session, varargin)
 
         saveVars('nosePos', [noseBotX noseBotY])
     end
-    
     
     
     
@@ -625,7 +610,7 @@ function analyzeSession(session, varargin)
             end
         end
         
-        % compute obsPositionsFixed, which is realigned st 0 corresponds to the position at which obsetacle is beneath the nose
+        % compute obsPositionsFixed, which is realigned st 0 corresponds to the position at which obstacle is beneath the nose
         obsPositionsFixed = fixObsPositions(data.obsPositions, data.obsTimes, obsPixPositions, ...
             data.frameTimeStamps, data.obsOnTimes, data.obsOffTimes, data.nosePos(1));
         
@@ -639,7 +624,6 @@ function analyzeSession(session, varargin)
                  'pixelsPerM', pixelsPerM, ...
                  'obsPositionsFixed', obsPositionsFixed);
     end
-    
     
     
     
@@ -667,7 +651,6 @@ function analyzeSession(session, varargin)
         
         saveVars('wheelCenter', wheelCenter, 'wheelRadius', wheelRadius);
     end
-    
     
     
     
@@ -700,7 +683,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % get height of obs for each trial
     if analyzeVar('obsHeights') && ~isempty(data.obsOnTimes) && isRunVid
         
@@ -729,7 +711,6 @@ function analyzeSession(session, varargin)
         
         saveVars('obsHeights', obsHeights)
     end
-    
     
     
     
@@ -832,7 +813,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % run whisker contact network
     if analyzeVar('wiskContactFrames', 'wiskContactFramesConfidences', 'wiskContactPositions', 'wiskContactTimes') && ...
             ~isempty(data.obsOnTimes) && ...
@@ -853,8 +833,7 @@ function analyzeSession(session, varargin)
         wiskContactData = readtable(fullfile(sessionDir, 'whiskerAnalyzed.csv'));
         
         % extract contact positions and times
-        contactTimes = nan(1,length(data.obsOnTimes));
-        contactPositions = nan(1,length(data.obsOnTimes));
+        [contactTimes, contactPositions] = deal(nan(1,length(data.obsOnTimes)));
         
         % set to nan -1 contact frames
         notFoundBins = wiskContactData.framenum==-1;
@@ -871,9 +850,92 @@ function analyzeSession(session, varargin)
                 end
             end
         end
+        wiskContactFrames = wiskContactData.framenum;
+        
+        % overwrite tracking for no whisker sessions
+        % (checks if whiskers were trimmed by looking in experimentMetaData
+        % spreadsheets // if yes, computes linear model relateing speed and
+        % contact position from whisker sessions for same mouse, and uses
+        % model to generate pseudo-contact positions for this mouse)
+        
+        for i = 1:length(s.noWiskExperiments)
+            expData = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetaData.xlsx'), ...
+                'Sheet', s.noWiskExperiments{i});
+            noWiskBins = strcmp(expData.whiskers, 'none');
+            sesBin = strcmp(expData.session, session);
+            
+            if any(sesBin & noWiskBins)  % if this is a no whisker session in this experiment
+                fprintf('%s: WARNING - no whisker session detected // using velocity instead of neural net to predict contact positions\n', session)
+                
+                % store these for subsequent sanity checking - the new results should be in the same ballpark
+                contactTimesOld = contactTimes;
+                contactPositionsOld = contactPositions;
+                wiskContactFramesOld = wiskContactFrames;
+                contactTimes = nan(1,length(data.obsOnTimes));
+                
+                % collect velocity and whisker contact positions for whisker sessions
+                mouseBins = strcmp(expData.mouse, expData.mouse(sesBin));
+                wiskInds = find(mouseBins & ~noWiskBins)';
+                [oldTrialVels, oldContactPositions] = deal(cell(1,length(wiskInds )));
+
+                for j = 1:length(wiskInds)
+                    oldSes = load(fullfile(getenv('OBSDATADIR'), 'sessions', expData.session{wiskInds (j)}, 'runAnalyzed.mat'), ...
+                        'obsOnTimes', 'obsOffTimes', 'wheelPositions', 'wheelTimes', 'wiskContactPositions');
+
+                    % trial vels
+                    dt = oldSes.obsOffTimes - oldSes.obsOnTimes;
+                    dp = diff(interp1(oldSes.wheelTimes, oldSes.wheelPositions, [oldSes.obsOnTimes oldSes.obsOffTimes]), 1, 2);
+                    oldTrialVels{j} = dp ./ dt;
+
+                    % whisker contact positions
+                    try
+                    oldContactPositions{j} = oldSes.wiskContactPositions;
+                    catch; keyboard; end
+                end
+
+                % fit linear model
+                oldTrialVels = cat(1, oldTrialVels{:})';
+                oldContactPositions = cat(2, oldContactPositions{:});
+                xy = rmmissing([oldTrialVels', oldContactPositions']);
+                model = polyfit(xy(:,1), xy(:,2), 1);
+                
+                % compute contact positions using model
+                dt = data.obsOffTimes - data.obsOnTimes;
+                dp = diff(interp1(data.wheelTimes, data.wheelPositions, [data.obsOnTimes data.obsOffTimes]), 1, 2);
+                vels = dp ./ dt;
+                contactPositions = polyval(model, vels);
+                
+                % find corresponding times
+                for j = 1:length(data.obsOnTimes)
+                    contactInd = find(data.obsPositionsFixed>=contactPositions(j) & ...
+                        data.obsTimes>data.obsOnTimes(j) & data.obsTimes<data.obsOffTimes(j), 1, 'first');
+                    if ~isempty(contactInd)
+                        contactTimes(j) = data.obsTimes(contactInd);
+                    else
+                        contactPositions(j) = nan;
+                    end
+                end
+                
+                % find corresponding frameNums
+                wiskContactFrames = knnsearch(data.frameTimeStampsWisk, contactTimes');
+                wiskContactFrames(isnan(contactTimes)) = nan;  % knnsearch returns 1 index for nan values otherwise... super annoying
+                
+                % plot analysis summary
+                timeDiff = nanmean(abs(contactTimesOld - contactTimes));  % MAE between velocity model and neural net contact times
+                figure('color', 'white', 'menubar', 'none', 'name', ...
+                    sprintf('%s: no-whisker contact predictions, mean time diff %.3f', session, timeDiff)); hold on
+                args = {20, 'filled', 'MarkerFaceAlpha', .6};
+                scatter(oldTrialVels, oldContactPositions, args{:})  % whisker sessions
+                scatter(vels, contactPositions, args{:})  % model predictions
+                scatter(vels, contactPositionsOld, args{:})  % neural network predictions
+                xlabel('velocity (m/s)'); ylabel('contact position (m)')
+                legend({'whisker session', 'velocity predictions', 'neural net predictions'})
+                pause(.01)
+            end
+        end
         
         % todo: check for invalid contact positions here?
-        saveVars('wiskContactFrames', wiskContactData.framenum, ...
+        saveVars('wiskContactFrames', wiskContactFrames, ...
                  'wiskContactFramesConfidences', wiskContactData.confidence, ...
                  'wiskContactTimes', contactTimes, ...
                  'wiskContactPositions', contactPositions);
@@ -886,7 +948,6 @@ function analyzeSession(session, varargin)
     
     
     
-    
     % save results
     if anythingAnalyzed
         save(fullfile(sessionDir, 'runAnalyzed.mat'), '-struct', 'data')
@@ -894,7 +955,6 @@ function analyzeSession(session, varargin)
     else
         fprintf('%s: no new variables computed\n', session)
     end
-    
     
     
     
