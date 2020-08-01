@@ -16,7 +16,7 @@ Analyzing a session requires running four neural networks (run tracking, run con
 - the old version of the deeplabcut analysis (for run tracking only) can be run using the `dlcAnalysis(session) `wrapper
 
 #### finish your PhD
-tbd
+tbd 😕
 
 # what is in...
 

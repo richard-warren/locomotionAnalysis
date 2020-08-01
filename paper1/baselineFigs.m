@@ -10,8 +10,7 @@ data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
 %% load experiment data
-% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
-fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')  % temp, for working from home
+fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 % global settings
 global_config;  % initialize global settings

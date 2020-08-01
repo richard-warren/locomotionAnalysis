@@ -14,8 +14,7 @@ fprintf('saving...'); save(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'se
 
 
 %% load experiment data
-% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!')
-fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
+fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
 
 % global settings
 global_config;
@@ -271,7 +270,20 @@ saveas(gcf, file, 'svg');
 flat = flattenData(data, ...
     [m.predictors, {'mouse', 'modSwingContacts', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
     'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', ...
-    'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modPawXVel', 'modPawZVel'}]);
+    'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modPawXVel', 'modPawZVel', 'trialVel'}]);
+
+%% set no whisker contact positions to constant...
+
+noWiskBins = ismember({flat.sensoryCondition}, {'L', '-'});
+% medContactPosition = nanmedian([flat(~noWiskBins).wiskContactPosition]);
+% [flat(noWiskBins).wiskContactPosition] = deal(medContactPosition);
+
+close all; figure; hold on
+histogram([flat(noWiskBins).wiskContactPosition])
+histogram([flat(~noWiskBins).wiskContactPosition])
+%%
+xy = rmmissing([[flat(~noWiskBins).trialVel]', [flat(~noWiskBins).wiskContactPosition]']);
+corr(xy(:,1), xy(:,2))
 
 %% heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
@@ -288,11 +300,13 @@ plotDecisionTrials(flat, 'condition', 'sensoryCondition', 'levels', vars.sensory
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDecisionKin'));
 
 %% model accuracies
+close all
 [~,~,temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'weightClasses', true, ...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', sensColors, 'barProps', [barProperties, 'YLim', [.2 1], 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], 'kFolds', 10, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+    'colors', sensColors, 'barProps', [barProperties, 'YLim', [.2 1], 'comparisons', [2 4; 2 6; 2 8; 4 10], 'test', 'ttest'], 'kFolds', 10, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'), ...
+    'modelTransfers', [3 2]);
 
 %% landing position entropy
 plotEntropies(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
@@ -306,6 +320,13 @@ plotPredictors(flat, [m.predictors {'modPawPredictedDistanceToObs'}], 'isModPawL
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'mouseAlpha', .4);
+
+%% bimodality
+plotBimodalities(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'avgMice', false, 'plotMice', false, 'colors', sensColors, 'xLims', [-20 15], 'normalize', 'col', ...
+    'subplotDims', [4 1], 'barProps', [barProperties, 'yLim', [0 300], 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceBimodality'));
 
 %% (temp, plot model coefficients)
 
