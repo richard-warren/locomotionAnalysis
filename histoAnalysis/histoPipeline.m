@@ -1,17 +1,17 @@
 %% import tiff stack mask files
-mouseID = 'cmu3';
+mouseID = 'cer18';
 folder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'TiffStack');
 files = dir(fullfile(folder, '*.tif'));
 
 downsampleRate = 0.3;
 thickness = 50;
 
-includeDentate = false;
-includeInt = false;
-includeFastigial = false;
+includeDentate = true;
+includeInt = true;
+includeFastigial = true;
 includePCL_and_BS = true;
 
-saveFiles = false;
+saveFiles = true;
 
 % brain regions
 if includeInt
@@ -48,8 +48,9 @@ probeFiles = files(contains({files.name}, 'Probe'));
 probe = struct();
 
 for i = 1:length(probeFiles)
-    probe(i).name = probeFiles(i).name;
-    probe(i).coords = importTiffStack(fullfile(folder, probeFiles(i).name), downsampleRate, thickness);      
+    probe(i).name = probeFiles(i).name(1:end-4);
+    probe(i).coords = importTiffStack(fullfile(folder, probeFiles(i).name), downsampleRate, thickness);   
+    probe(i).isDiI = 1;
 end
 
 
@@ -62,13 +63,13 @@ disp('All Done!');
 
 
 %% Plot brain regions + probe traces
-mouseID = 'cmu3';
+mouseID = 'cer18';
 resultsFolder = fullfile('Z:\obstacleData\histology', mouseID, 'Reconstruction');
 load(fullfile(resultsFolder, 'brain.mat'))
 
 figure('Color', 'white', 'position', get(0,'ScreenSize'));
 
-showDentate = false;
+showDentate = true;
 showInt = true;
 showFastigial = true;
 showPCL_and_BS = true;
@@ -128,33 +129,34 @@ title('3D Plot of Traced Features');
 
 %% fit a line for the probe traces
 
-for i = 1:length(probe)
+diI_inds = find([probe.isDiI]); 
+for i = 1:length(diI_inds)
 
-    probe(i).LM = LinearFit(probe(i).coords);
+    probe(diI_inds(i)).LM = LinearFit(probe(diI_inds(i)).coords);
     
-    if contains(probe(i).name, 'ProbeLeft')
-        probe(i).side = 'left';
+    if contains(probe(diI_inds(i)).name, 'ProbeLeft')
+        probe(diI_inds(i)).side = 'left';
     else
-        probe(i).side = 'right';    
+        probe(diI_inds(i)).side = 'right';    
     end
     
-    switch probe(i).name(end-4)
+    switch probe(diI_inds(i)).name(end)
         case 'L'
-            probe(i).shankNum = 1;
+            probe(diI_inds(i)).shankNum = 1;
         case 'R'
-            probe(i).shankNum = 2;
+            probe(diI_inds(i)).shankNum = 2;
         case 'M'
-            probe(i).shankNum = 3;
+            probe(diI_inds(i)).shankNum = 3;
     end
     
 end
 
 
 
-%% For probes with DiI, calculate brain surface cross points and PC layer cross points
+%% AddPoints: For probes with DiI, calculate brain surface cross points and PC layer cross points
 %  For probes with DiI, add good channel points 
 
-mouseID = 'cmu3';
+mouseID = 'cer18';
 
 disp('getting sessions for this mouse...');
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
@@ -165,23 +167,128 @@ mouse.sessions = {ephysInfo.session{strcmp(mouseID, ephysInfo.mouse) & (ephysInf
 mouse.DiINotes = {ephysInfo.DiINotes{strcmp(mouseID, ephysInfo.mouse) & (ephysInfo.DiI == 1)}};
 
 % find session number associated with each probe traces
-for i = 1:length(probe)
-    probe(i).session = mouse.sessions{contains(mouse.DiINotes, probe(i).name(1:end-5))}; 
+for i = 1:length(diI_inds)
+    probe(diI_inds(i)).session = mouse.sessions{contains(mouse.DiINotes, probe(diI_inds(i)).name(1:end-1))}; 
 end
 
 % plot BS_crossPoints, GC_crossPoints and good channels on the 3D map
 % temporarily use 
-for i = 1:length(probe)
+for i = 1:length(diI_inds)
     
-    if strcmp(probe(i).side, 'left')
-        [probe(i).BS_crossPoints, probe(i).PC_crossPoints, probe(i).GC_points] = ...
-            addPointsToProbe(probe(i).session, probe(i).LM, brain.LBSCoords, probe(i).shankNum);
-    elseif strcmp(probe(i).side, 'right')
-        [probe(i).BS_crossPoints, probe(i).PC_crossPoints, probe(i).GC_points] = ...
-            addPointsToProbe(probe(i).session, probe(i).LM, brain.RBSCoords, probe(i).shankNum);
+    if strcmp(probe(diI_inds(i)).side, 'left')
+        [probe(diI_inds(i)).BS_crossPoints, probe(diI_inds(i)).PC_crossPoints, probe(diI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(diI_inds(i)).session, probe(diI_inds(i)).LM, brain.LBSCoords, probe(diI_inds(i)).shankNum);
+    elseif strcmp(probe(diI_inds(i)).side, 'right')
+        [probe(diI_inds(i)).BS_crossPoints, probe(diI_inds(i)).PC_crossPoints, probe(diI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(diI_inds(i)).session, probe(diI_inds(i)).LM, brain.RBSCoords, probe(diI_inds(i)).shankNum);
     end
 
 end
+
+
+
+%% for no dii tracks, building linear models for locating the entry points
+
+% ------------------------- settings -------------------------------------
+% HistoCoords DiI (get from probe structure)
+temp = struct2table(probe(logical([probe.isDiI])));
+histoPoints = table(temp.name, temp.BS_crossPoints(:, 1:2), 'VariableNames', {'HistoProbeNames', 'HistoCoords'}); 
+
+% ManipulatorCoords (get from ephysInfo spreadsheet)
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
+warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+
+ManipuProbeNames = ephysInfo.DiINotes((strcmp(mouseID, ephysInfo.mouse)));
+ManipuCoords = [ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse))), ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)))];
+manipuPoints = table(ManipuProbeNames, ManipuCoords, 'VariableNames', {'ManipuProbeNames', 'ManipuCoords'});
+
+% Please review and modify these coordinates manually!
+
+
+% --------------------------- processing ----------------------------------
+% plot to verify the histo info
+noDiI_inds = contains(manipuPoints.ManipuProbeNames, 'noDiI');
+diI_inds = contains(manipuPoints.ManipuProbeNames, 'Probe');
+
+figure;
+plot(manipuPoints.ManipuCoords(diI_inds, 1), manipuPoints.ManipuCoords(diI_inds, 2), '.r', 'MarkerSize', 10);
+hold on
+plot(manipuPoints.ManipuCoords(noDiI_inds, 1), manipuPoints.ManipuCoords(noDiI_inds, 2), '.m', 'MarkerSize', 10);
+plot(histoPoints.HistoCoords(:, 1), histoPoints.HistoCoords(:, 2), '.b', 'MarkerSize', 20);
+
+mdlML_test = fitlm(manipuPoints.ManipuCoords(diI_inds, 1)*1000, histoPoints.HistoCoords(:, 1))
+mdlAP_test = fitlm(manipuPoints.ManipuCoords(diI_inds, 2)*1000, histoPoints.HistoCoords(:, 2))
+
+% fit the LM
+fittedML_nodii = predict(mdlML_test, manipuPoints.ManipuCoords(noDiI_inds, 1)*1000);
+fittedAP_nodii = predict(mdlAP_test, manipuPoints.ManipuCoords(noDiI_inds, 2)*1000);
+
+% plot the fitted entry points for ni dii tracks
+hold on
+plot(fittedML_nodii, fittedAP_nodii, '.', 'MarkerSize', 20, 'Color', [1 0.74 0.35])
+legend('manipulator coordinates (DiI)', 'manipulator coordinates (noDiI)', 'histo points (DiI)', 'predicted no DiI points');
+
+%% for ni dii tracks, reconstructing no-dii probe traces in 3d view
+
+dirV = nan(sum([probe.isDiI]), 3);
+diI_inds = find([probe.isDiI]);
+for i = 1:length(dirV)
+    dirV(i, :) = probe(diI_inds(i)).LM.dirVect;
+end
+nodiiLM.dirV = mean(dirV);
+
+noDiI_inds = find(contains(manipuPoints.ManipuProbeNames, 'noDiI'));
+L = sum([probe.isDiI]);
+for i = 1:length(noDiI_inds)
+    tempName = char(manipuPoints.ManipuProbeNames(noDiI_inds(i)));
+    probe(L+i).name = tempName;
+    probe(L+i).session = ephysInfo.session{contains(ephysInfo.DiINotes, tempName(1:end-1)) & strcmp(ephysInfo.mouse, mouseID)};
+    probe(L+i).side = ephysInfo.side{contains(ephysInfo.DiINotes, tempName(1:end-1))};
+    probe(L+i).isDiI = 0;
+    probe(L+i).coords = nan;
+    probe(L+i).PC_crossPoints = [];
+    probe(L+i).GC_points = [];
+    
+    tempLM = struct();
+    tempLM.BS_crossPoints = [fittedML_nodii(noDiI_inds(i)), fittedAP_nodii(noDiI_inds(i))];
+    tempLM.dirV = mean(dirV);
+    probe(L+i).LM = tempLM;
+    
+    
+    switch tempName(end)
+        case 'L'
+            probe(L+i).shankNum = 1;
+        case 'R'
+            probe(L+i).shankNum = 2;
+        case 'M'
+            probe(L+i).shankNum = 3;
+    end
+    
+   
+end
+
+noDiI_inds = find([probe.isDiI] == 0);
+for i = 1:length(noDiI_inds)
+    
+    if strcmp(probe(noDiI_inds(i)).side, 'right')
+        [probe(noDiI_inds(i)).BS_crossPoints, probe(noDiI_inds(i)).PC_crossPoints, probe(noDiI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(noDiI_inds(i)).session, probe(noDiI_inds(i)).LM, brain.RBSCoords, probe(noDiI_inds(i)).shankNum,...
+            0, {'noDiIMode', true, 'showGCPoints', false});
+    elseif strcmp(probe(noDiI_inds(i)).side, 'left')
+         [probe(noDiI_inds(i)).BS_crossPoints, probe(noDiI_inds(i)).PC_crossPoints, probe(noDiI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(noDiI_inds(i)).session, probe(noDiI_inds(i)).LM, brain.LBSCoords, probe(noDiI_inds(i)).shankNum,...
+            0, {'noDiIMode', true, 'showGCPoints', false});       
+    end
+    
+end
+
+saveFiles = true;
+resultsFolder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'Reconstruction');
+if saveFiles
+    save(fullfile(resultsFolder, 'probe.mat' ));
+end
+disp('All Done!');
 
 
 %% Save data to ephysHistoData
@@ -196,7 +303,6 @@ warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysChannelsInfo.xlsx'), 'Sheet', 'EphysChannelsInfo');
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 
-shankNum = max(ephysChannelsInfo.PCShankNum(strcmp(mouseID, ephysChannelsInfo.mouse)));
 sessions = ephysInfo.session((strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) & (ephysInfo.include == 1));
 
 
@@ -255,155 +361,6 @@ else
         save(fileName, 'ephysHistoData');
     end    
 end
-
-%% for no dii tracks, building linear models for locating the entry points
-
-histoCoords = [BS_crossPoint_right1; BS_crossPoint_left1; BS_crossPoint_left2];
-histoCoords = [histoCoords(:, 1) histoCoords(:, 2)];
-% BS_crossPoint_left1L; BS_crossPoint_left1M; BS_crossPoint_left1R; 
-
-
-mouseID = 'cer10';
-
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-
-diiMLCoords = ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) );
-diiAPCoords = ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) );
-
-nodiiMLCoords = ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) );
-nodiiAPCoords = ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) );
-
-% enter these info manually!!
-manipuCoords = [diiMLCoords, diiAPCoords];
-manipuCoords_noDiI = [nodiiMLCoords, nodiiAPCoords];
-
-
-% plot to verify the histo info
-figure;
-plot(manipuCoords(:, 1), manipuCoords(:, 2), '.r', 'MarkerSize', 10);
-hold on
-plot(manipuCoords_noDiI(:, 1), manipuCoords_noDiI(:, 2), '.m', 'MarkerSize', 10);
-plot(histoCoords(:, 1), histoCoords(:, 2), '.b', 'MarkerSize', 20);
-
-mdlML_test = fitlm(manipuCoords(:, 1), histoCoords(:, 1))
-mdlAP_test = fitlm(manipuCoords(:, 2), histoCoords(:, 2))
-
-% fit the LM
-fittedML_nodii = predict(mdlML_test, manipuCoords_noDiI(:, 1));
-fittedAP_nodii = predict(mdlAP_test, manipuCoords_noDiI(:, 2));
-% manipuCoords_noDiI(:, 2)
-
-% plot the fitted entry points for ni dii tracks
-hold on
-plot(fittedML_nodii, fittedAP_nodii, '.', 'MarkerSize', 20, 'Color', [1 0.74 0.35])
-
-
-%% for ni dii tracks, reconstructing no-dii probe traces in 3d view
-
-dirV = nan(3, 3);
-
-dirV(1, :) = LM_Right_1.dirVect;
-dirV(2, :) = LM_Left_1.dirVect;
-dirV(3, :) = LM_Left_2.dirVect;
-
-% dirV(1, :) = LM_Left_1L.dirVect;
-% dirV(2, :) = LM_Left_1R.dirVect;
-% dirV(3, :) = LM_Left_2L.dirVect;
-% dirV(4, :) = -LM_Left_2R.dirVect;
-% dirV(5, :) = LM_Right_1L.dirVect;
-% dirV(6, :) = LM_Right_1R.dirVect;
-
-meandirV = mean(dirV);
-
-nodiiLM.BS_crossPoint = [fittedML_nodii, fittedAP_nodii];
-nodiiLM.dirV = LM_Right_1.dirVect;
-
-mouseID = 'cer10';
-
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-
-sessions = ephysInfo.session((strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) & (ephysInfo.include == 1));
-
-ephysHistoData = cell(length(sessions), 6);
-
-for i = 1 : size(sessions, 1)
-    sessionNum = sessions{i};
-    offset = ephysInfo.offset((strcmp(sessionNum, ephysInfo.session)));
-    if isnan(offset); offset = 0; end
-    side = ephysInfo.side((strcmp(sessionNum, ephysInfo.session)));
-    if strcmp(side, 'right')
-        BSCoords = RBSCoords; 
-    else
-        BSCoords = LBSCoords; 
-    end
-    
-    temp = [1, 0];
-    for j = 1:2
-        ind = i*2-temp(j);
-        ephysHistoData{ind, 1} = sessionNum;
-        ephysHistoData{ind, 2} = mouseID;
-        ephysHistoData{ind, 3} = side;
-        [ephysHistoData{ind, 4}, ephysHistoData{ind, 5}, ephysHistoData{ind, 6}] = ...
-            addPointsToProbe(sessionNum, nodiiLM, BSCoords, offset, j,  {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-    end
-      
-end
-
-% check to update and save ephysHistoData
-fileName = fullfile(getenv('OBSDATADIR'), 'ephys', 'ephysHistoData', 'ephysHistoData.mat');
-if ~exist(fileName)
-    save(fileName, 'ephysHistoData');
-else
-    temp = load(fileName);
-    ephysHistoDataOld = temp.ephysHistoData;
-    sessionsOld = ephysHistoDataOld(:, 1);
-    sessions = ephysHistoData(:, 1);
-    inds = zeros(length(sessionsOld), length(sessions));
-    for i = 1:length(sessions)
-        inds(:, i) = strcmp(sessions{i}, sessionsOld);
-    end
- 
-    if sum(sum(inds)) == 0
-        ephysHistoData = [ephysHistoDataOld; ephysHistoData];
-        save(fileName, 'ephysHistoData');
-    else
-        [updateIndsOld, updateIndsNew] = find(inds == 1);
-        for i = 1:length(updateIndsOld)
-            ephysHistoDataOld(updateIndsOld(i), :) = ephysHistoData(updateIndsNew(i), :);
-            ephysHistoData(updateIndsNew(i), :) = [];
-        end
-        ephysHistoData = [ephysHistoDataOld; ephysHistoData];
-        save(fileName, 'ephysHistoData');
-    end    
-end
-
-
-
-
-
-
-
-nodiiLM.BS_crossPoint = [fittedML_nodii(1), fittedAP_nodii(1)];
-[BS_crossPoint_right2, PC_crossPoint_right2, GC_right2, ~] = addPointsToProbe('200311_000', nodiiLM, RBSCoords, 0, 1, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-
-% nodiiLM.BS_crossPoint = [fittedML_nodii(2), fittedAP_nodii(2)];
-% [BS_crossPoint_right2R, ~] = addPointsToProbe('200113_000', nodiiLM, RBSCoords, 0, 2, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-% 
-% nodiiLM.BS_crossPoint = [fittedML_nodii(3), fittedAP_nodii(3)];
-% [BS_crossPoint_right3L, ~] = addPointsToProbe('200114_000', nodiiLM, RBSCoords, 300, 1, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-% 
-% nodiiLM.BS_crossPoint = [fittedML_nodii(4), fittedAP_nodii(4)];
-% [BS_crossPoint_right3R, ~] = addPointsToProbe('200114_000', nodiiLM, RBSCoords, 300, 2, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-% 
-
-
-
-
-
 
 
 

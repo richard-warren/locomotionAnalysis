@@ -10,12 +10,18 @@ s.noDiIMode = false;
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
+if strcmp(session, '000000_000'); s.showGCPoints = false; end
+
+% initialization
+PC_crossPoint = []; 
+goodChannelPoint = [];
 
 
+% ------------- strat processing -----------------------------------------
 disp(['processing ' session ', shank = ' num2str(shankNum)]);
+
 % get probe mapping file
 ephysHistoInfo = getEphysSessionHistoInfo(session);
-
 
 % load ephysChannelsInfo spreadsheet
 warning('off')
@@ -23,11 +29,11 @@ ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ep
 warning('on')
 
 % automatically figure out offset if users didn't assign any values for it
-if ~any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session))) & (~exist('offset', 'var'))
+if ~any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session) & ephysChannelsInfo.PCShankNum == shankNum)) & (~exist('offset', 'var'))
     offset = 0;
     disp('offset = 0');
-elseif any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session))) & (~exist('offset', 'var'))
-    offset = unique(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)));
+elseif any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)& ephysChannelsInfo.PCShankNum == shankNum)) & (~exist('offset', 'var'))
+    offset = unique(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session) & ephysChannelsInfo.PCShankNum == shankNum));
     disp(['offset = ', num2str(offset)]);
     if length(offset) ~= 1
         warning('Multiple offsets detected for the same probe trace! Offset will be temporarily set to 0!')
@@ -35,33 +41,10 @@ elseif any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)))
     end        
 end
 
-% get PC channel info of the recording session
-PCShankNum =  ephysChannelsInfo.PCShankNum(strcmp(session, ephysChannelsInfo.session));
-PCProbeDepth = ephysChannelsInfo.PCProbeDepth(strcmp(session, ephysChannelsInfo.session));
-PCChannels = ephysChannelsInfo.PCChannels(strcmp(session, ephysChannelsInfo.session));
-
-PCShankNum = PCShankNum(~isnan(PCShankNum));
-PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth)); % probeDepth: the manipulator readings at where I see PC signals, indicating the most ventral point of the probe
-PCChannels = PCChannels(~isnan(PCChannels));
-
-PCDepth = PCProbeDepth - ephysHistoInfo.channelDepth(PCChannels); % PCDepth: the actual depth of the channels on which I see PC signals 
 
 
-
-% get good channels info of the recording session
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');
-if ~exist('bestChannels', 'var')
-    disp('bestChannels not found; format ephysData again to include bestChannels...');
-    formatEphysData(session);
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');   
-end
-GCChannels = bestChannels; clear bestChannels;
-GCShankNum = ephysHistoInfo.shankNum(GCChannels);
-GCDepth = ephysHistoInfo.probeFinalDepth * 1000 - ephysHistoInfo.channelDepth(GCChannels); % GCDepth: the actual depth of the channels on which there are good (single) unit signals after spike sorting
-
-
-% plot brain surface cross point
 disp('adding points...');
+% ----------------------- plot brain surface cross point ------------------
 if ~s.noDiIMode
     
     % the code below deals with the reconstruction of dii-coated probe traces    
@@ -108,10 +91,10 @@ if ~s.noDiIMode
     
     % dealing with the situation if there is only one adjacent brain section (most anterior or posterior)
     if length(adjacentAPCoord) == 1 
-        DVCoords = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord)), 3);
+        DVCoords = BSCoords((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord), 3);
     else
-        DVCoords1 = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
-        DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
+        DVCoords1 = BSCoords((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1)), 3);
+        DVCoords2 = BSCoords((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2)), 3);
         DVCoords = cat(1, DVCoords1, DVCoords2);
     end
     
@@ -135,7 +118,7 @@ if ~s.noDiIMode
 else
     
     % the code below applies for reconstructing no dii traces only
-    tempBS_crossPoint = LM.BS_crossPoint;
+    tempBS_crossPoint = LM.BS_crossPoints;
     dirV = LM.dirV;
     if dirV(1, 3)<0; dirV = -dirV; end
     
@@ -143,12 +126,11 @@ else
     adjacentAPCoord = [BSCoords(find(BSCoords(:, 2) < APCoord, 1, 'last'), 2), BSCoords(find(BSCoords(:, 2) > APCoord, 1, 'first'), 2)];
     MLCoord = tempBS_crossPoint(1, 1);
     MLCoord = BSCoords(find(BSCoords(:, 1) > round(MLCoord), 1));
-    DVCoords1 = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
-    DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
+    DVCoords1 = BSCoords((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1)), 3);
+    DVCoords2 = BSCoords((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2)), 3);
     weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2))/abs(diff(adjacentAPCoord)) ];
     DVCoord = mean(DVCoords1)*weights(2) + mean(DVCoords2)*weights(1);
     BS_crossPoint = [tempBS_crossPoint(1, :), DVCoord];
-    BS_distance = 0;   
 
 end
 
@@ -158,8 +140,19 @@ if ~s.noDiIMode; points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2),
 
 
 
-% plot PC layer cross points
+% ------------------ plot PC layer cross points ---------------------------
 if s.showPCPoints
+    
+    % get PC channel info of the recording session
+    PCShankNum =  ephysChannelsInfo.PCShankNum(strcmp(session, ephysChannelsInfo.session));
+    PCProbeDepth = ephysChannelsInfo.PCProbeDepth(strcmp(session, ephysChannelsInfo.session));
+    PCChannels = ephysChannelsInfo.PCChannels(strcmp(session, ephysChannelsInfo.session));
+    
+    PCShankNum = PCShankNum(~isnan(PCShankNum));
+    PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth)); % probeDepth: the manipulator readings at where I see PC signals, indicating the most ventral point of the probe
+    PCChannels = PCChannels(~isnan(PCChannels));
+    PCDepth = PCProbeDepth - ephysHistoInfo.channelDepth(PCChannels); % PCDepth: the actual depth of the channels on which I see PC signals
+    
     PC_inds = find(PCShankNum == shankNum);
     PCChannels = PCChannels(PC_inds);
     PCDepth = PCDepth(PC_inds);
@@ -176,8 +169,21 @@ if s.showPCPoints
 end
 
 
-% plot good channel points
-if s.showGCPoints    
+% ------------------- plot good channel points ----------------------------
+if s.showGCPoints
+    
+    % get good channels info of the recording session
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');
+    if ~exist('bestChannels', 'var')
+        disp('bestChannels not found; format ephysData again to include bestChannels...');
+        formatEphysData(session);
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');
+    end
+    GCChannels = bestChannels; clear bestChannels;
+    GCShankNum = ephysHistoInfo.shankNum(GCChannels);
+    GCDepth = ephysHistoInfo.probeFinalDepth * 1000 - ephysHistoInfo.channelDepth(GCChannels); % GCDepth: the actual depth of the channels on which there are good (single) unit signals after spike sorting
+       
+    
     inds = find(GCShankNum == shankNum);
     GCChannels = GCChannels(inds); 
     GCDepth = GCDepth(inds);
