@@ -14,3 +14,10 @@ for i = 1:length(noWiskExperiments)
         getKinematicData(noWiskSessions{j});
     end
 end
+
+%% analyze all sessions
+sessions = getAllExperimentSessions;
+
+for i = 1:length(sessions)
+    analyzeSession(sessions{i})
+end
