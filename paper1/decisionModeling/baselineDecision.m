@@ -1,17 +1,15 @@
 %% load experiment data
-% tic; fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!'); toc
-fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
+fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'baseline_data.mat'), 'data'); disp('baseline data loaded!');
 
 % settings
 outcome = 'isModPawLengthened';  % isBigStep or isModPawLengthened
 
-global_config;
-
+paper1_config;
 flat = flattenData(data, ...
     [m.predictorsAll, {'mouse', 'session', 'trial', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
     'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', ...
-    'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd', 'modSwingContacts'}]);
-
+    'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd', 'modSwingContacts', ...
+    'wiskContactPosition', 'trialVel'}]);
 predictorColors = lines(length(m.predictorsAll));
 mice = unique({flat.mouse});
 
@@ -82,7 +80,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'imgs'
 
 
 
-%% heatmaps
+%% heatmaps (figures f3f)
 plotDecisionHeatmaps(flat, 'normalize', 'col', 'outcome', 'isModPawLengthened', ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', decisionColors(1,:), 'xLims', [-20 15], 'plotProbs', false);
@@ -119,7 +117,6 @@ for i = 1:length(mice)
     velocity(i) = nanmean([flat(bins).velAtWiskContact]);
 end
 
-%%
 close all
 figure('Position', [36 1038 806 305], 'color', 'white', 'MenuBar', 'none');
 
@@ -163,20 +160,21 @@ end
 
 
 
-%% trials scatters
-rng(1)
+%% trials scatters (figures f3b)
+rng(2)
 plotDecisionTrials(flat, 'outcome', 'isModPawLengthened', ...
     'modSwingContactsMax', 0, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...  % don't limit to successful trials for this plot
     'colors', decisionColors, 'view', 'top', 'xLims', [-.11 .06], 'obsColor', obsColor, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDecisionKin'));
 
 %% model accuracies
+rng(0)
 [~,~,flat_restricted] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'model', 'glm', ...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'barProps', barProperties, 'kFolds', 15, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
-%% model predictors
+%% model predictors (figures f3d)
 plotPredictors(flat, m.predictors, 'isModPawLengthened', 'avgMice', true, 'colors', predictorColors,...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'mouseAlpha', .2, 'subplotDims', [2 4], 'names', m.predictorsNamed, 'figPos', [100 400 671 300], ...
@@ -195,7 +193,7 @@ plotDecisionThresholds(flat, 'outcome', 'isModPawLengthened', ...
     'colors', sensColors, 'barProps', barProperties, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineThresholds'));
 
-%% distribution of step modifications (this demonstrates the effect of different deltaMin strategies)
+%% (temp) distribution of step modifications (this demonstrates the effect of different deltaMin strategies)
 close all
 xLims = prctile([flat_sub.modPawDeltaLength flat_sub.preModPawDeltaLength], [1 99]);
 binEdges = linspace(xLims(1), xLims(2), 75);
@@ -233,7 +231,7 @@ set(gca, 'box', 'off', 'YColor', 'none')
 xlabel('\delta length')
 print -clipboard -dbitmap
 
-%% forward feature selection
+%% forward feature selection (figures f3b)
 
 % settings
 kFolds = 15;
@@ -288,10 +286,10 @@ fprintf('PREDICTORS: {');fprintf('''%s'', ', bestPredictors{:}); fprintf('}\n')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelAccuracy'), 'svg');
 
 
-%% predictor scatters and histograms
+%% predictor scatters and histograms (figures s3c)
 
 [~, ~, flat_sub] = plotModelAccuracies(flat, m.predictors, outcome, ...
-    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', .005, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'weightClasses', true, 'plot', false, 'kFolds', 2);
 
 % settings
@@ -357,7 +355,7 @@ end
 saveas(f1, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictorScatters'), 'svg');
 
 
-%% binned kinematics
+%% binned kinematics (figures f3e)
 
 % settings
 binNum = 5;
@@ -389,7 +387,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 
 
-%% success rate by model prediction adherence (!!! need to make a new flat_sub trained without unsuccessful trials removed)
+%% success rate by model prediction adherence (figures s3d)
 
 % settings
 confidenceLims = [.5 .5];  % only include trials where model is very confident
@@ -400,9 +398,7 @@ confidenceLims = [.5 .5];  % only include trials where model is very confident
     'weightClasses', true, 'barProps', barProperties, 'kFolds', 15, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
 
-
-
-%% compute overall success rate
+% compute overall success rate
 predictions = [flat_temp.isModPawLengthened_predicted];
 confidentBins = predictions<=confidenceLims(1) | predictions>confidenceLims(2);
 isModelCorrect = round(predictions) == [flat_temp.(outcome)];  % bins where decision agrees with model prediction
@@ -449,7 +445,7 @@ fprintf('writing %s to disk...\n', file)
 saveas(gcf, file, 'svg');
 
 
-%% see how model accuracy suffers without whisker info
+%% see how model accuracy suffers without whisker info (figures s3e)
 
 rng(0)
 excludeVars = {'obsHgt', 'wiskContactPosition'};
@@ -471,7 +467,7 @@ barFancy(mat, barProperties{:}, ...
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelNoWiskPredModels'), 'svg');
 
 
-%% distance and time to contact
+%% distance and time to contact (figures s3a)
 
 
 % compute distance and time to contact

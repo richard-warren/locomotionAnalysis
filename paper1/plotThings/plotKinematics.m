@@ -28,6 +28,7 @@ s.yLimZero = true; % makes min of y axis zero so traces don't dip beneathe 'floo
 s.lineColor = 'black';
 s.plotObs = true;  % whether to plot the obstacle
 s.scatterEnds = true;  % whether to add scatter points to the end of the individual trials
+s.evenlySampleTrials = true;  % when showing individual trials, whether to evenly sample across conditions // otherwise samples the same number of trials per condition regardless of condition probability
 
 
 % initializations
@@ -45,7 +46,7 @@ if s.plotObs
         if ~s.isBotView
             z = nanmean(obsHgts(conditions==i));
             rectangle('position', [0-obsRadius, z-2*obsRadius, 2*obsRadius, 2*obsRadius], ...
-                'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
+                'curvature', [1 1], 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', [.4 .4 .4]); hold on
         else
             rectangle('position', [0-obsRadius, -.1, 2*obsRadius, .2], ...
                 'facecolor', [s.obsColors(i,:) s.obsAlpha], 'edgecolor', 'none'); hold on
@@ -54,7 +55,7 @@ if s.plotObs
 end
 
 % plot kinematics for each condition
-for i = 1:max(conditions)
+for i = unique(conditions)'
     
     % first avg within each mouse ONLY if s.mouseNames is provided by user
     if ~isempty(s.mouseNames)
@@ -66,12 +67,11 @@ for i = 1:max(conditions)
         conditionTrajectories = trajectories(conditions==i,:,:);
     end
     
-    % plot median trajectory for condition
-
+    % plot mean trajectory for condition
     kinMean = squeeze(nanmean(conditionTrajectories, 1));
     if isempty(s.errorFcn)
         plot(kinMean(1,:), kinMean(2,:), ...
-            'LineWidth', s.lineWidth, 'Color', s.colors(i,:)); hold on
+            'LineWidth', s.lineWidth, 'Color', [s.colors(i,:) s.lineAlpha]); hold on
     else
         shadedErrorBar(kinMean(1,:), squeeze(conditionTrajectories(:,2,:)), {@nanmean, s.errorFcn}, ...
             'lineprops', {'linewidth', s.lineWidth, 'color', [s.colors(i,:) s.lineAlpha]}, 'patchSaturation', s.errorAlpha); hold on;
@@ -79,7 +79,12 @@ for i = 1:max(conditions)
     
     % plot individual trials
     if ~isempty(s.trialsToOverlay)
-        inds = randperm(size(conditionTrajectories,1), min(s.trialsToOverlay, size(conditionTrajectories,1)));
+        if s.evenlySampleTrials
+            conditionTrialsToShow = min(s.trialsToOverlay, size(conditionTrajectories,1)) * mean(conditions==i);
+        else
+            conditionTrialsToShow = min(s.trialsToOverlay, size(conditionTrajectories,1)) / length(unique(conditions));
+        end
+        inds = randperm(size(conditionTrajectories,1), floor(conditionTrialsToShow));
         
         for j = inds
             plot(squeeze(conditionTrajectories(j,1,:)), squeeze(conditionTrajectories(j,2,:)), ...

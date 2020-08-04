@@ -244,7 +244,7 @@ end
 
 % add model transfers to condition names and colors
 for i = 1:size(s.modelTransfers,1)
-    name = [s.levels{s.modelTransfers(i,1)} ' -> ' s.levels{s.modelTransfers(i,2)}];
+    name = [s.levels{s.modelTransfers(i,1)} '->' s.levels{s.modelTransfers(i,2)}];
     s.levels{end+1} = name;
     s.colors(end+1,:) = s.colors(s.modelTransfers(i,1),:);
 end

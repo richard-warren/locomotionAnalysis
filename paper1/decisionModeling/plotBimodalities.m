@@ -81,7 +81,7 @@ end
 
 
 % compute log likelihood ratios
-args = {'Replicates', 1, 'RegularizationValue', 1e-6, 'options', statset('MaxIter', 1000)};
+args = {'Replicates', 10, 'RegularizationValue', 1e-10, 'options', statset('MaxIter', 1000)};
 bimodalities = nan(cNum, 2, length(mice));  % (control dist vs dist) X (condition) X (shuffled vs. non-shuffled) X (mice)
 
 for i = 1:length(mice)
@@ -94,8 +94,6 @@ for i = 1:length(mice)
         
         ctl = flat.modPawPredictedDistanceToObs(bins);
         mod = flat.modPawDistanceToObs(bins);
-%         ctl = flat.preModPawDeltaLength(bins);
-%         mod = flat.modPawDeltaLength(bins);
                 
         % fit one and two component gmms for control and mod steps
         ctl1 = fitgmdist(ctl, 1, args{:});

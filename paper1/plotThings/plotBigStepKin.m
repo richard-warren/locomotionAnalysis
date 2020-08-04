@@ -82,7 +82,7 @@ for h = 1:numRows
     % add obstacle
     avgObsHgt = nanmean(obsHgts(rowInds==h)); % get avg obstacle height for row
     rectangle('position', [0-s.obsRadius, avgObsHgt-2*s.obsRadius, 2*s.obsRadius, 2*s.obsRadius], ...
-        'curvature', [1 1], 'facecolor', s.obsColor, 'edgecolor', 'none');
+        'curvature', [1 1], 'facecolor', s.obsColor, 'edgecolor', [.4 .4 .4]);
     
     % add sample size
     if s.showSmpNum
