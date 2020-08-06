@@ -1,4 +1,4 @@
-function [BS_crossPoint, PC_crossPoint, goodChannelPoint] = addPointsToProbe(session, LM, BSCoords, shankNum, offset, opts)
+function [BS_crossPoint, PC_crossPoint, goodChannelPoint] = addPointsToProbe(session, LM, BSCoords, shankNum, opts)
 
 
 if ~exist('shankNum', 'var'); shankNum = 1; end
@@ -29,16 +29,16 @@ ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ep
 warning('on')
 
 % automatically figure out offset if users didn't assign any values for it
-if ~any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session) & ephysChannelsInfo.PCShankNum == shankNum)) & (~exist('offset', 'var'))
-    offset = 0;
-    disp('offset = 0');
-elseif any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)& ephysChannelsInfo.PCShankNum == shankNum)) & (~exist('offset', 'var'))
+if any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)& ephysChannelsInfo.PCShankNum == shankNum)) & (~exist('offset', 'var'))
     offset = unique(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session) & ephysChannelsInfo.PCShankNum == shankNum));
     disp(['offset = ', num2str(offset)]);
     if length(offset) ~= 1
         warning('Multiple offsets detected for the same probe trace! Offset will be temporarily set to 0!')
         offset = 0;
-    end        
+    end
+else
+    offset = 0;
+    disp('set offset = 0');
 end
 
 
@@ -131,12 +131,19 @@ else
     weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2))/abs(diff(adjacentAPCoord)) ];
     DVCoord = mean(DVCoords1)*weights(2) + mean(DVCoords2)*weights(1);
     BS_crossPoint = [tempBS_crossPoint(1, :), DVCoord];
-
+    BS_distance = 2000;
+    fakePoints = BS_crossPoint + dirV * BS_distance;
 end
 
 % plot brain surface cross point
-plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.k', 'MarkerSize', 30)
-if ~s.noDiIMode; points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2), points(:,3),'-g','LineWidth',3); end
+
+if ~s.noDiIMode
+    plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.k', 'MarkerSize', 30);
+    points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2), points(:,3),'-g','LineWidth',3);
+else
+    plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.', 'Color',[0.4940 0.1840 0.5560], 'MarkerSize', 30);
+    points = [BS_crossPoint ; fakePoints]; plot3(points(:,1), points(:,2), points(:,3),'-y','LineWidth',3);
+end
 
 
 
@@ -151,20 +158,27 @@ if s.showPCPoints
     PCShankNum = PCShankNum(~isnan(PCShankNum));
     PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth)); % probeDepth: the manipulator readings at where I see PC signals, indicating the most ventral point of the probe
     PCChannels = PCChannels(~isnan(PCChannels));
-    PCDepth = PCProbeDepth - ephysHistoInfo.channelDepth(PCChannels); % PCDepth: the actual depth of the channels on which I see PC signals
+    PCDepth = [];
+    PCDepth = PCProbeDepth - [ephysHistoInfo.channelDepth(PCChannels)]'; % PCDepth: the actual depth of the channels on which I see PC signals
     
     PC_inds = find(PCShankNum == shankNum);
     PCChannels = PCChannels(PC_inds);
     PCDepth = PCDepth(PC_inds);
-    if dirV(1, 3) < 0; dirV = -dirV; end
      
     PC_crossPoint = nan(length(PCDepth), 3);
+    if dirV(1, 3) < 0; dirV = -dirV; end
     for i = 1:length(PCDepth)
-        PC_crossPoint(i, :) = (PCDepth(i) + offset)*dirV + BS_crossPoint;
+        PC_crossPoint(i, :) = (PCDepth(i) + offset).*dirV + BS_crossPoint;
         hold on
         plot3(PC_crossPoint(i, 1), PC_crossPoint(i, 2), PC_crossPoint(i, 3), '.r', 'MarkerSize', 30)   
         points = [PC_crossPoint(i, :); BS_crossPoint];
-        plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+        if ~s.noDiIMode
+            plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(PCDepth(i)),'FontSize',12)
+        else
+            plot3(points(:,1),points(:,2),points(:,3),'-y','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(PCDepth(i)),'FontSize',12)
+        end
     end  
 end
 
@@ -181,20 +195,26 @@ if s.showGCPoints
     end
     GCChannels = bestChannels; clear bestChannels;
     GCShankNum = ephysHistoInfo.shankNum(GCChannels);
+    GCDepth = [];
     GCDepth = ephysHistoInfo.probeFinalDepth * 1000 - ephysHistoInfo.channelDepth(GCChannels); % GCDepth: the actual depth of the channels on which there are good (single) unit signals after spike sorting
-       
-    
     inds = find(GCShankNum == shankNum);
     GCChannels = GCChannels(inds); 
     GCDepth = GCDepth(inds);
     
     goodChannelPoint = nan(length(GCDepth), 3);
+    if dirV(1, 3) < 0; dirV = -dirV; end
     for i = 1:length(GCDepth)        
-        goodChannelPoint(i, :) = (GCDepth(i) + offset)*dirV + BS_crossPoint;
+        goodChannelPoint(i, :) = (GCDepth(i) + offset).*dirV + BS_crossPoint;
         hold on
         plot3(goodChannelPoint(i, 1), goodChannelPoint(i, 2), goodChannelPoint(i, 3), '.c', 'Markersize', 30);
         points = [goodChannelPoint(i, :); BS_crossPoint];
-        plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+        if ~s.noDiIMode
+            plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(GCDepth(i)),'FontSize',12)
+        else
+            plot3(points(:,1),points(:,2),points(:,3),'-y','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(GCDepth(i)),'FontSize',12)
+        end
     end    
 end
 
