@@ -36,7 +36,7 @@ function analyzeSession(session, varargin)
     if ischar(s.overwriteVars); s.overwriteVars = {s.overwriteVars}; end  % make sure overwriteVars is in cell format
     anythingAnalyzed = false; % results are only saved if something was found that wasn't already analyzed
     sessionDir = fullfile(getenv('OBSDATADIR'), 'sessions', session);
-    isRunVid = exist(fullfile(sessionDir, 'run.mp4'), 'file');
+    isRunVid = exist(fullfile(sessionDir, 'run.mp4'), 'file') || exist(fullfile(sessionDir, 'runTop.mp4'), 'file');
     isWiskVid = exist(fullfile(sessionDir, 'runWisk.mp4'), 'file');
 
     % load or initialize data structure
@@ -161,7 +161,7 @@ function analyzeSession(session, varargin)
     
     
     % led indices (run camera)
-    if analyzeVar('ledInds') && isRunVid && isWiskVid
+    if analyzeVar('ledInds') && isRunVid
         
         if s.verbose; fprintf('%s: getting LED indices (for run camera)... ', session); end
         if ~exist('locations', 'var'); locations = readtable(fullfile(sessionDir, 'trackedFeaturesRaw.csv')); end

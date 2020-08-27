@@ -16,8 +16,14 @@ for i = 1:length(noWiskExperiments)
 end
 
 %% analyze all sessions
-sessions = getAllExperimentSessions;
+sessions = getAllExperimentSessions();
+sessions = sessions.session;
 
 for i = 1:length(sessions)
-    analyzeSession(sessions{i})
+    try
+        fprintf('\n\n-------- (%i/%i) %s --------\n', i, length(sessions), sessions{i})
+        analyzeSession(sessions{i})
+    catch exception
+        fprintf('%s: PROBLEM WITH SESSION -> %s', sessions{i}, exception.message)
+    end
 end
