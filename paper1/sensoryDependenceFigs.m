@@ -9,16 +9,15 @@ mice = unique(sessionInfo.mouse);
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-fprintf('saving...'); save(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
+fprintf('saving...'); save(fullfile(getenv('SSD'), 'paper1', 'sensoryDependence_data.mat'), 'data'); disp('data saved!')
 
 
 
 %% load experiment data
-% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!')
-fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
+fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'sensoryDependence_data.mat'), 'data'); disp('sensoryDependence data loaded!');  % temp, use to load from local drive because engram is slow over ethernet
 
 % global settings
-global_config;
+paper1_config;
 varsToAvg = {'mouse'};
 miceToExclude = {'sen1'};
 
@@ -271,63 +270,55 @@ saveas(gcf, file, 'svg');
 flat = flattenData(data, ...
     [m.predictors, {'mouse', 'modSwingContacts', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
     'modPawOnlySwing', 'isTrialSuccess', 'sensoryCondition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', ...
-    'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modPawXVel', 'modPawZVel'}]);
+    'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modPawXVel', 'modPawZVel', 'trialVel'}]);
 
-%% heatmaps
+%% heatmaps (figures f3h)
 plotDecisionHeatmaps(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', sensColors, 'xLims', [-20 15], 'normalize', 'col', ...
     'plotProbs', false, 'subplotDims', [4 1], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceHeatmaps'));
 
-%% trial scatters
+%% trial scatters (figures f3g)
+% figures
+close all
 rng(2)
-plotDecisionTrials(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isBigStep', ...
+plotDecisionTrials(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', decisionColors, 'showTitles', false, 'rowColors', sensColors, 'obsColor', obsColor, ...
+    'showHistos', true, 'poolHistos', true, 'evenlySampleTrials', true, 'histosOnBottom', true, 'histoFillAlpha', 0, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDecisionKin'));
 
-%% model accuracies
+%% model accuracies (figures s3f)
+rng(1)
 [~,~,temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', ...
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'weightClasses', true, ...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', sensColors, 'barProps', [barProperties, 'YLim', [.2 1], 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], 'kFolds', 10, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'));
+    'colors', sensColors, 'barProps', [barProperties, 'YLim', [.2 1], 'comparisons', [2 4; 2 6; 2 8; 4 10], 'test', 'ttest'], 'kFolds', 10, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceModels'), ...
+    'modelTransfers', [2 3]);
 
-%% landing position entropy
+%% landing position entropy (and landing position histogram)
 plotEntropies(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'xLimsAbs', [-.11 .08], 'colors', sensColors, ...
     'barProps', [barProperties, {'comparisons', [1 2; 1 3; 1 4; 5 6; 5 7; 5 8]}], ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceEntropy'));
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceDistributions'), 'svg');
+
 %% plot predictors
 plotPredictors(flat, [m.predictors {'modPawPredictedDistanceToObs'}], 'isModPawLengthened', 'colors', sensColors, 'avgMice', true, ...
     'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, ...
     'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'mouseAlpha', .4);
 
-%% (temp, plot model coefficients)
-
-coeffs = nan(4, length(m.predictors)+1, length(data.data));
-
-for i = 1:4
-    for j = 1:length(m.predictors)
-        for k = 1:length(data.data)
-            coeffs(i,:,k) = models{i,k}.Coefficients.tStat(1:end);
-        end
-    end
-end
-
-figure;
-barFancy((coeffs), 'colors', repelem(sensColors, length(m.predictors)+1, 1), ...
-    'levelNames', {vars.sensoryCondition.levelNames, ['constant', m.predictors]})
-
-%% decision threshold
-plotDecisionThresholds(flat, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
-    'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'colors', sensColors, 'barProps', barProperties, ...
-    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceThresholds'));
+%% bimodality
+% rng(2)
+close all
+plotBimodalities(flat, 'bic', true, 'condition', 'sensoryCondition', 'levels', vars.sensoryCondition.levels, 'outcome', 'isModPawLengthened', ...
+    'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', sensColors, 'barProps', [barProperties, 'comparisons', [2 4; 2 6; 2 8], 'test', 'ttest'], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceBimodality'));
 
 %% lagging forepaw planting distance variability
 
@@ -365,8 +356,28 @@ plotLaggingKinematics(flat, 'condition', 'sensoryCondition', 'levels', vars.sens
 figure('position', [200 472.00 300 255], 'color', 'white', 'menubar', 'none');
 dv = getDvMatrix(data, 'modPawDistanceToObsAbs', [vars.isBigStep; vars.sensoryCondition], {'mouse'}, [conditionals.modPawOnlySwing])*1000;
 barFancy(dv, 'ylabel', 'landing distance (mm)', 'levelNames', {vars.isBigStep.levelNames}, 'colors', repmat(sensColors,2,1), barProperties{:}, ...
-    'comparisons', [1 2; 1 3; 1 4; 5 6; 5 7; 5 8], 'test', 'ttest')
+    'comparisons', [1 2; 1 3; 1 4; 5 6; 5 7; 5 8; 2 3; 6 7], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependence_landingDistance'), 'svg');
+
+%% mod paw deltas
+close all
+
+binEdges = linspace(-.05, .15, 50);
+stepTypeBins = [flat.isBigStep]==1;
+
+figure('color', 'white', 'position', [91.00 627.00 1099.00 402.00]); hold on
+for i = vars.sensoryCondition.levels
+    bins = strcmp({flat.sensoryCondition}, i{1});
+    x = [flat(bins & stepTypeBins).modPawDeltaLength];
+    histogram(x, binEdges)
+    fprintf('%s: %.2f\n', i{1}, nanmean((x)*1000))
+end
+
+legend(vars.sensoryCondition.levelNames)
+
+
+
+
 
 
 

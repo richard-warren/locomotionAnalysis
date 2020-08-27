@@ -21,10 +21,12 @@ s.ctlStepColor = [.5 .5 .5];
 s.obsColor = [188 125 181] / 255;
 s.rowColors = [];  % if provided, overwrites s.colors and plots all traces in the same color per row
 
-s.trialsToShow = 50;
+s.trialsToShow = 100;
+s.evenlySampleTrials = true;  % when show individual trials, whether to evenly sample across conditions // otherwise samples the same number of trials per condition regardless of condition probability
 s.histoFillAlpha = .2;
 s.xLims = [-.11 .08];
 s.showTitles = true;
+s.histosOnBottom = false;  % if true, puts all histograms in one plot beneathe all the kinematics, no longer showing the control distributions
 
 s.showHistos = true;
 s.poolHistos = false;  % whether to pool the big step and little step histos
@@ -39,6 +41,7 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if isstruct(flat); flat = struct2table(flat); end
+if ~s.showHistos; s.histosOnBottom = false; end
 
 % set view specific parameters
 switch s.view
@@ -81,7 +84,7 @@ end
 
 
 for i = 1:length(s.levels)
-    subplot(length(s.levels), 1, i)
+    subplot(length(s.levels)+s.histosOnBottom, 1, i)
     bins = condition == i;
     
 %     if ~isempty(s.rowColors); s.ctlStepColor = s.rowColors(i,:); end
@@ -90,7 +93,7 @@ for i = 1:length(s.levels)
     % plot kinematics
     plotKinematics(kinData(bins,dims,:), flat.obsHgt(bins), flat.(s.outcome)(bins) + 1, ...
         'colors', s.colors, 'trialsToOverlay', s.trialsToShow, 'trialAlpha', .4, 'lineAlpha', 0, ...
-        'yLimZero', false, 'plotObs', false, 'isBotView', isBotView)
+        'yLimZero', false, 'plotObs', false, 'isBotView', isBotView, 'evenlySampleTrials', s.evenlySampleTrials)
     plotKinematics(kinDataCtl(bins,dims,:), flat.obsHgt(bins), ones(1,sum(bins)), ...
         'colors', s.ctlStepColor, 'lineWidth', 5, 'yLimZero', false, 'obsColors', s.obsColor, ...
         'isBotView', isBotView)
@@ -123,9 +126,13 @@ for i = 1:length(s.levels)
         end
 
 
-        % plot that shit
-        fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], s.ctlStepColor, 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
-        plot(xGrid, kdCtl, 'Color', s.ctlStepColor, 'LineWidth', 2)
+        % plot
+        if s.histosOnBottom
+            subplot(length(s.levels)+s.histosOnBottom, 1, length(s.levels)+s.histosOnBottom); hold on
+        else
+            fill([xGrid xGrid(1)], [kdCtl kdCtl(1)], s.ctlStepColor, 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
+            plot(xGrid, kdCtl, 'Color', s.ctlStepColor, 'LineWidth', 2)
+        end
 
         if ~s.poolHistos
             fill([xGrid xGrid(1)], [kdLong kdLong(1)], s.colors(2,:), 'FaceAlpha', s.histoFillAlpha, 'EdgeColor', 'none')
@@ -139,9 +146,12 @@ for i = 1:length(s.levels)
         end
 
         if s.showTitles; title(s.levels{i}); end
-
-        set(gca, 'ylim', [yLims(1)-s.histoHgt yLims(2)])
+        set(gca, 'ylim', [yLims(1)-s.histoHgt*~s.histosOnBottom*s.showHistos yLims(2)])
     end
+end
+
+if s.histosOnBottom
+    set(gca, 'XLim', s.xLims, 'YLim', [yLims(1)-s.histoHgt 0], 'visible', 'off')
 end
 
 

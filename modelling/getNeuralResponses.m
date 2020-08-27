@@ -1,190 +1,136 @@
-function getNeuralResponses(session)
+function getNeuralResponses(session, varargin)
 
-% for each predictor in predictors.mat, save (trial X xaxis) matrix of
+% for each predictor in predictors.mat, save (trial X x X cell) matrix of
 % responses to that predictor // responses are handled differently for
 % events, epochs, and continuous vars // for events, we store simple PSTH
 % firing rates // for epochs, each epoch (which varies in length) is
-% stretched over a common x axis // for continuous vars, TBD!!!
+% stretched over a common x axis // for continuous moving average // note 
+% that every row contains info FOR EVERY CELL, with the last dimension 
+% corresponding to the cell dimension
+
 
 
 % settings
 s.eventLims = [-1 1];  % (s)
 s.epochLims = [-.5 1.5];  % (s)
-s.epochGridNum = 200;  % number of points in epoch x axis
-s.percentileLims = [.1 99.9];  % limits for continuous variables
-s.contGridNum = 500;    % number of points in continuous x axis
+s.gridNum = 200;  % number of points in epoch and event x axis
+s.percentileLims = [1 99];  % limits for continuous variables
+s.contGridNum = 200;    % number of points in continuous x axis
 s.contWindowSz = .05;  % width of moving average window, expressed as fraction of x axis
-s.plotResponses = true;  % whether to make and save plot of all responses
-s.maxEpochs = 1000;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
-
-% plots
-colors = lines(3);
-s.eventColor = colors(1,:);
-s.epochColor = colors(2,:);
-s.contColor = colors(3,:);
+s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.maxEpochs
 
 
 % initializations
-cellData = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'cellData.csv'));
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'unit_ids', 'spkRates', 'timeStamps');
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'predictors.mat'), 'predictors');
-dt = median(diff(timeStamps));
-xEvent = s.eventLims(1) : dt : s.eventLims(2);
-xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.epochGridNum);
+load(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+
+% initialize table
+nRows = height(predictors);
+responses = table(cell(nRows,1), cell(nRows,1), cell(nRows,1), predictors.type, nan(nRows,2), predictors.include, ...
+    'VariableNames', {'response', 'std', 'density', 'type', 'xLims', 'include'}, ...
+    'RowNames', predictors.Properties.RowNames);
+t = predictors{find(predictors.type=='continuous',1,'first'), 't'}{1};  % (assumes same time grid for all predictors!)
+
+% put spikes on same time grid as predictors
+nUnits = length(unit_ids);
+if nUnits==1
+    spkRates = interp1(timeStamps, spkRates, t, 'linear');
+else
+    spkRates = interp2(timeStamps, [1:nUnits]', spkRates, t, [1:nUnits]', 'linear');
+end
+clear timeStamps
+
+% define x axes
+xEvent = linspace(s.eventLims(1), s.eventLims(2), s.gridNum);
+xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.gridNum);
 
 
-% for each cell
-for i = 1:length(unit_ids)
-    fprintf('%s, cell %i: computing neural responses...\n', session, cellData.unit_id(i))
-    
-    cellResponses = table({}, {}, {}, categorical({}, {'event', 'epoch', 'continuous'}), [], ...
-        'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {});
-    tLims = timeStamps([find(~isnan(spkRates(i,:)),1,'first') find(~isnan(spkRates(i,:)),1,'last')]);
-    spkBins = ~isnan(spkRates(i,:));
-    
-    if s.plotResponses
-        figure('color', 'white', 'name', sprintf('%s_cell%i', session, cellData.unit_id(i)), 'position', [185.00 58.00 1583.00 915.00]);
-        rows = ceil(sqrt(height(predictors)));  % same num row and cols
-        yMax = prctile(spkRates(i,:), 99);
-    end
 
-    
-    for j = 1:height(predictors)
+fprintf('%s: getting neural responses...\n', session)
+for i = find(predictors.include)'
+
+    if predictors.type(i)=='event'
+        events = predictors.data{i};
+        response = nan(length(events), length(xEvent), nUnits);
         
-        if predictors.type(j)=='event'
-            events = predictors.data{j};
-            
-            response = nan(length(events), length(xEvent));
-            for k = 1:length(events)
-                startInd = find(timeStamps>=events(k)+s.eventLims(1),1,'first');
-                if ~isempty(startInd)
-                    response(k,:) = spkRates(i,startInd:startInd+length(xEvent)-1);
-                end
-            end
-            cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'event', s.eventLims);
-            
-            if s.plotResponses
-                subplot(rows, rows, j); hold on
-                plot([0 0], [0 yMax], 'color', [0 0 0 .4])
-                respMean = nanmean(response,1);
-                respStd = nanstd(response,1);
-                plot(xEvent, respMean, 'LineWidth', 3, 'color', s.eventColor)
-                plot(xEvent, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.eventColor .4])
-                xlabel(predictors.Properties.RowNames{j}, 'Interpreter', 'none')
-                set(gca, 'xlim', s.eventLims, 'ylim', [0 yMax])
-                pause(.01)
-            end
-            
-            
-        elseif predictors.type(j)=='epoch'
-            epochs = predictors.data{j};
-            epochs = epochs(all(epochs>tLims(1) & epochs<tLims(2),2),:);
-            response = nan(size(epochs,1), length(xEpoch));
-            durations = diff(epochs,1,2);
-            
-            % if too many epochs find the elements of central duration
-            if size(epochs,1)>s.maxEpochs    
-                middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (0:s.maxEpochs-1);
-                [~, sortInds] = sort(durations);
-                inds = sortInds(middleIndsSorted)';
-            else
-                inds = 1:length(epochs);
-            end
-            
-            for k = inds
-                epoch = durations(k)*s.epochLims + epochs(k,1);
-                epochBins = timeStamps>=epoch(1) & timeStamps<=epoch(2) * spkBins;
-                if any(epochBins)
-                    response(k,:) = interp1(timeStamps(epochBins), spkRates(i,epochBins), ...
-                        linspace(epoch(1), epoch(2), s.epochGridNum), 'linear', 'extrap');
-                end
-            end
-            cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'epoch', s.epochLims);
-            
-            if s.plotResponses
-                subplot(rows, rows, j); hold on
-                plot([0 0; 1 1]', [0 yMax; 0 yMax]', 'color', [0 0 0 .4])
-                respMean = nanmean(response,1);
-                respStd = nanstd(response,1);
-                plot(xEpoch, respMean, 'LineWidth', 3, 'color', s.epochColor)
-                plot(xEpoch, respMean + [respStd; -respStd], 'LineWidth', 1, 'color', [s.epochColor .4])
-                xlabel(predictors.Properties.RowNames{j}, 'Interpreter', 'none')
-                set(gca, 'xlim', s.epochLims, 'ylim', [0 yMax])
-                pause(.01)
-            end
-                
+        % temp
+        eventBins = events+s.eventLims(1)>t(1) & events+s.eventLims(2)<t(end);  % only include events with windows falling inside range of t
+        for j = 1:nUnits
+            response(eventBins,:,j) = interp1(t, spkRates(j,:), xEvent+events(eventBins));  % compute firing rate for all trials in one shot
+        end
         
-        elseif predictors.type(j)=='continuous'
-            spkRate = interp1(timeStamps, spkRates(i,:), predictors.t{j});
-            spkRateBins = ~isnan(spkRate);
-            xLims = prctile(predictors.data{j}, s.percentileLims);
-            xGrid = linspace(xLims(1), xLims(2), s.contGridNum);
-            winSz = s.contWindowSz*diff(xLims);
-            
-            [response, responseStd, density] = deal(nan(1, length(xGrid)));
-            for k = 1:length(xGrid)
-                bins = predictors.data{j} >= (xGrid(k)-.5*winSz) & ...
-                    predictors.data{j} < (xGrid(k)+.5*winSz) & ...
-                    spkRateBins;
-                if any(bins)
-                    response(k) = sum(spkRate(bins)) / sum(bins);
-                    responseStd(k) = std(spkRate(bins));
-                    density(k) = sum(bins);
+        response = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');  % i don't think it's possible for NaNs to appear here, but just to be safe...
+        responses.response{i} = response;
+        responses.xLims(i,:) = s.eventLims;
+        % todo: determine if cell should be included here? as opposed to predictor?
+
+
+    elseif predictors.type(i)=='epoch'
+        epochs = predictors.data{i};
+        response = nan(size(epochs,1), length(xEpoch), nUnits);
+        durations = diff(epochs,1,2);
+
+        % if too many epochs find the elements of central duration
+        % (note) this may include epochs that are not within the usable
+        % period for all units!
+        if size(epochs,1)>s.maxEpochs
+            middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (1:s.maxEpochs);
+            [~, sortInds] = sort(durations);
+            inds = sortInds(middleIndsSorted)';  % !!! should maybe pick random intead of central-duration epochs
+        else
+            inds = 1:length(epochs);
+        end
+
+        for j = inds
+            epoch = durations(j)*s.epochLims + epochs(j,1);  % start and end times for this epoch
+            epochBins = t>=epoch(1) & t<=epoch(2);
+            if any(epochBins)
+                if nUnits==1
+                    response(j,:,:) = interp1(t(epochBins), spkRates(:,epochBins), ...
+                        linspace(epoch(1), epoch(2), s.gridNum));
+                else
+                    response(j,:,:) = interp2(t(epochBins), ...
+                        [1:nUnits]', spkRates(:,epochBins), ...
+                        linspace(epoch(1), epoch(2), s.gridNum), [1:nUnits]', 'linear')';
                 end
             end
-            density = density / sum(density);
-            cellResponses = addResponse(cellResponses, ...
-                predictors.Properties.RowNames{j}, response, 'continuous', xLims, responseStd, density);
-            
-            if s.plotResponses
-                subplot(rows, rows, j); hold on
-                density = density * (yMax/max(density));
-                fill([xLims(1) xGrid xLims(2) xLims(1)]', ...
-                    [0 density 0 0]', [0 0 0], ...
-                    'EdgeColor', [1 1 1]*.6, 'FaceAlpha', .1)
-                inds = randperm(length(spkRate), 1000);
-                scatter(predictors.data{j}(inds), spkRate(inds), 5, s.contColor, 'filled', 'markerfacealpha', .25)
-                
-                plot(xGrid, response, 'LineWidth', 3, 'color', s.contColor)
-                xlabel(predictors.Properties.RowNames{j}, 'Interpreter', 'none')
-                if xLims(1)~=xLims(2)  % somewhat of a hack to avoid constant predictors, which occur when feature is not successfully tracked...
-                    set(gca, 'xlim', xLims, 'ylim', [0 yMax])
-                end
-                pause(.01)
+        end
+        response = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');
+        responses.response{i} = response;
+        responses.xLims(i,:) = s.epochLims;
+        % todo: determine if cell should be included here? as opposed to predictor?
+        
+
+    elseif predictors.type(i)=='continuous'
+        xLims = prctile(predictors.data{i}, s.percentileLims);
+        xGrid = linspace(xLims(1), xLims(2), s.contGridNum);
+        winSz = s.contWindowSz*diff(xLims);
+
+        [response, responseStd] = deal(nan(length(xGrid), nUnits));
+        density = nan(1, length(xGrid));
+        for j = 1:length(xGrid)  % could this be sped up with hist?
+            xBins = predictors.data{i} >= (xGrid(j)-.5*winSz) & ...
+                predictors.data{i} < (xGrid(j)+.5*winSz);
+            density(j) = sum(xBins);
+            if any(xBins)
+                response(j,:) = nanmean(spkRates(:,xBins), 2);
+                responseStd(j,:) = nanstd(spkRates(:,xBins), 0, 2);
             end
-        end 
-    end
-    
-    % save cell responses somehow...
-    responses(i).cell = cellData.unit_id(i);
-    responses(i).responses = cellResponses;
-    if s.plotResponses
-        saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'responses', ...
-            sprintf('%s cell%i responses.png', session, cellData.unit_id(i))));
-    end
+        end
+        response = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');  % shouldn't these never be necessary?
+        responseStd = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');
+        density = density / sum(density);
+
+        responses.response{i} = response;
+        responses.xLims(i,:) = xLims;
+        responses.std{i} = responseStd;
+        responses.density{i} = density;
+        % todo: determine if cell should be included here? as opposed to predictor?
+    end 
 end
 
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling', 'responses.mat'), 'responses')
-disp('all done!')
-
-
-
-function responses = addResponse(responses, name, response, type, xLims, responseStd, density)
-    % extend predictors table by adding new row
-    
-    % conly continuous variables have the following fields
-    if ~exist('responseStd', 'var'); responseStd= []; end
-    if ~exist('density', 'var'); density = []; end
-    
-    newRow = table({response}, {responseStd}, {density}, categorical({type}, {'event', 'epoch', 'continuous'}), xLims, ...
-        'VariableNames', {'response', 'std', 'density', 'type', 'xLims'}, 'RowNames', {name});
-    responses = [responses; newRow];
-end
-
-end
-
-
+save(fullfile(getenv('SSD'), 'modelling', 'responses', [session '_responses.mat']), 'responses', '-v7.3');
+fprintf('%s: all done getting neural responses :)\n', session)
 

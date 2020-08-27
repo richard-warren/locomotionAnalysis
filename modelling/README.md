@@ -1,39 +1,20 @@
 # todo
-- [ ] ephys prelimAnalysis fixes
-  - [X] packContFiles (takes args again, and uses relative python path)
-  - [X] getGoodSpkInds (no longer finds best channel)
-  - [X] getFiringRate (now one function, slightly optimized)
-  - [X] plotting functions
-  - [X] formatEphysData (new alignment, plotting algo // dft firing rate calculation)
-    - [X] check min and max time calculation... (in cellData it is wrt open ephys clock... it is converted to spike clock in formatEphysData)
-    - [X] one fcn for getFiring rates
-    - [X] sync signal is spreadsheet somewhere...
-    - [X] rework alignment algorithm
-  - [X] getSessionEphysInfo (now gets sync signal also)
-  - [X] getBestChannels
-  - [X] incorporate new map generator
-    - [X] check kcoords works in plotQualityMetrics
-  - [ ] **test all functions on all sessions**
-    - [ ] formatEphysData
-    - [X] plotQualityMetrics
-  - [ ] sync with qz
-  - [ ] document prelimAnalysis
-    - [ ] figure out exact highpass, med ref pipeline
-
-- [ ] aggregate plots (first pass)
-  - ordering:
-    - event: avg response rate / overall avg rate
-    - epoch: ?
-    - cont: ?
-- [ ] aggregate plots (smarter)
-  - how to compare MI for cont, epoch, event?
-  - characterize 'true' and residual responses
+- [ ] *fix dpkAnalysis // check merged dpk still works...*
+- [ ] add real PSTH to plotPSTH
+- [ ] cluster cells
+  - [ ] mi by brain region
+  - [ ] how can i cluster predictors?
 - [ ] choose transformations, implement in prepDesignMatrix
   - [ ] may need some mechanism for regressing away arbitrary predictors...
   - [ ] sort both by peak autocorrelation AND mutual information to see if there are non-linear relationships here
   - [ ] mutual information for each cell and predictors, or cross correlations? only include high info cells in aggregate plots? does it make sense to use mutual information when model is linear? e.g. mutual info would be very high for phase predictor, but phase would be useless in model
-  - [ ] use these plots to determine model transformations
-- [ ] write matlab code to handle to experiment conditions (surprise, omission)
+- [ ] build models!
+
+# relevant papers
+- kinematics in cer
+  - https://pubmed.ncbi.nlm.nih.gov/21795616/
+  - https://pubmed.ncbi.nlm.nih.gov/16733704/
+
 
 # analysis flow
 - prepPredictors
@@ -55,6 +36,8 @@
     - applying transformation (e.g. convolve, raise to powers...)
 # predictors
 - [X] continuous
+  - [ ] whisker phase
+  - [ ] distance and time to contact
   - [X] wheel velocity
   - [X] paws (lh lf rf rh) (x y z)
   - [X] body angle
@@ -72,6 +55,7 @@
     - sound like predictor, obstacle velocity
     - brightness like predictor, something ramping when light is on and decaying as passes eye position
 - [X] epoch
+  - [ ] obs start to whisker contact
   - [X] swing stance (lh lf rf rh)
   - [X] obstacle (could also be event)
   - [X] obstacle light (could also be event)
@@ -87,6 +71,8 @@
   - [X] paw contacts (lh lf rf rh) (dorsal ventral) (could also be logical)
 
 # questions
+- how to cluster *correlated* varialbes (eg to find predictor groups)
+- number of trials appears to impact MI - it is high for small trial nums, eg paw contacts... how can i compare MI when trial nums are very dft, eg normal and surprise rewards
 - when averaging response shapes across mice, how to handle dft number of trials per mouse, e.g. if a mouse has only a single paw contact, i don't really want this to factor heavily in the across mouse average
 - how to handle temporal discontinuities in old sessions?
 - some logical vars could be treated as events, e.g. paw contacts might better be treated as moments of contact rather than periods of contact
@@ -98,6 +84,7 @@
 - how to do these info theoretic 'bits per thing' metrics of utility of dft predictors
 
 # long term todo
+- [ ] figure out how to handle missing whisker contact times in model
 - [ ] i should probably be smoothing vel somehow, e.g. really using the local fitting method
 - [ ] should i mask out phase when not running? also, why do i need to high pass for phase to work??
 - [ ] how to handle nose in old sessions, which is out of view!
@@ -115,6 +102,9 @@
 - [ ] bayesian methods for filtering tongue and whisker locations, incorporating prior information about location (in mouth, and maximally retracted)
 
 # todo(ne)
+- [X] move all analyses to SSD :)
+- [X] write matlab code to handle to experiment conditions (surprise, omission)
+- [X] speed up getNeuralResponses by computing all neurons at once!
 - [X] incorporate getKinematicData into autoAnalyze() and make sure diagnostic plots are produced
 - [X] percentile limits for epochs
 - [X] check spike width is narrow enough for fast licking
@@ -155,19 +145,38 @@
   - [X] whisker angle
 - [X] show lick times even for low confidence frames
 - [X] fix problem sessions
-
-# problem sessions
-session | problem
-------- | -------
-181019_002 | cellData_old and cellData (qz kept the old one, which was my sorting)
-181020_001 | cellData_old and cellData (qz kept the old one, which was my sorting)
-181103_000 | cellData_old only // ks1 and ks2 results need to be moved (looks good now)
-191007_003 | only KS2 results? and nothing in the main folder (looks good now)
-191009_003 | KS1 with and without HP, KS2, no results in main folder (qz fixed)
-191009_003 | empty cellData and cellData_withHighPass
-200113_000 | empty cellData
-200117_000 | cellData doesn't match spike sorted units
-
+- [X] ephys prelimAnalysis fixes
+  - [X] packContFiles (takes args again, and uses relative python path)
+  - [X] getGoodSpkInds (no longer finds best channel)
+  - [X] getFiringRate (now one function, slightly optimized)
+  - [X] plotting functions
+  - [X] formatEphysData (new alignment, plotting algo // dft firing rate calculation)
+    - [X] check min and max time calculation... (in cellData it is wrt open ephys clock... it is converted to spike clock in formatEphysData)
+    - [X] one fcn for getFiring rates
+    - [X] sync signal is spreadsheet somewhere...
+    - [X] rework alignment algorithm
+  - [X] getSessionEphysInfo (now gets sync signal also)
+  - [X] getBestChannels
+  - [X] incorporate new map generator
+    - [X] check kcoords works in plotQualityMetrics
+  - [X] test all functions on all sessions
+    - [X] formatEphysData
+    - [X] plotQualityMetrics
+  - [X] make sure works for QZ
+  - [X] document prelimAnalysis
+- [X] include 'unclustered' cells with high maha distance
+- [X] figure out why 'reward' such extreme values for some cells...
+- [X] figure out x limits for continuous vars...
+- [X] aggregate plots
+  - [X] wrap and plot all predictors
+    - [X] add `include` to aggregateResponses, plotAggregate, getFeatureImportance
+    - [X] showPlots option
+  - [X] compute MI for everybody
+    - [X] 'window' option for event and epoch vars
+    - [X] visualize and sanity-check MI
+    - [X] cluster
+    - [X] figure out how to include cells...
+    - [X] sort by group then by something else (mi, peak time, integral, maha distance)
 
 # to clear disk space in the future we could:
 - get rid of runTop, runBot when run exists

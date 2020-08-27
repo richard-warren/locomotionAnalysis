@@ -31,11 +31,11 @@ sensColors = [colorBoth; colorWisk; colorVision; colorNone];
 
 
 % decision making
-m.deltaMin = .005;  % (m) minimum change in step length for inclusion in model
-m.lightOffOnly = false;
-m.modPawOnlySwing = true;
-m.successOnly = false;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
 m.modSwingContactsMax = false;  % first swing of first modified paw cannot have more than this many frames of contact with the obstacle // overall success is LESS THAN 5 frames
+m.deltaMin = .0025;  % (m) minimum change in step length for inclusion in model
+m.successOnly = false;  % must set to false for sensoryDependence, bc not enough good trials with no whiskers and no light
+m.modPawOnlySwing = true;
+m.lightOffOnly = false;
 
 m.predictorsAll = {'velAtWiskContact', 'angleAtWiskContact', 'obsHgt', 'wiskContactPosition', 'modPawX', 'modPawXVel', 'modPawZ', 'modPawZVel'};
 m.predictorsNamedAll = {{'wheel velocity'}, {'body angle'}, {'obstacle height'}, {'obstacle proximity';'(horizontal)'}, {'paw position';'(horizontal)'}, {'paw velocity'; '(horizontal)'}, {'paw position';'(vertical)'}, {'paw velocity'; '(vertical)'}};

@@ -4,8 +4,8 @@ function packContFiles(sessions, varargin)
 
 % settings
 s.pythonPath = 'C:\Anaconda3\envs\phy2\python.exe';
-s.highPassFreq = 0; % 0 to skip highpass
-s.referencing = 'med';  % 'ave' 'med' or 'none'
+s.highPassFreq = 0;         % 0 to skip highpass
+s.referencing = 'med';      % 'ave' 'med' or 'none'
 s.verbose = false;
 
 
@@ -32,7 +32,6 @@ for i = 1:length(sessions)
     warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
     mapFile = ephysInfo.map{strcmp(sessions{i}, ephysInfo.session)};
     load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), 'connected')
-%     connected = true(64,1);  % !!! temp (this line sets all channels to be connected)
     connected = [num2str(connected)]'; % string containing binary vector
 
     % run pack_2

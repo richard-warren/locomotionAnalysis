@@ -1,20 +1,16 @@
-function prepPredictors(session, varargin)
+function getPredictors(session, varargin)
 
 % prepares table containing all predictors used for neural encoding models
-% // data are either events, epochs (e.g. isObsOn), or continuous
-
-% todo: should have the interpolation be optional... it's perhaps not
-% necessary to do the interpolation at this stage...
-% todo: should perhaps have dft colums for cont, event, and epoch data,
-% which would allow much easier indexing (they could be stored as arrays
-% rather than cell arrays...)
+% // data are either events, epochs (e.g. isObsOn), or continuous // if
+% predictor is unusable, 'include' is set to 0
 
 
 % settings
-s.dt = .002;
+s.dt = .002;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plotPredictors = true;
+s.visible = 'on';  % whether predictors plot is visible
 
 
 
@@ -26,7 +22,7 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'bodyAngles', 'whiskerAngle', 'pixelsPerM', 'wheelCenter', 'wheelRadius', ...
     'lickTimes', 'touchesPerPaw', 'touchClassNames', 'obsOnTimes', 'obsOffTimes', ...
     'rewardTimes', 'isRewardSurprise', 'omissionTimes', 'wiskContactTimes', ...
-    'obsLightOnTimes', 'obsLightOffTimes', 'isLightOn');
+    'obsLightOnTimes', 'obsLightOffTimes');
 locationsRun = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
 locationsWisk = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw_wisk.csv'));
 pawNames = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'};
@@ -35,9 +31,8 @@ fps = 1/nanmedian(diff(frameTimeStamps));
 scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
 validTimes = ~isnan(frameTimeStamps);
 validTimesWisk = ~isnan(frameTimeStampsWisk);
-predictors = table({}, categorical({}, {'event', 'epoch', 'continuous'}), {}, ...
-    'VariableNames', {'data', 'type', 't'}, 'RowNames', {});
-
+predictors = table({}, categorical({}, {'event', 'epoch', 'continuous'}), {}, [], ...
+    'VariableNames', {'data', 'type', 't', 'include'}, 'RowNames', {});
 
 
 
@@ -107,12 +102,6 @@ nose = pcProject([noseX, noseZ], noseConfidence, true, 'nose');
 nose = interp1(frameTimeStampsWisk(validTimesWisk), nose(validTimesWisk), t);
 addPredictor('nose', nose, 'continuous', t)
 
-% % whisker pad (first pc projection)
-% [padX, padZ, padConfidence] = deal(locationsWisk.wisk_pad, locationsWisk.wisk_pad_1, locationsWisk.wisk_pad_2);
-% pad = pcProject([padX, padZ], padConfidence, true, 'pad');
-% pad = interp1(frameTimeStampsWisk(validTimesWisk), pad(validTimesWisk), t);
-% addPredictor('pad', pad, 'continuous', t)
-
 % satiation
 lickBins = histcounts(lickTimes, [t (t(end)+s.dt)]);
 satiation = cumsum(lickBins) / sum(lickBins);
@@ -120,9 +109,9 @@ addPredictor('satiation', satiation, 'continuous', t)
 
 % velocity for continuous predictors
 % (expect for those listed in 'exclude')
-exclude = {'velocity', 'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
+excludeVars = {'velocity', 'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
 for row = predictors.Properties.RowNames'
-    if ~ismember(row{1}, exclude)
+    if ~ismember(row{1}, excludeVars)
         vel = getVelocity(predictors{row{1}, 'data'}{1}, s.velTime, 1/s.dt);
         addPredictor([row{1} '_vel'], vel, 'continuous', t)
     end
@@ -152,6 +141,9 @@ addPredictor('light', [obsLightOnTimes(:) obsLightOffTimes(:)], 'epoch')
 % reward
 addPredictor('reward', [rewardTimes(1:end-1), rewardTimes(2:end)], 'epoch')
 
+% obsOn -> wisk (start at obstacle on and end at moment of whisker contact)
+addPredictor('obsToWisk', rmmissing([obsOnTimes(:) wiskContactTimes(:)]), 'epoch');
+
 % stride (start of swing to start of next swing)
 for i = 1:4
     swingStartTimes = frameTimeStamps(find(diff(stanceBins(:,i))==-1)+1);
@@ -167,6 +159,10 @@ end
 % whisker contact
 addPredictor('whiskerContact', wiskContactTimes, 'event')
 
+% obs on/off
+addPredictor('obsOn', obsOnTimes, 'event')
+addPredictor('obsOff', obsOffTimes, 'event')
+
 % licks
 addPredictor('lick', lickTimes, 'event')
 
@@ -180,11 +176,11 @@ addPredictor('reward_surprise', rewardTimes(isRewardSurprise), 'event')
 medianFiltering = 5;  % (samples) window size for median filtering to remove 'blips'
 minDif = 1;  % (seconds) paw contacts must be at least this far apart in time
 touchesPerPaw(touchesPerPaw==0) = find(strcmp(touchClassNames, 'no_touch'));  % recode no_touch class
-include = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
+includeTouches = {'fore_dorsal', 'fore_ventral', 'hind_dorsal', 'hind_ventral_low'};
 for i = 1:4
     for j = {'dorsal', 'ventral'}
         touchTypes = touchClassNames(touchesPerPaw(:,i));
-        touchBins = contains(touchTypes, j{1}) & ismember(touchTypes, include);
+        touchBins = contains(touchTypes, j{1}) & ismember(touchTypes, includeTouches);
         touchBins = logical(medfilt1(single(touchBins), medianFiltering));
         touchTimes = frameTimeStamps(find(diff(touchBins)==1)+1);
         if ~isempty(touchTimes)
@@ -196,73 +192,15 @@ end
 
 
 
-
-% -----
-% PLOT!
-% -----
-
-% make nice little plot
-if s.plotPredictors
-    
-    % settings
-    dz = 6;  % (standard deviation) vertical separation
-    xWidth = 40;  % (seconds) range of x axis
-    xLims = [0 xWidth] + randi(round(tMax-xWidth*2));
-    ommit = {'paw1LH_stride', 'paw2LF_stride', 'paw3RF_stride', 'paw4RH_stride', ...
-        'reward', 'reward_surprise', 'reward_omission', 'reward_normal'};
-    
-    % initialiations
-    set(0, 'DefaultAxesTickLabelInterpreter', 'none')
-    figure('name', session, 'color', 'white', 'position', [125.00 93.00 1666.00 886.00]); hold on
-    allInds = find(~ismember(predictors.Properties.RowNames, ommit));
-    colors = lines(length(allInds));
-    y = 0:dz:dz*length(allInds)-1;
-    
-    % epoch
-    epochInds = allInds(predictors.type(allInds)=='epoch');
-    plot(xLims, repmat(y(1:length(epochInds)),2,1)', 'color', [.4 .4 .4])  % horizontal lines for each epoch predictor
-    for i = 1:length(epochInds)
-        epoch = predictors{epochInds(i),'data'}{1};
-        epoch = epoch(any(epoch>xLims(1) & epoch<xLims(2),2),:);  % only plot epochs within xLims
-        if ~isempty(epoch)
-            plot(epoch', repelem(y(i), 2), 'LineWidth', 5, 'color', colors(i,:))
-        end
-    end
-    
-    % continuous
-    contInds = allInds(predictors.type(allInds)=='continuous');
-    bins = t>xLims(1) & t<xLims(2);
-    yOffsets = y((1:length(contInds))+length(epochInds));
-    allCont = cat(1,predictors{predictors.type=='continuous','data'}{:});
-    plot(t(bins), zscore(allCont(:,bins)') + yOffsets);
-    
-    % events
-    eventInds = allInds(predictors.type(allInds)=='event');
-    dy = length(epochInds) + length(contInds);
-    plot(xLims, repmat(y((1:length(eventInds))+dy),2,1)', 'color', [.4 .4 .4])  % horizontal lines for each event predictor
-    for i = 1:length(eventInds)
-        x = predictors{eventInds(i),'data'}{1};
-        x = x(x>xLims(1) & x<xLims(2));
-        scatter(x, repelem(y(i+dy), length(x)), 20, colors(i+dy,:), 'filled')
-    end
-    
-    % fancify
-    set(gca, 'xlim', xLims, 'ytick', y, ...
-        'YTickLabel', predictors.Properties.RowNames([epochInds; contInds; eventInds]), ...
-        'YLim', [y(1) y(end)], 'TickDir', 'out')
-end
-
-
-
 % ----
 % SAVE
 % ----
-
-dirName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'modelling');
-if ~exist(dirName, 'dir'); mkdir(dirName); end
-save(fullfile(dirName, 'predictors.mat'), 'predictors')
+save(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 if s.plotPredictors
-    saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', sprintf('%s predictors.png', session)));
+    fig = plotNeuralPredictors(session, 'predictors', predictors, 'visible', s.visible);
+    saveas(fig, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', ...
+        sprintf('%s predictors.png', session)));
+    if strcmp(s.visible, 'off'); close(fig); end
 end
 
 
@@ -288,8 +226,8 @@ function projection = pcProject(sig, confidence, normalize, name)
             projection = (projection-nanmean(projection)) / pixelsPerM;
         end
     else
-        projection = zeros(1,length(confidence));
-        fprintf('  %s tracking unsuccessful\n', name)
+        projection = nan(1,length(confidence));
+        fprintf('  %s: %s tracking unsuccessful\n', session, name)
     end
 end
 
@@ -310,23 +248,29 @@ end
 
 
 function addPredictor(name, data, type, t)
-    % extends predictors tabel by add a new row
+    % extends predictors table by add a new row
+    % include=0 when there are no events, no epochs, or all of the
+    % continuous dta are NaN (occurs when pcProject fails)
     
+    if ~exist('include', 'var'); include = true; end
     if ~exist('t', 'var'); t = []; end
     
     % ensure homogeneous orientation
     if strcmp(type, 'event')
         data=data(:);
+        include = length(data)>1;
+    elseif strcmp(type, 'epoch')
+        include = size(data,1)>1;
     elseif strcmp(type, 'continuous')
         data=data(:)';
+        include = ~all(isnan(data));
     end
     
-    newRow = table({data}, categorical({type}, {'event', 'epoch', 'continuous'}), {t}, ...
-        'VariableNames', {'data', 'type', 't'}, 'RowNames', {name});
+    newRow = table({data}, categorical({type}, {'event', 'epoch', 'continuous'}), {t}, include, ...
+        'VariableNames', {'data', 'type', 't', 'include'}, 'RowNames', {name});
     predictors = [predictors; newRow];
 end
 
 end
-
 
 

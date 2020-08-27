@@ -143,7 +143,7 @@ for i = 1:length(s.levels)
     subplot(s.subplotDims(1), s.subplotDims(2), i); hold on
     imagesc(x, y, nanmean(cat(3, heatmaps{i,:}), 3))
     set(gca, 'YDir', 'normal', 'TickDir', 'out', 'Box', 'off')
-    line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)
+    line(s.xLims+[-1 1]*range(s.xLims), s.xLims+[-1 1]*range(s.xLims), 'color', [0 0 0 .5], 'lineWidth', 3)  % add unity line
     if i==1; ylabel('average'); end
     set(gca, 'XLim', s.xLims, 'YLim', s.yLims)
     

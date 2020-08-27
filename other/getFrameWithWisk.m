@@ -56,8 +56,6 @@ frameWisk(:, [1:s.border, end-s.border:end]) = 255;
 rightPadding = (xWiskPos+size(frameWisk,2)) - size(frameRun, 2) - 1;  % how much to add to right of frame
 frame = cat(2, frameRun, ones(size(frameRun,1), rightPadding)*255 * s.isPaddingWhite);
 
-<<<<<<< HEAD
-=======
 % crop top of wisk frame if it is too high
 if yWiskPos<1
     frameWisk = frameWisk((-yWiskPos+2):end,:,:);
@@ -65,17 +63,9 @@ if yWiskPos<1
 else
     yWiskPosTemp = yWiskPos;
 end
->>>>>>> upstream/master
 
 xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
 yInds = yWiskPosTemp:yWiskPosTemp+size(frameWisk,1)-1;
 frame(yInds, xInds) =  frameWisk;
-<<<<<<< HEAD
 
 
-
-end
-
-
-=======
->>>>>>> upstream/master

@@ -39,7 +39,6 @@ s.saveLocation = '';  % if provided, save figure automatically to this location
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 if length(s.levels)==1; colorNum=length(predictors); else; colorNum=length(s.condition); end 
 if isempty(s.colors); s.colors = jet(colorNum); end
-if isempty(s.figPos); s.figPos = [100 400 200*s.subplotDims(2) 150*s.subplotDims(1)]; end
 if isstruct(flat); flat = struct2table(flat); end
 cNum = length(s.levels);  % total number of conditions
 if isempty(s.names); s.names = predictors; end
@@ -50,6 +49,7 @@ if isempty(s.subplotDims)
         s.subplotDims = [cNum length(predictors)];
     end
 end
+if isempty(s.figPos); s.figPos = [100 400 200*s.subplotDims(2) 150*s.subplotDims(1)]; end
 
 % restrict to desired trials
 if length(s.levels)>1; flat = flat(ismember(flat.(s.condition), s.levels), :); end % keep only trials within condition

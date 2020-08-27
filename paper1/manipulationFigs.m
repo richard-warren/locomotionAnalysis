@@ -1,7 +1,7 @@
 %% compute experiment data from scratch (only need to do once)
 
 % settings
-dataset = 'mtc_muscimol';  % senLesion, mtc_lesion, mtc_muscimol
+dataset = 'senLesion';  % senLesion, mtc_lesion, mtc_muscimol
 
 if strcmp(dataset,'senLesion'); sheet='senLesionNotes'; elseif strcmp(dataset,'mtc_lesion'); sheet='mtcLesionNotes'; elseif strcmp(dataset,'mtc_muscimol'); sheet='muscimolNotes'; end
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', sheet);
@@ -11,7 +11,7 @@ mice = unique(sessionInfo.mouse);
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data', '-v7.3'); disp('data saved!')
+fprintf('saving...'); save(fullfile(getenv('SSD'), 'paper1', [dataset '_data.mat']), 'data', '-v7.3'); disp('data saved!')
 clear all
 
 
@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_muscimol';
+dataset = 'senLesion';
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = true;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
@@ -41,7 +41,7 @@ miceToExclude = {'sen11'};
 
 
 % initializations
-global_config;
+paper1_config;
 if matchTrials; suffix1='_matched'; else; suffix1=''; end
 if ~poolSenLesionConditions && strcmp(dataset,'senLesion'); suffix2='_allConditions'; else; suffix2=''; end
 if ~poolSenLesionConditions && splitEarlyLate; disp('WARNING! Splitting early and late sessions only makes sense when pooling senLesionConditions'); keyboard; end
@@ -103,8 +103,7 @@ end
 
 % load data
 fprintf(['loading ' dataset ' data... ']);
-% tic; load(fullfile(getenv('OBSDATADIR'), 'matlabData', [dataset '_data.mat']), 'data'); toc
-tic; load(fullfile('C:\Users\richa\Desktop\', 'matlabData', [dataset '_data.mat']), 'data'); toc  % when working on home computer
+tic; load(fullfile(getenv('SSD'), 'paper1', [dataset '_data.mat']), 'data'); toc
 data_backup = data;  % store unaltered data so it doesn't need to be loaded again
 
 
@@ -139,7 +138,7 @@ end
 
 % restrict to early lesion sessions
 if contains(dataset, 'esion') && ~splitEarlyLate  % only do this for the lesion data
-    fprintf('restricting to %i post lesion sessions... ', preSessions);
+    fprintf('restricting post lesion sessions to %i->%i... ', earlySessions(1), earlySessions(2));
     for i = 1:length(data.data)  % loop across mice
         bins = contains({data.data(i).sessions.condition}, 'post') & ...  % if a lesion session
             ([data.data(i).sessions.conditionNum]<earlySessions(1) | ...  % and if not an early session
@@ -599,14 +598,14 @@ flat = flattenData(data, ...
     'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', ...
     'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modSwingContacts', 'session'}]);
 
-%% heatmaps
+%% heatmaps (figures f6b f6e s6f)
 if strcmp(dataset, 'senLesion'); dims = [2 2]; else; dims = []; end
 plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', false, 'plotMice', false, 'colors', colors, 'outcome', 'isModPawLengthened', 'plotProbs', false, 'subplotDims', dims, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heatMaps' suffix1 suffix2]));
 
-%% (temp; to pick good mice) heatmaps
+%% (temp; to see individual mice) heatmaps
 plotDecisionHeatmaps(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'normalize', 'col', 'xLims', [-20 15], ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'avgMice', true, 'plotMice', true, 'colors', colors, 'outcome', 'isModPawLengthened', 'plotProbs', false, ...
@@ -623,15 +622,15 @@ plotEntropies(flat, 'condition', 'condition', 'levels', vars.condition.levels, .
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'colors', colors, 'barProps', [barProperties, {'comparisons', [1 2]}]);
 
-%% trial scatters
+%% trial scatters (figures f6a f6d s6g)
 plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'rowColors', colors, 'xLims', [-.11 .06], 'obsColor', obsColor, 'poolHistos', true, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionKin' suffix1 suffix2]));
 
-%% model accuracies
+%% model accuracies (figures s6a s6c s6h)
 rng(1)
-if strcmp(dataset, 'senLesion'); comparisons = [2 4; 2 6; 2 8]; xfers = []; else; comparisons = [2 4; 4 6]; xfers = [1 2]; end
+if strcmp(dataset, 'senLesion'); comparisons = [2 4; 2 6; 2 8]; xfers = []; else; comparisons = [2 4]; xfers = []; end
 [accuracies, ~, temp] = plotModelAccuracies(flat, m.predictors, 'isModPawLengthened', 'modelTransfers', xfers, ...
     'weightClasses', true, 'condition', 'condition', 'levels', vars.condition.levels, 'kFolds', 15, ...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
@@ -650,7 +649,7 @@ plotEntropies(flat, 'condition', 'condition', 'levels', vars.condition.levels, '
     'modSwingContactsMax', m.modSwingContactsMax, 'colors', colors, 'barProps', barProperties);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_landingHistos' suffix1 suffix2]), 'svg');
 
-%% model predictors
+%% model predictors (figures f6c s6e s6j)
 % predictorsToShow = m.predictors;
 predictorsToShow = m.predictors(1:4);
 
@@ -659,6 +658,13 @@ plotPredictors(flat, m.predictors(inds), 'isModPawLengthened', 'colors', colors,
     'condition', 'condition', 'levels', vars.condition.levels(1:2), 'overlayConditions', true, 'mouseAlpha', .15, 'subplotDims', [2 2], 'names', m.predictorsNamed(inds), ...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', true, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_predictors' suffix1 suffix2]));
+
+%% distribution bimodality
+close all
+plotBimodalities(flat, 'bic', true, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isModPawLengthened', ...
+    'modSwingContactsMax', 0, 'deltaMin', m.deltaMin, 'successOnly', false, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'colors', colors, 'barProps', [barProperties, 'comparisons', [2 4], 'test', 'ttest'], ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceBimodality'));
 
 %% BASELINE LOCOMOTION SCATTERS
 
@@ -773,7 +779,7 @@ ln = line([.5 .5], get(gca, 'ylim'), 'color', [lesionColor .9], 'linewidth', 2);
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_successAndVelOverSessions' suffix1 suffix2]), 'svg');
 
-%% landing distance bar plots
+%% landing distance bar plots (figures s6b s6d s6i)
 
 % landing distance
 if strcmp(dataset, 'senLesion'); cmp = [1 2; 1 3; 1 4; 5 6; 5 7; 5 8]; edgeColor=[.15 .15 .15]; else; cmp = [1 2; 3 4]; edgeColor = []; end

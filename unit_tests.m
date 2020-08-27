@@ -225,15 +225,41 @@ clear ephysInfo
 
 
 for i = 1:length(sessions)
+    disp(i)
     try
-        formatEphysData(sessions{i});
+%         formatEphysData(sessions{i});
+        bestChannels = getBestChannels(sessions{i});
+        showChannelsOverTime(sessions{i}, 'timeBinNum', 5, 'showSortedSpikes', true, ...
+            'figureName', fullfile(getenv('OBSDATADIR'), 'figures', 'ephys', 'qualityMetrics', [sessions{i} 'allUnits.png']), ...
+            'bestChannels', bestChannels); 
 %         plotQualityMetrics(sessions{i}, 'fastLoad', false);
-%         close all
+        close all
     catch
         fprintf('%s: PROBLEM!\n', sessions{i})
     end
 end
 disp('all done!')
+
+%% try using scipy within matlab
+
+% pyenv('Version', 'C:\Users\rick\AppData\Local\Programs\Python\Python37\python.exe')
+
+x1 = linspace(0,1,1000000);
+x2 = rand(size(x1));
+y = x1 + rand(size(x1))*10;
+
+tic
+py.sklearn.feature_selection.mutual_info_regression([x1', x2'], y)
+toc
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,9 +1,3 @@
-%% find ephysSessions
-
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
-ephysSessions = ephysInfo.session(ephysInfo.include==1);
-clear ephysInfo
-
 %% find out which sessions have 'originalDimensions' files
 
 files = dir(fullfile(getenv('OBSDATADIR'), 'sessions'));
@@ -136,33 +130,3 @@ oldConf = table2array(old(:,contains(old.Properties.VariableNames, '_2')));
 
 bins = 100;
 close all; figure; histogram(newConf(:),bins); hold on; histogram(oldConf(:),bins)
-
-
-%% modelling analyses on all sessions
-
-for i = 1:length(ephysSessions)
-    try
-%         prepPredictors(ephysSessions{i})
-%         getNeuralResponses(ephysSessions{i})
-        formatEphysData(ephysSessions{i})
-    catch
-        fprintf('%s: problem with analysis\n', ephysSessions{i})
-    end
-end
-
-
-%% create missing .dat files
-
-for i = 1:length(ephysSessions)
-    try
-        ephysFolder = dir(fullfile(getenv('OBSDATADIR'), 'sessions', ephysSessions{i}, 'ephys_*'));
-        datFile = dir(fullfile(ephysFolder.folder, ephysFolder.name, '*.dat'));
-        if isempty(datFile)
-            packContFiles(ephysSessions{i});
-        end
-    catch
-        fprintf('%s: problem with analysis\n', ephysSessions{i})
-    end
-end
-
-

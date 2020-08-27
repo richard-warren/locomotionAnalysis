@@ -10,11 +10,10 @@ data{1}.data = cellfun(@(x) x.data, data); data = data{1};
 fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
 
 %% load experiment data
-% fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
-fprintf('loading... '); load(fullfile('C:\Users\richa\Desktop\', 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')  % temp, for working from home
+fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
 
 % global settings
-global_config;  % initialize global settings
+paper1_config;  % initialize global settings
 extraBarProps = {'constantEdgeColor', [.2 .2 .2], 'scatterSize', 30};  % these data have large sample size, so some of the bar plot properties will be unique to this dataset
 isLeading = [true false true false]; % sequence of conditions for plots
 isFore = [true true false false];
@@ -746,5 +745,49 @@ end
 
 [h, p] = kstest(zscore(mat));
 fprintf('%i, %.5f: lagging paw landing position variability\n', h, p)
+
+
+%% compute correlation between whisker contact position and trial velocity
+
+flat = flattenData(data, {'mouse', 'trialVel', 'wiskContactPosition'});
+mice = unique({flat.mouse});
+xy = [[flat.wiskContactPosition]', [flat.trialVel]'];
+
+corrs = nan(1, length(mice));
+for i = 1:length(mice)
+    bins = strcmp({flat.mouse}, mice{i});
+    xy_sub = rmmissing(xy(bins,:));
+    corrs(i) = corr(xy_sub(:,1), xy_sub(:,2));
+end
+
+% [h, p] = kstest(zscore(mat));
+% fprintf('%i, %.5f: lagging paw landing position variability\n', h, p)
+
+%% compute number of mice, sessions, trials, and frames in first paper
+
+experimentSessions = getAllExperimentSessions();
+sessions = experimentSessions.session;
+[trials, frames] = deal(nan(1,length(sessions)));
+for i = 1:length(sessions)
+    disp(i/length(sessions))
+    
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), 'obsOnTimes')
+    vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runWisk.mp4'));
+    
+    frames(i) = round(vid.Duration*vid.FrameRate);
+    trials(i) = length(obsOnTimes);
+end
+
+fprintf('\n----- paper stats -----\n')
+fprintf('mice: %i\n', length(unique(experimentSessions.mouse)));
+fprintf('sessions: %i\n', height(experimentSessions));
+fprintf('trials: %i\n', nansum(trials));
+fprintf('frames: %i\n', nansum(frames));
+
+
+
+
+
+
 
 

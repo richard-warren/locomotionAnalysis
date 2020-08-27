@@ -10,7 +10,7 @@ s.kernelRise = .005;     % (s) rise for double exponential kernel
 s.kernelFall = .02;      % (s) fall for double exponential kernel
 s.kernelSig = .02;       % (s) if a gaussian kernel is used
 s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
-
+s.forceAlignment = false;  % whether to run the alignement algorithm to find best matches between spike and ephys sync signals // if false, only runs the algorithm when there are different numbers of events in each channel
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
@@ -29,9 +29,13 @@ syncSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.m
 syncSpikeTimes = syncSpikeTimes.(ephysInfo.syncSignal).times(syncSpikeTimes.(ephysInfo.syncSignal).level==1);
 
 
-if length(syncEphysTimes)~=length(syncSpikeTimes)
-    fprintf('%s: WARNING! %i events in spike and %i events in openEphys.\n', ...
-        session, length(syncSpikeTimes), length(syncEphysTimes))
+if length(syncEphysTimes)~=length(syncSpikeTimes) || s.forceAlignment
+    if ~s.forceAlignment
+        fprintf('%s: WARNING! %i events in spike and %i events in openEphys.\n', ...
+            session, length(syncSpikeTimes), length(syncEphysTimes))
+    else
+        fprintf('forcing alignment algorithm\n')
+    end
     
     % find signal offset
     % ------------------
@@ -105,8 +109,11 @@ openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get line
 
 % check that predictions are accurate
 predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
-if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .002
+if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .003
     fprintf('%s: WARNING! Linear mapping from openephys to spike fails to fit all events!\n', session)
+    keyboard
+    % try the following line to see if the predicted times are really off or within an acceptible range
+%     disp(predictedEventSpikeTimes - syncSpikeTimes)
 end
     
 
