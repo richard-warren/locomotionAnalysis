@@ -1,7 +1,6 @@
-function [BS_crossPoint, PC_crossPoint, goodChannelPoint, isStepModulated] = addPointsToProbe(session, LM, BSCoords, offset, shankNum, opts)
+function [BS_crossPoint, PC_crossPoint, goodChannelPoint] = addPointsToProbe(session, LM, BSCoords, shankNum, opts)
 
 
-if ~exist('offset', 'var'); offset = 0; end
 if ~exist('shankNum', 'var'); shankNum = 1; end
 
 % settings
@@ -11,68 +10,41 @@ s.noDiIMode = false;
 
 % reassign settings contained in opts
 if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
+if strcmp(session, '000000_000'); s.showGCPoints = false; end
 
+% initialization
+PC_crossPoint = []; 
+goodChannelPoint = [];
+
+
+% ------------- strat processing -----------------------------------------
+disp(['processing ' session ', shank = ' num2str(shankNum)]);
 
 % get probe mapping file
-disp('getting probe mapping...');
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-mapFile = ephysInfo.map{strcmp(session, ephysInfo.session)};
+ephysHistoInfo = getEphysSessionHistoInfo(session);
 
-load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [mapFile '.mat']), ...
-    'xcoords', 'ycoords', 'channelNum_OpenEphys', 'connected');
-
-probeDepth = [];
-for i = 1:length(ycoords)
-    ind = find(channelNum_OpenEphys == i);
-    probeDepth(ind, 1) = ind;
-    probeDepth(ind, 2) = ycoords(i);
-end
-
-
-% get channel info of the recording session
-disp('getting ephys channel info...');
-
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
+% load ephysChannelsInfo spreadsheet
+warning('off')
 ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysChannelsInfo.xlsx'), 'Sheet', 'EphysChannelsInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+warning('on')
 
-PCShankNum =  ephysChannelsInfo.PCShankNum(strcmp(session, ephysChannelsInfo.session));
-PCProbeDepth = ephysChannelsInfo.PCProbeDepth(strcmp(session, ephysChannelsInfo.session));
-PCChannels = ephysChannelsInfo.PCChannels(strcmp(session, ephysChannelsInfo.session));
-
-GCShankNum = ephysChannelsInfo.GCShankNum(strcmp(session, ephysChannelsInfo.session));
-GCProbeDepth = ephysChannelsInfo.GCProbeDepth(strcmp(session, ephysChannelsInfo.session));
-GCChannels = ephysChannelsInfo.GCChannels(strcmp(session, ephysChannelsInfo.session));
-
-isStepModulated = ephysChannelsInfo.stepModulated(strcmp(session, ephysChannelsInfo.session));
-
-
-% get rid of nans 
-PCShankNum = PCShankNum(~isnan(PCShankNum));
-PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth));
-PCChannels = PCChannels(~isnan(PCChannels));
-GCShankNum = GCShankNum(~isnan(GCShankNum));
-GCProbeDepth = GCProbeDepth(~isnan(GCProbeDepth));
-GCChannels = GCChannels(~isnan(GCChannels));
-isStepModulated = isStepModulated(~isnan(isStepModulated));
-
-% calculate the actual depth for where I got Perkinje cell signals and for channels that have
-% good signals.
-PCDepth = zeros(size(PCProbeDepth, 1), 1);
-for i = 1:length(PCProbeDepth)
-    PCDepth(i, 1) = PCProbeDepth(i, 1) - probeDepth(PCChannels(i, 1), 2); 
-end
-
-GCDepth = zeros(size(GCProbeDepth, 1), 1);
-for i = 1:length(GCProbeDepth)
-    GCDepth(i, 1) = GCProbeDepth(i, 1) - probeDepth(GCChannels(i, 1), 2);
+% automatically figure out offset if users didn't assign any values for it
+if any(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session)& ephysChannelsInfo.PCShankNum == shankNum)) & (~exist('offset', 'var'))
+    offset = unique(ephysChannelsInfo.Offset(strcmp(session, ephysChannelsInfo.session) & ephysChannelsInfo.PCShankNum == shankNum));
+    disp(['offset = ', num2str(offset)]);
+    if length(offset) ~= 1
+        warning('Multiple offsets detected for the same probe trace! Offset will be temporarily set to 0!')
+        offset = 0;
+    end
+else
+    offset = 0;
+    disp('set offset = 0');
 end
 
 
-% plot brain surface cross point
+
 disp('adding points...');
+% ----------------------- plot brain surface cross point ------------------
 if ~s.noDiIMode
     
     % the code below deals with the reconstruction of dii-coated probe traces    
@@ -89,7 +61,6 @@ if ~s.noDiIMode
     
     
     % coarsely determine the location of the brain surface cross point
-    disp('adding brain surface cross point...');
     MLCoord = avg(1, 1);
     BS_MLCoords = unique(BSCoords(:, 1));
     MLCoord = BS_MLCoords(knnsearch(BS_MLCoords, MLCoord), 1);
@@ -120,10 +91,10 @@ if ~s.noDiIMode
     
     % dealing with the situation if there is only one adjacent brain section (most anterior or posterior)
     if length(adjacentAPCoord) == 1 
-        DVCoords = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord)), 3);
+        DVCoords = BSCoords((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord), 3);
     else
-        DVCoords1 = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
-        DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
+        DVCoords1 = BSCoords((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1)), 3);
+        DVCoords2 = BSCoords((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2)), 3);
         DVCoords = cat(1, DVCoords1, DVCoords2);
     end
     
@@ -147,7 +118,7 @@ if ~s.noDiIMode
 else
     
     % the code below applies for reconstructing no dii traces only
-    tempBS_crossPoint = LM.BS_crossPoint;
+    tempBS_crossPoint = LM.BS_crossPoints;
     dirV = LM.dirV;
     if dirV(1, 3)<0; dirV = -dirV; end
     
@@ -155,64 +126,98 @@ else
     adjacentAPCoord = [BSCoords(find(BSCoords(:, 2) < APCoord, 1, 'last'), 2), BSCoords(find(BSCoords(:, 2) > APCoord, 1, 'first'), 2)];
     MLCoord = tempBS_crossPoint(1, 1);
     MLCoord = BSCoords(find(BSCoords(:, 1) > round(MLCoord), 1));
-    DVCoords1 = BSCoords(find((BSCoords(: , 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1))), 3);
-    DVCoords2 = BSCoords(find((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2))), 3);
+    DVCoords1 = BSCoords((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(1)), 3);
+    DVCoords2 = BSCoords((BSCoords(:, 1) == MLCoord) & (BSCoords(:, 2) == adjacentAPCoord(2)), 3);
     weights = [abs(APCoord - adjacentAPCoord(1))/abs(diff(adjacentAPCoord)), abs(APCoord - adjacentAPCoord(2))/abs(diff(adjacentAPCoord)) ];
     DVCoord = mean(DVCoords1)*weights(2) + mean(DVCoords2)*weights(1);
     BS_crossPoint = [tempBS_crossPoint(1, :), DVCoord];
-    BS_distance = 0;   
-
+    BS_distance = 2000;
+    fakePoints = BS_crossPoint + dirV * BS_distance;
 end
 
 % plot brain surface cross point
-plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.k', 'MarkerSize', 30)
-if ~s.noDiIMode; points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2), points(:,3),'-g','LineWidth',3); end
+
+if ~s.noDiIMode
+    plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.k', 'MarkerSize', 30);
+    points = [BS_crossPoint ; avg]; plot3(points(:,1), points(:,2), points(:,3),'-g','LineWidth',3);
+else
+    plot3(BS_crossPoint(:, 1), BS_crossPoint(:, 2), BS_crossPoint(:, 3), '.', 'Color',[0.4940 0.1840 0.5560], 'MarkerSize', 30);
+    points = [BS_crossPoint ; fakePoints]; plot3(points(:,1), points(:,2), points(:,3),'-y','LineWidth',3);
+end
 
 
 
-% plot PC layer cross points
+% ------------------ plot PC layer cross points ---------------------------
 if s.showPCPoints
-    disp('plotting PC cross points...');
+    
+    % get PC channel info of the recording session
+    PCShankNum =  ephysChannelsInfo.PCShankNum(strcmp(session, ephysChannelsInfo.session));
+    PCProbeDepth = ephysChannelsInfo.PCProbeDepth(strcmp(session, ephysChannelsInfo.session));
+    PCChannels = ephysChannelsInfo.PCChannels(strcmp(session, ephysChannelsInfo.session));
+    
+    PCShankNum = PCShankNum(~isnan(PCShankNum));
+    PCProbeDepth = PCProbeDepth(~isnan(PCProbeDepth)); % probeDepth: the manipulator readings at where I see PC signals, indicating the most ventral point of the probe
+    PCChannels = PCChannels(~isnan(PCChannels));
+    PCDepth = [];
+    PCDepth = PCProbeDepth - [ephysHistoInfo.channelDepth(PCChannels)]'; % PCDepth: the actual depth of the channels on which I see PC signals
+    
     PC_inds = find(PCShankNum == shankNum);
-    PCChannels = PCChannels(PC_inds, :);
-    PCDepth = PCDepth(PC_inds, :);
-    if dirV(1, 3) < 0; dirV = -dirV; end
+    PCChannels = PCChannels(PC_inds);
+    PCDepth = PCDepth(PC_inds);
      
     PC_crossPoint = nan(length(PCDepth), 3);
+    if dirV(1, 3) < 0; dirV = -dirV; end
     for i = 1:length(PCDepth)
-        PC_crossPoint(i, :) = (PCDepth(i) + offset)*dirV + BS_crossPoint;
+        PC_crossPoint(i, :) = (PCDepth(i) + offset).*dirV + BS_crossPoint;
         hold on
         plot3(PC_crossPoint(i, 1), PC_crossPoint(i, 2), PC_crossPoint(i, 3), '.r', 'MarkerSize', 30)   
         points = [PC_crossPoint(i, :); BS_crossPoint];
-        plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
-    end
-
-    disp('Done');    
+        if ~s.noDiIMode
+            plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(PCDepth(i)),'FontSize',12)
+        else
+            plot3(points(:,1),points(:,2),points(:,3),'-y','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(PCDepth(i)),'FontSize',12)
+        end
+    end  
 end
 
 
-% plot good channel points
+% ------------------- plot good channel points ----------------------------
 if s.showGCPoints
-    disp('plotting GC points...');
     
+    % get good channels info of the recording session
+    load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');
+    if ~exist('bestChannels', 'var')
+        disp('bestChannels not found; format ephysData again to include bestChannels...');
+        formatEphysData(session);
+        load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'bestChannels');
+    end
+    GCChannels = bestChannels; clear bestChannels;
+    GCShankNum = ephysHistoInfo.shankNum(GCChannels);
+    GCDepth = [];
+    GCDepth = ephysHistoInfo.probeFinalDepth * 1000 - ephysHistoInfo.channelDepth(GCChannels); % GCDepth: the actual depth of the channels on which there are good (single) unit signals after spike sorting
     inds = find(GCShankNum == shankNum);
-    GCChannels = GCChannels(inds, :);
-    GCDepth = GCDepth(inds, :);
-    isStepModulated = isStepModulated(inds, :);
+    GCChannels = GCChannels(inds); 
+    GCDepth = GCDepth(inds);
     
     goodChannelPoint = nan(length(GCDepth), 3);
-    for i = 1:length(GCDepth)
-        
-        goodChannelPoint(i, :) = (GCDepth(i) + offset)*dirV + BS_crossPoint;
+    if dirV(1, 3) < 0; dirV = -dirV; end
+    for i = 1:length(GCDepth)        
+        goodChannelPoint(i, :) = (GCDepth(i) + offset).*dirV + BS_crossPoint;
         hold on
         plot3(goodChannelPoint(i, 1), goodChannelPoint(i, 2), goodChannelPoint(i, 3), '.c', 'Markersize', 30);
         points = [goodChannelPoint(i, :); BS_crossPoint];
-        plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
-        
+        if ~s.noDiIMode
+            plot3(points(:,1),points(:,2),points(:,3),'-g','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(GCDepth(i)),'FontSize',12)
+        else
+            plot3(points(:,1),points(:,2),points(:,3),'-y','LineWidth',3)
+            text(points(:,1)+20,points(:,2),points(:,3), num2str(GCDepth(i)),'FontSize',12)
+        end
     end    
-    disp('Done');
 end
 
-
+disp('Done');
 
 end

@@ -1,411 +1,355 @@
-
-folder = uigetdir();
+%% import tiff stack mask files
+mouseID = 'cmu3';
+folder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'TiffStack');
 files = dir(fullfile(folder, '*.tif'));
 
 downsampleRate = 0.3;
 thickness = 50;
 
 includeDentate = true;
-includeFastigial = false;
+includeInt = true;
+includeFastigial = true;
+includePCL_and_BS = true;
 
+saveFiles = true;
 
-% Right Side 
-disp('Reformatting right side...');
-RICoords = importTiffStack(fullfile(folder, 'InterpositusRight.tif'), downsampleRate, thickness);
-RPCLCoords = importTiffStack(fullfile(folder, 'PCLayerRight.tif'), downsampleRate, thickness);
-RBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceRight.tif'), downsampleRate, thickness);
-
-% Left Side
-disp('Reformatting left side...');
-LICoords = importTiffStack(fullfile(folder, 'InterpositusLeft.tif'), downsampleRate, thickness);
-LPCLCoords = importTiffStack(fullfile(folder, 'PCLayerLeft.tif'), downsampleRate, thickness);
-LBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'), downsampleRate, thickness);
+% brain regions
+if includeInt
+    disp('Reformatting Int...');
+    brain.RICoords = importTiffStack(fullfile(folder, 'InterpositusRight.tif'), downsampleRate, thickness);
+    brain.LICoords = importTiffStack(fullfile(folder, 'InterpositusLeft.tif'), downsampleRate, thickness);
+end
 
 if includeDentate
-    LDCoords = importTiffStack(fullfile(folder, 'DentateLeft.tif'), downsampleRate, thickness);
-    RDCoords = importTiffStack(fullfile(folder, 'DentateRight.tif'), downsampleRate, thickness);
+    disp('Reformatting Dentate...');
+    brain.LDCoords = importTiffStack(fullfile(folder, 'DentateLeft.tif'), downsampleRate, thickness);
+    brain.RDCoords = importTiffStack(fullfile(folder, 'DentateRight.tif'), downsampleRate, thickness);
 end
 
 if includeFastigial
-    LFCoords = importTiffStack(fullfile(folder, 'FastigialLeft.tif'), downsampleRate, thickness);
-    RFCoords = importTiffStack(fullfile(folder, 'FastigialRight.tif'), downsampleRate, thickness);
+    disp('Reformatting Fastigial...');
+    brain.LFCoords = importTiffStack(fullfile(folder, 'FastigialLeft.tif'), downsampleRate, thickness);
+    brain.RFCoords = importTiffStack(fullfile(folder, 'FastigialRight.tif'), downsampleRate, thickness);
 end
 
+if includePCL_and_BS
+    disp('Reformatting PC Layer and Brain Surface...');
+    brain.RPCLCoords = importTiffStack(fullfile(folder, 'PCLayerRight.tif'), downsampleRate, thickness);
+    brain.RBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceRight.tif'), downsampleRate, thickness);
+    brain.LPCLCoords = importTiffStack(fullfile(folder, 'PCLayerLeft.tif'), downsampleRate, thickness);
+    brain.LBSCoords = importTiffStack(fullfile(folder, 'BrainSurfaceLeft.tif'), downsampleRate, thickness);
+end
 
 
 % probes
 disp('Reformatting probe traces...');
 
-LeftProbe_1 = importTiffStack(fullfile(folder, 'ProbeLeft_1.tif'), downsampleRate, thickness);
-LeftProbe_2 = importTiffStack(fullfile(folder, 'ProbeLeft_2.tif'), downsampleRate, thickness);
-RightProbe_1 = importTiffStack(fullfile(folder, 'ProbeRight_1.tif'), downsampleRate, thickness);
+probeFiles = files(contains({files.name}, 'Probe'));
+probe = struct();
+
+for i = 1:length(probeFiles)
+    probe(i).name = probeFiles(i).name(1:end-4);
+    probe(i).coords = importTiffStack(fullfile(folder, probeFiles(i).name), downsampleRate, thickness);   
+    probe(i).isDiI = 1;
+end
 
 
-% 
-% 
-% LeftProbe_1L = importTiffStack(fullfile(folder, 'ProbeLeft_1L.tif'), downsampleRate, thickness);
-% LeftProbe_1M = importTiffStack(fullfile(folder, 'ProbeLeft_1M.tif'), downsampleRate, thickness);
-% LeftProbe_1R = importTiffStack(fullfile(folder, 'ProbeLeft_1R.tif'), downsampleRate, thickness);
-% LeftProbe_2L = importTiffStack(fullfile(folder, 'ProbeLeft_2L.tif'), downsampleRate, thickness);
-% LeftProbe_2M = importTiffStack(fullfile(folder, 'ProbeLeft_2M.tif'), downsampleRate, thickness);
-% LeftProbe_2R = importTiffStack(fullfile(folder, 'ProbeLeft_2R.tif'), downsampleRate, thickness);
-% 
-% RightProbe_1L = importTiffStack(fullfile(folder, 'ProbeRight_1L.tif'), downsampleRate, thickness);
-% RightProbe_1M = importTiffStack(fullfile(folder, 'ProbeRight_1M.tif'), downsampleRate, thickness);
-% RightProbe_1R = importTiffStack(fullfile(folder, 'ProbeRight_1R.tif'), downsampleRate, thickness);
-
+resultsFolder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'Reconstruction');
+if saveFiles
+    save(fullfile(resultsFolder, 'brain.mat' ), 'brain');
+    save(fullfile(resultsFolder, 'probe.mat' ), 'probe');
+end
 disp('All Done!');
 
 
 
 %% Plot brain regions + probe traces
+mouseID = 'cer18';
+resultsFolder = fullfile('Z:\obstacleData\histology', mouseID, 'Reconstruction');
+load(fullfile(resultsFolder, 'brain.mat'))
+load(fullfile(resultsFolder, 'probe.mat'))
 
 figure('Color', 'white', 'position', get(0,'ScreenSize'));
 
+showDentate = true;
+showInt = true;
+showFastigial = true;
+showPCL_and_BS = true;
 
 
-xrange = [1000, max(LICoords(:, 1))*2.5];
-yrange = [0, max(LDCoords(:, 2))+500]; % +60 just for visualizing purposes
+xrange = [0, max(brain.LICoords(:, 1))*2.5];
+yrange = [0, max(brain.LICoords(:, 2))+500]; % +60 just for visualizing purposes
 
-% Left side 
-plotRegions3D(LICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1); 
-hold on
-plotRegions3D(LPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange, 0.1);
-plotRegions3D(LBSCoords, 10, [0.8 0.8 0.8], xrange, yrange, 0.1);
+markerSize = 20;
 
-plotRegions3D(LeftProbe_1, 10, [1.0, 0.43, 0.54], xrange, yrange);
-plotRegions3D(LeftProbe_2, 10, [1.0, 0.43, 0.54], xrange, yrange);
+PCL_color = [0.82, 0.56, 0.97];
+BS_color = [0.8 0.8 0.8];
+Int_color = [1, 0.74, 0.35];
+Fastigial_color = [0.39, 0.83, 0.075];
+Dentate_color = [0.3176, 0.8314, 0.9608];
+Probe_color = [1.0, 0.43, 0.54];
 
+transparency = 0.1;
 
-% plotRegions3D(LeftProbe_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(LeftProbe_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(LeftProbe_2L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(LeftProbe_2R, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(LeftProbe_2M, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(LeftProbe_1M, 10, [1.0, 0.43, 0.54], xrange, yrange);
-
-% Right side
-plotRegions3D(RICoords, 20, [1, 0.74, 0.35], xrange, yrange, 0.1);
-hold on
-plotRegions3D(RPCLCoords, 10, [0.82, 0.56, 0.97], xrange, yrange, 0.1);
-plotRegions3D(RBSCoords, 10, [0.8 0.8 0.8], xrange, yrange, 0.1);
-
-plotRegions3D(RightProbe_1, 10, [1.0, 0.43, 0.54], xrange, yrange);
-
-
-% plotRegions3D(RightProbe_1L, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(RightProbe_1R, 10, [1.0, 0.43, 0.54], xrange, yrange);
-% plotRegions3D(RightProbe_1M, 10, [1.0, 0.43, 0.54], xrange, yrange);
-
-
-if includeDentate
-    plotRegions3D(LDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange, 0.1);
-    plotRegions3D(RDCoords, 20, [0.3176, 0.8314, 0.9608], xrange, yrange, 0.1);
+if showPCL_and_BS
+    plotRegions3D(brain.LBSCoords, markerSize, BS_color, xrange, yrange, transparency); hold on
+    plotRegions3D(brain.RBSCoords, markerSize, BS_color, xrange, yrange, transparency);
+    plotRegions3D(brain.LPCLCoords, markerSize, PCL_color, xrange, yrange, transparency);
+    plotRegions3D(brain.RPCLCoords, markerSize, PCL_color, xrange, yrange, transparency);
 end
 
-if includeFastigial
-    plotRegions3D(LFCoords, 20, [0.39, 0.83, 0.075], xrange, yrange);
-    plotRegions3D(RFCoords, 20, [0.39, 0.83, 0.075], xrange, yrange);    
+
+if showInt
+    plotRegions3D(brain.LICoords, markerSize, Int_color, xrange, yrange, transparency);
+    plotRegions3D(brain.RICoords, markerSize, Int_color, xrange, yrange, transparency);
 end
+
+
+if showDentate
+    plotRegions3D(brain.LDCoords, markerSize, Dentate_color, xrange, yrange, transparency);
+    plotRegions3D(brain.RDCoords, markerSize, Dentate_color, xrange, yrange, transparency);
+end
+
+if showFastigial
+    plotRegions3D(brain.LFCoords, markerSize, Fastigial_color, xrange, yrange, transparency);
+    plotRegions3D(brain.RFCoords, markerSize, Fastigial_color, xrange, yrange, transparency);    
+end
+
+diI_inds = find([probe.isDiI]);
+for i = 1:length(diI_inds)
+    
+    plotRegions3D(probe(diI_inds(i)).coords, markerSize, Probe_color, xrange, yrange, transparency);
+    
+end
+
+
+
 
 view(3)
 
 
 title('3D Plot of Traced Features');
-% legend('Dentate', 'Interpositus', 'Fastigial');
-%% fit a line for the probe 
-
-% LM_Left_1L = LinearFit(LeftProbe_1L);
-% LM_Left_1R = LinearFit(LeftProbe_1R);
-% LM_Left_2L = LinearFit(LeftProbe_2L);
-% LM_Left_2R = LinearFit(LeftProbe_2R);
-% LM_Left_1M = LinearFit(LeftProbe_1M);
-% LM_Left_2M = LinearFit(LeftProbe_2M);
-% 
-% 
-% LM_Right_1L = LinearFit(RightProbe_1L);
-% LM_Right_1R = LinearFit(RightProbe_1R);
-% LM_Right_1M = LinearFit(RightProbe_1M);
 
 
-LM_Right_1 = LinearFit(RightProbe_1);
-LM_Left_1 = LinearFit(LeftProbe_1);
-LM_Left_2 = LinearFit(LeftProbe_2);
+%% fit a line for the probe traces
 
-% legend('Dentate Nucleus', 'Purkinje Cell Layer', 'Brain Surface', ' ','Probe Traces', 'Fitted Probe Tracks', 'Location' , 'northeast');
-% title('3D Plot of Traced Features with Fitted Probe Tracks'); 
+diI_inds = find([probe.isDiI]); 
+for i = 1:length(diI_inds)
 
-
-LM = cell(1, 3);
-
-
-LM{1} = LM_Left_1;
-LM{2} = LM_Left_2;
-LM{3} = LM_Right_1;
+    probe(diI_inds(i)).LM = LinearFit(probe(diI_inds(i)).coords);
+    
+    if contains(probe(diI_inds(i)).name, 'ProbeLeft')
+        probe(diI_inds(i)).side = 'left';
+    else
+        probe(diI_inds(i)).side = 'right';    
+    end
+    
+    switch probe(diI_inds(i)).name(end)
+        case 'L'
+            probe(diI_inds(i)).shankNum = 1;
+        case 'R'
+            probe(diI_inds(i)).shankNum = 2;
+        case 'M'
+            probe(diI_inds(i)).shankNum = 3;
+    end
+    
+end
 
 
 
-% LM{1} = LM_Left_1L;
-% LM{2} = LM_Left_1R;
-% LM{3} = LM_Left_2L;
-% LM{4} = LM_Left_2R;
-% LM{5} = LM_Right_1L;
-% LM{6} = LM_Right_1R;
-% 
-% % 3 shank version
-% LM = cell(1, 9);
-% LM{1} = LM_Right_1L;
-% LM{2} = LM_Right_1M;
-% LM{3} = LM_Right_1R;
-% LM{4} = LM_Left_1L;
-% LM{5} = LM_Left_1M;
-% LM{6} = LM_Left_1R;
-% LM{7} = LM_Left_2L;
-% LM{8} = LM_Left_2M;
-% LM{9} = LM_Left_2R;
+%% AddPoints: For probes with DiI, calculate brain surface cross points and PC layer cross points
+%  For probes with DiI, add good channel points 
 
+mouseID = 'cer18';
 
-
-%% For probes with DiI
-
-[BS_crossPoint_right1, PC_crossPoint_right1, GC_right1, ~] = addPointsToProbe('200312_000', LM_Right_1, RBSCoords, 0, 1);
-[BS_crossPoint_left1, PC_crossPoint_left1, GC_left1, ~] = addPointsToProbe('200314_000', LM_Left_1, LBSCoords, 0, 1);
-[BS_crossPoint_left2, PC_crossPoint_left2, GC_left2, ~] = addPointsToProbe('200314_001', LM_Left_2, LBSCoords, 0, 1);
-
-
-
-
-% [BS_crossPoint_left1L, PC_crossPoint_left1L, GC_left1L, ~] = addPointsToProbe('200201_000', LM_Left_1L, LBSCoords, 50, 1);
-% [BS_crossPoint_left1R, PC_crossPoint_left1R, GC_left1R, ~] = addPointsToProbe('200201_000', LM_Left_1R, LBSCoords, 50, 3);
-% [BS_crossPoint_left1M, PC_crossPoint_left1M, GC_left1M, ~] = addPointsToProbe('200201_000', LM_Left_1M, LBSCoords, 50, 2);
-% 
-% [BS_crossPoint_left2L, PC_crossPoint_left2L, GC_left2L, ~] = addPointsToProbe('200202_000', LM_Left_2L, LBSCoords, 0, 1);
-% [BS_crossPoint_left2R, PC_crossPoint_left2R, GC_left2R, ~] = addPointsToProbe('200202_000', LM_Left_2R, LBSCoords, 0, 3);
-% [BS_crossPoint_left2M, PC_crossPoint_left2M, GC_left2M, ~] = addPointsToProbe('200202_000', LM_Left_2M, LBSCoords, 0, 2);
-% 
-% [BS_crossPoint_right1L, PC_crossPoint_right1L, GC_right1L, ~] = addPointsToProbe('200131_000', LM_Right_1L, RBSCoords, -200, 1);
-% [BS_crossPoint_right1R, PC_crossPoint_right1R, GC_right1R, ~] = addPointsToProbe('200131_000', LM_Right_1R, RBSCoords, -200, 3);
-% [BS_crossPoint_right1M, PC_crossPoint_right1M, GC_right1M, ~] = addPointsToProbe('200131_000', LM_Right_1M, RBSCoords, -200, 2);
-% 
-
-%% Save data to ephysHistoData
-
-mouseID = 'cer12';
-
+disp('getting sessions for this mouse...');
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysChannelsInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysChannelsInfo.xlsx'), 'Sheet', 'EphysChannelsInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
+mouse.sessions = {ephysInfo.session{strcmp(mouseID, ephysInfo.mouse) & (ephysInfo.DiI == 1)}};
+mouse.DiINotes = {ephysInfo.DiINotes{strcmp(mouseID, ephysInfo.mouse) & (ephysInfo.DiI == 1)}};
 
-shankNum = max(ephysChannelsInfo.PCShankNum(strcmp(mouseID, ephysChannelsInfo.mouse)));
-sessions = ephysInfo.session((strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) & (ephysInfo.include == 1));
-
-
-colNum = 6;
-ephysHistoData = cell(length(sessions)*shankNum, colNum);
-
-for i = 1 : size(sessions, 1)
-    sessionNum = sessions{i};
-    offset = ephysInfo.offset((strcmp(sessionNum, ephysInfo.session)));
-    if isnan(offset); offset = 0; end
-    side = ephysInfo.side((strcmp(sessionNum, ephysInfo.session)));
-    if strcmp(side, 'right')
-        BSCoords = RBSCoords; 
-    else
-        BSCoords = LBSCoords; 
-    end
-    
-    temp = (shankNum-1):-1:0;
-    for j = 1:shankNum
-        ind = i*shankNum - temp(j);
-        ephysHistoData{ind, 1} = sessionNum;
-        ephysHistoData{ind, 2} = mouseID;
-        ephysHistoData{ind, 3} = side;
-        [ephysHistoData{ind, 4}, ephysHistoData{ind, 5}, ephysHistoData{ind, 6}, ephysHistoData{ind, 7}] = ...
-            addPointsToProbe(sessionNum, LM{ind}, BSCoords, offset, j);
-    end
-      
+% find session number associated with each probe traces
+for i = 1:length(diI_inds)
+    probe(diI_inds(i)).session = mouse.sessions{contains(mouse.DiINotes, probe(diI_inds(i)).name(1:end-1))}; 
 end
 
-% check to update and save ephysHistoData
-fileName = fullfile(getenv('OBSDATADIR'), 'ephys', 'ephysHistoData', 'ephysHistoData.mat');
-if ~exist(fileName)
-    save(fileName, 'ephysHistoData');
-else
-    temp = load(fileName);
-    ephysHistoDataOld = temp.ephysHistoData;
-    sessionsOld = ephysHistoDataOld(:, 1);
-    sessions = ephysHistoData(:, 1);
-    inds = zeros(length(sessionsOld), length(sessions));
-    for i = 1:length(sessions)
-        inds(:, i) = strcmp(sessions{i}, sessionsOld);
-    end
+% plot BS_crossPoints, GC_crossPoints and good channels on the 3D map
+% temporarily use 
+for i = 1:length(diI_inds)
     
-    if sum(sum(inds)) == 0
-        ephysHistoData = [ephysHistoDataOld; ephysHistoData];
-        save(fileName, 'ephysHistoData');
-    else
-        updateIndsOld = [];
-        updateIndsNew = [];
-        [updateIndsOld, updateIndsNew] = find(inds == 1);
-        for j = 1:length(updateIndsOld)
-            ephysHistoDataOld(updateIndsOld(j), :) = ephysHistoData(updateIndsNew(j), :);
-        end
-        ephysHistoData(updateIndsNew, :) = [];
-        ephysHistoData = [ephysHistoDataOld; ephysHistoData];
-        save(fileName, 'ephysHistoData');
-    end    
+    if strcmp(probe(diI_inds(i)).side, 'left')
+        [probe(diI_inds(i)).BS_crossPoints, probe(diI_inds(i)).PC_crossPoints, probe(diI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(diI_inds(i)).session, probe(diI_inds(i)).LM, brain.LBSCoords, probe(diI_inds(i)).shankNum);
+    elseif strcmp(probe(diI_inds(i)).side, 'right')
+        [probe(diI_inds(i)).BS_crossPoints, probe(diI_inds(i)).PC_crossPoints, probe(diI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(diI_inds(i)).session, probe(diI_inds(i)).LM, brain.RBSCoords, probe(diI_inds(i)).shankNum);
+    end
+
 end
+
+
 
 %% for no dii tracks, building linear models for locating the entry points
 
-histoCoords = [BS_crossPoint_right1; BS_crossPoint_left1; BS_crossPoint_left2];
-histoCoords = [histoCoords(:, 1) histoCoords(:, 2)];
-% BS_crossPoint_left1L; BS_crossPoint_left1M; BS_crossPoint_left1R; 
+% ------------------------- settings -------------------------------------
+% HistoCoords DiI (get from probe structure)
+temp = struct2table(probe(logical([probe.isDiI])));
+histoPoints = table(temp.name, temp.BS_crossPoints(:, 1:2), 'VariableNames', {'HistoProbeNames', 'HistoCoords'}); 
 
-
-mouseID = 'cer10';
-
+% ManipulatorCoords (get from ephysInfo spreadsheet)
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
 warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
 
-diiMLCoords = ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) );
-diiAPCoords = ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 1) );
+ManipuProbeNames = ephysInfo.DiINotes((strcmp(mouseID, ephysInfo.mouse)));
+ManipuCoords = [ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse))), ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)))];
+manipuPoints = table(ManipuProbeNames, ManipuCoords, 'VariableNames', {'ManipuProbeNames', 'ManipuCoords'});
 
-nodiiMLCoords = ephysInfo.locationML( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) );
-nodiiAPCoords = ephysInfo.locationAP( (strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) );
+% Please review and modify these coordinates manually! Then SAVE IT!
+saveFiles = true;
+resultsFolder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'Reconstruction');
+if saveFiles
+    save(fullfile(resultsFolder, 'histoPoints.mat' ), 'histoPoints');
+    save(fullfile(resultsFolder, 'manipuPoints.mat' ), 'manipuPoints');
+end
+disp('File saved!');
 
-% enter these info manually!!
-manipuCoords = [diiMLCoords, diiAPCoords];
-manipuCoords_noDiI = [nodiiMLCoords, nodiiAPCoords];
-
-
+% --------------------------- processing ----------------------------------
 % plot to verify the histo info
-figure;
-plot(manipuCoords(:, 1), manipuCoords(:, 2), '.r', 'MarkerSize', 10);
-hold on
-plot(manipuCoords_noDiI(:, 1), manipuCoords_noDiI(:, 2), '.m', 'MarkerSize', 10);
-plot(histoCoords(:, 1), histoCoords(:, 2), '.b', 'MarkerSize', 20);
+noDiI_inds = contains(manipuPoints.ManipuProbeNames, 'noDiI');
+diI_inds = contains(manipuPoints.ManipuProbeNames, 'Probe');
 
-mdlML_test = fitlm(manipuCoords(:, 1), histoCoords(:, 1))
-mdlAP_test = fitlm(manipuCoords(:, 2), histoCoords(:, 2))
+figure;
+plot(manipuPoints.ManipuCoords(diI_inds, 1), manipuPoints.ManipuCoords(diI_inds, 2), '.r', 'MarkerSize', 10);
+hold on
+plot(manipuPoints.ManipuCoords(noDiI_inds, 1), manipuPoints.ManipuCoords(noDiI_inds, 2), '.m', 'MarkerSize', 10);
+plot(histoPoints.HistoCoords(:, 1), histoPoints.HistoCoords(:, 2), '.b', 'MarkerSize', 20);
+
+mdlML_test = fitlm(manipuPoints.ManipuCoords(diI_inds, 1)*1000, histoPoints.HistoCoords(:, 1))
+mdlAP_test = fitlm(manipuPoints.ManipuCoords(diI_inds, 2)*1000, histoPoints.HistoCoords(:, 2))
 
 % fit the LM
-fittedML_nodii = predict(mdlML_test, manipuCoords_noDiI(:, 1));
-fittedAP_nodii = predict(mdlAP_test, manipuCoords_noDiI(:, 2));
-% manipuCoords_noDiI(:, 2)
+fittedML_nodii = predict(mdlML_test, manipuPoints.ManipuCoords(noDiI_inds, 1)*1000);
+fittedAP_nodii = predict(mdlAP_test, manipuPoints.ManipuCoords(noDiI_inds, 2)*1000);
 
 % plot the fitted entry points for ni dii tracks
 hold on
 plot(fittedML_nodii, fittedAP_nodii, '.', 'MarkerSize', 20, 'Color', [1 0.74 0.35])
-
+legend('manipulator coordinates (DiI)', 'manipulator coordinates (noDiI)', 'histo points (DiI)', 'predicted no DiI points');
 
 %% for ni dii tracks, reconstructing no-dii probe traces in 3d view
 
-dirV = nan(3, 3);
+dirV = nan(sum([probe.isDiI]), 3);
+diI_inds = find([probe.isDiI]);
+for i = 1:length(dirV)
+    dirV(i, :) = probe(diI_inds(i)).LM.dirVect;
+    if dirV(i, 3) < 0; dirV(i, :) = -dirV(i, :); end
+end
+nodiiLM.dirV = mean(dirV);
 
-dirV(1, :) = LM_Right_1.dirVect;
-dirV(2, :) = LM_Left_1.dirVect;
-dirV(3, :) = LM_Left_2.dirVect;
-
-% dirV(1, :) = LM_Left_1L.dirVect;
-% dirV(2, :) = LM_Left_1R.dirVect;
-% dirV(3, :) = LM_Left_2L.dirVect;
-% dirV(4, :) = -LM_Left_2R.dirVect;
-% dirV(5, :) = LM_Right_1L.dirVect;
-% dirV(6, :) = LM_Right_1R.dirVect;
-
-meandirV = mean(dirV);
-
-nodiiLM.BS_crossPoint = [fittedML_nodii, fittedAP_nodii];
-nodiiLM.dirV = LM_Right_1.dirVect;
-
-mouseID = 'cer10';
-
-warning('off', 'MATLAB:table:ModifiedAndSavedVarnames')
-ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'), 'Sheet', 'ephysInfo');
-warning('on', 'MATLAB:table:ModifiedAndSavedVarnames')
-
-sessions = ephysInfo.session((strcmp(mouseID, ephysInfo.mouse)) & (ephysInfo.DiI == 0) & (ephysInfo.include == 1));
-
-ephysHistoData = cell(length(sessions), 6);
-
-for i = 1 : size(sessions, 1)
-    sessionNum = sessions{i};
-    offset = ephysInfo.offset((strcmp(sessionNum, ephysInfo.session)));
-    if isnan(offset); offset = 0; end
-    side = ephysInfo.side((strcmp(sessionNum, ephysInfo.session)));
-    if strcmp(side, 'right')
-        BSCoords = RBSCoords; 
-    else
-        BSCoords = LBSCoords; 
+noDiI_inds = find(contains(manipuPoints.ManipuProbeNames, 'noDiI'));
+L = sum([probe.isDiI]);
+for i = 1:length(noDiI_inds)
+    tempName = char(manipuPoints.ManipuProbeNames(noDiI_inds(i)));
+    probe(L+i).name = tempName;
+    probe(L+i).session = ephysInfo.session{contains(ephysInfo.DiINotes, tempName(1:end-1)) & strcmp(ephysInfo.mouse, mouseID)};
+    probe(L+i).side = ephysInfo.side{contains(ephysInfo.DiINotes, tempName(1:end-1))};
+    probe(L+i).isDiI = 0;
+    probe(L+i).coords = nan;
+    probe(L+i).PC_crossPoints = [];
+    probe(L+i).GC_points = [];
+    
+    tempLM = struct();
+    tempLM.BS_crossPoints = [fittedML_nodii(noDiI_inds(i)), fittedAP_nodii(noDiI_inds(i))];
+    tempLM.dirV = mean(dirV);
+    probe(L+i).LM = tempLM;
+    
+    
+    switch tempName(end)
+        case 'L'
+            probe(L+i).shankNum = 1;
+        case 'R'
+            probe(L+i).shankNum = 2;
+        case 'M'
+            probe(L+i).shankNum = 3;
     end
     
-    temp = [1, 0];
-    for j = 1:2
-        ind = i*2-temp(j);
-        ephysHistoData{ind, 1} = sessionNum;
-        ephysHistoData{ind, 2} = mouseID;
-        ephysHistoData{ind, 3} = side;
-        [ephysHistoData{ind, 4}, ephysHistoData{ind, 5}, ephysHistoData{ind, 6}] = ...
-            addPointsToProbe(sessionNum, nodiiLM, BSCoords, offset, j,  {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-    end
-      
+   
 end
+
+noDiI_inds = find([probe.isDiI] == 0);
+for i = 1:length(noDiI_inds)
+    
+    if strcmp(probe(noDiI_inds(i)).side, 'right')
+        [probe(noDiI_inds(i)).BS_crossPoints, probe(noDiI_inds(i)).PC_crossPoints, probe(noDiI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(noDiI_inds(i)).session, probe(noDiI_inds(i)).LM, brain.RBSCoords, probe(noDiI_inds(i)).shankNum,...
+            {'noDiIMode', true, 'showGCPoints', true});
+    elseif strcmp(probe(noDiI_inds(i)).side, 'left')
+         [probe(noDiI_inds(i)).BS_crossPoints, probe(noDiI_inds(i)).PC_crossPoints, probe(noDiI_inds(i)).GC_points] = ...
+            addPointsToProbe(probe(noDiI_inds(i)).session, probe(noDiI_inds(i)).LM, brain.LBSCoords, probe(noDiI_inds(i)).shankNum,...
+            {'noDiIMode', true, 'showGCPoints', true});       
+    end
+    
+end
+
+saveFiles = true;
+resultsFolder = fullfile(getenv('OBSDATADIR'), 'histology', mouseID, 'Reconstruction');
+if saveFiles
+    save(fullfile(resultsFolder, 'probe.mat' ));
+end
+disp('Probe.mat Saved!');
+
+
+%% Save & Update data to ephysHistoTable
+
+mouseID = 'cer18';
+
+temp = struct2table(probe);
+
+newEphysHistoTable = table();
+newEphysHistoTable.session = temp.session;
+newEphysHistoTable.mouseID(:) = {mouseID};
+newEphysHistoTable.side = temp.side;
+newEphysHistoTable.probeName = temp.name;
+newEphysHistoTable.isDiI = temp.isDiI;
+for i = 1:height(newEphysHistoTable)
+    newEphysHistoTable.probeID(i) = ephysInfo.probeID(strcmp(ephysInfo.session, temp.session(i)));
+end
+newEphysHistoTable.shankNum = temp.shankNum;
+newEphysHistoTable.BS_crossPoints = temp.BS_crossPoints;
+newEphysHistoTable.PC_crossPoints = temp.PC_crossPoints;
+newEphysHistoTable.GC_Points = temp.GC_points;
+
 
 % check to update and save ephysHistoData
-fileName = fullfile(getenv('OBSDATADIR'), 'ephys', 'ephysHistoData', 'ephysHistoData.mat');
+fileName = fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat');
+ephysHistoFolder = fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData');
 if ~exist(fileName)
-    save(fileName, 'ephysHistoData');
+    ephysHistoTable = newEphysHistoTable;
+    save(fileName, 'ephysHistoTable');
 else
-    temp = load(fileName);
-    ephysHistoDataOld = temp.ephysHistoData;
-    sessionsOld = ephysHistoDataOld(:, 1);
-    sessions = ephysHistoData(:, 1);
-    inds = zeros(length(sessionsOld), length(sessions));
-    for i = 1:length(sessions)
-        inds(:, i) = strcmp(sessions{i}, sessionsOld);
-    end
- 
-    if sum(sum(inds)) == 0
-        ephysHistoData = [ephysHistoDataOld; ephysHistoData];
-        save(fileName, 'ephysHistoData');
-    else
-        [updateIndsOld, updateIndsNew] = find(inds == 1);
-        for i = 1:length(updateIndsOld)
-            ephysHistoDataOld(updateIndsOld(i), :) = ephysHistoData(updateIndsNew(i), :);
-            ephysHistoData(updateIndsNew(i), :) = [];
+    old = load(fullfile(ephysHistoFolder, 'ephysHistoTable.mat'));
+    old = old.ephysHistoTable;
+    new = newEphysHistoTable;
+    deleteInds = [];
+    for i = 1:height(new)
+        overlap = find(strcmp(old.session, new.session(i)) & strcmp(old.probeName, old.name(i)));
+        if any(overlap) & length(overlap) == 1
+            old(overlap) = new(i);
+            deleteInds = [deleteInds, i];
         end
-        ephysHistoData = [ephysHistoDataOld; ephysHistoData];
-        save(fileName, 'ephysHistoData');
-    end    
+    end
+    new(deleteInds, :) = [];
+    
+    if any(height(new))
+        ephysHistoTable = [old; new];
+    else
+        ephysHistoTable = old;
+    end  
+    save(fileName, 'ephysHistoTable');
 end
-
-
-
-
-
-
-
-nodiiLM.BS_crossPoint = [fittedML_nodii(1), fittedAP_nodii(1)];
-[BS_crossPoint_right2, PC_crossPoint_right2, GC_right2, ~] = addPointsToProbe('200311_000', nodiiLM, RBSCoords, 0, 1, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-
-% nodiiLM.BS_crossPoint = [fittedML_nodii(2), fittedAP_nodii(2)];
-% [BS_crossPoint_right2R, ~] = addPointsToProbe('200113_000', nodiiLM, RBSCoords, 0, 2, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-% 
-% nodiiLM.BS_crossPoint = [fittedML_nodii(3), fittedAP_nodii(3)];
-% [BS_crossPoint_right3L, ~] = addPointsToProbe('200114_000', nodiiLM, RBSCoords, 300, 1, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-% 
-% nodiiLM.BS_crossPoint = [fittedML_nodii(4), fittedAP_nodii(4)];
-% [BS_crossPoint_right3R, ~] = addPointsToProbe('200114_000', nodiiLM, RBSCoords, 300, 2, {'showPCPoints', true, 'showGCPoints', true, 'noDiIMode', true});
-% 
-
-
-
 
 
 

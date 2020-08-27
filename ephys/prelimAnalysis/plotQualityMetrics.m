@@ -9,7 +9,7 @@ spkNum = 5000; % take this many of all spikes to analyze (to save system resourc
 showFigures = 'on';
 s.unitsToPlot = [];  % if provided, only plot cells in unit_ids
 s.fastLoad = false;  % if true loads from .cont instead of .dat file, which is faster but lacks common reference subtraction
-s.showChannelsOverTime = false;  % whether to also call showChannelsOverTime()
+s.showChannelsOverTime = true;  % whether to also call showChannelsOverTime()
 
 % SNR settings
 snrYLims = [0 20];
