@@ -1,4 +1,5 @@
 import sys
+print(sys.path)  # for debugging
 import numpy as np
 from deepposekit.models import load_model
 from deepposekit.io import DataGenerator, VideoReader, VideoWriter

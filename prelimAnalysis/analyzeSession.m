@@ -724,7 +724,7 @@ function analyzeSession(session, varargin)
         if s.verbose; fprintf('%s: getting paw contacts\n', session); end
         
         % settings
-        pythonPath = 'C:\Users\rick\Anaconda3\envs\fastai\python.exe';
+        pythonPath = 'D:\old_anaconda\Anaconda3\envs\fastai\python.exe';
         confidenceThresh = .5;
         confidenceThreshForeDorsal = .6;  % fore dorsal is prone to false positives // emperically .9 results in good sensitivity/specificity tradeoff
         proximityThresh = 20;  % how close does a paw have to be to the obstacle to be assigned to it for a touch
@@ -822,7 +822,7 @@ function analyzeSession(session, varargin)
         if s.verbose; fprintf('%s: getting whisker contacts\n', session); end
         
         % settings
-        pythonPath = 'C:\Users\rick\Anaconda3\envs\deepLabCut\python.exe';
+        pythonPath = 'D:\old_anaconda\Anaconda3\envs\deepLabCut\python.exe';
         
         % run neural network classifier
         if ~exist(fullfile(sessionDir, 'whiskerAnalyzed.csv'), 'file') ||  s.rerunWiskContactNetwork

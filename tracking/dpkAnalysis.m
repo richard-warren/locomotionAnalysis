@@ -2,7 +2,7 @@ function dpkAnalysis(session, varargin)
 
 % runs deepposekit analysis
 
-s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepposekit\python.exe';
+s.pythonPath = 'D:\old_anaconda\Anaconda3\envs\deepposekit\python.exe';
 s.matlabPath = 'F:\Software\MATLAB\bin\win64';  % this is needed to fix the bug described here: https://www.mathworks.com/matlabcentral/answers/316233-can-t-run-external-program
 
 s.vid = 'run.mp4';

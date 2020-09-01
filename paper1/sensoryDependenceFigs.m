@@ -19,7 +19,8 @@ fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'sensoryDependenc
 % global settings
 paper1_config;
 varsToAvg = {'mouse'};
-miceToExclude = {'sen1'};
+miceToExclude = {'sen1', 'cmu6'};
+% miceToExclude = {};
 
 
 % initializations
@@ -65,8 +66,17 @@ barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'velocity at whis
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceVelBars'), 'svg');
 
 
-%% step over height for all paws (measured before paw reaches obstacle)
+%% velocity slow down
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+conditions = [vars.sensoryCondition];
+mat = getDvMatrix(data, 'velSlowDown', conditions, varsToAvg);
+barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'velocity slow down (m/s)', ...
+    'colors', sensColors, barProperties{:}, 'YTick', [.3 .5 .7], ...
+    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceSlowDown'), 'svg');
 
+
+%% step over height for all paws (measured before paw reaches obstacle)
 figure('position', [200 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.isFore; vars.isLeading; vars.sensoryCondition];
 mat = getDvMatrix(data, 'preObsHgt', conditions, varsToAvg) * 1000;
@@ -88,7 +98,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 
 %% baseline step heights
-figure('position', [2800.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
+figure('position', [200.00 100 700 328.00], 'color', 'white', 'menubar', 'none');
 figVars = [vars.isFore; vars.sensoryCondition];
 dv = getDvMatrix(data, 'controlStepHgt', figVars, varsToAvg)*1000;
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
@@ -179,7 +189,7 @@ end
 
 
 
-%% plot things
+% plot things
 
 % all paws
 figure('position', [200.00 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
