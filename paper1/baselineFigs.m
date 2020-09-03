@@ -414,7 +414,7 @@ saveas(gcf, file, 'svg');
 
 %% moving averages
 figure('Color', 'white', 'Position', [200 400 500 400], 'MenuBar', 'none');
-plot([0 xLims(2)], [0 xLims(2)], 'Color', [obsColor .4], 'LineWidth', 3) % add unity line
+plot([0 xLims(2)], [0 xLims(2)], 'Color', [0 0 0 .25], 'LineWidth', 3, 'LineStyle', ':') % add unity line
 
 logPlotRick(obsHgts, pawHgts, ...
     'colors', stepColors, 'conditions', stepTypeConditions, 'xlabel', 'obstacle height (mm)', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
@@ -785,7 +785,15 @@ fprintf('trials: %i\n', nansum(trials));
 fprintf('frames: %i\n', nansum(frames));
 
 
+%%
 
+
+mice = unique({flat.mouse});
+breakRates = nan(1,length(mice));
+for i = 1:length(mice)
+    bins = strcmp({flat.mouse}, mice{i});
+    breakRates(i) = nanmean([flat(bins).isWheelBreak]);
+end
 
 
 

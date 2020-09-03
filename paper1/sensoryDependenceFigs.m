@@ -127,7 +127,7 @@ velData = plotDvPsth(flat, 'velVsPosition', 'sensoryCondition', ...
     {'showLegend', false, 'conditionColors', colorsTemp(plotSequence,:), 'xlim', [-.5 .2], ... 
      'plotConditions', vars.sensoryCondition.levels(plotSequence), 'errorAlpha', .1, 'lineWidth', 4, 'flipx', true});
 set(gca, 'YLim', yLims, 'YTick', linspace(yLims(1),yLims(2),3));
-xlabel('position relative to nose (m)')
+xlabel('obstacle distance to nose (m)')
 ylabel('velocity (m/s)')
 
 % save
@@ -194,7 +194,7 @@ end
 % all paws
 figure('position', [200.00 472.00 600 328.00], 'color', 'white', 'menubar', 'none');
 temp = [vars.isFore; vars.isLeading; vars.sensoryCondition];
-barFancy(corrs, 'levelNames', {temp.levelNames}, 'ylabel', 'paw:hurdle correlation', 'YTick', [0 .4 .8], ...
+barFancy(corrs, 'levelNames', {temp.levelNames}, 'ylabel', 'paw-obstacle correlation', 'YTick', [0 .4 .8], ...
     'colors', repmat(sensColors,4,1), 'YLim', [], barProperties{:}, 'constantEdgeColor', [.15 .15 .15], ...
     'comparisons', repmat([1 2; 1 3; 1 4],4,1) + repelem([0,4,8,12],3)', 'test', 'ttest')
 
