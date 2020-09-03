@@ -67,13 +67,24 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 
 
 %% velocity slow down
+% figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+% conditions = [vars.sensoryCondition];
+% mat = getDvMatrix(data, 'velSlowDown', conditions, varsToAvg);
+% barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'velocity slow down (m/s)', ...
+%     'colors', sensColors, barProperties{:}, 'YTick', [.3 .5 .7], ...
+%     'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceSlowDown'), 'svg');
+
 figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
 conditions = [vars.sensoryCondition];
-mat = getDvMatrix(data, 'velSlowDown', conditions, varsToAvg);
-barFancy(mat, 'levelNames', {conditions.levelNames}, 'ylabel', 'velocity slow down (m/s)', ...
-    'colors', sensColors, barProperties{:}, 'YTick', [.3 .5 .7], ...
-    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+matObsOn = getDvMatrix(data, 'velAtObsOn', conditions, varsToAvg);
+matContact = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
+mat = permute(cat(3, matObsOn, matContact), [1 3 2]);
+barFancy(mat, 'levelNames', {conditions.levelNames, {'obsOn', 'contact'}}, 'ylabel', 'velocity slow down (m/s)', ...
+    'colors', repelem(sensColors, 2, 1), barProperties{:}, 'YTick', [.3 .5 .7], ...
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceSlowDown'), 'svg');
+
 
 
 %% step over height for all paws (measured before paw reaches obstacle)
