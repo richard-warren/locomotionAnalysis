@@ -38,4 +38,10 @@ binned kinematics:  (no max [0], .0025,      false, true, false)
 
 ## figure formatting
 - font size 6 for axis labels
-- font size 10 for subplot letters
+- font size 10 for subplot letters, all caps
+- Arial
+
+## exporting to PNG in batch
+- you can record actions in illustrator then execute them as batch scripts
+- follow [these](https://community.adobe.com/t5/illustrator/adobe-sufferer-how-to-batch-convert-ai-to-png/td-p/9260013?page=1) instructions to export all figures as PNG in batches
+- when copying and pasting the PNGs into word they retain their actual size, which is nice (as opposed to automatically filling up the width of the page, which could give misleading impressions about the appropriatenes of font sizes, etc.)
