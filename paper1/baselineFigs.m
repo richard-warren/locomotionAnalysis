@@ -7,7 +7,7 @@ mice = unique(sessionInfo.mouse);
 data = cell(1,length(mice));
 parfor i=1:length(mice); data{i} = getExperimentData(sessionInfo(strcmp(sessionInfo.mouse, mice{i}),:), 'all'); end
 data{1}.data = cellfun(@(x) x.data, data); data = data{1};
-fprintf('saving...'); save(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('data saved!')
+fprintf('saving...'); save(fullfile(getenv('SSD'), 'paper1', 'baseline_data.mat'), 'data'); disp('data saved!')
 
 %% load experiment data
 fprintf('loading... '); load(fullfile(getenv('SSD'), 'paper1', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')
@@ -785,15 +785,26 @@ fprintf('trials: %i\n', nansum(trials));
 fprintf('frames: %i\n', nansum(frames));
 
 
-%%
+%% (temp) light on vs. light off speeds
+
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+matWiskContact = getDvMatrix(data, 'velAtWiskContact', vars.isLightOn, {'mouse'});
+matObsOn = getDvMatrix(data, 'velAtObsOn', vars.isLightOn, {'mouse'});
+mat = permute(cat(3, matObsOn, matWiskContact), [1 3 2]);
+
+figure('position', [200 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+barFancy(matWiskContact, 'levelNames', {vars.isLightOn.levelNames}, 'ylabel', 'velocity at contact (m/s)', ...
+    'colors', hsv(2), barProperties{:}, extraBarProps{:}, ...
+    'comparisons', [1 2], 'test', 'ttest')
+
+figure('position', [600 472.00 382.00 328.00], 'color', 'white', 'menubar', 'none');
+barFancy(mat, 'levelNames', {vars.isLightOn.levelNames}, 'ylabel', 'velocity (m/s)', ...
+    'colors', repelem(hsv(2),2,1), barProperties{:}, extraBarProps{:}, ...
+    'comparisons', [1 2; 3 4], 'test', 'ttest')
+% set(gca, 'YTick', 0:20:80, 'TickDir', 'out')
+% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtLand'), 'svg');
 
 
-mice = unique({flat.mouse});
-breakRates = nan(1,length(mice));
-for i = 1:length(mice)
-    bins = strcmp({flat.mouse}, mice{i});
-    breakRates(i) = nanmean([flat(bins).isWheelBreak]);
-end
 
 
 

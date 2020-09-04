@@ -10,17 +10,6 @@ Scripts in this folder can be used to create the figures for the first paper.
 - `flattenData`:
 - `barFancy`:
 
-## todo
-- [X] plotBimodalities
-- [X] smarter whisker contact position computation
-- [X] recompute no whisker sessions: analyzeSession, genKinData, get ExperimentData
-- [X] make sure new nyperparameters work for: senLesion, mtc_lesion, mtc_muscimol, sensoryDependence
-- [X] figure out how i made f3g
-- [X] redo decision-making sections (figs, text, stats, legends, methods)
-  - [X] section3
-  - [X] section6 (more conservative text)
-- [ ] discussion
-
 ## how to make figures
 - In the `paper1` folder, use the scripts `baselineFigs`, `baselineDecision`, `sensoryDependenceFigs`, `manipulationFigs`, and `whiskerTrimFigs` to make figures for the paper.
 - There are code blocks in each script that generate and save `.svg` files that can be loaded in illustrator.
@@ -44,4 +33,42 @@ binned kinematics:  (no max [0], .0025,      false, true, false)
 ## exporting to PNG in batch
 - you can record actions in illustrator then execute them as batch scripts
 - follow [these](https://community.adobe.com/t5/illustrator/adobe-sufferer-how-to-batch-convert-ai-to-png/td-p/9260013?page=1) instructions to export all figures as PNG in batches
-- when copying and pasting the PNGs into word they retain their actual size, which is nice (as opposed to automatically filling up the width of the page, which could give misleading impressions about the appropriatenes of font sizes, etc.)
+- when copying and pasting the PNGs into Word they retain their actual size, which is nice (as opposed to automatically filling up the width of the page, which could give misleading impressions about the appropriatenes of font sizes, etc.)
+
+## making videos
+Use `paper1\paper1Figs.mat` to make vids for the paper.
+
+
+#### outline
+- [X] setup example
+  - `makeSetupExampleVid()`
+  - wide vid, no tracking, obs to right
+  - fade into 3d animation
+- [ ] **tracking example**
+  - `makeVid()`
+  - obs loco with tracking, all slomo
+    - swing stance too...
+3. high speeds obs [makevid]
+  - can i integrate wisk contact slow down into makeVid?
+  - real speed running
+  - then matrix vids
+4. unheadfixation [makevidunheadfixed]
+  - unheadfixed, with tracking 'left behind'
+  - fancy 3d view on the bottom?
+5. sensory dependence [makevid]
+  - one vid, all conditions, with explanatory text
+6. decision making [will probably need to make dedicated script...]
+  - unheadfixed // show lengthened (and big step), shortened (and small step), same
+  - leave behind mod paw kin
+  - also show 'would-be' kinematics? (would require knn search perhaps, or interpolation based on landing position)
+  - make it look like plots in figgys (colors, dots at end, etc)
+7. barrels [makevid]
+  - one vid, pre, post early, post late
+8. mtc [makevid]
+  - one vid for lesion, mus
+  - for both show pre, post
+9. matched [maketrialpairsvid]
+  - one vid mus, les
+  - matched for at wisk contact stuff
+  - show slow mo but with no pauses at whisker contact
+  - top row control, bottom row manip

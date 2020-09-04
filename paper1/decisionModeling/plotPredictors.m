@@ -13,6 +13,7 @@ s.colors = [];
 s.names = {};  % use these names to label subplots (overwriting names in 'predictors')
 s.overlayConditions = false;  % whether to plot different conditions on top of one another, or as different rows
 s.figPos = [];
+s.fontSize = 10;
 
 s.avgMice = false;
 s.percentileLims = [10 99];
@@ -31,6 +32,8 @@ s.modSwingContactsMax = 0;  % exclude trials where number of contacts of first m
 s.lineWidth = .05;  % expressed as fraction of y axis
 s.mouseLineWidth = .02;  % expressed as fraction of y axis
 s.verbose = true;
+
+s.textOnly = false;
 
 s.saveLocation = '';  % if provided, save figure automatically to this location
 
@@ -97,12 +100,11 @@ else
     condition = ones(height(flat), 1);
 end
 
-figure('position', s.figPos, ...
-    'color', 'white', 'menubar', 'none')
+figure('position', s.figPos, 'color', 'white', 'menubar', 'none')
 
 % loop over conditions
 [probs, thicknesses] = deal(zeros(cNum, length(predictors), length(mice), s.binNum));
-
+% 
 for j = 1:length(predictors)
     xLims = prctile(flat.(predictors{j}), s.percentileLims);  % base x limits on distribution for this predictor across conditions and across mice
     binCenters = linspace(xLims(1), xLims(2), s.binNum);
@@ -138,7 +140,7 @@ for j = 1:length(predictors)
                     p = squeeze(probs(i,j,k,:));
                     t = squeeze(thicknesses(i,j,k,:));
                     t = t*s.mouseLineWidth/max(t);
-                    patch([binCenters fliplr(binCenters)]', [p+t; flipud(p-t)], c, 'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha)
+                    if ~s.textOnly; patch([binCenters fliplr(binCenters)]', [p+t; flipud(p-t)], c, 'EdgeColor', 'none', 'FaceAlpha', s.mouseAlpha); end
                 end
             end
         end
@@ -147,16 +149,19 @@ for j = 1:length(predictors)
         p = squeeze(nanmean(probs(i,j,:,:),3));
         t = squeeze(nanmean(thicknesses(i,j,:,:),3));
         t = t*s.lineWidth/max(t);
-        patch([binCenters fliplr(binCenters)], ...
-            [p+t; flipud(p-t)], c, 'EdgeColor', 'none')
+        if ~s.textOnly; patch([binCenters fliplr(binCenters)], [p+t; flipud(p-t)], c, 'EdgeColor', 'none'); end
         
         if j==1; ylabel(s.levels{i}); end
         if i==cNum; xlabel(s.names{j}); end
-        set(gca, 'yLim', s.yLim, 'XTick', [], 'xlim', xLims)
-%         if i==cNum; set(gca, 'XTick', [xLims(1) xLims(2)]); end
+        if s.textOnly
+            set(gca, 'yLim', s.yLim, 'XTick', [], 'YTick', [0 1])
+        else
+            set(gca, 'yLim', s.yLim, 'XTick', [], 'xlim', xLims, 'YTick', [0 1], ...
+                'FontName', 'Arial', 'FontSize', s.fontSize)
+        end
+        if mod(j-1, s.subplotDims(2))~=0; set(gca, 'YTickLabel', []);  % only label y axes for left-most plots
     end
 end
-
 
 
 % save

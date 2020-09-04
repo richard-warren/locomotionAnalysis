@@ -17,7 +17,7 @@ eyeRad = .12;
 furColor = hsv2rgb([.08 .7 .6]);
 whiskerThickness = .5;
 
-padX = [2 3 4 5, 1 2 3 4 5, 1 2 3 4 5, 1 2 3 4 5, 1 2 3 4 5];
+padX = [1.5 2.5 3.5 4.5, 1 2 3 4 5, 1 2 3 4 5, 1 2 3 4 5, 1 2 3 4 5];
 padY = [1 1 1 1, 2 2 2 2 2, 3 3 3 3 3, 4 4 4 4 4, 5 5 5 5 5];
 
 
@@ -44,10 +44,10 @@ set(gca, 'Visible', 'off')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrimSchematic'), 'svg');
 
 % add schematic
-figure('menubar', 'none', 'color', 'white', 'position', [886 955 273 235]); hold on
-scatter(padX, padY, 300, whiskerColors, 'filled')
+figure('menubar', 'none', 'color', 'white', 'position', [100 100 273 235]); hold on
+scatter(padX, padY, 500, whiskerColors, 'filled')
 text(padX, padY, whiskers{1}, 'Color', 'white', ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', 'FontWeight', 'bold')
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', 'FontWeight', 'bold', 'FontSize', 12)
 set(gca, 'Visible', 'off')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'whiskerTrimPadSchematic'), 'svg');
 

@@ -177,7 +177,8 @@ rng(0)
 %% model predictors (figures f3d)
 plotPredictors(flat, m.predictors, 'isModPawLengthened', 'avgMice', true, 'colors', predictorColors,...
     'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
-    'mouseAlpha', .2, 'subplotDims', [2 4], 'names', m.predictorsNamed, 'figPos', [100 400 671 300], ...
+    'mouseAlpha', .2, 'subplotDims', [2 4], 'names', m.predictorsNamed, 'figPos', [100 400 671 350], ...
+    'fontSize', 12, 'textOnly', false, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselinePredictors'));
 
 %% model accuracies (predicted distance only)
@@ -264,7 +265,7 @@ for i = 1:length(m.predictorsAll)
     remainingPredictors = remainingPredictors(~strcmp(remainingPredictors, remainingPredictors{ind}));
 end
 
-% plot forward feature selection
+%% plot forward feature selection
 figure('Color', 'white', 'MenuBar', 'none', 'Position', [200 747.00 297.00 232.00]); hold on
 plot(0:length(m.predictorsAll), [.5 nanmean(accuracies,1)], ...
     'LineWidth', 1, 'Color', [.2 .2 .2]);
@@ -274,13 +275,26 @@ scatter(repelem(1:length(m.predictorsAll), length(mice)), ...
 %     accuracies', 20, [1 1 1]*.8, 'color', [0 0 0 .1]);
 scatter(1:length(m.predictorsAll), nanmean(accuracies,1), 60, predictorColors, 'filled');
 
+if ~isequal(bestPredictors, m.predictors)
+    keyboard
+    disp('WARNING! the following code assumes bestPredictors and m.predictors are the same!!!')
+    disp('update the config file to reflect the new bestPredictors')
+end
 
 
-xlabel('number of features')
+
+% xlabel('number of features')
 ylabel('cross-validation accuracy')
-set(gca, 'XLim', [0, length(m.predictorsAll)])
+set(gca, 'XLim', [0, length(m.predictorsAll)], 'XTick', [])
 fprintf('max accuracy: %.2f\n', max(mean(accuracies,1)))
 fprintf('PREDICTORS: {');fprintf('''%s'', ', bestPredictors{:}); fprintf('}\n')
+yLims = ylim;
+
+for i = 1:length(bestPredictors)
+    text(i, yLims(1), m.predictorsNamed{i}, ...
+        'Rotation', 30, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+        'Color', predictorColors(i,:))
+end
 
 % save
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModelAccuracy'), 'svg');
@@ -293,6 +307,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
     'weightClasses', true, 'plot', false, 'kFolds', 2);
 
 % settings
+fontSize = 9;
 binNum = 15;  % number of histogram bins
 maxPlots = length(m.predictors);
 scatAlpha = .4;
@@ -340,7 +355,7 @@ for r = 1:sz
         end
         
         % pimp fig
-        set(gca, 'XTick', [], 'YTick', [])
+        set(gca, 'XTick', [], 'YTick', [], 'FontName', 'Arial', 'FontSize', fontSize)
         if c==1
             ylabel(m.predictorsNamed{r}, 'Interpreter', 'none', 'FontWeight', 'bold', 'Color', predictorColors(r,:));
         end
@@ -553,3 +568,15 @@ end
 % fprintf('time to contact:       %.1f +- %.1f SEM\n', mean(times), std(times)/sqrt(length(times)))
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineDistanceTimeToContact'), 'svg');
+
+
+%% (temp) model accuracies with subsets of variables
+rng(0)
+[~,~,flat_restricted] = plotModelAccuracies(flat, {'velAtWiskContact'}, 'isModPawLengthened', 'model', 'glm', ...
+    'modSwingContactsMax', m.modSwingContactsMax, 'deltaMin', m.deltaMin, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
+    'weightClasses', true, 'barProps', barProperties, 'kFolds', 15, ...
+    'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baselineModels'));
+
+
+
+

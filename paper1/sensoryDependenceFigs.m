@@ -80,7 +80,7 @@ conditions = [vars.sensoryCondition];
 matObsOn = getDvMatrix(data, 'velAtObsOn', conditions, varsToAvg);
 matContact = getDvMatrix(data, 'velAtWiskContact', conditions, varsToAvg);
 mat = permute(cat(3, matObsOn, matContact), [1 3 2]);
-barFancy(mat, 'levelNames', {conditions.levelNames, {'obsOn', 'contact'}}, 'ylabel', 'velocity slow down (m/s)', ...
+barFancy(mat, 'levelNames', {conditions.levelNames, {'obs on', 'contact'}}, 'ylabel', 'velocity (m/s)', ...
     'colors', repelem(sensColors, 2, 1), barProperties{:}, 'YTick', [.3 .5 .7], ...
     'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'sensoryDependenceSlowDown'), 'svg');
@@ -396,6 +396,42 @@ end
 
 legend(vars.sensoryCondition.levelNames)
 
+%% (temp) slow down anova
+
+
+% load data
+matObsOn = getDvMatrix(data, 'velAtObsOn', [vars.sensoryCondition], varsToAvg);
+matContact = getDvMatrix(data, 'velAtWiskContact', [vars.sensoryCondition], varsToAvg);
+mat = permute(cat(3, matObsOn, matContact), [1 3 2]);
+close all; figure('position', [1144.00 550 560.00 420.00])
+barFancy(mat, 'levelNames', {vars.sensoryCondition.levelNames, {'obs on', 'contact'}}, 'ylabel', 'velocity (m/s)', ...
+    'colors', repelem(sensColors, 2, 1), barProperties{:}, 'YTick', [.3 .5 .7], ...
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
+
+WV_on = matObsOn(1,:)';
+WV_contact = matContact(1,:)';
+W_on = matObsOn(2,:)';
+W_contact = matContact(2,:)';
+
+figure('position', [1144.00 30.00 560.00 420.00])
+boxplot([WV_on WV_contact W_on W_contact]);
+ylabel('velocity (m/s)');
+xticklabels({'WV_on' 'WV_contact' 'W_on' 'W_contact'});
+
+% organize data into table where each row is a subject
+% and each column is a condition (intersection of levels)
+dataAnova = table(WV_on, WV_contact, W_on, W_contact);
+
+% specify within-subject design table
+condition = {'WV', 'WV', 'W', 'W'}';
+time = {'obs on', 'contact', 'obs on', 'contact'}';
+within = table(condition, time, 'VariableNames', {'condition', 'time'});
+
+rm = fitrm(dataAnova, 'WV_on,WV_contact,W_on,W_contact~1', 'WithinDesign', within);
+[ranovatblb] = ranova(rm, 'WithinModel','condition*time')
+
+%[ranovatblb] = ranova(rm, 'WithinModel','whisking+laser'); main effects
+%[ranovatblb] = ranova(rm, 'WithinModel','whisking*laser'); +interactions
 
 
 
