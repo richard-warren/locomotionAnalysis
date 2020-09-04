@@ -30,12 +30,18 @@ makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'tr
 
 % settings
 session = '180715_004';
-trials = [];
-speed = 1.0;
+numTrials = 5;
+dropFrames = 5;
+
+% find fastest numTrials trials in session
+load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'rewardTimes')
+dts = diff(rewardTimes);
+[~, sortInds] = sort(dts);
+trials = sort(sortInds(1:numTrials)'+1);
 
 makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'highSpeedObstacleClearance'), ...
-    session, 'trials', trials, 'playBackSpeed', speed, 'obsPosRange', [-.1 .1], ...
-    'showTracking', true, 'text', sprintf('%.2fx', speed))
+    session, 'trials', trials, 'playBackSpeed', 1.0, 'rewardTrials', true, 'rewardWindow', [5 -1], ...
+    'visible', false, 'showTracking', true, 'text', sprintf('%.2fx', 1.0), 'dropFrames', dropFrames)
 
 
 

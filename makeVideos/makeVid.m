@@ -14,21 +14,24 @@ s.visible = 'on';           % ('on' or 'off') whether to show frames while writi
 s.maxTrialTime = 10;        % (s) trials exceeding maxTrialTime will be trimmed to this duration
 s.border = 4;               % (pixels) thickness of border surrounding whisker frame
 s.contrastLims = [.1 .9];   % (0->1) contrast limits for video
+s.playBackSpeed = .15;      % fraction of real time speed for playback
+s.dropFrames = 1;           % drop every s.dropFrames frames to keep file sizes down
 
 s.includeWiskCam = true;    % whether to add whisker camera
 s.text = '';                % text to add to bottom right corner
 
-s.obsPosRange = [-.05 .1];  % (m) for each trial, show when obs is within this range of the mouse's nose
-s.playBackSpeed = .15;      % fraction of real time speed for playback
-
 s.trialNum = 10;            % number of trials (evenly spaced throughout session) to show
 s.trials = [];              % array of specific trials to show // if provided, s.trialNum is ignored
+s.rewardTrials = false;     % whether trials are considered reward delivery // otherwise considered obstacles
+s.obsPosRange = [-.05 .1];  % (m) for each trial, show when obs is within this range of the mouse's nose
+s.rewardWindow = [2 .5];    % (s) if rewardTrials==true, seconds relative to previous reward for trial start, and relative to current reward to trial end
+s.blankTime = .15;          % (s) how many seconds of black frames (or fadeout time) to put in between trials
 
 s.showTracking = false;     % whether to overlay tracking
-s.featuresToShow = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBase', 'tailMid'};  % features to show (excluding _top and _bot suffix)
 s.numCircles = 4;           % number of circles to show for each feature (there will be a trail of circles showing the tracking over time)
 s.circSeparation = 2;       % how many frames separating circles in trail
-s.circSz = 100;
+s.circSz = 80;
+s.featuresToShow = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBase', 'tailMid'};  % features to show (excluding _top and _bot suffix)
 
 
 % initializations
@@ -39,7 +42,7 @@ if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessi
 circIndOffsets = -(s.numCircles-1)*s.circSeparation : s.circSeparation : 0;
 
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
-    'obsPositionsFixed', 'obsTimes', 'wheelPositions', 'wheelTimes', 'isLightOn', ...
+    'obsPositionsFixed', 'obsTimes', 'wheelPositions', 'wheelTimes', 'rewardTimes', ...
     'obsOnTimes', 'frameTimeStamps', 'frameTimeStampsWisk', 'pixelsPerM');
 
 
@@ -55,8 +58,9 @@ frameDims = size(frame);
 
 % determine video settings
 vidSetting = 'MPEG-4';
-fps = round(vid.FrameRate * s.playBackSpeed);
+fps = round(vid.FrameRate * s.playBackSpeed / s.dropFrames);
 maxFps = 150; % fps > 150 can be accomplished using 'Motion JPEG AVI' as second argument to VideoWriter, but quality of video is worse
+blankFrames = round(fps * s.blankTime);  % how many black frames to put in between trials;
 
 if fps>maxFps
     fprintf('WARNING: changing video mode to ''Motion JPEG AVI'' to acheive requested playback speed\n');
@@ -70,11 +74,14 @@ open(vidWriter)
 
 
 % determine trials to include
-if isempty(s.trials); s.trials = floor(linspace(1, length(obsOnTimes), min(s.trialNum, length(obsOnTimes)))); end
+if isempty(s.trials)
+    if s.rewardTrials; maxNum = length(rewardTimes)-1; else; maxNum = length(obsOnTimes); end
+    s.trials = floor(linspace(2, maxNum, min(s.trialNum, maxNum)));
+end
 
 
 % set up figure
-fig = figure('name', session, 'color', [0 0 0], 'position', [800, 50, size(frame,2), size(frame,1)], 'menubar', 'none', 'visible', 'on');
+fig = figure('name', session, 'color', [0 0 0], 'position', [800, 50, size(frame,2), size(frame,1)], 'menubar', 'none', 'visible', s.visible);
 ax = axes('position', [0 0 1 1], 'CLim', [0 255]);
 colormap gray
 im = image(frame, 'CDataMapping', 'scaled'); hold on;
@@ -104,7 +111,6 @@ if s.showTracking
     
     colors = repelem(colors, s.numCircles, 1);
     colors = colors .* repmat([ones(1,s.numCircles-1)*.5 1], 1, length(features))';  % darken trailing circles
-%     alphas = repmat(linspace(1,0,s.numCircles), 1, length(features));
     circSizes = [linspace(s.circSz*.1, s.circSz*.5, s.numCircles-1) s.circSz];
     circSizes = repmat(circSizes,1,length(features));
     
@@ -123,20 +129,25 @@ end
 % edit video
 for i = s.trials
     fprintf('%i ', i)
-    keyboard
     
     % find trial inds
-    obsAtNoseTime = obsTimes(find(obsPositionsFixed>=0 & obsTimes>obsOnTimes(i), 1, 'first'));
-    obsAtNosePos = wheelPositions(find(wheelTimes>=obsAtNoseTime,1,'first'));
-    inds = find((wheelPositions > obsAtNosePos+s.obsPosRange(1)) & (wheelPositions < obsAtNosePos+s.obsPosRange(2)));
-    startInd = inds(1);
-    endInd = inds(end);
-    endTime = min(wheelTimes(startInd)+s.maxTrialTime, wheelTimes(endInd));
-    trialInds = find(frameTimeStamps>wheelTimes(startInd) & frameTimeStamps<endTime);
+    if ~s.rewardTrials
+        obsAtNoseTime = obsTimes(find(obsPositionsFixed>=0 & obsTimes>obsOnTimes(i), 1, 'first'));
+        obsAtNosePos = wheelPositions(find(wheelTimes>=obsAtNoseTime,1,'first'));
+        inds = find((wheelPositions > obsAtNosePos+s.obsPosRange(1)) & (wheelPositions < obsAtNosePos+s.obsPosRange(2)));
+        startInd = inds(1);
+        endInd = inds(end);
+        endTime = min(wheelTimes(startInd)+s.maxTrialTime, wheelTimes(endInd));
+        trialInds = find(frameTimeStamps>wheelTimes(startInd) & frameTimeStamps<endTime);
+    else
+        trialInds = find(frameTimeStamps>rewardTimes(i-1)+s.rewardWindow(1) & ...
+                         frameTimeStamps<rewardTimes(i)+s.rewardWindow(2));
+    end
+    trialInds = trialInds(1) : s.dropFrames : trialInds(end);
     
     
     if ~isempty(trialInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty
-        for j = trialInds'
+        for j = trialInds
             
             if s.includeWiskCam
                 frame = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, j, ...
@@ -169,7 +180,10 @@ for i = s.trials
         end
 
         % add blank frame between trials
-        writeVideo(vidWriter, zeros(frameDims));
+        if blankFrames>0
+            for k = linspace(1,0,blankFrames); writeVideo(vidWriter, frame.cdata.*k); end  % fade out last frame
+%             for k = 1:blankFrames; writeVideo(vidWriter, zeros(frameDims)); end  % black frames only
+        end
     end
 end
 fprintf('\nall done!\n')
