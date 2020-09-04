@@ -1,7 +1,7 @@
 function makeVid(vidName, session, varargin)
 
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
-% kept and everything else is edited out
+% kept and everything else is edited out // see abagillion option below
 
 % todo:
 % have text be a cell array so users can pass in trial specific text
@@ -33,17 +33,21 @@ s.circSeparation = 2;       % how many frames separating circles in trail
 s.circSz = 80;
 s.featuresToShow = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBase', 'tailMid'};  % features to show (excluding _top and _bot suffix)
 
+s.speedNearContact = [];    % playBackSpeed immediatly after whisker contact // use this to create a cool slow down effect as the obstacle jump occurs
+s.contactWindow = [0 .2];   % (s) seconds relative to whisker contact to start and stop slow down effect
+
 
 % initializations
 fprintf('writing %s, trial: ', vidName)
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
+if isempty(s.speedNearContact); s.speedNearContact = s.playBackSpeed; end
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
 circIndOffsets = -(s.numCircles-1)*s.circSeparation : s.circSeparation : 0;
 
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'obsPositionsFixed', 'obsTimes', 'wheelPositions', 'wheelTimes', 'rewardTimes', ...
-    'obsOnTimes', 'frameTimeStamps', 'frameTimeStampsWisk', 'pixelsPerM');
+    'obsOnTimes', 'frameTimeStamps', 'frameTimeStampsWisk', 'pixelsPerM', 'wiskContactTimes');
 
 
 % get position where wisk frame should overlap with runTop frame
@@ -98,9 +102,6 @@ if s.showTracking
     bins = contains(features, s.featuresToShow);
     locations = locations(:,:,bins); features = features(bins); scores = scores(bins);
     
-    topPawInds = find(contains(features, 'paw') & contains(features, '_top'));
-    botPawInds = find(contains(features, 'paw') & contains(features, '_bot'));
-    
     % define colors (s.t. same feature across views has same color)
     colorsTemp = hsv(length(s.featuresToShow));
     colors = nan(length(features),3);
@@ -116,7 +117,7 @@ if s.showTracking
     
     scat = scatter(nan(1,length(features)*s.numCircles), ...
         nan(1,length(features)*s.numCircles), ...
-        circSizes, colors, 'filled');
+        circSizes, colors, 'filled', 'MarkerFaceAlpha', .8);
 end
 
 
@@ -144,6 +145,20 @@ for i = s.trials
                          frameTimeStamps<rewardTimes(i)+s.rewardWindow(2));
     end
     trialInds = trialInds(1) : s.dropFrames : trialInds(end);
+    
+    % get 'slow down' inds
+    if s.playBackSpeed ~= s.speedNearContact
+        contactInds = wiskContactTimes(wiskContactTimes>frameTimeStamps(trialInds(1)) & ...
+                                       wiskContactTimes<frameTimeStamps(trialInds(end)));  % inds of whisker contacts within trial
+        for j = contactInds
+            tLims = j + s.contactWindow;                             % start and end time of slow down window
+            times = tLims(1) : (s.speedNearContact/fps) : tLims(2);  % these are the 'desired' frame times given the specified frameRate
+            trialSlowInds = knnsearch(frameTimeStamps, times');      % these are the inds closest to the desired frame times
+
+            % splice in slow down inds
+            trialInds = [trialInds(trialInds<trialSlowInds(1)) trialSlowInds' trialInds(trialInds>trialSlowInds(end))];
+        end
+    end
     
     
     if ~isempty(trialInds) % if a block has NaN timestamps (which will happen when unresolved), startInd and endInd will be the same, and frameInds will be empty

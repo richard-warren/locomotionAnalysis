@@ -40,20 +40,16 @@ Use `paper1\paper1Figs.mat` to make vids for the paper.
 
 
 #### outline
-- [X] setup example
+1. setup example
   - `makeSetupExampleVid()`
-  - wide vid, no tracking, obs to right
-  - fade into 3d animation
-- [X] tracking example
+  - matlab vids: rigAnimation // setupExample
+2. tracking example
   - `makeVid()`
-  - obs loco with tracking, all slomo
-    - swing stance too...
-3. **high speeds obs**
+  - matlab vids: trackingExample
+3. high speeds obs
   - `makeVid()`
-  - can i integrate wisk contact slow down into makeVid?
-  - real speed running
-  - then matrix vids
-4. unheadfixation [makevidunheadfixed]
+  - matlab vids: highSpeedObstacleClearance // highSpeedObstacleClearance_slowDown
+4. **unheadfixation [makevidunheadfixed]**
   - unheadfixed, with tracking 'left behind'
   - fancy 3d view on the bottom?
 5. sensory dependence [makevid]
