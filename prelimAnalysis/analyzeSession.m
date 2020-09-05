@@ -619,8 +619,8 @@ function analyzeSession(session, varargin)
 
         saveVars('obsPixPositions', obsPixPositions', ...  % positions of obstacle along track in pixel coordinates // positions when out of frame are inferred based on obstacle rotary encoder and linear mapping between pixel and encoder coordinate systems
                  'obsPixPositionsUninterped', obsPixPositionsUninterped, ...  % positions of obstacle in pixel coordinates only when it is in the camera view and accurately tracked
-                 'obsToObsPixPosMappings', obsToObsPixPosMappings, ...  % linear mapping from obstacle position (meters) to obstacle position (pixels)
-                 'wheelToObsPixPosMappings', wheelToObsPixPosMappings, ...  % linear mapping from wheel position (meters) to obstacle position (pixels)
+                 'obsToObsPixPosMappings', obsToObsPixPosMappings, ...        % linear mapping from obstacle position (meters) to obstacle position (pixels)
+                 'wheelToObsPixPosMappings', wheelToObsPixPosMappings, ...    % linear mapping from wheel position (meters) to obstacle position (pixels)
                  'pixelsPerM', pixelsPerM, ...
                  'obsPositionsFixed', obsPositionsFixed);
     end

@@ -52,5 +52,18 @@ makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'hi
     'visible', false, 'showTracking', true, 'text', sprintf('%.2fx, %.2fx at whisker contact', 1.0, slowDownSpeed), ...
     'dropFrames', 5, 'speedNearContact', slowDownSpeed)
 
+%% unheadfixed tracking
+% (movie 4)
+
+% todo: add text
+
+session = '180715_004';
+trials = [7 10 30 50];
+speed = .15;
+dropFrames = 1;
+
+makeVidUnheadfixed(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'trackingUnheadfixed'), ...
+    session, 'trials', trials, 'playBackSpeed', speed, 'showTracking', true, 'dropFrames', dropFrames)
+
 
 

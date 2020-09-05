@@ -32,6 +32,7 @@ s.numCircles = 4;           % number of circles to show for each feature (there 
 s.circSeparation = 2;       % how many frames separating circles in trail
 s.circSz = 80;
 s.featuresToShow = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH', 'tailBase', 'tailMid'};  % features to show (excluding _top and _bot suffix)
+s.colors = [];
 
 s.speedNearContact = [];    % playBackSpeed immediatly after whisker contact // use this to create a cool slow down effect as the obstacle jump occurs
 s.contactWindow = [0 .2];   % (s) seconds relative to whisker contact to start and stop slow down effect
@@ -57,7 +58,7 @@ if s.includeWiskCam
 else
     frame = read(vid, 1);
 end
-frameDims = size(frame);
+
 
 
 % determine video settings
@@ -103,7 +104,7 @@ if s.showTracking
     locations = locations(:,:,bins); features = features(bins); scores = scores(bins);
     
     % define colors (s.t. same feature across views has same color)
-    colorsTemp = hsv(length(s.featuresToShow));
+    if ~isempty(s.colors); colorsTemp = s.colors; else; colorsTemp = hsv(length(s.featuresToShow)); end
     colors = nan(length(features),3);
     for i = 1:length(s.featuresToShow)
         bins =contains(features, s.featuresToShow{i});
@@ -194,11 +195,8 @@ for i = s.trials
             writeVideo(vidWriter, frame);
         end
 
-        % add blank frame between trials
-        if blankFrames>0
-            for k = linspace(1,0,blankFrames); writeVideo(vidWriter, frame.cdata.*k); end  % fade out last frame
-%             for k = 1:blankFrames; writeVideo(vidWriter, zeros(frameDims)); end  % black frames only
-        end
+        % fade out last frame
+        if blankFrames>0; for k = linspace(1,0,blankFrames); writeVideo(vidWriter, frame.cdata.*k); end; end
     end
 end
 fprintf('\nall done!\n')
