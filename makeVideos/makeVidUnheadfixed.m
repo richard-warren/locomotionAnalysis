@@ -3,11 +3,6 @@ function makeVidUnheadfixed(vidName, session, varargin)
 % edits a video of mouse jumping over obstacles s.t. obstacle trials are
 % kept and everything else is edited out // see abagillion option below
 
-% todo:
-% have text be a cell array so users can pass in trial specific text
-% paw contact visualization
-% whisker contact visualization
-
 
 % settings
 s.visible = 'on';           % ('on' or 'off') whether to show frames while writing video
@@ -19,7 +14,7 @@ s.includeWiskCam = true;    % whether to add whisker camera
 s.text = '';                % text to add to bottom right corner
 
 s.trialNum = 10;            % number of trials (evenly spaced throughout session) to show
-s.trials = [20];            % !!! array of specific trials to show // if provided, s.trialNum is ignored
+s.trials = [];              % array of specific trials to show // if provided, s.trialNum is ignored
 s.xLims = [-.35 .15];       % (m) x limits relative to obstacle position
 s.blankTime = .15;          % (s) how many seconds of black frames (or fadeout time) to put in between trials
 
@@ -82,7 +77,6 @@ if isempty(s.trials); s.trials = floor(linspace(2, length(obsOnTimes), min(s.tri
 
 
 % set up figure
-close all
 fig = figure('position', [0, 600, range(s.xLims) * pixelsPerM, size(frame,1)], ...
     'name', session, 'color', [0 0 0], 'menubar', 'none', 'visible', s.visible);
 ax = axes('position', [0 0 1 1], 'CLim', [0 255]);
@@ -90,22 +84,24 @@ colormap gray
 im = image(frame, 'CDataMapping', 'scaled', 'ydata', frameY); hold on;
 set(ax, 'visible', 'off', 'XLim', s.xLims); hold on
 
-% obstacle
-obsTop = rectangle('position', [0-s.obsDiam/2, 0, s.obsDiam, s.obsDiam], 'curvature', [1 1], ...
-    'facecolor', [s.obsColor .8], 'EdgeColor', 'none');
-rectangle('position', [0-s.obsDiam/2, s.topHgt, s.obsDiam, frameY(end)-s.topHgt], ...
-    'facecolor', [s.obsColor .8], 'EdgeColor', 'none');
+
+% text
+if ~isempty(s.text); text(s.xLims(2), frameY(end), s.text, 'color', 'white', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom'); end
 
 
 % load tracking
 if s.showTracking
     locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
     scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
-    [locations, features, ~, ~, scores] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
+    [locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
     
     % restrict features
     bins = contains(features, s.featuresToShow);
-    locations = locations(:,:,bins); features = features(bins); scores = scores(bins);
+    locations = locations(:,:,bins); features = features(bins);
+    
+    % interpolate non-paw features
+    nonPawInds = find(~contains(features, 'paw'));
+    for i = nonPawInds; locations(:,:,i) = fillmissing(locations(:,:,i), 'spline'); end
     
     % define colors (s.t. same feature across views has same color)
     if ~isempty(s.colors); colorsTemp = s.colors; else; colorsTemp = hsv(length(s.featuresToShow)); end
@@ -127,6 +123,13 @@ if s.showTracking
     lines = cell(1, length(features));
     for i = 1:length(features); lines{i} = plot(nan, nan, 'color', [colors(i,:) .8], 'LineWidth', s.lineWidth); end
 end
+
+
+% obstacle
+obsTop = rectangle('position', [0-s.obsDiam/2, 0, s.obsDiam, s.obsDiam], 'curvature', [1 1], ...
+    'facecolor', [s.obsColor .8], 'EdgeColor', 'none');
+rectangle('position', [0-s.obsDiam/2, s.topHgt, s.obsDiam, frameY(end)-s.topHgt], ...
+    'facecolor', [s.obsColor .8], 'EdgeColor', 'none');
 
 
 

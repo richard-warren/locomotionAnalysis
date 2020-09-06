@@ -40,25 +40,23 @@ Use `paper1\paper1Figs.mat` to make vids for the paper.
 
 
 #### outline
-1. setup example
+1. [X] setup example
   - `makeSetupExampleVid()`
-  - matlab vids: rigAnimation // setupExample
-2. tracking example
+  - vids: rigAnimation // setupExample
+2. [X] tracking example
   - `makeVid()`
-  - matlab vids: trackingExample
-3. high speeds obs
+  - vids: trackingExample
+3. [X] high speeds obs
   - `makeVid()`
-  - matlab vids: highSpeedObstacleClearance // highSpeedObstacleClearance_slowDown
-4. **unheadfixation [makevidunheadfixed]**
-  - unheadfixed, with tracking 'left behind'
-  - fancy 3d view on the bottom?
-5. sensory dependence [makevid]
+  - vids: highSpeedObstacleClearance // highSpeedObstacleClearance_slowDown // highSpeedObstacleClearance_unheadfixed
+4. [X] unheadfixation
+  - `makeVidUnheadfixed()`
+  - matlab vids: trackingUnheadfixed
+5. sensory dependence
   - one vid, all conditions, with explanatory text
-6. decision making [will probably need to make dedicated script...]
-  - unheadfixed // show lengthened (and big step), shortened (and small step), same
-  - leave behind mod paw kin
-  - also show 'would-be' kinematics? (would require knn search perhaps, or interpolation based on landing position)
-  - make it look like plots in figgys (colors, dots at end, etc)
+6. decision making
+  - `makeDecisionVid()`
+  - vids: decision
 7. barrels [makevid]
   - one vid, pre, post early, post late
 8. mtc [makevid]

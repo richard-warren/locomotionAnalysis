@@ -52,18 +52,53 @@ makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'hi
     'visible', false, 'showTracking', true, 'text', sprintf('%.2fx, %.2fx at whisker contact', 1.0, slowDownSpeed), ...
     'dropFrames', 5, 'speedNearContact', slowDownSpeed)
 
+makeVidUnheadfixed(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'highSpeedObstacleClearance_unheadfixed'), ...
+    session, 'trials', trials, 'playBackSpeed', 1.0, 'showTracking', false, 'dropFrames', 5, 'text', sprintf('%.2fx', 1.0))
+
 %% unheadfixed tracking
 % (movie 4)
 
-% todo: add text
-
+% settings
 session = '180715_004';
 trials = [7 10 30 50];
 speed = .15;
-dropFrames = 1;
+dropFrames = 2;
 
 makeVidUnheadfixed(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'trackingUnheadfixed'), ...
-    session, 'trials', trials, 'playBackSpeed', speed, 'showTracking', true, 'dropFrames', dropFrames)
+    session, 'trials', trials, 'playBackSpeed', speed, 'showTracking', true, 'dropFrames', dropFrames, ...
+    'colors', cat(1, stepColors, ones(2,3)*.5), 'text', sprintf('%.2fx', speed))
+
+
+%% decision kinematics
+% (movie 6)
+
+% settings
+session = '180630_000';
+speed = .15;
+
+% makeDecisionVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'decision'), ...
+%     session, 'speed', speed, 'text', sprintf('%.2fx', speed), 'dropFrames', 1, 'xLims', [-.25 .1]);
+
+
+% uncomment to make options
+sessions = getAllExperimentSessions('experiments', 'baselineNotes'); sessions = sessions.session;
+for i = 1:length(sessions)
+    if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mp4'), 'file'); concatTopBotVids(sessions{i}); end
+    try
+        makeDecisionVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'movie_options', ['decision_' sessions{i}]), ...
+            sessions{i}, 'speed', speed, 'text', sprintf('%.2fx', speed), 'dropFrames', 1, 'xLims', [-.25 .1]);
+    catch
+        fprintf('PROBLEM WITH SESSION %s\n', sessions{i})
+    end
+end
+
+
+
+
+
+
+
+
 
 
 
