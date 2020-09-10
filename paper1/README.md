@@ -52,18 +52,13 @@ Use `paper1\paper1Figs.mat` to make vids for the paper.
 4. [X] unheadfixation
   - `makeVidUnheadfixed()`
   - matlab vids: trackingUnheadfixed
-5. sensory dependence
+5. [ ] sensory dependence
   - one vid, all conditions, with explanatory text
-6. decision making
+6. [X] decision making
   - `makeDecisionVid()`
   - vids: decision
-7. barrels [makevid]
+7. [ ] barrels [makevid]
   - one vid, pre, post early, post late
-8. mtc [makevid]
+8. [ ] mtc [makevid]
   - one vid for lesion, mus
   - for both show pre, post
-9. matched [maketrialpairsvid]
-  - one vid mus, les
-  - matched for at wisk contact stuff
-  - show slow mo but with no pauses at whisker contact
-  - top row control, bottom row manip

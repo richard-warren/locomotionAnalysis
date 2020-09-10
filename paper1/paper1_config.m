@@ -57,5 +57,6 @@ muscimolColor = [13 177 111]/255;
 % other
 contrast = [0 .75];  % for videos and images
 contactColor = [1 .2 .2];  % contact color (paw, whiskers)
+trackingColors = cat(1, stepColors, ones(2,3)*.5);  % colors for tracking (first four rows are paw, final two are tail)
 
 

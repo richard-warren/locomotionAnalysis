@@ -3,6 +3,7 @@
 paper1_config;
 
 
+
 %% make wide view setup example view (shows obs coming into view from far off on the right side of the screen)
 % (movie 1)
 
@@ -25,7 +26,7 @@ speed = .1;
 
 makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'trackingExample'), ...
     session, 'trials', trials, 'playBackSpeed', speed, 'obsPosRange', [-.1 .1], ...
-    'showTracking', true, 'text', sprintf('%.2fx', speed))
+    'showTracking', true, 'text', sprintf('%.2fx', speed), 'colors', trackingColors)
 
 %% mice clear obstacles at high speeds
 % (movie 3)
@@ -44,23 +45,23 @@ trials = sort(sortInds(1:numTrials)'+1);
 % make real-time vid
 makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'highSpeedObstacleClearance'), ...
     session, 'trials', trials, 'playBackSpeed', 1.0, 'rewardTrials', true, 'rewardWindow', [5 -1], ...
-    'visible', false, 'showTracking', true, 'text', sprintf('%.2fx', 1.0), 'dropFrames', 5)
+    'visible', 'on', 'showTracking', true, 'text', sprintf('%.2fx', 1.0), 'dropFrames', 5, 'colors', trackingColors)
 
 % make real-time vid that slows at whisker contact
 makeVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'highSpeedObstacleClearance_slowDown'), ...
     session, 'trials', trials, 'playBackSpeed', 1.0, 'rewardTrials', true, 'rewardWindow', [5 -1], ...
-    'visible', false, 'showTracking', true, 'text', sprintf('%.2fx, %.2fx at whisker contact', 1.0, slowDownSpeed), ...
-    'dropFrames', 5, 'speedNearContact', slowDownSpeed)
+    'visible', 'on', 'showTracking', true, 'text', sprintf('%.2fx, %.2fx at whisker contact', 1.0, slowDownSpeed), ...
+    'dropFrames', 5, 'speedNearContact', slowDownSpeed, 'colors', trackingColors)
 
 makeVidUnheadfixed(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'highSpeedObstacleClearance_unheadfixed'), ...
-    session, 'trials', trials, 'playBackSpeed', 1.0, 'showTracking', false, 'dropFrames', 5, 'text', sprintf('%.2fx', 1.0))
+    session, 'trials', trials, 'playBackSpeed', 1.0, 'showTracking', false, 'dropFrames', 5, 'text', sprintf('%.2fx', 1.0), 'colors', trackingColors)
 
 %% unheadfixed tracking
 % (movie 4)
 
 % settings
 session = '180715_004';
-trials = [7 10 30 50];
+trials = [7 30 50];
 speed = .15;
 dropFrames = 2;
 
@@ -77,16 +78,16 @@ session = '180630_000';
 speed = .15;
 
 % makeDecisionVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'decision'), ...
-%     session, 'speed', speed, 'text', sprintf('%.2fx', speed), 'dropFrames', 1, 'xLims', [-.25 .1]);
+%     session, 'speed', speed, 'text', sprintf('%.2fx', speed), 'dropFrames', 1, 'xLims', [-.2 .1]);
 
 
 % uncomment to make options
 sessions = getAllExperimentSessions('experiments', 'baselineNotes'); sessions = sessions.session;
-for i = 1:length(sessions)
+for i = 6:length(sessions)
     if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'run.mp4'), 'file'); concatTopBotVids(sessions{i}); end
     try
-        makeDecisionVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'movie_options', ['decision_' sessions{i}]), ...
-            sessions{i}, 'speed', speed, 'text', sprintf('%.2fx', speed), 'dropFrames', 1, 'xLims', [-.25 .1]);
+        makeDecisionVid(fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'movies', 'movie_options', 'decision', ['decision_' sessions{i}]), ...
+            sessions{i}, 'speed', speed, 'text', sprintf('%.2fx', speed), 'dropFrames', 1, 'xLims', [-.2 .1]);
     catch
         fprintf('PROBLEM WITH SESSION %s\n', sessions{i})
     end

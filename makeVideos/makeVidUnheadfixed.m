@@ -191,6 +191,7 @@ for i = s.trials
 
     % fade out last frame
     if blankFrames>0; for k = linspace(1,0,blankFrames); writeVideo(vidWriter, frame.cdata.*k); end; end
+    for k = 1:length(features); set(lines{k}, 'xdata', nan, 'ydata', nan); end  % clear tracking
 end
 
 fprintf('\nall done!\n')

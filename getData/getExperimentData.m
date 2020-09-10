@@ -555,7 +555,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
 
         % paw variables
         % -------------
-        case 'isContra'  % whether paw is contralateral to 'side'
+        case 'isContra'  % whether paw is contralateral to 'side' ('side' is a column is experimentMetadata spreadsheet)
             side = g.expData(g.mouse).sessions(g.session).side;
             if strcmp(side, 'left')
                 var = num2cell(logical([0 0 1 1]));
@@ -686,7 +686,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell(g.sesKinData(g.trial).controlSwingLengths(end,:));
             end
         
-        case 'isVentralContact'  % whether each paw contacts obs ventrally for >= touchThresh frames
+        case 'isVentralContact'  % whether each paw contacts obs ventrally for >= touchThresh frames (use to assess whether obs was 'grabbed')
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 foreVentInd = find(strcmp(g.sesData.touchClassNames, 'fore_ventral'));

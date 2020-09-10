@@ -1,7 +1,7 @@
 %% compute experiment data from scratch (only need to do once)
 
 % settings
-dataset = 'senLesion';  % senLesion, mtc_lesion, mtc_muscimol
+dataset = 'mtc_lesion';  % senLesion, mtc_lesion, mtc_muscimol
 
 if strcmp(dataset,'senLesion'); sheet='senLesionNotes'; elseif strcmp(dataset,'mtc_lesion'); sheet='mtcLesionNotes'; elseif strcmp(dataset,'mtc_muscimol'); sheet='muscimolNotes'; end
 sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx'), 'Sheet', sheet);
@@ -19,9 +19,9 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';
+dataset = 'mtc_lesion';  % senLesion, mtc_muscimol, or mtc_lesion
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
-splitEarlyLate = true;  % whether to split early and late post-lesion sessions
+splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
     earlySessions = [1 1];  % min and max sessions to include in 'early' lesion sessions ([1 1] for sen lesions, [1 3] for mtc lesions)
     lateSessions = [4 4];  % min and max sessions to include in 'late' lesion sessions
@@ -387,14 +387,23 @@ barFancy(dv, 'ylabel', 'success rate', 'levelNames', {figVars.levelNames}, ...
     'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawContacts' suffix1 suffix2]), 'svg');
 
-%% baseline step heights (forepaw only)
-figure('position', [200 100 400 328.00], 'color', 'white', 'menubar', 'none');
-figVars = [vars.condition];
-dv = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, [figConditionals; conditionals.isFore])*1000;
-barFancy(dv, 'ylabel', 'forepaw control step height (mm)', 'levelNames', {figVars.levelNames}, ...
-    'colors', colors, barProperties{:}, ...
-    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+%% baseline step heights
+figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
+figVars = [vars.isFore; vars.isContra; vars.condition];
+dv = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, [figConditionals])*1000;
+barFancy(dv, 'ylabel', 'control step height (mm)', 'levelNames', {figVars(1:end-1).levelNames}, ...
+    'colors', repmat(colors,4,1), barProperties{:}, ...
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest', 'addLabelLines', false)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_baselineHeights' suffix1 suffix2]), 'svg');
+
+%% ventral contacts ('grabs')
+figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
+figVars = [vars.isFore; vars.isContra; vars.condition];
+dv = getDvMatrix(data, 'isVentralContact', figVars, {'mouse'}, [figConditionals]);
+barFancy(dv, 'ylabel', 'ventral contact rate', 'levelNames', {figVars(1:end-1).levelNames}, ...
+    'colors', repmat(colors,4,1), barProperties{:}, ...
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest', 'addLabelLines', false)
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_ventralContacts' suffix1 suffix2]), 'svg');
 
 %% forepaw height
 figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
@@ -470,7 +479,7 @@ else
 end
 
 %% body angle
-figure('position', [2018.00 200 521.00 239.00], 'color', 'white', 'menubar', 'none')
+figure('position', [200 200 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'trialAngleContra', vars.sessionsPostLesion, {'mouse'});
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'body angle', 'xlabel', 'sessions post lesion', ...
     'compareTo', 1:manipInd, sessionPlotProperties{:});
@@ -479,7 +488,7 @@ ln = line([.5 .5], get(gca, 'ylim'), 'color', [lesionColor .9], 'linewidth', 2);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_angleOverSessions' suffix1 suffix2]), 'svg');
 
 %% tail height
-figure('position', [2018.00 300 521.00 239.00], 'color', 'white', 'menubar', 'none')
+figure('position', [200 300 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'tailHgt', vars.sessionsPostLesion, {'mouse'});
 % if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'tail height', 'xlabel', 'sessions post lesion', ...
@@ -509,7 +518,7 @@ ln = line([.5 .5], get(gca, 'ylim'), 'color', [lesionColor .9], 'linewidth', 2);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_forepawHgtOverSessions' suffix1 suffix2]), 'svg');
 
 %% hindpaw height
-figure('position', [2018.00 500 521.00 239.00], 'color', 'white', 'menubar', 'none')
+figure('position', [200 500 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'preObsHgt', vars.sessionsPostLesion, {'mouse'}, conditionals.isHind) * 1000;
 % if strcmp(dataset, 'senLesion'); dv = dv(:,[1,3:end]); end  % !!! this is a hack to remove the mouse who only has one post lesion sessions
 sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'hindpaw height (mm)', 'xlabel', 'sessions post lesion', ...
@@ -527,7 +536,7 @@ sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'correlation
 yLims = get(gca, 'ylim'); ln = line([.5 .5],yLims, 'color', [lesionColor .9], 'linewidth', 2); uistack(ln, 'bottom'); set(gca, 'ylim', yLims);
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_corrOverSessions' suffix1 suffix2]), 'svg');
 
-%% success over days post wisk trim
+%% success over days post wisk trim (senLesion only)
 
 sessionsToShow = -(preSessions+1):3;
 
@@ -797,6 +806,31 @@ dv = getDvMatrix(data, 'modPawDistanceToObsAbs', [vars.isModPawContra], {'mouse'
 barFancy(dv, 'ylabel', 'landing distance (mm)', 'levelNames', {vars.isModPawContra.levelNames}, barProperties{:}, ...
     'comparisons', [1 2], 'test', 'ttest')
 
+%% success and paw height as fcn of obs height
+close all
+flat = struct2table(flattenData(data, {'mouse', 'session', 'trial', 'condition', 'conditionNum', 'isTrialSuccess', 'isLeading', 'isFore', 'obsHgt', 'preObsHgt'}));
+[~, conditions] = ismember(flat.condition, vars.condition.levels);
+
+% obs height vs paw height
+figure('Color', 'white', 'Position', [200 400 400 300], 'MenuBar', 'none');
+plot([0 10], [0 10], 'Color', [obsColor .4], 'LineWidth', 3) % add unity line
+lfBins = [flat.isLeading] & [flat.isFore];  % leading forepaw bins
+logPlotRick(flat.obsHgt(lfBins)*1000, flat.preObsHgt(lfBins)*1000, ...
+    'colors', colors, 'conditions', conditions(lfBins), 'xlabel', 'obstcle height (mm)', 'ylabel', 'paw height (mm)', 'plotMice', false, ...
+    'xlim', [4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', flat.mouse(lfBins), ...
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)))
+set(gca, 'xlim', [4 10], 'YTick', 4:2:12, 'YLim', [4 12])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_heightShapingMovingAverages' suffix1 suffix2]), 'svg');
+
+% obs height vs success rate
+figure('Color', 'white', 'Position', [800 400 400 300], 'MenuBar', 'none');
+lfBins = [flat.isLeading] & [flat.isFore];  % leading forepaw bins
+logPlotRick(flat.obsHgt(lfBins)*1000, flat.isTrialSuccess(lfBins), ...
+    'colors', colors, 'conditions', conditions(lfBins), 'xlabel', 'obstcle height (mm)', 'ylabel', 'success rate', 'plotMice', false, ...
+    'xlim', [4 10], 'binWidth', 1, 'binNum', 100, 'smoothing', 1, 'lineWidth', 4, 'mouseNames', flat.mouse(lfBins), ...
+    'errorFcn', @(x) std(x)/sqrt(size(x,1)))
+set(gca, 'xlim', [4 10], 'YLim', [0 1])
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_successVsHeight' suffix1 suffix2]), 'svg');
 
 
 

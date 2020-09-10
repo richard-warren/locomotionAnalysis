@@ -14,7 +14,7 @@ s.dropFrames = 1;           % drop every s.dropFrames frames to keep file sizes 
 s.includeWiskCam = true;    % whether to add whisker camera
 s.text = '';                % text to add to bottom right corner
 
-s.xLims = [-.30 .15];       % (m) x limits relative to obstacle position
+s.xLims = [-.20 .10];       % (m) x limits relative to obstacle position
 s.blankTime = .25;          % (s) how many seconds of black frames (or fadeout time) to put in between trials
 s.contactPauseTime = 2;     % (s) time to pause at whisker contact
 
@@ -27,7 +27,7 @@ s.colors = [hsv(2); .8 .8 .8];   % lengthened, shortened, unmodified
 
 
 % initializations
-fprintf('writing %s, trial: ', vidName)
+fprintf('writing %s... ', vidName)
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
@@ -76,7 +76,8 @@ bins = false(1, length(kinData));
 bins([kinData.isTrialAnalyzed]) = [kinData.isRightSwingAtContact]==1 & [kinData.isLeftSwingAtContact]==0;
 xPosLims = prctile([vars.modPawX], [10 80]);
 bins = bins & [vars.modPawX]>xPosLims(1) & [vars.modPawX]<xPosLims(2);
-bins = bins & [vars.isTrialSuccess] & [vars.trialVel]>.5 & ~isLightOn';
+bins = bins & [vars.isTrialSuccess] & [vars.trialVel]>.5;
+% bins = bins & ~isLightOn';
 if ~any(bins); disp('no trials met criteria!'); return; end
 
 deltas = [vars.modPawDeltaLength];
@@ -150,7 +151,6 @@ if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
 open(vidWriter)
 
 for i = find(~isnan([a b c]))  % only use trial types for which there were valid trials to try
-    fprintf('%s ', names{i})
     
     % load obstacle positions for trial
     obsPixPositions = polyval(wheelToObsPixPosMappings(trials(i),:), wheelPositions);

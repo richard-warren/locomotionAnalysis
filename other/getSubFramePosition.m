@@ -6,9 +6,6 @@ function [yPos, xPos, scaling] = getSubFramePosition(frame, frameSub, scalings)
 % corresponding to the position in frame where the top left corner of
 % frameSub should live
 
-% settings
-scalings = .35 : .005 : .45; % all of the scales in this vector are attempted
-
 
 % iterate through potential scalings
 maxCorrs = nan(1, length(scalings));
@@ -17,9 +14,8 @@ maxPositions = nan(2, length(maxCorrs));
 
 for i = 1:length(scalings)
     
-   frameSubScaled = imresize(frameSub, scalings(i));
-   
-   % perform cross correlation
+    % perform cross correlation
+    frameSubScaled = imresize(frameSub, scalings(i));
     ccorr = normxcorr2(frameSubScaled, frame);
 
     % get coordinates in frameTop whether top left corner of frameWisk should live

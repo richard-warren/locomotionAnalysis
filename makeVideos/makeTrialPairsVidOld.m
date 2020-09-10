@@ -1,4 +1,4 @@
-function makeTrialPairsVid(filename, sessions, trials, trialText)
+function makeTrialPairsVidOld(filename, sessions, trials, trialText)
 
 % makes vid with different trials show at same time as different rows in
 % same video, with all pausing at moment of wisk contact // number of rows
