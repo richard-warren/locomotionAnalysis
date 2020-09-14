@@ -9,9 +9,16 @@ flat = flattenData(data, ...
     [m.predictorsAll, {'mouse', 'session', 'trial', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', ...
     'modPawOnlySwing', 'isTrialSuccess', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'modPawKinInterp', ...
     'preModPawKinInterp', 'firstModPaw', 'contactIndInterp', 'preModPawDeltaLength', 'contactInd', 'modSwingContacts', ...
-    'wiskContactPosition', 'trialVel'}]);
+    'wiskContactPosition', 'trialVel', 'isWheelBreak'}]);
 predictorColors = lines(length(m.predictorsAll));
 mice = unique({flat.mouse});
+
+%% (temp) see how many analyzed trials have wheel breaks
+
+breaks = sum([flat.isWheelBreak]);
+notAnalyzed = sum(isnan([flat.firstModPaw]));
+breaksNotAnalyzed = sum([flat.isWheelBreak] & isnan([flat.firstModPaw]));
+fprintf('')
 
 %% schematic imgs for step type decision
 

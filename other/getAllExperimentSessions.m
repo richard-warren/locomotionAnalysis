@@ -6,12 +6,13 @@ function experimentSessions = getAllExperimentSessions(varargin)
 % settings
 s.experiments = {'baselineNotes', 'mtcLesionNotes', 'senLesionNotes', 'muscimolNotes', 'sensoryDependenceNotes', 'whiskerTrimNotes'};
 s.includeOnly = true;  % whether to only include sessions where include column is true in spreadsheet
+s.extraColumns = {};   % copy these columns for experiment spreadsheet into experimentSessions output
 
 
 
 % initializations
-columns = {'mouse', 'session', 'include'};  % copy these fields into a composite table across experiments
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
+columns = [{'mouse', 'session', 'include'} s.extraColumns];  % copy these fields into a composite table across experiments
 spreadsheet = fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'experimentMetadata.xlsx');
 if ischar(s.experiments); s.experiments = {s.experiments}; end
 

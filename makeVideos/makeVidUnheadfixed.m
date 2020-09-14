@@ -12,11 +12,15 @@ s.playBackSpeed = .15;      % fraction of real time speed for playback
 s.dropFrames = 1;           % drop every s.dropFrames frames to keep file sizes down
 s.includeWiskCam = true;    % whether to add whisker camera
 s.text = '';                % text to add to bottom right corner
+s.textArgs = {};            % additional args to pass to the text() function
+s.insertTrialInfo = false;  % whether to insert trial info into bottom right corner
+s.maxTrialTime = 2;         % (s) time trials that exceed this amount of time
 
 s.trialNum = 10;            % number of trials (evenly spaced throughout session) to show
 s.trials = [];              % array of specific trials to show // if provided, s.trialNum is ignored
 s.xLims = [-.35 .15];       % (m) x limits relative to obstacle position
 s.blankTime = .15;          % (s) how many seconds of black frames (or fadeout time) to put in between trials
+s.noWheelBreaks = true;     % whether to exclude trials with wheel breaks (only applies when 'trials' NOT provided
 
 s.obsColor = [1 .7 0];
 s.obsDiam = .004;
@@ -34,6 +38,7 @@ s.colors = [];
 
 % initializations
 fprintf('writing %s, trial: ', vidName)
+if ~exist(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'), 'file'); concatTopBotVids(session); end  % temp
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
@@ -42,7 +47,7 @@ circIndOffsets = -(s.numCircles-1)*s.circSeparation : s.circSeparation : 0;
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'wheelPositions', 'wheelTimes', 'wheelToObsPixPosMappings', ...
     'obsOnTimes', 'frameTimeStamps', 'frameTimeStampsWisk', 'pixelsPerM', ...
-    'wheelCenter', 'wheelRadius', 'obsHeights');
+    'wheelCenter', 'wheelRadius', 'obsHeights', 'isWheelBreak');
 
 
 % get position where wisk frame should overlap with runTop frame
@@ -73,7 +78,13 @@ open(vidWriter)
 
 
 % determine trials to include
-if isempty(s.trials); s.trials = floor(linspace(2, length(obsOnTimes), min(s.trialNum, length(obsOnTimes)))); end
+if isempty(s.trials)
+    if s.noWheelBreaks
+        s.trials = sort(datasample(find(~isWheelBreak), min(s.trialNum, sum(~isWheelBreak)), 'replace', false))';  % excluding wheel break trials
+    else
+        s.trials = randsample(length(obsOnTimes), min(s.trialNum, length(obsOnTimes)))';  % excluding wheel break trials
+    end
+end
 
 
 % set up figure
@@ -86,7 +97,15 @@ set(ax, 'visible', 'off', 'XLim', s.xLims); hold on
 
 
 % text
-if ~isempty(s.text); text(s.xLims(2), frameY(end), s.text, 'color', 'white', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom'); end
+if ~isempty(s.text)
+    text(s.xLims(1), frameY(end), s.text, 'color', 'white', ...
+        'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', s.textArgs{:});
+end
+
+if s.insertTrialInfo
+    trialText = text(s.xLims(end), frameY(end), '', 'color', 'white', ...
+        'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom', s.textArgs{:});
+end
 
 
 % load tracking
@@ -145,16 +164,20 @@ for i = s.trials
     % obstacle
     wheelTopZ = (wheelCenter(2)-wheelRadius)/pixelsPerM;
     obsZ = wheelTopZ - obsHeights(i)/1000;  % y axis is reversed
-    set(obsTop, 'position', [0-s.obsDiam/2, obsZ, s.obsDiam, s.obsDiam]);
+    try; set(obsTop, 'position', [0-s.obsDiam/2, obsZ, s.obsDiam, s.obsDiam]); catch; keyboard; end
     
     % find trial inds
     trialInds = find(obsPositionsMeters<(-s.xLims(1)+frameX(end)) & obsPositionsMeters>-s.xLims(2));
     trialInds = trialInds(1) : s.dropFrames : trialInds(end);
+    trialInds = trialInds(frameTimeStamps(trialInds) - frameTimeStamps(trialInds(1)) < s.maxTrialTime);  % make sure doesn't exceed max trial time
     
     if s.showTracking
         trialLocations = locations/pixelsPerM;
         trialLocations(:,1,:) = trialLocations(:,1,:) - obsPositionsMeters;
     end
+    
+    % text
+    if s.insertTrialInfo; set(trialText, 'String', sprintf('trial %i', i)); end
     
     for j = trialInds
         if s.includeWiskCam
@@ -191,7 +214,7 @@ for i = s.trials
 
     % fade out last frame
     if blankFrames>0; for k = linspace(1,0,blankFrames); writeVideo(vidWriter, frame.cdata.*k); end; end
-    for k = 1:length(features); set(lines{k}, 'xdata', nan, 'ydata', nan); end  % clear tracking
+    if s.showTracking; for k = 1:length(features); set(lines{k}, 'xdata', nan, 'ydata', nan); end; end  % clear tracking
 end
 
 fprintf('\nall done!\n')

@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_lesion';  % senLesion, mtc_muscimol, or mtc_lesion
+dataset = 'mtc_muscimol';  % senLesion, mtc_muscimol, or mtc_lesion
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
@@ -510,7 +510,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 %% forepaw height
 figure('position', [200 500 521.00 239.00], 'color', 'white', 'menubar', 'none')
 dv = getDvMatrix(data, 'preObsHgt', vars.sessionsPostLesion, {'mouse'}, conditionals.isFore) * 1000;
-sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'forepaw height (mm)', 'xlabel', 'sessions post lesion', ...
+sesPlotRick(dv', 'xvals', vars.sessionsPostLesion.levels, 'ylabel', 'leading forepaw height (mm)', 'xlabel', 'sessions post lesion', ...
     'compareTo', 1:manipInd, sessionPlotProperties{:});
 if strcmp(dataset, 'senLesion'); set(gca, 'YLim', [6 10.5]); end
 set(gca, 'XLim', [sessionsToShow(1) sessionsToShow(end)])
@@ -604,7 +604,7 @@ saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures'
 %% decision making initialization
 flat = flattenData(data, ...
     [m.predictorsAll, {'mouse', 'isModPawLengthened', 'modPawDeltaLength', 'isBigStep', 'isLightOn', 'isModPawContra', ...
-    'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', ...
+    'modPawOnlySwing', 'isTrialSuccess', 'condition', 'modPawPredictedDistanceToObs', 'modPawDistanceToObs', 'isWheelBreak', ...
     'modPawKinInterp', 'preModPawKinInterp', 'firstModPaw', 'preModPawDeltaLength', 'modSwingContacts', 'session'}]);
 
 %% heatmaps (figures f6b f6e s6f)
@@ -632,7 +632,7 @@ plotEntropies(flat, 'condition', 'condition', 'levels', vars.condition.levels, .
     'colors', colors, 'barProps', [barProperties, {'comparisons', [1 2]}]);
 
 %% trial scatters (figures f6a f6d s6g)
-plotDecisionTrials(flat, 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
+plotDecisionTrials(flat([flat.isWheelBreak]), 'condition', 'condition', 'levels', vars.condition.levels, 'outcome', 'isBigStep', ...
     'modSwingContactsMax', 0, 'deltaMin', 0, 'successOnly', m.successOnly, 'modPawOnlySwing', m.modPawOnlySwing, 'lightOffOnly', m.lightOffOnly, ...
     'rowColors', colors, 'xLims', [-.11 .06], 'obsColor', obsColor, 'poolHistos', true, ...
     'saveLocation', fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_decisionKin' suffix1 suffix2]));

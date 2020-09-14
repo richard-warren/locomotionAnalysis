@@ -18,7 +18,9 @@ s.playBackSpeed = .15;      % fraction of real time speed for playback
 s.dropFrames = 1;           % drop every s.dropFrames frames to keep file sizes down
 
 s.includeWiskCam = true;    % whether to add whisker camera
-s.text = '';                % text to add to bottom right corner
+s.text = '';                % text to add to bottom left corner
+s.textArgs = {};            % additional args to pass to the text() function
+s.insertTrialInfo = false;  % whether to insert trial info into bottom right corner
 
 s.trialNum = 10;            % number of trials (evenly spaced throughout session) to show
 s.trials = [];              % array of specific trials to show // if provided, s.trialNum is ignored
@@ -176,8 +178,13 @@ for i = s.trials
             
             % add text
             if ~isempty(s.text)
-                frame = insertText(frame, [size(frame,2) size(frame,1)], s.text, ...
-                                   'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+                frame = insertText(frame, [0 size(frame,1)], s.text, ...
+                                   'BoxColor', 'black', 'AnchorPoint', 'LeftBottom', 'TextColor', 'white', s.textArgs{:});
+            end
+            
+            if s.insertTrialInfo
+                frame = insertText(frame, [size(frame,2) size(frame,1)], sprintf('trial %i', i), ...
+                                   'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white', s.textArgs{:});
             end
             
             % update figure

@@ -13,6 +13,7 @@ s.playBackSpeed = .10;      % fraction of real time speed for playback
 s.dropFrames = 1;           % drop every s.dropFrames frames to keep file sizes down
 s.includeWiskCam = true;    % whether to add whisker camera
 s.text = '';                % text to add to bottom right corner
+s.textArgs = {};            % additional args to pass to the text() function
 
 s.xLims = [-.20 .10];       % (m) x limits relative to obstacle position
 s.blankTime = .25;          % (s) how many seconds of black frames (or fadeout time) to put in between trials
@@ -27,10 +28,10 @@ s.colors = [hsv(2); .8 .8 .8];   % lengthened, shortened, unmodified
 
 
 % initializations
-fprintf('writing %s... ', vidName)
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
 if s.includeWiskCam; vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4')); end
+fprintf('writing %s... ', vidName)
 
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'wheelPositions', 'wheelTimes', 'wheelToObsPixPosMappings', 'isLightOn', ...
@@ -45,8 +46,8 @@ if s.includeWiskCam
 else
     frame = read(vid, 1);
 end
-frameX = [0:size(frame,2)-1] / pixelsPerM;  % x grid for image in meters
-frameY = [0:size(frame,1)-1] / pixelsPerM;  % x grid for image in meters
+frameX = (0:size(frame,2)-1) / pixelsPerM;  % x grid for image in meters
+frameY = (0:size(frame,1)-1) / pixelsPerM;  % x grid for image in meters
 
 
 % determine video settings
@@ -93,6 +94,8 @@ deltasTemp = deltas; deltasTemp([vars.isBigStep]==0) = nan;
 deltasTemp = deltas; deltasTemp([vars.isBigStep]==1) = nan;
 [c, trialNoChange]   = min(abs(deltasTemp));                     % step with least change (excluding big step trials)
 
+if ~all(~isnan([a b c])); disp('all trial types not detected!'); return; end
+
 
 
 % set up figure
@@ -106,7 +109,7 @@ set(ax, 'visible', 'off', 'XLim', s.xLims); hold on
 
 
 % text
-if ~isempty(s.text); text(s.xLims(2), frameY(end), s.text, 'color', 'white', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom'); end
+if ~isempty(s.text); text(s.xLims(1), frameY(end), s.text, 'color', 'white', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', s.textArgs{:}); end
 
 
 % kinematics
@@ -145,12 +148,12 @@ trials = [trialShortened, trialLengthened, trialNoChange];
 names = {'shortened', 'lengthened', 'noChange'};
 
 
-vidWriter = VideoWriter(vidName);
-set(vidWriter, 'FrameRate', fps)
-if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
-open(vidWriter)
-
-for i = find(~isnan([a b c]))  % only use trial types for which there were valid trials to try
+for i = 1:3
+    
+    vidWriter = VideoWriter([vidName '_' names{i}]);
+    set(vidWriter, 'FrameRate', fps)
+    if strcmp(vidSetting, 'MPEG-4'); set(vidWriter, 'Quality', 50); end
+    open(vidWriter)
     
     % load obstacle positions for trial
     obsPixPositions = polyval(wheelToObsPixPosMappings(trials(i),:), wheelPositions);
@@ -238,10 +241,10 @@ for i = find(~isnan([a b c]))  % only use trial types for which there were valid
 
     % fade out last frame
     if blankFrames>0; for k = linspace(1,0,blankFrames); writeVideo(vidWriter, getframe(fig).cdata*k); end; end
+    close(vidWriter)
 end
 
 fprintf('\nall done!\n')
-close(vidWriter)
 close(fig)
 
 

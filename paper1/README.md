@@ -36,29 +36,7 @@ binned kinematics:  (no max [0], .0025,      false, true, false)
 - when copying and pasting the PNGs into Word they retain their actual size, which is nice (as opposed to automatically filling up the width of the page, which could give misleading impressions about the appropriatenes of font sizes, etc.)
 
 ## making videos
-Use `paper1\paper1Figs.mat` to make vids for the paper.
-
-
-#### outline
-1. [X] setup example
-  - `makeSetupExampleVid()`
-  - vids: rigAnimation // setupExample
-2. [X] tracking example
-  - `makeVid()`
-  - vids: trackingExample
-3. [X] high speeds obs
-  - `makeVid()`
-  - vids: highSpeedObstacleClearance // highSpeedObstacleClearance_slowDown // highSpeedObstacleClearance_unheadfixed
-4. [X] unheadfixation
-  - `makeVidUnheadfixed()`
-  - matlab vids: trackingUnheadfixed
-5. [ ] sensory dependence
-  - one vid, all conditions, with explanatory text
-6. [X] decision making
-  - `makeDecisionVid()`
-  - vids: decision
-7. [ ] barrels [makevid]
-  - one vid, pre, post early, post late
-8. [ ] mtc [makevid]
-  - one vid for lesion, mus
-  - for both show pre, post
+- use `paper1\paper1Figs.mat` to render vids for the paper.
+- the final videos (with title slides, etc.) are put together using `OpenShot`
+  - export videos with `Medium` quality
+  - 3.5 second title slides, which can be edited and fine-tuned in `InkScape`

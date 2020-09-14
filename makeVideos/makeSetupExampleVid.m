@@ -14,6 +14,7 @@ s.includeWiskCam = true;  % whether to add whisker camera
 s.obsOffsetX = 0;         % (pixels) offset the x tracking of the obs in the top view to coimpensate for obs being tracking in the bottom view
 s.obsOffsetZ = 0;         % (pixels) offset the z tracking of the obs to account for differences in the camera view...
 s.text = '';              % text to include in bottom right corner of screen
+s.textArgs = {};          % additional args to pass to the text() function
 
 
 % initializations
@@ -92,8 +93,8 @@ for i = 1:length(trials)
         
         % text
         if ~isempty(s.text)
-            frame = insertText(frame, [size(frame,2) size(frame,1)], s.text, ...
-                'BoxColor', 'black', 'AnchorPoint', 'RightBottom', 'TextColor', 'white');
+            frame = insertText(frame, [0 size(frame,1)], s.text, ...  % [size(frame,2) size(frame,1)]
+                'BoxColor', 'black', 'AnchorPoint', 'LeftBottom', 'TextColor', 'white', s.textArgs{:});
         end
         
         % write video
