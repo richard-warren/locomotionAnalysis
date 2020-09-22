@@ -1,76 +1,56 @@
-%% settings
-mouse = 'cer5';
+%% inits
+mouse = 'cer18';  % cer18
 scaling = .2;
 
-%% import neuron locations
-load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable_old.mat'))
+% prepare histo labels (only need to do once per mouse)
+% prepareHistoLabels(mouse);
 
+
+%% load neuron locations
+load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'))
 cellLocations = ephysHistoTable.GC_Points(strcmp(ephysHistoTable.mouseID, mouse));
-cellLocations = cat(1, cellLocations{:});
-cellLocations = cellLocations / 2 * scaling;  % convert from microns to pixels
+cellLocations = cat(1, cellLocations{:}) / 1000;  % convert to mm
 
-close all;
+% load mouse brain
+data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
+
+% plot neurons on brain
 figure; hold on
-image(squeeze(neurotrace(10,:,:))); colormap gray
+imagesc(data.ml, data.dv, squeeze(data.imgs(15,:,:))); colormap gray
 set(gca, 'ydir', 'reverse')
 scatter(cellLocations(:,1), cellLocations(:,3), 20, 'yellow', 'filled')
+axis equal
 
 %% load allen brain ccf
 
 regionIds = [989, 91, 846];  % fastigial, interpositus, dentate
-ccfSize = [528 320 456];  % don't change
+ccfSize = [528 320 456];     % don't change
 
 % load ccf average brain
-fid = fopen(fullfile('histoAnalysis', 'brainRegistration', 'allenBrainCCF', 'atlasVolume.raw'), 'r', 'l');
-brainImgsRef = fread(fid, prod(ccfSize), 'uint8');
-fclose(fid);
-brainImgsRef = reshape(brainImgsRef, ccfSize);
+[brainImgsRef, labelsRef, ~, labelsAll] = loadCCF();
 
-% load ccf annotations
-fid = fopen(fullfile('histoAnalysis', 'brainRegistration', 'allenBrainCCF', 'annotation.raw'), 'r', 'l' );
-labelsRef = fread(fid, prod(ccfSize), 'uint32' );
-fclose(fid);
-labelsRef = reshape(labelsRef, ccfSize);
- 
 % display one coronal section
-section = 460;
+section = 470;
 close all; figure('position', [47.00 435.00 1782.00 383.00]);
-subplot(1,3,1); imagesc(squeeze(brainImgsRef(section,:,:))); colormap(gca, gray); 
-subplot(1,3,2); imagesc(squeeze(labelsRef(section,:,:))); colormap(gca, lines); 
-subplot(1,3,3); imagesc(squeeze(ismember(labelsRef(section,:,:), regionIds))); colormap(gca, lines);
+subplot(1,3,1); imagesc(squeeze(brainImgsRef(section,:,:))); colormap(gca, gray); axis equal 
+subplot(1,3,2); imagesc(squeeze(labelsAll(section,:,:))); colormap(gca, lines); axis equal
+subplot(1,3,3); imagesc(squeeze(labelsRef(section,:,:)>0)); colormap(gca, lines); axis equal
 
-%% test imregister
-
-mouse = 'cer5';
-
-% load ccf
-ccfSize = [528 320 456];  % don't change
-fid = fopen(fullfile('histoAnalysis', 'brainRegistration', 'allenBrainCCF', 'atlasVolume.raw'), 'r', 'l');
-brainImgsRef = fread(fid, prod(ccfSize), 'uint8');
-fclose(fid);
-brainImgsRef = reshape(brainImgsRef, ccfSize);
-
-fid = fopen(fullfile('histoAnalysis', 'brainRegistration', 'allenBrainCCF', 'annotation.raw'), 'r', 'l' );
-labelsRef = fread(fid, prod(ccfSize), 'uint32' );
-fclose(fid);
-labelsRef = reshape(labelsRef, ccfSize);
-labelsRef = ismember(labelsRef, [989, 91, 846]);  % fastigial, interpositus, dentate
-
-% load labels
-load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']), ...
-    'brainImgs', 'labels', 'scaling', 'brainRegions')
-
-
-%%
+%% test 2d imregister
 
 % settings
 section = 16;
 sectionRef = 450;
 halfOnly = true;
 
-label = squeeze(labels(section,:,:))>0;
+
+% load mouse brain and ccf
+[brainImgsRef, labelsRef] = loadCCF();
+data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
+
+label = squeeze(data.labels(section,:,:))>0;
 labelRef = squeeze(labelsRef(sectionRef,:,:))>0;
-img = squeeze(brainImgs(section,:,:));
+img = squeeze(data.imgs(section,:,:));
 imgRef = squeeze(brainImgsRef(sectionRef,:,:));
 
 % resize images to help alignment algorithm...
@@ -112,13 +92,67 @@ subplot(2,4,7); imshowpair(imgRef, img, 'Scaling', 'joint'); daspect([1 1 1])
 subplot(2,4,8); imshowpair(imgRef, imgAligned, 'Scaling', 'joint'); daspect([1 1 1])
 
 
+%% test 3d imregister
+
+% settings
+
+% load mouse brain and ccf
+[brainImgsRef, labelsRef] = loadCCF();
+data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
+labels = data.labels;
+
+% slice volumes to keep only sections containing nuclei
+labelsRef = labelsRef(any(labelsRef, [2 3]), any(labelsRef, [1 3]), any(labelsRef, [1 2]));
+labels = labels(any(labels, [2 3]), any(labels, [1 3]), any(labels, [1 2]));
+% todo: incorporate user knowledge of final section in tissue... // store information about this slice, or don't slice at all (if that works) 
+
+% resize images to match
+labels = imresize3(labels, size(labelsRef), 'nearest');
+
+% find transformation
+[optimizer, metric] = imregconfig('monomodal');
+% optimizer.InitialRadius = 0.1;
+% optimizer.Epsilon = 1.5e-3;
+% optimizer.GrowthFactor = 1.01;
+% optimizer.MaximumIterations = 500;
+
+% create mask for left side of brain
+midLine = round(size(labels,3)/2);
+leftMask = cast(zeros(size(labels)), 'uint8');
+leftMask(:, :, 1:midLine) = 1;
+labelsAligned = cast(zeros(size(labels)), 'uint8');
+
+for mask = {leftMask, uint8(~leftMask)}
+    tform = imregtform(uint8(labels.*mask{1}>0), uint8(labelsRef.*mask{1}>0), 'affine', optimizer, metric);
+    warped = imwarp(labels.*mask{1}, tform, 'OutputView', imref3d(size(labels)), 'interp', 'nearest');
+    labelsAligned(mask{1}>0) = warped(mask{1}>0);
+end
 
 
+%% plot
+close all; figure('color', 'white', 'position', [90.00 251.00 1763.00 607.00]); hold on
 
+ax1 = subplot(1,2,1); title('original'); hold on
+plotLabels3D(labelsRef, 'colors', repelem(lines(3),2,1)*.5, 'surfArgs', {'FaceAlpha', .1});
+plotLabels3D(labels, 'colors', repelem(lines(3),2,1), 'surfArgs', {'FaceAlpha', .5});
 
+ax2 = subplot(1,2,2); title('morphed'); hold on
+plotLabels3D(labelsRef, 'colors', repelem(lines(3),2,1)*.5, 'surfArgs', {'FaceAlpha', .1});
+plotLabels3D(labelsAligned, 'colors', repelem(lines(3),2,1), 'surfArgs', {'FaceAlpha', .5});
 
+link = linkprop([ax1, ax2],{'CameraUpVector', 'CameraPosition', 'CameraTarget', 'XLim', 'YLim', 'ZLim'});
+setappdata(gcf, 'StoreTheLink', link);
 
+view(-45, 30)
 
+%% test plot3D function
+
+[~, labelsRef] = loadCCF();
+data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
+
+close all; figure('color', 'white', 'position', [800 228.00 987.00 750.00]); hold on
+plotLabels3D(labelsRef, 'colors', repelem(lines(3),2,1));
+plotLabels3D(data.labels, 'colors', repelem(lines(3),2,1));
 
 
 

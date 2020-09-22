@@ -174,6 +174,7 @@ for i = s.trials
                 frame = repmat(frame, 1, 1, 3);  % add color dimension
             else
                 frame = read(vid, j);
+                frame = imadjust(frame, s.contrastLims, [0 1]);
             end
             
             % add text

@@ -1,5 +1,12 @@
-# 3d brain registration
+# notes
+- for all analyses, the **origin** of the coordinate systems is: top left corner of most rostral image
+- 3D tensors have dimension order: AP, DV, ML
 
+# histo todo
+- register fcn should show:
+  - xyz orig with outlines
+  - xyz stretched with outlines
+  - xyz stretched outlines over atlas outlines
 
 ## files needed for reconstruction
 - intrabrain per-cell coordinates
@@ -10,5 +17,13 @@
 - tracing
   - Reconstruction/brain.mat: locations of ones for tracing for all brain regions
 
+# qz notes
+- `cer18` has all nuclei traced front to back - use this for testing
+- section thickness is in the `histology` in the sessionInfo
+- res for all images is 2um/pixel
 
-test on `cer10`
+# rick qs
+- when will ephysHistoData_old be ported to ephysHistoData?: yes
+- what is 'corner' of cellLocations, and are AP units correct?
+- make sure 0 indexing no mistakes when scaling from pix to mm
+- WE NEED TO DEFINE A CORNER!

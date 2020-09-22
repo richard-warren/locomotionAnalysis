@@ -1,5 +1,4 @@
 # todo
-- [ ] *fix dpkAnalysis // check merged dpk still works...*
 - [ ] add real PSTH to plotPSTH
 - [ ] cluster cells
   - [ ] mi by brain region
@@ -36,6 +35,7 @@
     - applying transformation (e.g. convolve, raise to powers...)
 # predictors
 - [X] continuous
+  - [ ] 'visual input' predictor // turn on right at light on, and fade to zero as cross under mouse's head
   - [ ] whisker phase
   - [ ] distance and time to contact
   - [X] wheel velocity
