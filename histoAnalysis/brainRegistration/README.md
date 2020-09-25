@@ -3,10 +3,18 @@
 - 3D tensors have dimension order: AP, DV, ML
 
 # histo todo
-- register fcn should show:
-  - xyz orig with outlines
-  - xyz stretched with outlines
-  - xyz stretched outlines over atlas outlines
+- tform plan
+  - crop and resize images
+  - find matrices that implement cropping and resizing, and save
+  - find left and right matrices to perform subsequent steps
+
+
+- [ ] make everything 25 micron resolution?
+- [ ] try tform with coordinate args
+- [ ] incorporate 'final section' into analysis
+- [ ] apply tform to tracked cells
+- [ ] figure out pipeline
+- [ ] analyze all brains!
 
 ## files needed for reconstruction
 - intrabrain per-cell coordinates

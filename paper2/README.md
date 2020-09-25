@@ -14,7 +14,6 @@
   - https://pubmed.ncbi.nlm.nih.gov/21795616/
   - https://pubmed.ncbi.nlm.nih.gov/16733704/
 
-
 # analysis flow
 - prepPredictors
   - untransformed predictors containing
