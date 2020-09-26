@@ -1,7 +1,7 @@
 function tiffStack = loadTiffStack(fileName, varargin)
 % quickly load tiff stack for a single channel into an (imageNum X height X width matrix)
 
-% code modified from https://www.mathworks.com/matlabcentral/answers/105739-how-to-show-tiff-stacks
+% code inspired by: https://www.mathworks.com/matlabcentral/answers/105739-how-to-show-tiff-stacks
 
 % settings
 s.scaling = 1;         % shrink images by setting < 1

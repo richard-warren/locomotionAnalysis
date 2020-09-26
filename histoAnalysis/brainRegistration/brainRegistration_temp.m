@@ -35,12 +35,13 @@ subplot(1,3,3); imagesc(squeeze(ccf.labels(section,:,:)>0)); colormap(gca, lines
 %% test 3d imregister
 
 % settings
+mouse = 'cer18';
 
 % load mouse brain and ccf
 ccf = loadCCF();
 data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
 
-% todo: chop off ends of nuclei in ref
+% transformations: histo -> histoCropped -> histoResized -> ccfCropped -> ccf
 
 %% estimate initial matrix
 apScale  = sum(any(ccf.labels, [2 3])) / sum(any(data.labels, [2 3]));

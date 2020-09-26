@@ -21,8 +21,8 @@ for i = 1:length(labels)
     for j = regionLabels
         [apInds, dvInds, mlInds] = ind2sub(size(labels{i}), find(labels{i}==j));
         ap = s.apGrid(apInds); ml = s.mlGrid(mlInds); dv = s.dvGrid(dvInds);
-%         k = boundary(ap', ml', dv');
-        k = convhull(ap, ml, dv, 'Simplify', true);
+        k = boundary(ap', ml', dv');
+%         k = convhull(ap, ml, dv, 'Simplify', true);
         trisurf(k, ml, ap, dv, ...
             'FaceColor', s.colors(j,:), 'FaceAlpha', .4, 'EdgeColor', [.2 .2 .2], 'EdgeAlpha', .4, ...
             s.surfArgs{:});
