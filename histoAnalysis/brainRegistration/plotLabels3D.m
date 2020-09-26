@@ -2,31 +2,48 @@ function plotLabels3D(labels, varargin)
 
 
 % settings
+s.downSampling = 1;             % (int, >=1) downsample volumes to speed things up 
+s.maxSmps = 5e6;                % if > s.maxSmps in volumes, automatically downsample to prevent crashing
+s.surfArgs = {};                % args pass to trisurf function
 s.apGrid = 1:size(labels,1);
 s.mlGrid = 1:size(labels,3);
 s.dvGrid = 1:size(labels,2);
-s.surfArgs = {};                % args pass to trisurf function
 
 
 % inits
 regionLabels = unique(labels(:));
+regionLabels = regionLabels(regionLabels~=0)';
 s.colors = lines(length(unique(labels(:)))-1);
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
-if ~iscell(labels); labels = {labels}; end
-regionLabels = regionLabels(regionLabels~=0)';
 hold on; axis equal
 
-
-for i = 1:length(labels)
-    for j = regionLabels
-        [apInds, dvInds, mlInds] = ind2sub(size(labels{i}), find(labels{i}==j));
-        ap = s.apGrid(apInds); ml = s.mlGrid(mlInds); dv = s.dvGrid(dvInds);
-        k = boundary(ap', ml', dv');
-%         k = convhull(ap, ml, dv, 'Simplify', true);
-        trisurf(k, ml, ap, dv, ...
-            'FaceColor', s.colors(j,:), 'FaceAlpha', .4, 'EdgeColor', [.2 .2 .2], 'EdgeAlpha', .4, ...
-            s.surfArgs{:});
+% check if there are too many samples\
+smpNum = sum(labels(:)>0);
+if smpNum > s.maxSmps
+    newDownSampling = ceil(smpNum / s.maxSmps);
+    if newDownSampling > s.downSampling
+        s.downSampling = newDownSampling;
+        fprintf('WARNING! Downsamping by %ix because too many samples detected...\n', s.downSampling);
     end
+end
+
+% downsample
+if s.downSampling ~= 1
+    ds = s.downSampling;
+    s.apGrid = s.apGrid(1:ds:end);
+    s.mlGrid = s.mlGrid(1:ds:end);
+    s.dvGrid = s.dvGrid(1:ds:end);
+    labels   = labels(1:ds:end, 1:ds:end, 1:ds:end);
+end
+
+for i = regionLabels
+    [apInds, dvInds, mlInds] = ind2sub(size(labels), find(labels==i));
+    ap = s.apGrid(apInds); ml = s.mlGrid(mlInds); dv = s.dvGrid(dvInds);
+    k = boundary(ap', ml', dv');
+%     k = convhull(ap, ml, dv, 'Simplify', true);
+    trisurf(k, ml, ap, dv, ...
+        'FaceColor', s.colors(i,:), 'FaceAlpha', .4, 'EdgeColor', [.2 .2 .2], 'EdgeAlpha', .4, ...
+        s.surfArgs{:});
 end
 
 xlabel('ml'); ylabel('ap'); zlabel('dv');

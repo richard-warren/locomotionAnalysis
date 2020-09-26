@@ -1,5 +1,6 @@
 # notes
 - for all analyses, the **origin** of the coordinate systems is: top left corner of most rostral image
+- one indexing is used for all coordinate system, such that the corner pixel is either (1,1,1) (for pixels), (2,2,2) (for microns), etc...
 - 3D tensors have dimension order: AP, DV, ML
 
 # histo todo
