@@ -21,10 +21,10 @@ for i = 1:length(nuclei)
     end
 end
 
-% define x, y, z grid
-ap = (0 : sectionThickness : sectionThickness*(size(labels,1)-1));
-ml = (0 : mmPerPixel : mmPerPixel*(size(labels,3)-1)) / scaling;
-dv = (0 : mmPerPixel : mmPerPixel*(size(labels,2)-1)) / scaling;
+% define x, y, z grid (check this is correct)
+ap = (sectionThickness : sectionThickness : sectionThickness*size(labels,1));
+ml = (mmPerPixel : mmPerPixel : mmPerPixel*size(labels,3)) / scaling;
+dv = (mmPerPixel : mmPerPixel : mmPerPixel*size(labels,2)) / scaling;
 
 save(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']), ...
     'imgs', 'labels', 'scaling', 'mouse', 'nuclei', 'ap', 'ml', 'dv')

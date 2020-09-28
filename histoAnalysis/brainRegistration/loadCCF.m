@@ -43,9 +43,9 @@ ccf.labels = labels;
 
 % coordinates
 res = .025;
-ccf.ap = 0 : res : (size(labels,1)-1)*res;
-ccf.dv = 0 : res : (size(labels,2)-1)*res;
-ccf.ml = 0 : res : (size(labels,3)-1)*res;
+ccf.ap = res : res : size(labels,1)*res;
+ccf.dv = res : res : size(labels,2)*res;
+ccf.ml = res : res : size(labels,3)*res;
 
 % get outlines of cerebellum, cerebrum, and brainstem
 tree_json = 'D:\github\locomotionAnalysis\histoAnalysis\brainRegistration\allenBrainCCF\tree_structure\tree_structure.json';

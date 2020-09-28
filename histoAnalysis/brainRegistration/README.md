@@ -4,18 +4,14 @@
 - 3D tensors have dimension order: AP, DV, ML
 
 # histo todo
-- tform plan
-  - crop and resize images
-  - find matrices that implement cropping and resizing, and save
-  - find left and right matrices to perform subsequent steps
-
-
-- [ ] make everything 25 micron resolution?
-- [ ] try tform with coordinate args
-- [ ] incorporate 'final section' into analysis
-- [ ] apply tform to tracked cells
-- [ ] figure out pipeline
-- [ ] analyze all brains!
+- function to plot cell over outlines
+  - should cells be in pixels, or real units?
+- turn pipeline into function
+  - save
+    - imgs: 3d original // 3d warped over ccf // 2d projection original // 2d projection over ccf
+    - table: unit_id, orig_pix, orig_mm, ccf_pix, ccf_mm, session, ddi, shank
+- incorporate 'final section' into analysis
+- analyze all brains!
 
 ## files needed for reconstruction
 - intrabrain per-cell coordinates
