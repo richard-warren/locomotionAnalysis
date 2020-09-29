@@ -19,7 +19,7 @@ clear all
 clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_muscimol';  % senLesion, mtc_muscimol, or mtc_lesion
+dataset = 'mtc_lesion';  % senLesion, mtc_muscimol, or mtc_lesion
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
@@ -31,7 +31,7 @@ else
 end
 preSessions = 2;  % only include the most recent 'preSessions' in the 'pre' condition
 
-matchTrials = false;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
+matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 20;  % take manipPercent percent of best matched manip trials
 miceToExclude = {'sen11'};
@@ -354,13 +354,13 @@ dv = getDvMatrix(data, 'trialAngleContra', vars.condition, {'mouse'}, [figCondit
 barFancy(dv, 'ylabel', 'body angle ({\circ})', 'levelNames', {vars.condition.levelNames}, 'colors', colors, barProperties{:}, 'textRotation', 0)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_bodyAngle' suffix1 suffix2]), 'svg');
 
-%% paw height
+%% paw height (figures s5d)
 figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
-figVars = [vars.isContra; vars.isFore; vars.condition];
+figVars = [vars.isFore; vars.isContra; vars.condition];
 if strcmp(dataset, 'senLesion'); figVars = [vars.isFore; vars.condition]; end
 dv = getDvMatrix(data, 'preObsHgt', figVars, {'mouse'}, [figConditionals]) * 1000;
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
-barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {figVars(1:end).levelNames}, ...
+barFancy(dv, 'ylabel', 'paw height (mm)', 'levelNames', {figVars(1:end-1).levelNames}, ...
     'colors', repmat(colors,colorRepeats,1), barProperties{:}, 'constantEdgeColor', [.15 .15 .15], ...
     'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawHeight' suffix1 suffix2]), 'svg');
@@ -376,18 +376,18 @@ barFancy(dv, 'ylabel', 'paw-obstacle correlation', 'levelNames', {figVars.levelN
     'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_correlations' suffix1 suffix2]), 'svg');
 
-%% paw contacts
+%% paw contacts (figures s5b)
 figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
-figVars = [vars.isContra; vars.isFore; vars.condition];
-if strcmp(dataset, 'senLesion'); figVars = [vars.isFore; vars.condition]; end
+figVars = [vars.isFore; vars.isContra; vars.condition];
+if strcmp(dataset, 'senLesion'); figVars = [vars.condition; vars.isFore]; end
 dv = 1-getDvMatrix(data, 'anyTouchFrames', figVars, {'mouse'}, [figConditionals]);
 colorRepeats = prod(cellfun(@length, {figVars(1:end-1).levels}));
-barFancy(dv, 'ylabel', 'success rate', 'levelNames', {figVars.levelNames}, ...
+barFancy(dv, 'ylabel', 'success rate', 'levelNames', {figVars(1:end-1).levelNames}, ...
     'colors', repmat(colors,colorRepeats,1), barProperties{:}, 'constantEdgeColor', [.15 .15 .15], ...
-    'comparisons', [1 2; 1 3; 1 4], 'test', 'ttest')
+    'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest')
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_pawContacts' suffix1 suffix2]), 'svg');
 
-%% baseline step heights
+%% baseline step heights (figures s5a)
 figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
 figVars = [vars.isFore; vars.isContra; vars.condition];
 dv = getDvMatrix(data, 'controlStepHgt', figVars, {'mouse'}, [figConditionals])*1000;
@@ -396,7 +396,7 @@ barFancy(dv, 'ylabel', 'control step height (mm)', 'levelNames', {figVars(1:end-
     'comparisons', [1 2; 3 4; 5 6; 7 8], 'test', 'ttest', 'addLabelLines', false)
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_baselineHeights' suffix1 suffix2]), 'svg');
 
-%% ventral contacts ('grabs')
+%% ventral contacts,  'grabs' (figures s5f)
 figure('position', [200 100 300 328.00], 'color', 'white', 'menubar', 'none');
 figVars = [vars.isFore; vars.isContra; vars.condition];
 dv = getDvMatrix(data, 'isVentralContact', figVars, {'mouse'}, [figConditionals]);

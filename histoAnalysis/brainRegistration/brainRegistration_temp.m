@@ -3,7 +3,7 @@ mouse = 'cer18';  % cer18
 scaling = .2;
 
 % prepare histo labels (only need to do once per mouse)
-% prepareHistoLabels(mouse);
+prepareHistoLabels(mouse);
 
 
 %% load neuron locations
@@ -80,22 +80,15 @@ T = T1 * T2 * T3 * T4;
 tform = affine3d(T);
 warped = imwarp(data.labels, tform, 'OutputView', imref3d(size(ccf.labels)), 'interp', 'nearest');
 
-%% apply transformation to cellLocations
-
 % convert to histo pixels
 cellLocationsTformed = cellLocations;
 cellLocationsTformed(:,[1 3]) = cellLocationsTformed(:,[1 3]) * .5 * data.scaling;
 cellLocationsTformed(:,2) = cellLocationsTformed(:,2) / (diff(data.ap(1:2))*1000);
 
 % convert to ccf pixels
-% cellLocationsTformed = cellLocationsTformed(:, [1 2 3]);  % ml ap dv
 cellLocationsTformed = [cellLocationsTformed, ones(size(cellLocations,1),1)] * T(:,[1 2 3 4]);
 
-% close all; figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
-% plotLabels3D(data.labels, 'downSampling', 4);
-% scatter3(cellLocationsTformed(:,1), cellLocationsTformed(:,2), cellLocationsTformed(:,3));
-
-%% plot
+% plot
 close all; figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
 
 % ax1 = subplot(1,2,1); title('full transform'); hold on
