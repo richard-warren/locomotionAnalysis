@@ -8,13 +8,12 @@ function registerBrain(mouse)
 % --------
 
 % load ccf, mouse brain, and cell locations
-fprintf('registering %s brain to allen brain common coordinate framework...\n')
+fprintf('registering %s brain to allen brain common coordinate framework...\n', mouse)
 ccf = loadCCF();
 data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'))
 cellLocations = ephysHistoTable.GC_Points(strcmp(ephysHistoTable.mouseID, mouse));
 cellLocations = cat(1, cellLocations{:});  % ml ap dv
-cellLocationsHistoMm = cellLocations / 1000;
 
 
 % find transformation from histo (pixels) to ccf (pixels)
@@ -54,12 +53,14 @@ tform = affine3d(T);
 warped = imwarp(data.labels, tform, 'OutputView', imref3d(size(ccf.labels)), 'interp', 'nearest');
 
 % convert cell locations to pixels
-cellLocationsHistoPixels = cellLocations;
-cellLocationsHistoPixels(:,[1 3]) = cellLocationsHistoPixels(:,[1 3]) * .5 * data.scaling;
-cellLocationsHistoPixels(:,2) = cellLocationsHistoPixels(:,2) / (diff(data.ap(1:2))*1000);
+cellLocationsHistoMm = cellLocations / 1000;
+cellLocationsHistoPixels = cellLocationsHistoMm;  % ml ap dv
+cellLocationsHistoPixels(:,[1 3]) = cellLocationsHistoPixels(:,[1 3]) * 500 * data.scaling;
+cellLocationsHistoPixels(:,2) = cellLocationsHistoPixels(:,2) / diff(data.ap(1:2));
 
 % apply transormation to cell locations
-cellLocationsCcfPixels = [cellLocationsHistoPixels, ones(size(cellLocations,1),1)] * T(:,[1 2 3 4]);
+cellLocationsCcfPixels = [cellLocationsHistoPixels, ones(size(cellLocations,1),1)] * T;
+cellLocationsCcfPixels = cellLocationsCcfPixels(:,1:3);
 cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 
 
@@ -67,7 +68,7 @@ cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 % PLOT
 % ----
 
-% 3d plot
+%% 3d plot
 colors = repelem(lines(3),2,1);
 figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
 plotLabels3D(ccf.labels, 'surfArgs', {'FaceAlpha', .1, 'edgealpha', .2}, 'colors', colors, ...
@@ -79,12 +80,12 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_
 
 % 2d plots
 figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]);
-views = {'ap', 'dv'};
-inds = {[1 3], [1 2]};  % cellLocations inds for 'ap' and 'ml' views
+views = {'ap', 'dv', 'ml'};
+inds = {[1 3], [1 2], [2 3]};  % cellLocations inds for 'ap' and 'ml' views
 
-for i = 1:2
+for i = 1:3
     % zoomed out
-    subplot(2,3,1 + (i-1)*3); hold on
+    subplot(3,3,1 + (i-1)*3); hold on
     title('registered')
     plotLabels2D(warped, 'dim', views{i}, ...                   % registered
         'colors', colors, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml)  
@@ -95,7 +96,7 @@ for i = 1:2
         30, 'black', 'filled', 'MarkerFaceAlpha', .6);
 
     % original
-    subplot(2,3,2 + (i-1)*3); hold on
+    subplot(3,3,2 + (i-1)*3); hold on
     title('original')
     plotLabels2D(data.labels, 'dim', views{i}, ...
         'colors', colors, 'apGrid', data.ap, 'dvGrid', data.dv, 'mlGrid', data.ml)
@@ -103,7 +104,7 @@ for i = 1:2
         30, 'black', 'filled', 'MarkerFaceAlpha', .6);
     
     % registered
-    subplot(2,3,3 + (i-1)*3); hold on
+    subplot(3,3,3 + (i-1)*3); hold on
     title('registered')
     plotLabels2D(warped, 'dim', views{i}, ...                   % registered
         'colors', colors, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml)  

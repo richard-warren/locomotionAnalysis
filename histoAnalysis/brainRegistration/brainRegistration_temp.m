@@ -35,7 +35,7 @@ subplot(1,3,3); imagesc(squeeze(ccf.labels(section,:,:)>0)); colormap(gca, lines
 %% test 3d imregister
 
 % settings
-mouse = 'cer18';
+mouse = 'cer18';  % 'cmu3'
 
 % load ccf, mouse brain, and cell locations
 ccf = loadCCF();
