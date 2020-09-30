@@ -32,84 +32,8 @@ subplot(1,3,1); imagesc(squeeze(ccf.imgs(section,:,:))); colormap(gca, gray); ax
 subplot(1,3,2); imagesc(squeeze(ccf.labelsAll(section,:,:))); colormap(gca, lines); axis equal
 subplot(1,3,3); imagesc(squeeze(ccf.labels(section,:,:)>0)); colormap(gca, lines); axis equal
 
-%% test 3d imregister
 
-% settings
-mouse = 'cer18';  % 'cmu3'
-
-% load ccf, mouse brain, and cell locations
-ccf = loadCCF();
-data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
-load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'))
-cellLocations = ephysHistoTable.GC_Points(strcmp(ephysHistoTable.mouseID, mouse));
-cellLocations = cat(1, cellLocations{:});
-
-%% transformations: histo 1-> histoCropped 2-> histoResized 3-> ccfCropped 4-> ccf
-
-% 1) histo to cropped histo coords
-apOffset = find(any(data.labels, [2 3]), 1, 'first');
-dvOffset = find(any(data.labels, [1 3]), 1, 'first');
-mlOffset = find(any(data.labels, [1 2]), 1, 'first');
-T1 = eye(4);
-T1(end,1:3) = -[dvOffset apOffset mlOffset];  % dv ap ml
-
-% 2) cropped histo to resized coords
-apScale  = sum(any(ccf.labels, [2 3])) / sum(any(data.labels, [2 3]));
-dvScale  = sum(any(ccf.labels, [1 3])) / sum(any(data.labels, [1 3]));
-mlScale  = sum(any(ccf.labels, [1 2])) / sum(any(data.labels, [1 2]));
-T2 = diag([dvScale apScale mlScale 1]);  % dv ap ml
-
-% 3) cropped histo to cropped ccf
-[optimizer, metric] = imregconfig('monomodal');
-optimizer.MaximumIterations = 200;
-labelsCcfCropped = ccf.labels(any(ccf.labels, [2 3]), any(ccf.labels, [1 3]), any(ccf.labels, [1 2]));
-labelsCropped = data.labels(any(data.labels, [2 3]), any(data.labels, [1 3]), any(data.labels, [1 2]));
-labelsCropped = imresize3(labelsCropped, size(labelsCcfCropped), 'nearest');
-tform = imregtform(labelsCropped, labelsCcfCropped, 'affine', optimizer, metric, 'DisplayOptimization', false);
-T3 = tform.T;
-
-% 4) cropped ccf to normal ccf
-apOffset = find(any(ccf.labels, [2 3]), 1, 'first');
-dvOffset = find(any(ccf.labels, [1 3]), 1, 'first');
-mlOffset = find(any(ccf.labels, [1 2]), 1, 'first');
-T4 = eye(4);
-T4(end,1:3) = [dvOffset apOffset mlOffset];  % dv ap ml
-
-% full transform
-T = T1 * T2 * T3 * T4;
-tform = affine3d(T);
-warped = imwarp(data.labels, tform, 'OutputView', imref3d(size(ccf.labels)), 'interp', 'nearest');
-
-% convert to histo pixels
-cellLocationsTformed = cellLocations;
-cellLocationsTformed(:,[1 3]) = cellLocationsTformed(:,[1 3]) * .5 * data.scaling;
-cellLocationsTformed(:,2) = cellLocationsTformed(:,2) / (diff(data.ap(1:2))*1000);
-
-% convert to ccf pixels
-cellLocationsTformed = [cellLocationsTformed, ones(size(cellLocations,1),1)] * T(:,[1 2 3 4]);
-
-% plot
-close all; figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
-
-% ax1 = subplot(1,2,1); title('full transform'); hold on
-plotLabels3D(ccf.labels, 'surfArgs', {'FaceAlpha', .1});
-plotLabels3D(warped);
-scatter3(cellLocationsTformed(:,1), cellLocationsTformed(:,2), cellLocationsTformed(:,3), ...
-    50, [0 0 0], 'filled');
-% plotLabels3D(ccf.coarseLabels, 'downSampling', 8, 'colors', repmat([0 0 0],3,1), 'surfArgs', {'FaceAlpha', .02, 'EdgeAlpha', .2});
-
-% % cropped only
-% tform = affine3d(T3);
-% warped = imwarp(labelsCropped, tform, 'OutputView', imref3d(size(labelsCcfCropped)), 'interp', 'nearest');
-% ax2 = subplot(1,2,2); title('cropped only'); hold on
-% plotLabels3D(labelsCcfCropped, 'surfArgs', {'FaceAlpha', .1});
-% plotLabels3D(warped);
-
-% link = linkprop([ax1, ax2],{'CameraUpVector', 'CameraPosition', 'CameraTarget', 'XLim', 'YLim', 'ZLim'});
-% setappdata(gcf, 'StoreTheLink', link);
-
-
-%% test cropped warp only
+%% test cropped warp
 [optimizer, metric] = imregconfig('monomodal');
 optimizer.MaximumIterations = 200;
 

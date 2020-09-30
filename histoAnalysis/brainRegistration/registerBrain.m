@@ -59,7 +59,12 @@ cellLocationsHistoPixels(:,[1 3]) = cellLocationsHistoPixels(:,[1 3]) * 500 * da
 cellLocationsHistoPixels(:,2) = cellLocationsHistoPixels(:,2) / diff(data.ap(1:2));
 
 % apply transormation to cell locations
-cellLocationsCcfPixels = [cellLocationsHistoPixels, ones(size(cellLocations,1),1)] * T;
+% (columns of T act on (dv, ap, ml), but locations are (ml, ap, dv), so
+% first we create T_cells, which swaps the order of the diagonal entries
+% and the bottom row)
+T_cells = T(:,[3 2 1 4]);
+T_cells(1:3,1:3) = flipud(T_cells(1:3,1:3));
+cellLocationsCcfPixels = [cellLocationsHistoPixels, ones(size(cellLocations,1),1)] * T_cells;
 cellLocationsCcfPixels = cellLocationsCcfPixels(:,1:3);
 cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 
@@ -68,7 +73,7 @@ cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 % PLOT
 % ----
 
-%% 3d plot
+% 3d plot
 colors = repelem(lines(3),2,1);
 figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
 plotLabels3D(ccf.labels, 'surfArgs', {'FaceAlpha', .1, 'edgealpha', .2}, 'colors', colors, ...
