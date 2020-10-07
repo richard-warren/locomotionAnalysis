@@ -1,4 +1,4 @@
-%% inits
+auto%% inits
 mouse = 'cer18';  % cer18
 scaling = .2;
 

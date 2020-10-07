@@ -53,6 +53,7 @@ for i = regionLabels
     if transpose; projection = projection'; end
 %     projection = squeeze(mean(labels==i, projectionDim));
 %     projection = projection > (max(projection(:)) * .5);
+    
     [i1, i2] = ind2sub(size(projection), find(projection));
     ax1 = axes{1}(i1);
     ax2 = axes{2}(i2);
