@@ -1,5 +1,5 @@
-auto%% inits
-mouse = 'cer18';  % cer18
+% inits
+mouse = 'cer18';  % cer12, cmu3, cer18 
 scaling = .2;
 
 % prepare histo labels (only need to do once per mouse)
