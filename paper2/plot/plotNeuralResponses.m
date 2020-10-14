@@ -8,15 +8,15 @@ colors = lines(3);
 s.eventColor = colors(1,:);
 s.epochColor = colors(2,:);
 s.contColor = colors(3,:);
-s.showImportance = true;  % whether to show mutual information as text in figure
+s.showImportance = false;  % whether to show mutual information as text in figure
 s.visible = true;  % whether figure is visible
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-load(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
-load(fullfile(getenv('SSD'), 'modelling', 'responses', [session '_responses.mat']), 'responses');
-if s.showImportance; load(fullfile(getenv('SSD'), 'modelling', 'importance', [session '_importance.mat']), 'importance'); end
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses');
+if s.showImportance; load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'importance', [session '_importance.mat']), 'importance'); end
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'unit_ids', 'spkRates', 'timeStamps');
 fprintf('%s: plotting neural responses...\n', session)
 

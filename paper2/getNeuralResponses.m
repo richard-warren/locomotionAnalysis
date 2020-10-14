@@ -24,7 +24,7 @@ s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.ma
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
     'unit_ids', 'spkRates', 'timeStamps');
-load(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 
 % initialize table
 nRows = height(predictors);
@@ -131,6 +131,6 @@ for i = find(predictors.include)'
     end 
 end
 
-save(fullfile(getenv('SSD'), 'modelling', 'responses', [session '_responses.mat']), 'responses', '-v7.3');
+save(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses', '-v7.3');
 fprintf('%s: all done getting neural responses :)\n', session)
 

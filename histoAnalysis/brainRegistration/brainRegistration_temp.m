@@ -1,5 +1,5 @@
 % inits
-mouse = 'cer18';  % cer12, cmu3, cer18 
+mouse = 'cer12';  % cer12, cmu3, cer18 
 scaling = .2;
 
 % prepare histo labels (only need to do once per mouse)
@@ -14,12 +14,13 @@ cellLocations = cat(1, cellLocations{:}) / 1000;  % ml ap dv
 % load mouse brain
 data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
 
-% plot neurons on brain
-figure; hold on
+%% plot neurons on brain
+figure('color', 'black'); hold on
 imagesc(data.ml, data.dv, squeeze(data.imgs(15,:,:))); colormap gray
 set(gca, 'ydir', 'reverse')
 scatter(cellLocations(:,1), cellLocations(:,3), 20, 'yellow', 'filled')
 axis equal
+set(gca, 'visible', 'off')
 
 %% load allen brain ccf
 
@@ -53,6 +54,31 @@ plotLabels3D(labelsCcfCropped, 'surfArgs', {'FaceAlpha', .1});
 plotLabels3D(warped);
 link = linkprop([ax1, ax2],{'CameraUpVector', 'CameraPosition', 'CameraTarget', 'XLim', 'YLim', 'ZLim'});
 setappdata(gcf, 'StoreTheLink', link);
+
+%% show nuclei traces
+
+
+
+% mouse = 'cer12';  % cer12, cmu3, cer18 
+% data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
+
+
+close all; figure('color', 'white'); plotLabels2D(ccf.coarseLabels, 'dim', 'dv', 'smoothing', 3); set(gca, 'visible', 'off')
+
+
+%% make ccf diagram
+
+close all; figure('color', 'white', 'position', [200 166.00 867.00 851.00]);
+ccf = loadCCF();
+plotLabels3D(ccf.coarseLabels, 'method', 'contours', 'slices', {'ap'}, 'lineWidth', 2, 'contourAlpha', .1, 'colors', zeros(3,3));
+plotLabels3D(ccf.labels, 'method', 'boundary', 'surfArgs', {'edgecolor', 'none', 'facealpha', 1}, 'colors', repelem(lines(3),2,1));
+set(gca, 'visible', 'off');
+view([0 0])
+
+
+
+
+
 
 
 

@@ -48,7 +48,8 @@ ccf.dv = res : res : size(labels,2)*res;
 ccf.ml = res : res : size(labels,3)*res;
 
 % get outlines of cerebellum, cerebrum, and brainstem
-tree_json = 'D:\github\locomotionAnalysis\histoAnalysis\brainRegistration\allenBrainCCF\tree_structure\tree_structure.json';
+tree_json = fullfile('histoAnalysis', 'brainRegistration', 'allenBrainCCF', 'tree_structure', 'tree_structure.json');
+% tree_json = 'D:\github\locomotionAnalysis\histoAnalysis\brainRegistration\allenBrainCCF\tree_structure\tree_structure.json';
 ccf.coarseLabels = cast(zeros(size(labelsAll)), 'uint8');
 ccf.coarseLabels(ismember(labelsAll, getAllDescenants(tree_json, 'Cerebrum'))) = 1;
 ccf.coarseLabels(ismember(labelsAll, getAllDescenants(tree_json, 'Cerebellum'))) = 2;

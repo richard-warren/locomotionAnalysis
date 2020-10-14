@@ -6,7 +6,7 @@ function getPredictors(session, varargin)
 
 
 % settings
-s.dt = .002;  % (s) everything interpolated onto new time axis with this temporal resolution
+s.dt = .010;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plotPredictors = true;
@@ -195,7 +195,7 @@ end
 % ----
 % SAVE
 % ----
-save(fullfile(getenv('SSD'), 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+save(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 if s.plotPredictors
     fig = plotNeuralPredictors(session, 'predictors', predictors, 'visible', s.visible);
     saveas(fig, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', ...

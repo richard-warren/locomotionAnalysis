@@ -119,7 +119,32 @@ for i = 1:3
     scatter(cellLocationsCcfMm(:,inds{i}(1)), cellLocationsCcfMm(:,inds{i}(2)), ...
         30, 'black', 'filled', 'MarkerFaceAlpha', .6);
 end
+
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_2D.png']))
+save(fullfile(getenv('SSD'), 'paper2', 'histo', 'registration', [mouse '_registration.mat']), ...
+    'cellLocationsCcfMm', 'cellLocationsCcfPixels')
+disp('all done!')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

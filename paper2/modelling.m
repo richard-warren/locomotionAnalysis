@@ -2,24 +2,24 @@
 
 sessions = getEphysSessions();
 
-%% perform various analyses on all sessions
+%% prepare predictors and neural responses for all ephys sessions
 
 sessions = getEphysSessions;
 % sessions = sessions(1:33);  % temp
 
-overwrite = false;
+overwrite = true;
 tic
 
 % parpool('local', 4);  % set number of workers
-for i = 1:length(sessions)
+parfor i = 1:4
     folderSes = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
-    folder = fullfile(getenv('SSD'), 'modelling');
+    folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
     
     try
         % format ephys data
-        if overwrite || ~exist(fullfile(folderSes, 'neuralData.mat'), 'file')
-            formatEphysData(sessions{i})
-        end
+%         if overwrite || ~exist(fullfile(folderSes, 'neuralData.mat'), 'file')
+%             formatEphysData(sessions{i})
+%         end
         
         % predictors
         if overwrite || ~exist(fullfile(folder, 'predictors', [sessions{i} '_predictors.mat']), 'file')
@@ -31,13 +31,13 @@ for i = 1:length(sessions)
             getNeuralResponses(sessions{i})
         end
         
-        % feature importance
-        if overwrite || ~exist(fullfile(folder, 'importance', [sessions{i} '_importance.mat']), 'file')
-            getFeatureImportance(sessions{i})
-        end
+%         % feature importance
+%         if overwrite || ~exist(fullfile(folder, 'importance', [sessions{i} '_importance.mat']), 'file')
+%             getFeatureImportance(sessions{i})
+%         end
         
         % plot neural responses
-%         plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', true)
+        plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
     
     catch exception
         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
