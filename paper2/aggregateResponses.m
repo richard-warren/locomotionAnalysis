@@ -24,7 +24,7 @@ s.sessions = {};
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 if isempty(s.sessions); s.sessions = getEphysSessions(); end
-load(fullfile(getenv('OBSDATADIR'), 'sessions', s.sessions{1}, 'modelling', 'predictors.mat'), 'predictors');  % load sample session
+load(fullfile(getenv('SSD'), 'modelling', 'responses', [s.sessions{1} '_predictors.mat']), 'predictors');  % load sample session
 nRows = height(predictors);
 aggregates = table(cell(nRows,1), cell(nRows,1), nan(nRows,2), ...
     repmat({nan(length(s.sessions),2)}, nRows, 1), predictors.type, cell(nRows,1), ...
