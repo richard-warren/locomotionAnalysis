@@ -11,6 +11,7 @@ function [B, t] = makeCosBasis(start, stop, n, varargin)
 s.matchVal = pi/2;    % (radians) value at which adjacent bases overlap
 s.dt = .01;
 s.showPlot = false;
+s.t = [];
 
 % inits
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
@@ -18,8 +19,12 @@ centers = linspace(start, stop, n);
 dc = centers(2)-centers(1);
 f = 2*s.matchVal/dc;  % cosine frequency
 tmax = max(abs([start stop])) + pi/f;
-t = 0 : s.dt : tmax;
-t = [fliplr(-t(2:end)) t];
+if isempty(s.t)
+    t = 0 : s.dt : tmax;
+    t = [fliplr(-t(2:end)) t];
+else
+    t = s.t;
+end
 
 
 
