@@ -3,7 +3,7 @@
 
 %% inits
 
-session = '181020_001'; neuron = 66;  % 37    54    65    66    69    83
+session = '181020_001'; neuron = 69;  % 37    54    65    66    69    83
 timeDegrees = 3;  % 0: .56, 1: .72, 2: .72, 3: .72
 
 % make design matrix
@@ -43,13 +43,19 @@ end
 
 disp('init complete!')
 
+%% export data for python tests
+
+X = table2array(dmat(inds,:));  % restrict to inds that are valid for this neuron
+y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
+save(fullfile('paper2', 'glm', 'test.mat'), 'X', 'y', 't')
+
+
 %% linear glm (manual)
 
-lambdas = [0 2.^(0:15)];
 
+lambdas = [0 logspace(-8, -1, 5)];
 
-X = zscore(table2array(dmat(inds,:)));
-X(:,end-timeDegrees) = 1;  % restore the constant column to ones
+X = [zscore(table2array(dmat(inds,:))) ones(size(t))'];
 Imat = eye(size(X,2));
 y = spkRate(inds)';
 
@@ -87,8 +93,7 @@ fprintf('r squared: %.2f\n', mean(r2))
 
 %% poisson glm (glmfit)
 
-X = zscore(table2array(dmat(inds,:)));
-X(:,end-timeDegrees) = 1;  % restore the constant column to ones
+X = [zscore(table2array(dmat(inds,:))) ones(size(t))'];
 spkTimes = neuralData.spkTimes{neuralData.unit_ids==neuron};
 y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
 
@@ -105,16 +110,15 @@ fprintf('r squared: %.2f\n', corr(spkRateGaus', yhat)^2)
 
 %% poisson glm (lassoglm)
 
+% X = [zscore(table2array(dmat(inds,:))) ones(size(t))'];
 X = zscore(table2array(dmat(inds,:)));
-X(:,end-timeDegrees) = 1;  % restore the constant column to ones
 spkTimes = neuralData.spkTimes{neuralData.unit_ids==neuron};
 y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
 
 tic; [B, fitInfo] = lassoglm(X, y, 'poisson', ...
-    'alpha', .5, 'lambda', [0 1], 'standardize', true, 'CV', 2); toc
+    'alpha', .5, 'lambda', 0, 'standardize', true, 'CV', 2); toc
 
 minInd = fitInfo.IndexMinDeviance;
-minInd = 2;
 B0 = fitInfo.Intercept(minInd);
 w = [B0; B(:,minInd)];
 yhat = glmval(w, X, 'log') / dt;
@@ -128,13 +132,12 @@ fprintf('r squared: %.2f\n', corr(spkRateGaus', yhat)^2)
 
 %% glmnet package (no cross validation, no regularizaton)
 
-X = zscore(table2array(dmat(inds,:)));
-X(:,end-timeDegrees) = 1;  % restore the constant column to ones
+X = table2array(dmat(inds,:));
 y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
 
 % git 
-options = struct('alpha', 0, 'lambda', 0, 'standardize', false);
-fit = glmnet(X, y, 'poisson', options);
+options = struct('alpha', 0, 'lambda', 0, 'standardize', true);
+tic; fit = glmnet(X, y, 'poisson', options); toc;
 
 % plot predicted vs true firing rate
 yhat = glmnetPredict(fit, X, [], 'response') / dt;
@@ -150,13 +153,12 @@ fprintf('deviance explained: %.2f\n', fit.dev)
 %% glmnet package (cross validation, regularizaton)
 
 % settings
-lambdas = logspace(-8, 1, 50);
-% options = struct('alpha', 0, 'nlambda', 5, 'lambda_min', 1e-20, 'standardize', false);
-options = struct('alpha', 0, 'lambda', lambdas, 'standardize', false);
+lambdas = logspace(-8, -1, 50);
+options = struct('alpha', 0, 'lambda', lambdas, 'standardize', true);
+parallel = true;  % 1.3 min false // 1 min true (with starting parpool), .7 when parpool already running)
 
 % inits
-X = zscore(table2array(dmat(inds,:)));
-X(:,end-timeDegrees) = 1;  % restore the constant column to ones
+X = table2array(dmat(inds,:));
 y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
 
 fold_id = nan(size(t));
@@ -165,8 +167,10 @@ for i = 1:size(partitions,1)
 end
 
 % fit model
-tic; fit = cvglmnet(X, y, 'poisson', options, [], k, fold_id);
-fprintf('\nfit model in %.1f minutes\n', toc/60);
+tic; fprintf('\nfiting model (%i folds, %i lambdas)... ', k, length(lambdas));
+fit = cvglmnet(X, y, 'poisson', options, [], k, fold_id, parallel);
+minInd = find(fit.lambda==fit.lambda_min);
+fprintf('finished in %.1f minutes\n', toc/60);
 lambdaMinInd = find(fit.lambda==fit.lambda_min);
 
 % plot predicted vs true firing rate
@@ -182,6 +186,7 @@ fprintf('deviance explained: %.2f\n', fit.glmnet_fit.dev(lambdaMinInd))
 % plot regularization
 figure('position', [214.00 155.00 609.00 430.00], 'color', 'white'); hold on
 plot(fit.lambda, fit.cvm, 'linewidth', 2)
+scatter(fit.lambda(minInd), fit.cvm(minInd), 20, 'red', 'filled')
 set(gca, 'xscale', 'log')
 xlabel('lambda'); ylabel('cross validated error')
 

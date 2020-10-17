@@ -1,7 +1,7 @@
 function [dmat, t] = makeDesignMatrix(session, varargin)
 
 % settings
-s.timeDegrees = 0;  % add time polynomial of degree timeDegrees (setting to zeros adds a column of ones, which is useful anyway)
+s.timeDegrees = 0;  % add time polynomial of degree timeDegrees (constant term is excluded)
 
 % inits
 fprintf('making design matrix for %s... ', session)
@@ -60,10 +60,10 @@ for i = 1:height(settings)
 end
 
 % add time polynomial
-bases = ones(rows, s.timeDegrees+1);
+bases = nan(rows, s.timeDegrees);
 tNorm = t - mean(t);  % not sure if this affects anything...
 for i = 1:s.timeDegrees
-    bases(:,i+1) = tNorm.^i;
+    bases(:,i) = tNorm.^i;
 end
 addPredictor(bases, 'time')
 
