@@ -11,6 +11,8 @@ s.kernelFall = .02;      % (s) fall for double exponential kernel
 s.kernelSig = .02;       % (s) if a gaussian kernel is used
 s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
 s.forceAlignment = false;  % whether to run the alignement algorithm to find best matches between spike and ephys sync signals // if false, only runs the algorithm when there are different numbers of events in each channel
+s.outputFileName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat');
+
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
@@ -166,8 +168,7 @@ for i = 1:length(spkTimes)
 end
 
 settings = s;
-save(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
-     'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'bestChannels', 'openEphysToSpikeMapping', 'settings')
+save(s.outputFileName, 'spkRates', 'spkTimes', 'timeStamps', 'unit_ids', 'bestChannels', 'openEphysToSpikeMapping', 'settings')
 
 
 
