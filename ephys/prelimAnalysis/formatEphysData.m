@@ -4,7 +4,7 @@ function formatEphysData(session, varargin)
 
 
 % settings
-s.spkRateFs = 1000;        % sampling frequency of instantaneous firing rate
+s.spkRateFs = 200;         % sampling frequency of instantaneous firing rate
 s.kernelRise = .005;       % (s) rise for double exponential kernel
 s.kernelFall = .02;        % (s) fall for double exponential kernel
 s.kernelSig = .02;         % (s) if a gaussian kernel is used

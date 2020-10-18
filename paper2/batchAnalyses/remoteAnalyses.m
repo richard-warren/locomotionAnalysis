@@ -16,9 +16,9 @@ parfor i = 1:length(sessions)
         
         % predictors
         filename = fullfile(getenv('OBSDATADIR'), 'data_transfer', 'predictors', [sessions{i} '_predictors.mat']);
-        if overwrite || ~exist(filename, 'file')
-            getPredictors(sessions{i}, 'outputFileName', filename, 'plot', true, 'visible', 'off')
-        end
+%         if overwrite || ~exist(filename, 'file')
+%             getPredictors(sessions{i}, 'outputFileName', filename, 'plot', true, 'visible', 'off')
+%         end
             
     catch exception
         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
