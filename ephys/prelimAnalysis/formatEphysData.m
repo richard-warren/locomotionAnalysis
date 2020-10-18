@@ -31,7 +31,7 @@ syncSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.m
 syncSpikeTimes = syncSpikeTimes.(ephysInfo.syncSignal).times(syncSpikeTimes.(ephysInfo.syncSignal).level==1);
 
 % check if we need to force the alignment algorithm
-runAlignment = length(syncEphysTimes)~=length(syncSpikeTimes) || ~s.forceAlignment;
+runAlignment = length(syncEphysTimes)~=length(syncSpikeTimes) || s.forceAlignment;
 
 % simple linear mapping alignment
 if ~runAlignment
@@ -95,23 +95,24 @@ if runAlignment
     
     % plot
     % ----
-    figure('name', sprintf('%s: spike / openephys event alignment', session), ...
-        'color', 'white', 'position', [90.00 654.00 1769.00 225.00]); hold on
-    
-    plot([syncSpikeTimes(matchedInds(1,:)), syncEphysTimes(matchedInds(2,:))+lag], ...
-        [1 0], 'LineWidth', 1, 'color', [0 0 0 .4])  % lines connecting matched events
-    scatter(syncSpikeTimes(matchedInds(1,:)), ones(1,size(matchedInds,2)), 50, [0 0.44 0.74], 'filled')
-    scatter(syncEphysTimes(matchedInds(2,:))+lag, zeros(1,size(matchedInds,2)), 50, [.85 .32 .10], 'filled')
-    
-    spkUnmatchedInds = find(~ismember(1:length(syncSpikeTimes), matchedInds(1,:)));
-    scatter(syncSpikeTimes(spkUnmatchedInds), ones(1,length(spkUnmatchedInds)), 100, 'red')
-    ephysUnmatchedInds = find(~ismember(1:length(syncEphysTimes), matchedInds(2,:)));
-    scatter(syncEphysTimes(ephysUnmatchedInds)+lag, zeros(1,length(ephysUnmatchedInds)), 100, 'red')
-    
-    set(gca, 'ytick', [0 1], 'YTickLabel', {'open ephys', 'spike'}, 'ylim', [-1 2])
-    xlabel('spike times (s)')
-    pause(.1)
-    
+    if s.plot
+        figure('name', sprintf('%s: spike / openephys event alignment', session), ...
+            'color', 'white', 'position', [90.00 654.00 1769.00 225.00]); hold on
+
+        plot([syncSpikeTimes(matchedInds(1,:)), syncEphysTimes(matchedInds(2,:))+lag], ...
+            [1 0], 'LineWidth', 1, 'color', [0 0 0 .4])  % lines connecting matched events
+        scatter(syncSpikeTimes(matchedInds(1,:)), ones(1,size(matchedInds,2)), 50, [0 0.44 0.74], 'filled')
+        scatter(syncEphysTimes(matchedInds(2,:))+lag, zeros(1,size(matchedInds,2)), 50, [.85 .32 .10], 'filled')
+
+        spkUnmatchedInds = find(~ismember(1:length(syncSpikeTimes), matchedInds(1,:)));
+        scatter(syncSpikeTimes(spkUnmatchedInds), ones(1,length(spkUnmatchedInds)), 100, 'red')
+        ephysUnmatchedInds = find(~ismember(1:length(syncEphysTimes), matchedInds(2,:)));
+        scatter(syncEphysTimes(ephysUnmatchedInds)+lag, zeros(1,length(ephysUnmatchedInds)), 100, 'red')
+
+        set(gca, 'ytick', [0 1], 'YTickLabel', {'open ephys', 'spike'}, 'ylim', [-1 2])
+        xlabel('spike times (s)')
+        pause(.1)
+    end
     
     % update times
     syncSpikeTimes = syncSpikeTimes(matchedInds(1,:));
@@ -124,11 +125,11 @@ openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get line
 predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
 
 % check that predictions are accurate
-if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .003
-    fprintf('%s: WARNING! Linear mapping from openephys to spike fails to fit all events!\n', session)
-    keyboard
-    % try the following line to see if the predicted times are really off or within an acceptible range
-%     disp(predictedEventSpikeTimes - syncSpikeTimes)
+thresh = .003;  % maximum acceptable difference between predicted and actual event times
+if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > thresh
+    fprintf('%s: WARNING! %i predicted event times are more than %i ms off! Mapping may have failed!\n', ...
+        session, sum(abs(predictedEventSpikeTimes - syncSpikeTimes) > thresh), thresh*1000)
+%     disp(predictedEventSpikeTimes - syncSpikeTimes)  % try the following line to see if the predicted times are really off or within an acceptible range
 end
     
 
@@ -177,7 +178,6 @@ for i = 1:length(spkTimes)
     % remove spikes that are out of min and max times
     spkRates(i, timeStamps<cellMinTime | timeStamps>cellMaxTime) = nan;
     spkTimes{i} = spkTimes{i}(spkTimes{i}>cellMinTime & spkTimes{i}<cellMaxTime);
-    
 end
 
 settings = s;

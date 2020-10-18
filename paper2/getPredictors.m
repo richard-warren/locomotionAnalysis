@@ -9,14 +9,15 @@ function getPredictors(session, varargin)
 s.dt = .005;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
-s.plotPredictors = true;
+s.plot = true;
 s.visible = 'on';  % whether predictors plot is visible
+s.outputFileName = fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']);
 
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-fprintf('%s: preparing predictors...\n', session)
+fprintf('%s: getting predictors...\n', session)
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', ...
     'bodyAngles', 'whiskerAngle', 'pixelsPerM', 'wheelCenter', 'wheelRadius', ...
@@ -195,11 +196,11 @@ end
 % ----
 % SAVE
 % ----
-save(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
-if s.plotPredictors
+save(s.outputFileName, 'predictors');
+if s.plot
     fig = plotNeuralPredictors(session, 'predictors', predictors, 'visible', s.visible);
-    saveas(fig, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'predictors', ...
-        sprintf('%s predictors.png', session)));
+    [pathstr, name] = fileparts(s.outputFileName);
+    saveas(fig, fullfile(pathstr, [name '.png']));
     if strcmp(s.visible, 'off'); close(fig); end
 end
 

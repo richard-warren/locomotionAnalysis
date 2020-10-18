@@ -1,8 +1,9 @@
 %% test formatEphysData
 
 
-session = '181103_000';  % normal
+session = '181103_000';  % different number of events
 % session = '200721_000';  % forces alignment although same number of events...
+% session = sessions{end};   % same number of events, normal alignment algorithm 
 
 filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']);
 formatEphysData(session, 'outputFileName', filename, 'kernel', 'gauss', 'kernelSig', .02)
