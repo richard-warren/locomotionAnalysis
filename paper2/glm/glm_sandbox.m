@@ -7,11 +7,10 @@ session = '181020_001'; neuron = 69;  % 37    54    65    66    69    83
 timeDegrees = 3;  % 0: .56, 1: .72, 2: .72, 3: .72
 
 % make design matrix
-[dmat, t] = makeDesignMatrix(session, 'timeDegrees', timeDegrees);
+[dmat, t, reward_all] = makeDesignMatrix(session, 'timeDegrees', timeDegrees);
 
 % load cells
 neuralData = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'rewardTimes');
 spkRate = interp1(neuralData.timeStamps, neuralData.spkRates(neuralData.unit_ids==neuron,:), t);
 inds = find(~isnan(spkRate),1,'first') : find(~isnan(spkRate),1,'last');  % valid inds for cell
 t = t(inds);
@@ -29,7 +28,7 @@ spkRateGaus = interp1(tTemp, spkRateGaus, t);
 k = 5;
 
 % epochs spanning beginning of one reward to the end of the next
-r = rewardTimes(rewardTimes>t(1) & rewardTimes<t(end))';
+r = reward_all(reward_all>t(1) & reward_all<t(end))';
 r = [t(1) r t(end)];
 
 % assign each epoch to a parition p

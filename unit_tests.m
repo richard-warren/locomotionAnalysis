@@ -1,3 +1,13 @@
+%% test formatEphysData
+
+
+session = '181103_000';  % normal
+% session = '200721_000';  % forces alignment although same number of events...
+
+filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']);
+formatEphysData(session, 'outputFileName', filename, 'kernel', 'gauss', 'kernelSig', .02)
+
+
 %% test getDvMatrix
 
 % fprintf('loading... '); load(fullfile(getenv('OBSDATADIR'), 'matlabData', 'baseline_data.mat'), 'data'); disp('baseline data loaded!')

@@ -11,35 +11,34 @@ overwrite = true;
 tic
 
 % parpool('local', 4);  % set number of workers
-parfor i = 1:4%length(sessions)
+for i = 1:length(sessions)
     folderSes = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
     folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
     
     try
-        % format ephys data (save locally!)
-        if overwrite || ~exist(fullfile(folderSes, 'neuralData.mat'), 'file')
-            formatEphysData(sessions{i}, ...
-                'outputFileName', fullfile(folder, 'neuralData', [sessions{i} '_neuralData.mat']), ...
-                'kernel', 'gauss', 'kernelSig', .02)
-        end
+        % format ephys data (REMOTE!)
+%         if overwrite || ~exist(fullfile(folder, 'neuralData', [sessions{i} '_neuralData.mat']), 'file')
+%             formatEphysData(sessions{i}, ...
+%                 'outputFileName', fullfile(folder, 'neuralData', [sessions{i} '_neuralData.mat']), ...
+%                 'kernel', 'gauss', 'kernelSig', .02)
+%         end
         
-        % predictors
+        % predictors (REMOTE!)
 %         if overwrite || ~exist(fullfile(folder, 'predictors', [sessions{i} '_predictors.mat']), 'file')
 %             getPredictors(sessions{i}, 'plotPredictors', true, 'visible', 'off')
 %         end
-        
-        % neural responses
+            
+        % neural responses (loca)
 %         if overwrite || ~exist(fullfile(folder, 'responses', [sessions{i} '_responses.mat']), 'file')
 %             getNeuralResponses(sessions{i})
 %         end
         
-%         % feature importance
-%         if overwrite || ~exist(fullfile(folder, 'importance', [sessions{i} '_importance.mat']), 'file')
-%             getFeatureImportance(sessions{i})
-%         end
-        
-        % plot neural responses
-%         plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
+        % plot neural responses (local)
+        plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
+
+        % design matrices (requires predictors only...)
+%         filename = fullfile(folder, 'designMatrices', [sessions{i} '_designMatrix.mat']);
+%         makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'saveFileName', filename);
     
     catch exception
         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)

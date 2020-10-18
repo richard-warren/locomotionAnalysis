@@ -15,11 +15,10 @@ s.plot = true;
 
 
 % load (or make) design matrix
-[dmat, t] = makeDesignMatrix(session, 'timeDegrees', s.timeDegrees);
+[dmat, t, reward_all] = makeDesignMatrix(session, 'timeDegrees', s.timeDegrees);
 
 % load neuron
-neuralData = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'));
-tic; load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), 'rewardTimes'); toc
+neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
 spkRate = interp1(neuralData.timeStamps, neuralData.spkRates(neuralData.unit_ids==neuron,:), t);
 inds = find(~isnan(spkRate),1,'first') : find(~isnan(spkRate),1,'last');  % valid inds for neuron
 t = t(inds);
@@ -32,7 +31,7 @@ X = table2array(dmat(inds,:));
 y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
 
 % define cross-validation folds
-r = rewardTimes(rewardTimes>t(1) & rewardTimes<t(end))';  % epochs spanning beginning of one reward to the end of the next
+r = reward_all(reward_all>t(1) & reward_all<t(end))';  % epochs spanning beginning of one reward to the end of the next
 r = [t(1) r t(end)];
 fold_id = nan(size(t));
 [~,~,f] = histcounts(randperm(length(r)-1), linspace(1,length(r)-1,s.folds+1));  % evey ind assigned an int on [1,k]

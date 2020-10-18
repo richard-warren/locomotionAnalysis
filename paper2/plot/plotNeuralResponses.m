@@ -17,7 +17,7 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses');
 if s.showImportance; load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'importance', [session '_importance.mat']), 'importance'); end
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), 'unit_ids', 'spkRates', 'timeStamps');
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']), 'unit_ids', 'spkRates', 'timeStamps');
 fprintf('%s: plotting neural responses...\n', session)
 
 
@@ -94,7 +94,7 @@ for i = 1:length(unit_ids)
     
     % save figure
     pause(.1)
-    saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'modelling', 'responses', ...
+    saveas(gcf, fullfile(getenv('SSD'), 'paper2', 'plots', 'responses', ...
         sprintf('%s cell%i responses.png', session, unit_ids(i))));
     if ~s.visible; close(fig); end
 end

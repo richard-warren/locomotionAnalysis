@@ -6,7 +6,7 @@ function getPredictors(session, varargin)
 
 
 % settings
-s.dt = .010;  % (s) everything interpolated onto new time axis with this temporal resolution
+s.dt = .005;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plotPredictors = true;

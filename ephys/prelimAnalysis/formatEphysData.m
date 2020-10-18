@@ -1,16 +1,16 @@
 function formatEphysData(session, varargin)
-% work in progress // prepares spikes for matlab-land by getting spike
-% times wrt spike clock, and maybe by computing instantaneous firing rates
-% as well...
+% prepares spikes for matlab-land by getting spike times wrt spike clock,
+% and maybe by computing instantaneous firing rates as well...
 
 
 % settings
-s.spkRateFs = 1000;      % sampling frequency of instantaneous firing rate
-s.kernelRise = .005;     % (s) rise for double exponential kernel
-s.kernelFall = .02;      % (s) fall for double exponential kernel
-s.kernelSig = .02;       % (s) if a gaussian kernel is used
-s.kernel = 'doubleExp';  % 'gauss', or 'doubleExp'
+s.spkRateFs = 1000;        % sampling frequency of instantaneous firing rate
+s.kernelRise = .005;       % (s) rise for double exponential kernel
+s.kernelFall = .02;        % (s) fall for double exponential kernel
+s.kernelSig = .02;         % (s) if a gaussian kernel is used
+s.kernel = 'doubleExp';    % 'gauss', or 'doubleExp'
 s.forceAlignment = false;  % whether to run the alignement algorithm to find best matches between spike and ephys sync signals // if false, only runs the algorithm when there are different numbers of events in each channel
+s.plot = true;             % whether to show plot when forcing alignment... 
 s.outputFileName = fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat');
 
 
@@ -30,10 +30,23 @@ syncEphysTimes = eventTimes(logical(info.eventId) & channel==eventChannel); % on
 syncSpikeTimes = load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mat'), ephysInfo.syncSignal);
 syncSpikeTimes = syncSpikeTimes.(ephysInfo.syncSignal).times(syncSpikeTimes.(ephysInfo.syncSignal).level==1);
 
+% check if we need to force the alignment algorithm
+runAlignment = length(syncEphysTimes)~=length(syncSpikeTimes) || ~s.forceAlignment;
 
-if length(syncEphysTimes)~=length(syncSpikeTimes) || s.forceAlignment
+% simple linear mapping alignment
+if ~runAlignment
+    openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get linear mapping from open ephys to spike
+    predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
+    if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .003
+        fprintf('%s: WARNING! Same number of events in both channels, but linear mapping fails. Running alignment algorithm.\n', session)
+        runAlignment = true;
+    end
+end
+
+% hard-core alignment algorithm
+if runAlignment
     if ~s.forceAlignment
-        fprintf('%s: WARNING! %i events in spike and %i events in openEphys.\n', ...
+        fprintf('%s: WARNING! %i events in spike and %i events in openEphys. Running alignment algorithm.\n', ...
             session, length(syncSpikeTimes), length(syncEphysTimes))
     else
         fprintf('forcing alignment algorithm\n')
@@ -108,9 +121,9 @@ end
 
 % linear mapping from open ephys to spike event time
 openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get linear mapping from open ephys to spike
+predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
 
 % check that predictions are accurate
-predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
 if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .003
     fprintf('%s: WARNING! Linear mapping from openephys to spike fails to fit all events!\n', session)
     keyboard

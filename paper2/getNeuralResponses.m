@@ -22,7 +22,7 @@ s.maxEpochs = 500;  % if more than s.maxEpochs epochs, only compute central s.ma
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'neuralData.mat'), ...
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']), ...
     'unit_ids', 'spkRates', 'timeStamps');
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 
