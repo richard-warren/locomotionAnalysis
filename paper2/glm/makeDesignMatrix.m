@@ -5,7 +5,7 @@ function [dmat, t, reward_all] = makeDesignMatrix(session, varargin)
 
 % settings
 s.timeDegrees = 0;    % add time polynomial of degree timeDegrees (constant term is excluded)
-s.saveFileName = '';  % if provided saves design matrix to disk
+s.outputFileName = '';  % if provided saves design matrix to disk
 
 % inits
 fprintf('making design matrix for %s... ', session)
@@ -33,7 +33,7 @@ for i = 1:height(settings)
         end
         
         data = data(~isnan(data));
-        binned = histcounts(data, t(1)-dt/2 : dt : t(end)+dt/2);
+        binned = histcounts(data, [t-dt/2 t(end)+dt/2]);
         kernels = makeCosBasis(settings.kernel_start(i), settings.kernel_stop(i), settings.n_kernels(i), 'dt', dt);
         bases = nan(length(t), settings.n_kernels(i));
         for j = 1:settings.n_kernels(i); bases(:,j) = conv(binned, kernels(j,:), 'same'); end
@@ -65,15 +65,17 @@ for i = 1:height(settings)
 end
 
 % add time polynomial
-bases = nan(rows, s.timeDegrees);
-tNorm = t - mean(t);  % not sure if this affects anything...
-for i = 1:s.timeDegrees
-    bases(:,i) = tNorm.^i;
+if s.timeDegrees>0
+    bases = nan(rows, s.timeDegrees);
+    tNorm = t - mean(t);  % not sure if this affects anything...
+    for i = 1:s.timeDegrees
+        bases(:,i) = tNorm.^i;
+    end
+    addPredictor(bases, 'time')
 end
-addPredictor(bases, 'time')
 
 % save to desk
-if ~isempty(s.saveFileName); save(s.saveFileName, 'dmat', 't', 'reward_all'); end
+if ~isempty(s.outputFileName); save(s.outputFileName, 'dmat', 't', 'reward_all'); end
 
 fprintf('all done!\n')
 

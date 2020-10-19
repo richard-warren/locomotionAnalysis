@@ -1,52 +1,6 @@
 %% general 'scratch pad' for modelling paper
 
 
-
-%% prepare predictors and neural responses for all ephys sessions
-
-sessions = getEphysSessions();
-% sessions = sessions(1:33);  % temp
-
-overwrite = true;
-tic
-
-% parpool('local', 4);  % set number of workers
-for i = 1:length(sessions)
-    folderSes = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i});
-    folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
-    
-    try
-        % format ephys data (REMOTE!)
-%         if overwrite || ~exist(fullfile(folder, 'neuralData', [sessions{i} '_neuralData.mat']), 'file')
-%             formatEphysData(sessions{i}, ...
-%                 'outputFileName', fullfile(folder, 'neuralData', [sessions{i} '_neuralData.mat']), ...
-%                 'kernel', 'gauss', 'kernelSig', .02)
-%         end
-        
-        % predictors (REMOTE!)
-%         if overwrite || ~exist(fullfile(folder, 'predictors', [sessions{i} '_predictors.mat']), 'file')
-%             getPredictors(sessions{i}, 'plotPredictors', true, 'visible', 'off')
-%         end
-            
-        % neural responses (loca)
-%         if overwrite || ~exist(fullfile(folder, 'responses', [sessions{i} '_responses.mat']), 'file')
-%             getNeuralResponses(sessions{i})
-%         end
-        
-        % plot neural responses (local)
-        plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
-
-        % design matrices (requires predictors only...)
-%         filename = fullfile(folder, 'designMatrices', [sessions{i} '_designMatrix.mat']);
-%         makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'saveFileName', filename);
-    
-    catch exception
-        fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
-    end
-end
-toc
-
-
 %% look into MI
 
 % load(fullfile(getenv('SSD'), 'modelling', 'aggregates', 'aggregates.mat'), 'aggregates', 'cellInfo');

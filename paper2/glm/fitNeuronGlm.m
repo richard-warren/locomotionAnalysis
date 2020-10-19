@@ -1,21 +1,40 @@
-% function fitNeuronGlm(session, neuron)
+function fitNeuronGlm(session, neuron, varargin)
 
 % fit (several) glms for a neuron: full model, single model for each
-% predictor group, and models with each predictor group removed
+% predictor group, and models with each predictor group removed // either
+% fits single model on all data (method 'none'), or additional assesses
+% importance of each feature group by making models with just that group
+% included, and just that group excluded // either does this by refitting
+% models for with and without each group (method 'refit') or by shuffling
+% each group and all predictors other than that group in time (method
+% 'shuffle') // all models use ridge regression, with lambda automatically
+% chosen to maximize test set performance // lambda is chosen on the full
+% model and applied to nested models
 
-% temp
-session = '181020_001'; neuron = 69;  % 37    54    65    66    69    83
+% for refitting, best lambda determined by full model and applied to other
+% models, although 0 reg is used if it's generalization is better... // 
+% for shuffling, best lambda used for each nested model...
+
 
 % settings
 s.lambdas = logspace(-8, -1, 50);    % ridge regression coefficients
-s.timeDegrees = 3;                   % fit timeDegrees order polynomial to account for drift over time
 s.folds = 5;                         % cross-validation folds
-s.parallel = false;
+s.parallel = true;
 s.plot = true;
+s.method = 'shuffle';                 % 'shuffle', or 'refit' (see below)
 
 
-% load (or make) design matrix
-[dmat, t, reward_all] = makeDesignMatrix(session, 'timeDegrees', s.timeDegrees);
+
+% inits
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
+
+% load design matrix
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '_designMatrix.mat']), ...
+    'dmat', 't', 'reward_all')
+
+% load predictor info
+predictorInfo = readtable(fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.csv'));
+groups = unique(predictorInfo.group);
 
 % load neuron
 neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
@@ -25,10 +44,9 @@ t = t(inds);
 dt = t(2) - t(1);
 spkTimes = neuralData.spkTimes{neuralData.unit_ids==neuron};
 
-% prep data for model (restrict to valid times for neuron)
-options = struct('alpha', 0, 'lambda', s.lambdas, 'standardize', true);
-X = table2array(dmat(inds,:));
-y = histcounts(spkTimes, t(1)-dt/2 : dt : t(end)+dt/2)';
+% prep data for model
+dmat = dmat(inds,:);
+y = histcounts(spkTimes, [t-dt/2 t(end)+dt/2])';
 
 % define cross-validation folds
 r = reward_all(reward_all>t(1) & reward_all<t(end))';  % epochs spanning beginning of one reward to the end of the next
@@ -41,28 +59,72 @@ for i = 1:s.folds
     end
 end
 
-%% fit model
-tic; fprintf('\nfitting model (%i folds, %i lambdas)... ', s.folds, length(s.lambdas));
-fit = cvglmnet(X, y, 'poisson', options, [], s.folds, fold_id, s.parallel);
-fprintf('finished in %.1f minutes\n', toc/60);
-minInd = find(fit.lambda==fit.lambda_min);
-lambdaMinInd = find(fit.lambda==fit.lambda_min);
 
-% plot predicted vs true firing rate
-if s.plot
-    yhat = cvglmnetPredict(fit, X, [], 'response') / dt;
-    close all; figure('position', [2.00 1024.00 1278.00 332.00], 'color', 'white'); hold on
-    plot(t, spkRateGaus)
-    plot(t, yhat, 'linewidth', 2)
-    xlabel('time (s)'); ylabel('firing rate (hz)')
-    legend('actual', 'predicted')
-    fprintf('r squared:          %.2f\n', corr(spkRateGaus', yhat)^2)
-    fprintf('deviance explained: %.2f\n', fit.glmnet_fit.dev(lambdaMinInd))
+% initialize table
+nrows = length(groups) + 1;
+rowNames = [{'full'}, groups'];
+models = table(cell(nrows,1), cell(nrows,1), nan(nrows,1), nan(nrows,1), 'RowNames', rowNames, ...
+    'VariableNames', {'model_in', 'model_out', 'dev_in', 'dev_out'});
 
-    % plot regularization
-    figure('position', [214.00 155.00 609.00 430.00], 'color', 'white'); hold on
-    plot(fit.lambda, fit.cvm, 'linewidth', 2)
-    scatter(fit.lambda(minInd), fit.cvm(minInd), 20, 'red', 'filled')
-    set(gca, 'xscale', 'log')
-    xlabel('lambda'); ylabel('cross validated error')
+% train full model
+tic
+model = fitModel(table2array(dmat), y, s.lambdas);
+models{'full', 'model_in'}{1} = model;
+dev_full = cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+models{'full', 'dev_in'} = dev_full;
+models{'full', 'dev_out'} = 0;
+lambda_min = model.lambda_min;
+
+% check that rick's deviance matches glmnet deviance for full model evaluated on training data
+glmnet_dev = model.glmnet_fit.dev(model.lambda_min_id);
+rick_dev = cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+if abs(glmnet_dev - rick_dev)>.01
+    disp('WARNING! Deviance computed by Glmnet disagrees with rick deviance!')
 end
+keyboard
+
+% assess importance of groups of features
+for i = 1:length(groups)
+    members = predictorInfo.name(strcmp(predictorInfo.group, groups{i}));   % members of group
+    fprintf('fitting nested models for group: %s\n', groups{i})
+    
+    % single group model
+    switch s.method
+        case 'shuffle'
+            
+            
+        case 'refit'
+            X = dmat(:, ismember(dmat.Properties.VariableNames, members));
+            X = table2array([X dmat(:,'time')]);
+            model = fitModel(X, y, lambda_min);
+            models{groups{i}, 'model_in'}{1} = model;
+            models{groups{i}, 'dev_in'} = cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+    end
+    
+    % single group removed
+    switch s.method
+        case 'shuffle'
+            
+            
+        case 'refit'
+            X = dmat(:, ~ismember(dmat.Properties.VariableNames, members));
+            X = table2array(X);
+            model = fitModel(X, y, lambda_min);
+            models{groups{i}, 'model_out'}{1} = model;
+            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+    end
+end
+toc
+
+
+
+function fit = fitModel(X, y, lambdas)
+    % fit model with k fold cross validation
+    if length(lambdas)==1; lambdas = [0 lambdas]; end  % a hack, because cvglmnet requires multiple lambdas
+    options = struct('alpha', 0, 'lambda', lambdas, 'standardize', true);
+    fit = cvglmnet(X, y, 'poisson', options, [], s.folds, fold_id, s.parallel, true);
+end
+end
+
+
+

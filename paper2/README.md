@@ -15,6 +15,8 @@
   - https://pubmed.ncbi.nlm.nih.gov/16733704/
 
 # analysis flow
+See scripts in `batchAnalyses`. First must formatEphysData and getPredictors **remotely**, and subsequent analyses can be performed locally...
+
 - prepPredictors
   - untransformed predictors containing
     - continuous: continuous signals
