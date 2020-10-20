@@ -1,48 +1,50 @@
 %% play around with GLMs :)
 
 
-%% inits
+%% compare refit, shuffle, and mask importance analyses
 
 session = '181020_001';
-neuron = 69;
+neuron = 66;
 
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '_designMatrix.mat']), 'dmat', 't')
-neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
-spkRate = interp1(neuralData.timeStamps, neuralData.spkRates(neuralData.unit_ids==neuron,:), t);
-inds = find(~isnan(spkRate),1,'first') : find(~isnan(spkRate),1,'last');  % valid inds for neuron
-spkRate = spkRate(inds);
-t = t(inds);
-dt = t(2) - t(1);
+[models_refit, groups] = fitNeuronGlm(session, neuron, 'method', 'refit');
+models_shuffle = fitNeuronGlm('181020_001', 66, 'method', 'shuffle');
+models_mask = fitNeuronGlm('181020_001', 66, 'method', 'mask');
 
-spkTimes = neuralData.spkTimes{neuralData.unit_ids==neuron};
+% plot
+close all; figure('color', 'white', 'position', [2.00 1043.00 1278.00 313.00]);
+ngroups = height(models_refit)-1;
+models = {models_refit, models_shuffle, models_mask};
+names = {'refit', 'shuffle', 'mask'};
 
-X = table2array(dmat(inds,:));
-y = histcounts(spkTimes, [t-dt/2 t(end)+dt/2])';
+for i = 1:3
+    subplot(1,3,i); title(names{i}); hold on
+    plot(repmat(1:ngroups+1,2,1), [models{i}.dev_in models{i}.dev_out]', 'color', [.6 .6 .6])
+    slow = scatter(1:ngroups+1, models{i}.dev_out, 40, [1 .4 .4], 'filled');
+    shigh = scatter(1:ngroups+1, models{i}.dev_in, 40, [.4 .4 1], 'filled');
+    set(gca, 'XTick', 1:ngroups+1, 'XTickLabel', ['full'; groups], 'XTickLabelRotation', 40)
+end
+legend([shigh slow], 'high', 'low')
 
+%% compare parallelization within or around fitHeuronGlm
 
-%% compute deviance
-
-%% cv model
-
-lambdas = logspace(-8, -1, 20);
-parallel = true;
-options = struct('alpha', 0, 'lambda', lambdas, 'standardize', true);
-fit = cvglmnet(X, y, 'poisson', options, [], 5, [], parallel, true);
-
-%%
-deviance = cvdeviance(fit, 'holdout', false);
-
-close all; figure('color', 'white', 'position', [2.00 722.00 1278.00 634.00]);
-subplot(121); hold on
-scatter(fit.glmnet_fit.dev, deviance);
-plot([0 1], [0 1])
-set(gca, 'xlim', [0 1], 'ylim', [0 1])
-subplot(122)
-histogram(fit.glmnet_fit.dev - deviance)
-xlabel('deviance differences')
+session = '181020_001';
+neurons = [37 54 65 66 69 83];
+neurons = repmat(neurons,1,2);
 
 
+% inner loop in parallelization
+tic
+for i = 1:(length(neurons))
+    fitNeuronGlm(session, neurons(i), 'method', 'refit', 'parallel', true);
+end
+fprintf('inner loop time: %.2f minutes\n', toc/60);
 
+% outer loop in parallelization
+tic
+parfor i = 1:length(neurons)
+    fitNeuronGlm(session, neurons(i), 'method', 'refit', 'parallel', false);
+end
+fprintf('outer loop time: %.2f minutes\n', toc/60);
 
 
 
