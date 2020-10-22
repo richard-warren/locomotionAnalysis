@@ -5,8 +5,8 @@ function packContFiles(sessions, varargin)
 % settings
 s.pythonPath = 'C:\Anaconda3\envs\phy2\python.exe';
 s.highPassFreq = 0; % 0 to skip highpass
-s.referencing = 'med';  % 'ave' 'med' or 'none'
-s.verbose = false;
+s.referencing = 'ave';  % 'ave' 'med' or 'none'
+s.verbose = true;
 
 
 % initializations

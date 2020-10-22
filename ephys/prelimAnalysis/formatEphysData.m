@@ -107,6 +107,7 @@ openEphysToSpikeMapping = polyfit(syncEphysTimes, syncSpikeTimes, 1); % get line
 predictedEventSpikeTimes = polyval(openEphysToSpikeMapping, syncEphysTimes);
 if max(abs(predictedEventSpikeTimes - syncSpikeTimes)) > .002
     fprintf('%s: WARNING! Linear mapping from openephys to spike fails to fit all events!\n', session)
+   
 end
     
 
