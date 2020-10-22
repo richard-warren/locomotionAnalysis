@@ -1,4 +1,4 @@
-function [models, groups] = fitNeuronGlm(session, neuron, varargin)
+function [models, fitdata] = fitNeuronGlm(session, neuron, varargin)
 
 % fit (several) glms for a neuron: full model, single model for each
 % predictor group, and models with each predictor group removed // either
@@ -19,16 +19,17 @@ function [models, groups] = fitNeuronGlm(session, neuron, varargin)
 % settings
 s.lambdas = logspace(-8, -1, 40);    % ridge regression coefficients
 s.folds = 5;                         % cross-validation folds
-s.parallel = true;
-s.plot = true;
-s.method = 'shuffle';                 % 'shuffle', or 'refit' (see description above...)
+s.parallel = false;                  % whether crossval analyses are parallelized
+s.method = 'refit';                  % 'shuffle', or 'refit', or 'mask' (see description above...)
+s.outputFileName = '';               % whether to save output to file
+s.verbose = true;
+
 
 
 
 % inits
-% tic;
-fprintf('%s: fitting models for neuron %i... ', session, neuron)
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
+if s.verbose; fprintf('%s: fitting models for neuron %i... ', session, neuron); end
 
 % load design matrix
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '_designMatrix.mat']), ...
@@ -42,6 +43,7 @@ groups = unique(predictorInfo.group);
 neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
 spkRate = interp1(neuralData.timeStamps, neuralData.spkRates(neuralData.unit_ids==neuron,:), t);
 inds = find(~isnan(spkRate),1,'first') : find(~isnan(spkRate),1,'last');  % valid inds for neuron
+spkRate = spkRate(inds);
 t = t(inds);
 dt = t(2) - t(1);
 spkTimes = neuralData.spkTimes{neuralData.unit_ids==neuron};
@@ -69,16 +71,17 @@ models = table(cell(nrows,1), cell(nrows,1), nan(nrows,1), nan(nrows,1), 'RowNam
     'VariableNames', {'model_in', 'model_out', 'dev_in', 'dev_out'});
 
 % train full model
-model = fitModel(table2array(dmat), y, s.lambdas);
+X = table2array(dmat);
+model = fitModel(X, y, s.lambdas);
 models{'full', 'model_in'}{1} = model;
-dev_full = cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+dev_full = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
 models{'full', 'dev_in'} = dev_full;
 models{'full', 'dev_out'} = 0;
 lambda_min = model.lambda_min;
 
 % check that rick's deviance matches glmnet deviance for full model evaluated on training data
 glmnet_dev = model.glmnet_fit.dev(model.lambda_min_id);
-rick_dev = cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+rick_dev = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
 if abs(glmnet_dev - rick_dev)>.01
     disp('WARNING! Deviance computed by Glmnet disagrees with rick deviance!')
 end
@@ -95,14 +98,14 @@ for i = 1:length(groups)
             X = dmat;
             for j = find(colBins)'; X(:,j) = X(randperm(height(dmat)), j); end  % shuffle
             X = table2array(X);
-            models{groups{i}, 'dev_in'} = cvdeviance(model, 'X', X, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
         
         case 'mask'
             colBins = ~ismember(dmat.Properties.VariableNames, [members; 'time']);
             X = dmat;
             for j = find(colBins)'; X{:,j} = zeros(size(X{:,j})); end  % mask with zeros
             X = table2array(X);
-            models{groups{i}, 'dev_in'} = cvdeviance(model, 'X', X, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
             
         case 'refit'
             colBins = ismember(dmat.Properties.VariableNames, members);
@@ -110,7 +113,7 @@ for i = 1:length(groups)
             X = table2array([X dmat(:,'time')]);
             model = fitModel(X, y, lambda_min);
             models{groups{i}, 'model_in'}{1} = model;
-            models{groups{i}, 'dev_in'} = cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
     end
     
     % single group removed
@@ -120,34 +123,47 @@ for i = 1:length(groups)
             X = dmat;
             for j = find(colBins)'; X(:,j) = X(randperm(height(dmat)), j); end  % shuffle
             X = table2array(X);
-            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(model, 'X', X, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
         
         case 'mask'
             colBins = ismember(dmat.Properties.VariableNames, members);
             X = dmat;
             for j = find(colBins)'; X{:,j} = zeros(size(X{:,j})); end  % mask with zeros
             X = table2array(X);
-            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(model, 'X', X, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
             
         case 'refit'
             X = dmat(:, ~ismember(dmat.Properties.VariableNames, members));
             X = table2array(X);
             model = fitModel(X, y, lambda_min);
             models{groups{i}, 'model_out'}{1} = model;
-            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(model, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
     end
 end
 
-% fprintf('finished in %.1f minutes\n', toc/60)
-disp('all done!')
+if s.verbose; disp('all done!'); end
 
+% save some objects for convenience...
+yhat = exp(models{'full', 'model_in'}{1}.fit_preval) / dt;
+fitdata.t = t;
+fitdata.y = y;
+fitdata.yRate = spkRate;
+fitdata.yhat = yhat;
+fitdata.groups = groups;
+fitdata.session = session;
+fitdata.neuron = neuron;
+
+% save
+if ~isempty(s.outputFileName); save(s.outputFileName, 'models', 'fitdata'); end
 
 
 function fit = fitModel(X, y, lambdas)
     % fit model with k fold cross validations
+    if any(isnan(X(:))); keyboard; end
     if length(lambdas)==1; lambdas = [0 lambdas]; end  % a hack, because cvglmnet requires multiple lambdas
     options = struct('alpha', 0, 'lambda', lambdas, 'standardize', true);
     fit = cvglmnet(X, y, 'poisson', options, [], s.folds, fold_id, s.parallel, true);
+    fit.fit_preval = fit.fit_preval(:,fit.lambda_min_id);  % only keep predictions for best lambda (save disk space)
 end
 
 

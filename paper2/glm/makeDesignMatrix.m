@@ -26,41 +26,43 @@ for i = 1:height(settings)
     type = predictors{name, 'type'};
     data = predictors{name, 'data'}{1};
     
-    if type=='event'
-        if any(isnan([settings.kernel_start(i) settings.kernel_stop(i) settings.n_kernels(i)]))
-            fprintf('WARNING! Settings missing for predictors %s\n', name)
-            break
-        end
-        
-        data = data(~isnan(data));
-        binned = histcounts(data, [t-dt/2 t(end)+dt/2]);
-        kernels = makeCosBasis(settings.kernel_start(i), settings.kernel_stop(i), settings.n_kernels(i), 'dt', dt);
-        bases = nan(length(t), settings.n_kernels(i));
-        for j = 1:settings.n_kernels(i); bases(:,j) = conv(binned, kernels(j,:), 'same'); end
-        addPredictor(bases, name)
-        
-    elseif type=='epoch'
-        if any(isnan([settings.n_kernels(i) settings.max_epoch_duration(i)]))
-            fprintf('WARNING! Settings missing for predictors %s\n', name)
-            break
-        end
-        
-        durations = diff(data,1,2);
-        data = data(durations<settings.max_epoch_duration(i),:);
-        bases = zeros(length(t), settings.n_kernels(i));
-        
-        for j = 1:size(data,1)
-            pad = (data(j,2) - data(j,1)) *.25;  % pad window on sides so edges of first and last cosine bump fit
-            bins = t>(data(j,1)-pad) & t<(data(j,2)+pad);
-            if any(bins)
-                basis = makeCosBasis(data(j,1), data(j,2), settings.n_kernels(i)+1, 't', t(bins));
-                bases(bins,:) = bases(bins,:) + basis(1:end-1,:)';
+    if predictors{name, 'include'}
+        if type=='event'
+            if any(isnan([settings.kernel_start(i) settings.kernel_stop(i) settings.n_kernels(i)]))
+                fprintf('WARNING! Settings missing for predictors %s\n', name)
+                break
             end
+
+            data = data(~isnan(data));
+            binned = histcounts(data, [t-dt/2 t(end)+dt/2]);
+            kernels = makeCosBasis(settings.kernel_start(i), settings.kernel_stop(i), settings.n_kernels(i), 'dt', dt);
+            bases = nan(length(t), settings.n_kernels(i));
+            for j = 1:settings.n_kernels(i); bases(:,j) = conv(binned, kernels(j,:), 'same'); end
+            addPredictor(bases, name)
+
+        elseif type=='epoch'
+            if any(isnan([settings.n_kernels(i) settings.max_epoch_duration(i)]))
+                fprintf('WARNING! Settings missing for predictors %s\n', name)
+                break
+            end
+
+            durations = diff(data,1,2);
+            data = data(durations<settings.max_epoch_duration(i),:);
+            bases = zeros(length(t), settings.n_kernels(i));
+
+            for j = 1:size(data,1)
+                pad = (data(j,2) - data(j,1)) *.25;  % pad window on sides so edges of first and last cosine bump fit
+                bins = t>(data(j,1)-pad) & t<(data(j,2)+pad);
+                if any(bins)
+                    basis = makeCosBasis(data(j,1), data(j,2), settings.n_kernels(i)+1, 't', t(bins));
+                    bases(bins,:) = bases(bins,:) + basis(1:end-1,:)';
+                end
+            end
+            addPredictor(bases, name)
+
+        elseif type=='continuous'
+            addPredictor(data, name)
         end
-        addPredictor(bases, name)
-        
-    elseif type=='continuous'
-        addPredictor(data, name)
     end
 end
 
