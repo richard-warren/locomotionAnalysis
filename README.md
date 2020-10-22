@@ -16,7 +16,7 @@ Analyzing a session requires running four neural networks (run tracking, run con
 - the old version of the deeplabcut analysis (for run tracking only) can be run using the `dlcAnalysis(session) `wrapper
 
 #### finish your PhD
-tbd
+tbd 😕
 
 # what is in...
 
@@ -56,4 +56,3 @@ kinData.mat | "trial-ized" struct, with each row containing many metrics for a t
 ephys_* folder | contains probe recordings
 neuralData.mat | processed neural data
 cellData.csv | spreadsheet containing information about sorted units
-modelling | folder containing intermediate results for ephys paper

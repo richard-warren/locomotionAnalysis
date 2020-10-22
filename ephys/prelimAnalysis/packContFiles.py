@@ -1,7 +1,7 @@
 import sys
-from importlib import import_module
-print(sys.path)
-OpenEphys = import_module('analysis-tools.Python3.OpenEphys')
+import os
+sys.path.append(os.path.join(os.environ['GITDIR'], 'analysis-tools', 'Python3'))
+import OpenEphys
 
 # get input arguments
 file_dir = sys.argv[1]

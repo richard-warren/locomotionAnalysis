@@ -45,7 +45,7 @@ g.speedSmps = 0;
 mouseVars = {};
 sessionVars = {'condition', 'side', 'brainRegion', 'conditionNum', 'sessionNum', 'whiskers'};
 trialVars = {'obsOnTimes', 'obsOffTimes', 'obsOnPositions', 'obsOffPositions', 'velContinuousAtContact', 'velVsPosition', 'isLightOn', ...
-             'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'firstModPaw', ...
+             'isWheelBreak', 'obsHgt', 'isTrialSuccess', 'trialVel', 'velAtWiskContact', 'velAtObsOn', 'velSlowDown', 'firstModPaw', ...
              'trialAngle', 'trialAngleContra', 'angleAtWiskContact', 'angleAtWiskContactContra', ...
              'wiskContactPosition', 'wiskContactTimes', 'lightOnTimes', 'isContraFirst', 'isBigStep', 'isModPawContra', ...
              'tailHgt', 'tailHgtAtWiskContact', 'modPawDistanceToObs', 'modPawDistanceToObsAbs', 'modPawPredictedDistanceToObs', 'velContinuousAtContact', ...
@@ -300,6 +300,13 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
         
         case 'velAtWiskContact'  % running speed at moment of whisker contact
             var = num2cell(interp1(g.sesData.wheelTimes, g.wheelVel, g.sesData.wiskContactTimes));
+        
+        case 'velAtObsOn'
+            var = num2cell(interp1(g.sesData.wheelTimes, g.wheelVel, g.sesData.obsOnTimes)');
+            
+        case 'velSlowDown'  % running vel at obs on minus vel at whisker contact
+            var = num2cell(interp1(g.sesData.wheelTimes, g.wheelVel, g.sesData.obsOnTimes)' - ...
+                           interp1(g.sesData.wheelTimes, g.wheelVel, g.sesData.wiskContactTimes));
             
         case 'firstModPaw'  % first modified paw identity
             var = num2cell(nan(1,length(g.sesKinData)));
@@ -548,7 +555,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
 
         % paw variables
         % -------------
-        case 'isContra'  % whether paw is contralateral to 'side'
+        case 'isContra'  % whether paw is contralateral to 'side' ('side' is a column is experimentMetadata spreadsheet)
             side = g.expData(g.mouse).sessions(g.session).side;
             if strcmp(side, 'left')
                 var = num2cell(logical([0 0 1 1]));
@@ -679,7 +686,7 @@ function var = getVar(dvName) % sessionInfo, expData, mice, mouse, sessions, ses
                 var = num2cell(g.sesKinData(g.trial).controlSwingLengths(end,:));
             end
         
-        case 'isVentralContact'  % whether each paw contacts obs ventrally for >= touchThresh frames
+        case 'isVentralContact'  % whether each paw contacts obs ventrally for >= touchThresh frames (use to assess whether obs was 'grabbed')
             var = num2cell(nan(1,4));
             if g.sesKinData(g.trial).isTrialAnalyzed
                 foreVentInd = find(strcmp(g.sesData.touchClassNames, 'fore_ventral'));

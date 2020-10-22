@@ -2,8 +2,8 @@ function dpkAnalysis(session, varargin)
 
 % runs deepposekit analysis
 
-s.pythonPath = 'C:\Users\rick\Anaconda3\envs\deepposekit\python.exe';
-s.matlabPath = 'C:\Program Files\MATLAB\R2019a\bin\win64';  % this is needed to fix the bug described here: https://www.mathworks.com/matlabcentral/answers/316233-can-t-run-external-program
+s.pythonPath = 'D:\old_anaconda\Anaconda3\envs\deepposekit\python.exe';
+s.matlabPath = 'F:\Software\MATLAB\bin\win64';  % this is needed to fix the bug described here: https://www.mathworks.com/matlabcentral/answers/316233-can-t-run-external-program
 
 s.vid = 'run.mp4';
 s.model = 'D:\github\locomotionAnalysis\tracking\deepposekit\models\model_run_StackedDenseNet.h5';

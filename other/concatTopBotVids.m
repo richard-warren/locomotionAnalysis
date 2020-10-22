@@ -7,7 +7,7 @@ function concatTopBotVids(session, varargin)
 % vertically concatenating top and bot vids
 
 % settings
-s.bitRate = 10;  % megabits per second
+s.bitRate = 10;         % megabits per second
 s.moveOriginalTo = '';  % if a directory is provided, a folder named with session name is created there and original runTop and runBot and moved there
 
 % initializations
@@ -43,3 +43,4 @@ if ~isempty(s.moveOriginalTo)
         keyboard
     end
 end
+disp('all done!')

@@ -1,0 +1,2 @@
+# batch analyses
+Many intermediate results are saved to disk to speed up analyses. These batch scripts generate these results for all valid sessions. Some results require access to engram, which is very slow on my home machine (ethernet bottleneck). Therefore, `remoteAnalyses` will be performed on the lab computer. These results will be saved to `engram` and coped to my local machine. All subsequent analyses will be performed on my local machine... fml

@@ -23,6 +23,14 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 frameWisk = rgb2gray(read(vidWisk, frameNumWisk));
 frameRun = rgb2gray(read(vidRun, frameNumRun));
 
+% find wisk cam alignment if not provided
+if isempty(s.yWiskPos) || isempty(s.xWiskPos) || isempty(s.wiskScaling)
+    [s.yWiskPos, s.xWiskPos, s.wiskScaling] = getSubFramePosition(frameRun(1:round(size(frameRun,1)/2),:), frameWisk(:,:), .35:.005:.45);  % only use top half of frame run (assuming bottom half corresponds to bottom view)
+end
+yWiskPos = s.yWiskPos;
+xWiskPos = s.xWiskPos;
+wiskScaling = s.wiskScaling;
+
 if s.edgeFading>0
     fade = repmat([linspace(0,1,s.edgeFading) ones(1,vidRun.Width-2*s.edgeFading) linspace(1,0,s.edgeFading)], vidRun.Height, 1);
     frameRun = uint8(double(frameRun) .* fade);
@@ -30,13 +38,7 @@ end
 
 frameRun = imadjust(frameRun, s.runContrast, [0 1]);
 
-% find wisk cam alignment if not provided
-if isempty(s.yWiskPos) || isempty(s.xWiskPos) || isempty(s.wiskScaling)
-    [s.yWiskPos, s.xWiskPos, s.wiskScaling] = getSubFramePosition(frameRun(:,:), frameWisk(:,:), .35:.005:.45);
-end
-yWiskPos = s.yWiskPos;
-xWiskPos = s.xWiskPos;
-wiskScaling = s.wiskScaling;
+
 
 
 % adjust wisk frame
@@ -68,3 +70,7 @@ xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
 yInds = yWiskPosTemp:yWiskPosTemp+size(frameWisk,1)-1;
 frame(yInds, xInds) =  frameWisk;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 403084717706e379fe39f1524671ab0c3297bcb6

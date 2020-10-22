@@ -25,7 +25,6 @@ load(fullfile(getenv('OBSDATADIR'), 'ephys', 'channelMaps', 'kilosort', [info.ma
 % transfer the openephys channel order into its physical location order on the probe
 % in order to determine the spacing offset for every channel for the drift plots.
 [~, sortedInds] = sort(channelNum_OpenEphys);
-% sortedInds = length(channelNum_OpenEphys) - sortedInds + 1;  % dorsal at the top, ventral at the bottom
 
 if s.showSortedSpikes
     [spkInds, unit_ids] = getGoodSpkInds(session);
@@ -46,7 +45,8 @@ data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, info.ephys
 
 
 % plot all channels at dft time intervals
-figure('color', 'white', 'Units', 'pixels', 'position', get(0,'ScreenSize'));
+[~, name, ~] = fileparts(s.figureName);
+figure('name', name, 'color', 'white', 'Units', 'pixels', 'position', get(0,'ScreenSize'));
 
 timeBinEdges = linspace(min(info.timeStamps), max(info.timeStamps), s.timeBinNum+1);
 timeStarts = timeBinEdges(1:end-1);
