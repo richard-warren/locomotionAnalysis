@@ -36,8 +36,12 @@ load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '
     'dmat', 't', 'reward_all')
 
 % load predictor info
-predictorInfo = readtable(fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.csv'));
+filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.xlsx');
+predictorInfo = readtable(filename, 'sheet', 'predictors', 'ReadRowNames', true);
+predictorInfo = predictorInfo(dmat.Properties.VariableNames(1:end-1), :);  % end-1 because last predictor is time in dmat
 groups = unique(predictorInfo.group);
+groupInfo = readtable(filename, 'sheet', 'groups', 'ReadRowNames', true);
+
 
 % load neuron
 neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
@@ -71,73 +75,99 @@ models = table(cell(nrows,1), cell(nrows,1), nan(nrows,1), nan(nrows,1), 'RowNam
     'VariableNames', {'model_in', 'model_out', 'dev_in', 'dev_out'});
 
 % train full model
-X = table2array(dmat);
-model = fitModel(X, y, s.lambdas);
+X_full = table2array(dmat);
+model = fitModel(X_full, y, s.lambdas);
 models{'full', 'model_in'}{1} = model;
-dev_full = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+dev_full = cvdeviance(X_full, y, model, 'holdout', true, 'bestLambdaOnly', true);
 models{'full', 'dev_in'} = dev_full;
 models{'full', 'dev_out'} = 0;
 lambda_min = model.lambda_min;
 
 % check that rick's deviance matches glmnet deviance for full model evaluated on training data
 glmnet_dev = model.glmnet_fit.dev(model.lambda_min_id);
-rick_dev = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+rick_dev = cvdeviance(X_full, y, model, 'holdout', false, 'bestLambdaOnly', true);  % don't use heldout data to match glmnet_fit deviance
 if abs(glmnet_dev - rick_dev)>.01
-    disp('WARNING! Deviance computed by Glmnet disagrees with rick deviance!')
+    fprintf('WARNING! Deviance computed by Glmnet %.3f off from rick deviance!\n', ...
+        glmnet_dev - rick_dev)
 end
+
+% get names of columns in X
+colNames = cell(1,length(dmat.Properties.VariableNames));
+for i = 1:length(dmat.Properties.VariableNames)
+    colNames{i} = repelem({dmat.Properties.VariableNames{i}}, length(dmat{1,i}));  % number of 
+end
+colNames = cat(2, colNames{:});
 
 
 % assess importance of groups of features
 for i = 1:length(groups)
-    members = predictorInfo.name(strcmp(predictorInfo.group, groups{i}));  % members of group
+    members = predictorInfo.Properties.RowNames(strcmp(predictorInfo.group, groups{i}));  % members of group
+    
+    % determine time bins relevant to single group models
+    % deviance will only be computed at these times
+    restrictTime = ~isnan(groupInfo{groups{i}, 'restrict_time'}{1});
+    
+    if restrictTime
+        colBins = ismember(colNames, groupInfo{groups{i}, 'restrict_time'});  % only restrict time based on predictor listed in restrict_time column
+        timeBins = any(X_full(:,colBins)>0,2);
+        dev_full_group = cvdeviance(X_full, y, models{'full', 'model_in'}{1}, ...
+            'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
+    else
+        timeBins = true(size(X_full,1),1);
+        dev_full_group = dev_full;
+    end
+    
     
     % single group model
     switch s.method
         case 'shuffle'
-            colBins = ~ismember(dmat.Properties.VariableNames, [members; 'time']);
-            X = dmat;
-            for j = find(colBins)'; X(:,j) = X(randperm(height(dmat)), j); end  % shuffle
-            X = table2array(X);
-            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+            X = X_full;
+            colBins = ~ismember(colNames, [members; 'time']);
+            for j = find(colBins)'; X(:,j) = X(randperm(size(X,1)), j); end  % shuffle
+            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, ...
+                'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
         
         case 'mask'
-            colBins = ~ismember(dmat.Properties.VariableNames, [members; 'time']);
-            X = dmat;
-            for j = find(colBins)'; X{:,j} = zeros(size(X{:,j})); end  % mask with zeros
-            X = table2array(X);
-            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+            colBins = ismember(colNames, [members; 'time']);
+            X = X_full .* colBins;
+            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, ...
+                'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
             
         case 'refit'
-            colBins = ismember(dmat.Properties.VariableNames, members);
-            X = dmat(:, colBins);
-            X = table2array([X dmat(:,'time')]);
+            colBins = ismember(colNames, [members; 'time']);
+            X = X_full(:, colBins);
             model = fitModel(X, y, lambda_min);
             models{groups{i}, 'model_in'}{1} = model;
-            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_in'} = cvdeviance(X, y, model, ...
+                'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
     end
+    
     
     % single group removed
     switch s.method
         case 'shuffle'
-            colBins = ismember(dmat.Properties.VariableNames, members);
-            X = dmat;
-            for j = find(colBins)'; X(:,j) = X(randperm(height(dmat)), j); end  % shuffle
-            X = table2array(X);
-            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+            X = X_full;
+            colBins = ismember(colNames, members);
+            for j = find(colBins)'; X(:,j) = X(randperm(size(X,1)), j); end  % shuffle
+            models{groups{i}, 'dev_out'} = dev_full_group - ...
+                cvdeviance(X, y, model, ...
+                'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
         
         case 'mask'
-            colBins = ismember(dmat.Properties.VariableNames, members);
-            X = dmat;
-            for j = find(colBins)'; X{:,j} = zeros(size(X{:,j})); end  % mask with zeros
-            X = table2array(X);
-            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+            colBins = ~ismember(colNames, members);
+            X = X_full .* colBins;
+            models{groups{i}, 'dev_out'} = dev_full_group - ...
+                cvdeviance(X, y, model, ...
+                'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
             
         case 'refit'
-            X = dmat(:, ~ismember(dmat.Properties.VariableNames, members));
-            X = table2array(X);
+            colBins = ~ismember(colNames, members);
+            X = X_full(:, colBins);
             model = fitModel(X, y, lambda_min);
             models{groups{i}, 'model_out'}{1} = model;
-            models{groups{i}, 'dev_out'} = dev_full - cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+            models{groups{i}, 'dev_out'} = dev_full_group - ...
+                cvdeviance(X, y, model, ...
+                'holdout', true, 'bestLambdaOnly', true, 'timeBins', timeBins);
     end
 end
 
@@ -159,7 +189,6 @@ if ~isempty(s.outputFileName); save(s.outputFileName, 'models', 'fitdata'); end
 
 function fit = fitModel(X, y, lambdas)
     % fit model with k fold cross validations
-    if any(isnan(X(:))); keyboard; end
     if length(lambdas)==1; lambdas = [0 lambdas]; end  % a hack, because cvglmnet requires multiple lambdas
     options = struct('alpha', 0, 'lambda', lambdas, 'standardize', true);
     fit = cvglmnet(X, y, 'poisson', options, [], s.folds, fold_id, s.parallel, true);

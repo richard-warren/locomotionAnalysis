@@ -8,7 +8,7 @@ overwrite = true;
 
 
 tic
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
     try
         % neural responses

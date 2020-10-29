@@ -23,17 +23,18 @@ t = fitdata.t;
 y = fitdata.yRate;
 dt = t(2) - t(1);
 r = predictors{'reward_all', 'data'}{1};  % reward times
+r = r(r>t(1) & r<t(end));
 xlims = r(floor(length(r)/2 + [0 1])) + [-2; 2];  % spanning two rewards
-if ~s.visible; vis = 'off'; else; vis = 'on'; end
 
 
-fig = figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00]); hold on
+
+fig = figure('name', sprintf('%s, neuron %i', session, neuron), 'color', 'white', 'position', [2.00 2.00 1278.00 1354.00]); hold on
 cols = 5;
 axes = cell(1,ngroups);
 ylims = [0 prctile(y, 99.9)];
 for j = 1:ngroups
     yhat_upper = exp(models{groups{j}, 'model_in'}{1}.fit_preval) / dt;
-%     if j>1; yhat_lower = exp(models{groups{j}, 'model_out'}{1}.fit_preval) / dt; end
+    if j>1; yhat_lower = exp(models{groups{j}, 'model_out'}{1}.fit_preval) / dt; end
     
     % importance
     subplot(ngroups,cols,(j-1)*cols+1); hold on
@@ -49,7 +50,7 @@ for j = 1:ngroups
     props = {};
     plot(t, y, 'color', colors(1,:), props{:})
     plot(t, yhat_upper, 'color', colors(2,:), props{:})
-%     plot(t, yhat_lower, 'color', colors(3,:), props{:})
+    if j>1; plot(t, yhat_lower, 'color', colors(3,:), props{:}); end
     
     % plot events
 %     ylims = ylim;
