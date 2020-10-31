@@ -21,8 +21,11 @@ s.lambdas = logspace(-8, -1, 40);    % ridge regression coefficients
 s.folds = 5;                         % cross-validation folds
 s.parallel = false;                  % whether crossval analyses are parallelized
 s.method = 'refit';                  % 'shuffle', or 'refit', or 'mask' (see description above...)
-s.outputFileName = '';               % whether to save output to file
 s.verbose = true;
+s.save = true;
+s.outputFileName = fullfile(...
+    getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+    [session '_cell_' num2str(neuron) '_glm.mat']);
 
 
 
@@ -184,7 +187,7 @@ fitdata.session = session;
 fitdata.neuron = neuron;
 
 % save
-if ~isempty(s.outputFileName); save(s.outputFileName, 'models', 'fitdata'); end
+if s.save; save(s.outputFileName, 'models', 'fitdata'); end
 
 
 function fit = fitModel(X, y, lambdas)

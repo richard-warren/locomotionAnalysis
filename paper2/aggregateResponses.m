@@ -24,12 +24,10 @@ s.sessions = {};
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
 if isempty(s.sessions); s.sessions = getEphysSessions(); end
-load(fullfile(getenv('SSD'), 'modelling', 'responses', [s.sessions{1} '_predictors.mat']), 'predictors');  % load sample session
-nRows = height(predictors);
-aggregates = table(cell(nRows,1), cell(nRows,1), nan(nRows,2), ...
-    repmat({nan(length(s.sessions),2)}, nRows, 1), predictors.type, cell(nRows,1), ...
-    'VariableNames', {'aggregate', 'mi', 'xLims', 'xLimsAll', 'type', 'include'}, ...
-    'RowNames', predictors.Properties.RowNames);
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [s.sessions{1} '_responses.mat']), 'responses');  % load sample session
+nRows = height(responses);
+aggregates = table(cell(nRows,1), nan(nRows,2), repmat({nan(length(s.sessions),2)}, nRows, 1), responses.type, cell(nRows,1), ...
+    'VariableNames', {'aggregate', 'xLims', 'xLimsAll', 'type', 'include'}, 'RowNames', responses.Properties.RowNames);
 
 
 % find x limits for each continuous variable for each session
@@ -38,7 +36,7 @@ fprintf('getting xLims and nUnits for %i sessions: ', length(s.sessions))
 nUnits = 0;
 for i = 1:length(s.sessions)
     fprintf('%i ', i)
-    load(fullfile(getenv('SSD'), 'modelling', 'responses', [s.sessions{i} '_responses.mat']), 'responses');
+    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [s.sessions{i} '_responses.mat']), 'responses');
     responseSize = size(responses.response{find(responses.include,1,'first')});
     
     nUnits = nUnits + responseSize(end);  % different units are stored in the last dimension of responses
@@ -64,11 +62,11 @@ fprintf('\n')
 % initializations
 xEvent = linspace(s.eventLims(1), s.eventLims(2), s.binNum);
 xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.binNum);
-aggregates.aggregate = repmat({nan(nUnits, s.binNum)}, height(predictors), 1);
-aggregates.mi = repmat({nan(nUnits, 1)}, height(predictors), 1);
-aggregates.include = repmat({nan(nUnits, 1)}, height(predictors), 1);
+aggregates.aggregate = repmat({nan(nUnits, s.binNum)}, height(aggregates), 1);
+aggregates.include = repmat({nan(nUnits, 1)}, height(aggregates), 1);
 cellInfo = table(cell(nUnits,1), nan(nUnits,1), ...
     'VariableNames', {'session', 'unit'});
+
 
 
 % for all sessions
@@ -76,10 +74,10 @@ rowInd = 0;
 for i = 1:length(s.sessions)
     
     fprintf('%s: (%i/%i) adding responses...\n', s.sessions{i}, i, length(s.sessions))
-    load(fullfile(getenv('OBSDATADIR'), 'sessions', s.sessions{i}, 'neuralData.mat'), 'spkRates', 'unit_ids');
-    load(fullfile(getenv('SSD'), 'modelling', 'responses', [s.sessions{i} '_responses.mat']), 'responses');
-	load(fullfile(getenv('SSD'), 'modelling', 'importance', [s.sessions{i} '_importance.mat']), 'importance');
-    
+    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [s.sessions{i} '_neuralData.mat']), ...
+        'spkRates', 'unit_ids');
+    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [s.sessions{i} '_responses.mat']), 'responses');
+	
     % for all cells
     for j = 1:length(unit_ids)
         rowInd = rowInd + 1;
@@ -120,7 +118,6 @@ for i = 1:length(s.sessions)
                         aggregates.aggregate{k}(rowInd,:) = temp;
                     end
                 end
-                aggregates.mi{k}(rowInd) = importance.mi(k,j);
             end
         end
         
@@ -129,7 +126,7 @@ for i = 1:length(s.sessions)
     end
 end
 
-file = fullfile(getenv('SSD'), 'modelling', 'aggregates', 'aggregates.mat');
+file = fullfile(getenv('SSD'), 'paper2', 'modelling', 'response_aggregates.mat');
 fprintf('saving results to: %s\n', file);
 save(file, 'aggregates', 'cellInfo');
 

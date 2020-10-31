@@ -1,6 +1,48 @@
 %% play around with GLMs :)
 
 
+%% fit residual GLM
+session = '181020_001'; neuron = 66;
+[models, fitdata] = fitResidualGlm(session, neuron, 'parallel', false, 'save', true);
+plotResidualGlms(session, neuron)
+
+%% train all residual GLMs
+
+overwrite = false;
+
+[sessions, neurons] = getEphysSessions();
+sessions = repelem(sessions, cellfun(@length, neurons));
+neurons = cat(1, neurons{:});
+
+skipInds = 61;
+
+
+tic; fprintf('\nfitting residual GLMs for %i neurons...\n', length(sessions))
+
+parfor i = 1:length(sessions)
+    if ~ismember(i, skipInds)
+        try
+            % fit models
+            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
+                [sessions{i} '_cell_' num2str(neurons(i)) '_glm.mat']);
+            if overwrite || ~exist(filename, 'file')
+                fprintf('(%3i/%i) %s, cell %3i: fitting GLMs\n', i, length(sessions), sessions{i}, neurons(i));
+                fitResidualGlm(sessions{i}, neurons(i), 'verbose', false, 'parallel', false, 'save', true);
+            end
+
+            % plot
+            plotFilename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
+                [sessions{i} '_cell_' num2str(neurons(i)) '_glm.png']);
+            if (overwrite || ~exist(plotFilename, 'file')) && exist(filename, 'file')
+                plotResidualGlms(sessions{i}, neurons(i), 'save', true, 'visible', false)
+            end
+        catch exception
+            fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
+        end
+    end
+end
+fprintf('\nfinished in %.1f minutes\n', toc/60)
+
 %% train GLMs for all sessions
 
 overwrite = false;
@@ -10,9 +52,10 @@ sessions = repelem(sessions, cellfun(@length, neurons));
 neurons = cat(1, neurons{:});
 
 tic; fprintf('\nfitting models for %i neurons...\n', length(sessions))
-parfor i = 250:length(sessions)
+parfor i = 1:length(sessions)
     try
-        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [sessions{i} '_cell_' num2str(neurons(i)) '_glm.mat']);
+        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+            [sessions{i} '_cell_' num2str(neurons(i)) '_glm.mat']);
         if overwrite || ~exist(filename, 'file')
             % train model
             fprintf('(%i/%i) %s, cell %3i: fitting GLMs\n', i, length(sessions), sessions{i}, neurons(i));
@@ -20,7 +63,8 @@ parfor i = 250:length(sessions)
                 'method', 'refit', 'parallel', false, 'outputFileName', filename);
 
             % plot
-            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [sessions{i} '_cell_' num2str(neurons(i)) '_glm']);
+            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+                [sessions{i} '_cell_' num2str(neurons(i)) '_glm']);
             plotGlmModels(sessions{i}, neurons(i), 'outputFileName', filename, 'visible', false)
             fprintf('%s, cell %i: all done!\n', sessions{i}, neurons(i));
         end
@@ -42,7 +86,8 @@ neurons = cat(1, neurons{:});
 tic; fprintf('\plotting GLMs for %i neurons...\n', length(sessions))
 parfor i = 1:length(sessions)
     try
-        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [sessions{i} '_cell_' num2str(neurons(i)) '_glm']);
+        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+            [sessions{i} '_cell_' num2str(neurons(i)) '_glm']);
         if overwrite || ~exist(filename, 'file')
             fprintf('%s, cell %i: plotting...\n', sessions{i}, neurons(i));
             plotGlmModels(sessions{i}, neurons(i), 'outputFileName', filename, 'visible', false)
@@ -80,10 +125,12 @@ parfor i = 1:length(neurons)
         fprintf('%s, cell %i\n', neurons{i}{1}, neurons{i}{2});
         fitNeuronGlm(neurons{i}{1}, neurons{i}{2}, 'verbose', false, ...
             'method', 'refit', 'parallel', false, 'outputFileName', ...
-            fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [neurons{i}{1} '_cell_' num2str(neurons{i}{2}) '_glm.mat']));
+            fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+            [neurons{i}{1} '_cell_' num2str(neurons{i}{2}) '_glm.mat']));
         
         % plot
-        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [neurons{i}{1} '_cell_' num2str(neurons{i}{2}) '_glm']);
+        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+            [neurons{i}{1} '_cell_' num2str(neurons{i}{2}) '_glm']);
         plotGlmModels(neurons{i}{1}, neurons{i}{2}, 'outputFileName', filename, 'visible', false)
         
         fprintf('%s, cell %i: all done!\n', neurons{i}{1}, neurons{i}{2});
@@ -115,7 +162,8 @@ makeDesignMatrix(session, 'timeDegrees', 3, 'outputFileName', filename);
 
 % fit (and save) model
 [models, fitdata] = fitNeuronGlm(session, neuron, 'method', 'refit', 'parallel', true, 'outputFileName', ...
-    fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [session '_cell_' num2str(neuron) '_glm.mat']));
+    fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+    [session '_cell_' num2str(neuron) '_glm.mat']));
 
 plotGlmModels(session, neuron);
 
@@ -131,7 +179,8 @@ filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [ses
 makeDesignMatrix(session, 'timeDegrees', 3, 'outputFileName', filename);
 
 tic; [models_refit, fitdata] = fitNeuronGlm(session, neuron, 'method', 'refit', 'parallel', parallel, 'outputFileName', ...
-    fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [session '_cell_' num2str(neuron) '_glm.mat'])); toc
+    fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+    [session '_cell_' num2str(neuron) '_glm.mat'])); toc
 % tic; models_shuffle = fitNeuronGlm(session, neuron, 'method', 'shuffle', 'parallel', parallel, 'outputFileName', ...
 %     fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', [session '_cell_' num2str(neuron) '_glm.mat'])); toc
 % tic; models_mask = fitNeuronGlm(session, neuron, 'method', 'mask', 'parallel', parallel, 'outputFileName', ...
