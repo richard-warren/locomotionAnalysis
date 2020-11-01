@@ -1,3 +1,8 @@
+function [data, cellInfo] = getClusteringData()
+
+% create struct of tables containing per cell info on group importance,
+% responses, and locations // use to explore functional clustering
+
 % function plotGroupResponses()
 
 % plot heatmaps of representative response variable for each response group
@@ -5,13 +10,14 @@
 
 
 % inits
+fprintf('getting clustering data... ')
 load('E:\lab_files\paper2\modelling\response_aggregates.mat', 'aggregates', 'cellInfo')
 load(fullfile('E:\lab_files\paper2\modelling\glms\residual_glms\', ...
     [cellInfo.session{1} '_cell_' num2str(cellInfo.unit(1)) '_glm.mat']), 'models');  % load sample models
 groupInfo = readtable('C:\Users\richa\Desktop\github\locomotionAnalysis\paper2\glm\predictorSettings.xlsx', ...
     'sheet', 'groups', 'ReadRowNames', true);
 groups = models.Properties.RowNames(2:end);
-responses = groupInfo{groups, 'response'};  % predictors to associate with each group
+
 
 % make data storage struct
 % each group gets its own table of responses and importances for each unit
@@ -31,9 +37,9 @@ for i = 1:length(groups)
     data.(groups{i}).tbl.response = aggregates{predictor, 'aggregate'}{1};
 end
 
-%% get importance for each unit
+% get importance for each unit
 for i = 1:height(cellInfo)
-    disp(i)
+
     % load importances
     file = fullfile('E:\lab_files\paper2\modelling\glms\residual_glms\', ...
         sprintf('%s_cell_%i_glm.mat', cellInfo.session{i}, cellInfo.unit(i)));
@@ -48,49 +54,18 @@ for i = 1:height(cellInfo)
     end
 end
 
-%%
+% get target locations
+ephysInfo = readtable('Y:\loco\obstacleData\spreadSheets\ephysInfo.xlsx', ...
+    'sheet', 'ephysInfo', 'ReadRowNames', true);
+target = cell(height(cellInfo), 1);
+for i = 1:length(target); target{i} = ephysInfo{cellInfo.session{i}, 'target'}{1}; end
+cellInfo = cat(2, cellInfo, table(target, 'VariableNames', {'target'}));
 
-close all; figure('color', 'white', 'position', [852.00 2.00 428.00 1408.00])
+% todo: get ccf locations
 
-
-% inits
-traceNum = 10;
-colors = lines(length(groups));
-
-% group inits
-i=7;
-tbl = data.(groups{i}).tbl;
-x = data.(groups{i}).x;
-predictor = data.(groups{i}).predictor;
-[~, sortInds] = sort(tbl.importance);
-
-
-% histogram
-subplot(5,1,1)
-histogram(tbl.importance, 50, 'EdgeColor', 'none', 'FaceColor', colors(i,:))
-xlabel('deviance explained')
-set(gca, 'box', 'off')
-title(groups{i})
-
-% responses
-subplot(5,1,2); hold on
-plot(x, tbl.response(sortInds(1:traceNum),:)', 'color', [0 0 0 .4])
-plot(x, tbl.response(sortInds(end-traceNum:end),:)', 'color', [colors(i,:) .6], 'LineWidth', 2)
-ylabel('firing rate (z score)')
-xlabel(predictor, 'Interpreter', 'none')
-set(gca, 'box', 'off', 'XLim', [x(1) x(end)])
-
-% heatmap
-subplot(5,1,3:5)
-imagesc(x, 1:height(tbl), tbl.response(sortInds, :));
-colormap gray
-xlabel(predictor, 'Interpreter', 'none')
-set(gca, 'box', 'off', 'ytick', [], 'TickDir', 'out', 'ydir', 'normal')
-
-
-
-
-
+% save
+save('E:\lab_files\paper2\modelling\clustering_data.mat', 'data', 'cellInfo')
+fprintf('all done!\n')
 
 
 
