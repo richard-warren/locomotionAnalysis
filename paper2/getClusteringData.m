@@ -18,6 +18,14 @@ groupInfo = readtable('C:\Users\richa\Desktop\github\locomotionAnalysis\paper2\g
     'sheet', 'groups', 'ReadRowNames', true);
 groups = models.Properties.RowNames(2:end);
 
+% load ccf locations for all cells
+files = dir('E:\lab_files\paper2\histo\registration\*_registration.mat');
+registration = cell(1, length(files));
+for i = 1:length(files)
+    reg = load(fullfile(files(i).folder, files(i).name), 'registration');
+    registration{i} = reg.registration;
+end
+registration = cat(1, registration{:});
 
 % make data storage struct
 % each group gets its own table of responses and importances for each unit
@@ -62,6 +70,12 @@ for i = 1:length(target); target{i} = ephysInfo{cellInfo.session{i}, 'target'}{1
 cellInfo = cat(2, cellInfo, table(target, 'VariableNames', {'target'}));
 
 % todo: get ccf locations
+ccf = nan(height(cellInfo), 3);
+for i = 1:height(cellInfo)
+    bin = strcmp(registration.session, cellInfo.session{i}) & registration.unit==cellInfo.unit(i);
+    if any(bin); ccf(bin,:) =  registration{bin, 'ccfMm'}; end
+end
+cellInfo = cat(2, cellInfo, table(ccf, 'VariableNames', {'ccf'}));
 
 % save
 save('E:\lab_files\paper2\modelling\clustering_data.mat', 'data', 'cellInfo')
