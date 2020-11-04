@@ -4,12 +4,11 @@
 - 3D tensors have dimension order: AP, DV, ML
 
 # histo todo
-- function to plot cell over outlines
-  - should cells be in pixels, or real units?
+- document registration pipeline!
 - turn pipeline into function
   - save
     - imgs: 3d original // 3d warped over ccf // 2d projection original // 2d projection over ccf
-    - table: unit_id, orig_pix, orig_mm, ccf_pix, ccf_mm, session, ddi, shank
+    - table: unit_id, orig_pix, orig_mm, ccf_pix, ccf_mm, session, ddi, shank, tform, nucleus?
 - incorporate 'final section' into analysis
 - analyze all brains!
 

@@ -20,6 +20,7 @@ locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, '
 scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
 [locations, locationsFeatures] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 
+
 [pawXYZ, pawXYZ_pixels] = deal(table(frameTimeStamps, 'VariableNames', {'t'}));
 
 % stitch together xyz

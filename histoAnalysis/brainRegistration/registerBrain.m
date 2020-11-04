@@ -11,8 +11,21 @@ function registerBrain(mouse)
 fprintf('registering %s brain to allen brain common coordinate framework...\n', mouse)
 ccf = loadCCF();
 data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
-load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'))
-cellLocations = ephysHistoTable.GC_Points(strcmp(ephysHistoTable.mouseID, mouse));
+load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
+
+% make table for data storage
+bins = strcmp(ephysHistoTable.mouseID, mouse);
+cellLocations = ephysHistoTable.GC_Points(bins);
+unitsPerSession = cellfun(@(x) size(x,1), cellLocations);
+sessions = repelem(ephysHistoTable.session(bins), unitsPerSession);
+unit_ids = ephysHistoTable.GC_ids(bins);
+unit_ids = cat(1, unit_ids{:});
+shank = repelem(ephysHistoTable.shankNum(bins), unitsPerSession);
+nunits = sum(unitsPerSession);
+
+
+registration = table(sessions, unit_ids, shank, nan(nunits,3), nan(nunits,3), ...
+    'VariableNames', {'session', 'unit', 'shank', 'ccfMm', 'ccfPix'});
 cellLocations = cat(1, cellLocations{:});  % ml ap dv
 
 
@@ -68,6 +81,12 @@ cellLocationsCcfPixels = [cellLocationsHistoPixels, ones(size(cellLocations,1),1
 cellLocationsCcfPixels = cellLocationsCcfPixels(:,1:3);
 cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 
+% save registration
+registration.ccfMm = cellLocationsCcfMm;
+registration.ccfPix = cellLocationsCcfPixels;
+save(fullfile(getenv('SSD'), 'paper2', 'histo', 'registration', [mouse '_registration.mat']), ...
+    'mouse', 'registration')
+
 
 % ----
 % PLOT
@@ -121,8 +140,6 @@ for i = 1:3
 end
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_2D.png']))
-save(fullfile(getenv('SSD'), 'paper2', 'histo', 'registration', [mouse '_registration.mat']), ...
-    'cellLocationsCcfMm', 'cellLocationsCcfPixels')
 disp('all done!')
 
 
