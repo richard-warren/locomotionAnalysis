@@ -16,26 +16,26 @@ ngroups = length(groups);
 
 % settings
 clims = [0 .05];
-cols = 2;
 
 % inits
-close all; figure('color', 'white', 'position', [2.00 722.00 1278.00 634.00])
+close all; figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
 colors = lines(ngroups);
-rows = ceil(ngroups / cols);
+views = {'ap', 'dv'}; dims = [1 3; 1 2];
 
 for i = 1:ngroups
-    subplot(rows, cols, i)
-    title(groups{i})
-    imp = data.(groups{i}).tbl.importance;
-    plotLabels2D(ccf.labels, 'dim', 'dv', 'patchArgs', {'FaceColor', 'none', 'EdgeColor', 'black'}, ...
-        'apGrid', ccf.ap, 'mlGrid', ccf.ml, 'dvGrid', ccf.dv)
-    set(gca, 'xtick', [], 'ytick', [])
-
-    cmap = customcolormap([0 1], [colors(i,:); 0 0 0]);
-    scatter(cellInfo.ccf(:,1), cellInfo.ccf(:,2), 30, imp, 'filled', 'MarkerFaceAlpha', .8);
-    colormap(gca, cmap)
-%     colorbar
-    caxis(clims)
+    for j = 1:2
+        subplot(ngroups, 2, i*2-(j==1))
+        title(groups{i})
+        imp = data.(groups{i}).tbl.importance;
+        plotLabels2D(ccf.labels, 'dim', views{j}, 'patchArgs', {'FaceColor', 'none', 'EdgeColor', 'black'}, ...
+            'apGrid', ccf.ap, 'mlGrid', ccf.ml, 'dvGrid', ccf.dv)
+        set(gca, 'xtick', [], 'ytick', [])
+        cmap = customcolormap([0 1], [colors(i,:); 1 1 1]);
+        scatter(cellInfo.ccf(:,dims(j,1)), cellInfo.ccf(:,dims(j,2)), 30, imp, 'filled', ...
+            'MarkerFaceAlpha', .8, 'MarkerEdgeColor', 'black');
+        colormap(gca, cmap)
+        caxis(clims)
+    end
 end
 savefig('E:\lab_files\paper2\plots\clustering\ccf_importance.fig')
 
@@ -156,6 +156,31 @@ barFancy(imp, 'showBars', true, 'levelNames', {clusternames, groups}, ...
     'showViolins', false, 'showErrorBars', false, 'scatterCondColor', true)
 
 savefig('E:\lab_files\paper2\plots\clustering\clustering.fig')
+
+%% custering on ccf (run cell above first)
+
+% settings
+clims = [0 .05];
+
+% inits
+close all; figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
+colors = lines(nclusters);
+views = {'ap', 'dv'}; dims = [1 3; 1 2];
+
+for i = 1:2
+    subplot(2,1,i); hold on
+    plotLabels2D(ccf.labels, 'dim', views{i}, 'patchArgs', {'FaceColor', 'none', 'EdgeColor', 'black'}, ...
+        'apGrid', ccf.ap, 'mlGrid', ccf.ml, 'dvGrid', ccf.dv)
+    set(gca, 'xtick', [], 'ytick', [])
+    
+    for j = 1:nclusters
+        bins = groupid==j;
+        scatter(cellInfo.ccf(bins,dims(i,1)), cellInfo.ccf(bins,dims(i,2)), 100, colors(j,:), 'filled', ...
+            'MarkerFaceAlpha', .8, 'MarkerEdgeColor', 'none');
+    end
+end
+savefig('E:\lab_files\paper2\plots\clustering\ccf_groups.fig')
+
 
 %% plot responses sorted by importance
 
