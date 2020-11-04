@@ -6,7 +6,7 @@ function getPredictors(session, varargin)
 
 
 % settings
-s.dt = .005;  % (s) everything interpolated onto new time axis with this temporal resolution
+s.dt = .010;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plot = true;
@@ -21,7 +21,8 @@ fprintf('%s: getting predictors...\n', session)
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'frameTimeStampsWisk', 'wheelPositions', 'wheelTimes', ...
     'bodyAngles', 'whiskerAngle', 'pixelsPerM', 'wheelCenter', 'wheelRadius', ...
-    'lickTimes', 'touchesPerPaw', 'touchClassNames', 'obsOnTimes', 'obsOffTimes', ...
+    'lickTimes', 'touchesPerPaw', 'touchClassNames', 'obsOnT
+imes', 'obsOffTimes', ...
     'rewardTimes', 'isRewardSurprise', 'omissionTimes', 'wiskContactTimes', ...
     'obsLightOnTimes', 'obsLightOffTimes');
 locationsRun = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv'));
@@ -110,7 +111,7 @@ addPredictor('satiation', satiation, 'continuous', t)
 
 % velocity for continuous predictors
 % (expect for those listed in 'exclude')
-excludeVars = {'velocity', 'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
+excludeVars = {'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
 for row = predictors.Properties.RowNames'
     if ~ismember(row{1}, excludeVars)
         vel = getVelocity(predictors{row{1}, 'data'}{1}, s.velTime, 1/s.dt);
