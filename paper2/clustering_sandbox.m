@@ -10,6 +10,7 @@ for i = 1:length(groups)
     importance(:,i) = data.(groups{i}).tbl.importance;
 end
 ngroups = length(groups);
+ccf = loadCCF();
 
 %% plot stuff on ccf
 % ccf = loadCCF();

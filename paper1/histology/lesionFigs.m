@@ -1,13 +1,13 @@
 close all
 
 % settings
-global_config;
-brainRegion = 'sen';  % mtc, sen
+paper1_config;
+brainRegion = 'mtc';  % mtc, sen
 rostralHippoPos = 77/158;  % vertical position of the rostral edge of the hippocampus, expressed as percentage from top of image (this is used to vertically align lesions)
 mmWidth = 11;  % width of cartoon in mm
 interpPoints = 200;
 smoothSmps = 5;
-roiFolder = 'Y:\obstacleData\papers\hurdles_paper1\figures\histology\lesionRois';
+roiFolder = 'Y:\loco\obstacleData\papers\hurdles_paper1\figures\histology\lesionRois';
 ventricalScale = 4.4;  % (mm)
 baseScale = 2.9089;  % (mm)
 figWidth = 400;

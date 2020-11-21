@@ -16,11 +16,11 @@ clear all
 
 
 %% initializations
-clear all; close all  % best to clear workspace before loading these super large datasets
+% clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'mtc_lesion';  % senLesion, mtc_muscimol, or mtc_lesion
-poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
+dataset = 'senLesion';  % senLesion, mtc_muscimol, or mtc_lesion
+poolSenLesionConditions = false;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
     earlySessions = [1 1];  % min and max sessions to include in 'early' lesion sessions ([1 1] for sen lesions, [1 3] for mtc lesions)
@@ -31,7 +31,7 @@ else
 end
 preSessions = 2;  % only include the most recent 'preSessions' in the 'pre' condition
 
-matchTrials = true;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
+matchTrials = false;  % whether to use propensity score matching to control for baseline characteristics of locomotion (varsToMatch)
 varsToMatch = {'velAtWiskContact', 'angleAtWiskContactContra', 'tailHgtAtWiskContact'};
 manipPercent = 20;  % take manipPercent percent of best matched manip trials
 miceToExclude = {'sen11'};
@@ -431,7 +431,7 @@ end
 
 sessionsToShow = -(preSessions-1):7;
 manipInd = find(sessionsToShow==0);
-plotIpsi = false;  % whether to align everything to the ipsilateral lesion
+plotIpsi = true;  % whether to align everything to the ipsilateral lesion
 
     
 % add sessionsPostLesion to data structure
@@ -831,6 +831,18 @@ logPlotRick(flat.obsHgt(lfBins)*1000, flat.isTrialSuccess(lfBins), ...
     'errorFcn', @(x) std(x)/sqrt(size(x,1)))
 set(gca, 'xlim', [4 10], 'YLim', [0 1])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_successVsHeight' suffix1 suffix2]), 'svg');
+
+
+%% compare ipsi and contra lesion effect sizes
+% (need to set poolSenLesionConditions=false in inits)
+poolSenLesionConditions
+
+
+
+
+
+
+
 
 
 

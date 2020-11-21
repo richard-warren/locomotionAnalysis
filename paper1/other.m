@@ -1,1 +1,0 @@
-%% count total steps analyzed

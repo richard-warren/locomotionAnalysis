@@ -2,7 +2,7 @@ function obsPositionsFixed = fixObsPositions(obsPositions, obsTimes, obsPixPosit
 
 % obsPositionsFixed shifts obsPositions on a trial by trial basis such that
 % 0 corresponds to the point at which the obstacle is beneath the nose of
-% the mouse. in theory this could be does by simply adding a constant, but
+% the mouse. in theory this could be done by simply adding a constant, but
 % the rotary encoder measurements are subject (theoretically) to drift over
 % time, so it is safer to do this trial by trial
 
