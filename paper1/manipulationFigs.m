@@ -20,7 +20,7 @@ clear all
 
 % settings
 dataset = 'senLesion';  % senLesion, mtc_muscimol, or mtc_lesion
-poolSenLesionConditions = false;  % whether to use all conditions or pool postBi and postContra
+poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
     earlySessions = [1 1];  % min and max sessions to include in 'early' lesion sessions ([1 1] for sen lesions, [1 3] for mtc lesions)
@@ -833,14 +833,60 @@ set(gca, 'xlim', [4 10], 'YLim', [0 1])
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_successVsHeight' suffix1 suffix2]), 'svg');
 
 
-%% compare ipsi and contra lesion effect sizes
-% (need to set poolSenLesionConditions=false in inits)
-poolSenLesionConditions
+%% correlate lesion sizes with effect sizes
+
+% settings
+roiFolder = 'Y:\loco\obstacleData\papers\hurdles_paper1\figures\histology\lesionRois';
 
 
+% get lesion sizes
+miceUpper = cellfun(@upper, mice, 'UniformOutput', false);
+areas = nan(1, length(mice));
+files = dir(fullfile(roiFolder, '*.mat'));
+
+edges = cell(1,length(mice));
+for i = 1:length(mice)
+    fileBin = contains({files.name}, miceUpper{i});
+    if sum(fileBin)>1; fileBin = fileBin & contains({files.name}, 'Contra'); end  % load only contra lesion for senLesion experiments
+    rois = load(fullfile(roiFolder, files(fileBin).name));
+    areas(i) = polyarea(rois.ExportPoints.x, rois.ExportPoints.y);
+end
 
 
+%%
+close all; figure('color', 'white', 'position', [244.00 759.00 905.00 236.00], 'menubar', 'none')
+colors = lines(length(mice));
+scatSz = 60;
 
+% success
+dv = getDvMatrix(data, 'isTrialSuccess', vars.condition, {'mouse'}, [figConditionals]);
+delta = diff(dv(1:2,:), 1, 1);  % only consider pre and first post session
+subplot(1,3,1);
+scatter(areas, delta, scatSz, colors, 'filled')
+xlabel('lesion area (mm^2)'); ylabel('\Delta success rate')
+[r, pval] = corr(delta', areas');
+title(sprintf('r = %.2f, p = %.5f', r, pval), 'FontWeight', 'normal')
+
+% paw height
+dv = getDvMatrix(data, 'preObsHgt', vars.condition, {'mouse'}, [figConditionals]) * 1000;
+delta = diff(dv(1:2,:), 1, 1);
+subplot(1,3,2);
+scatter(areas, delta, scatSz, colors, 'filled')
+xlabel('lesion area (mm^2)'); ylabel('leading forepaw height (mm)')
+[r, pval] = corr(delta', areas');
+title(sprintf('r = %.2f, p = %.5f', r, pval), 'FontWeight', 'normal')
+
+% correlation
+tempConditionals = [figConditionals; conditionals.isLeading; conditionals.isFore];
+dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.condition, {'mouse'}, {'session'}, tempConditionals, 'corr');
+delta = diff(dv(1:2,:), 1, 1);
+subplot(1,3,3);
+scatter(areas, delta, scatSz, colors, 'filled')
+xlabel('lesion area (mm^2)'); ylabel('paw-obstacle correlation')
+[r, pval] = corr(delta', areas');
+title(sprintf('r = %.2f, p = %.5f', r, pval), 'FontWeight', 'normal')
+
+% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_lesionSizeCorrelations' suffix1 suffix2]), 'svg');
 
 
 
