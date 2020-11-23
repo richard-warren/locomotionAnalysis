@@ -805,6 +805,73 @@ barFancy(mat, 'levelNames', {vars.isLightOn.levelNames}, 'ylabel', 'velocity (m/
 % saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'paper1', 'figures', 'matlabFigs', 'baselineDistAtLand'), 'svg');
 
 
+%% clustering on contact times to determine good success threshold
+
+flat = flattenData(data, {'mouse', 'session', 'trial', 'touchFrames'});
+x = [flat.touchFrames]';
+
+gmm = fitgmdist(x, 2, 'CovarianceType', 'full', 'SharedCovariance', false, ...
+    'RegularizationValue', 1e-6, 'Replicates', 40, 'Options', statset('MaxIter', 1000));
+xq = (1:max(gmm.mu))';
+thresh = find(gmm.cluster(xq)==2, 1, 'first');
+disp(thresh)
+
+%% compute distance and time to contact when light turns on
+
+sessions = getAllExperimentSessions('experiments', 'baselineNotes');
+sessions = sessions.session;
+
+data = cell(1, length(sessions));
+
+fprintf('collecting session... ')
+for i = 1:length(sessions)
+    fprintf('%i ', i)
+    data{i} = load(fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat'), ...
+        'obsOnTimes', 'obsOffTimes', 'obsTimes', 'obsPositions', 'obsPositionsFixed', 'obsLightOnTimes', ...
+        'isLightOn', 'wiskContactTimes', 'wheelPositions', 'wheelTimes');
+end
+fprintf('all done!\n')
+
+
+[dObsOn, dLightOn, dt] = deal(cell(1,length(sessions)));
+for i = 1:length(sessions)
+    dLightOn{i} = interp1(data{i}.obsTimes, data{i}.obsPositionsFixed, data{i}.obsLightOnTimes);
+    dObsOn{i} = interp1(data{i}.obsTimes, data{i}.obsPositionsFixed, data{i}.obsOnTimes);
+    dt{i} =  data{i}.wiskContactTimes(data{i}.isLightOn)' - data{i}.obsLightOnTimes;
+end
+
+dLightOn = cat(1, dLightOn{:});
+dObsOn = cat(1, dObsOn{:});
+dt = cat(1, dt{:});
+
+fprintf('\nlight on to nose distance: %.3f+=%.3f\n', nanmedian(dLightOn), nanstd(dLightOn))
+fprintf('obs on to nose distance:   %.3f+=%.3f\n', nanmedian(dObsOn), nanstd(dObsOn))
+fprintf('light on to nose time:     %.3f+=%.3f\n', nanmedian(dt), nanstd(dt))
+
+%% see how success rates vary with thresholds
+
+flat = flattenData(data, {'mouse', 'session', 'trial', 'touchFrames', 'isLightOn'});
+mice = unique({flat.mouse});
+thresholds = 0:15;  % frames
+mat = nan(length(mice), length(thresholds));
+
+for i = 1:length(mice)
+    bins = strcmp({flat.mouse}, mice{i});
+    touchFrames = [flat(bins).touchFrames];
+    for j = 1:length(thresholds)
+        mat(i,j) = mean(touchFrames<=thresholds(j));
+    end
+end
+
+close all; figure('color', 'white', 'position', [377.00 747.00 658.00 386.00], 'menubar', 'none')
+barFancy(mat', 'showBars', false, 'ylabel', 'success rate', 'levelNames', {sprintfc('%i', thresholds*4)})
+
+
+
+
+
+
+
 
 
 

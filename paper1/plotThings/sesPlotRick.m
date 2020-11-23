@@ -50,7 +50,7 @@ if ~isempty(s.compareTo)
         [~, p] = ttest(bl, data(:,i));
 %         [p] = signrank(bl, data(:,i));
         cohensD = sqrt((std(bl)^2 + std(data(:,i))^2) / 2);
-        fprintf('session %i -> cohens d: %.2f, p: %.5f\n', i, cohensD, p);
+        fprintf('session %i -> cohens d: %.3f, p: %.5f\n', i, cohensD, p);
     end
     fprintf('\n');
 end
