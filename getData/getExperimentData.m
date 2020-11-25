@@ -1,4 +1,4 @@
-function expData = getExperimentData(sessionInfo, vars, oldData)
+function expData = getExperimentData(sessionInfo, vars, varargin)
 
 % creates nested struct containing data for all mice, sessions, trials, and
 % paws // at each level in this heirarchy vars can be computed // add
@@ -13,9 +13,18 @@ function expData = getExperimentData(sessionInfo, vars, oldData)
 % some of this code assumes the first six characters of the session name
 % encode the date in the format: YYMMDD
 
+% todo: should refactor such that g and s are a single struct, and varargin
+% can be used to overwrite anything in g... also should just save the whole
+% s structure rather than picking specific metadata to write to disk...
+
 
 % settings
+s.oldData = [];
+s.outputFileName = '';
+
 metadata = {'touchThresh', 'speedTime', 'preObsLim', 'clearanceBuffer', 'velVsPositionX', 'velContinuousAtContactX'};  % these parameters will be stored as experiment metadata
+
+
 g.touchThresh = 5;  % successful trials have fewer than touchThresh frames where paw is in contact with obs
 g.speedTime = .01;  % (s) compute velocity over this interval
 g.pawSpeedTime = .05;  % (s) compute paw velocity over this interval
@@ -29,7 +38,11 @@ g.velContinuousAtContactPrePost = [-1 1]; % (s) how many seconds before and afte
 g.velContinuousAtContactRes = 500; % (tics) how many samples in the x grid
 
 
+
 % initialiations
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
+if ~isempty(s.oldData); oldData = s.oldData; end
+
 if ischar(sessionInfo) % if sessionInfo is a string, then it contains the name of a single session, and we will get sesionInfo for this session automatically
     sessionName = sessionInfo;
     sessionInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'sessions');
@@ -177,8 +190,8 @@ end
 expData = g.expData;
 dataTemp = expData; clear expData;  % nest expData within itself
 expData.data = dataTemp; clear dataTemp;
-for m = 1:length(metadata); expData.(metadata{m}) = g.(metadata{m}); end % add one field per metadatum
-
+for m = 1:length(metadata); expData.(metadata{m}) = g.(metadata{m}); end  % add one field per metadatum
+if ~isempty(s.outputFileName); save(s.outputFileName, 'expData'); end
 
 
 
