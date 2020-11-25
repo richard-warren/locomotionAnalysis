@@ -19,7 +19,7 @@ clear all
 % clear all; close all  % best to clear workspace before loading these super large datasets
 
 % settings
-dataset = 'senLesion';  % senLesion, mtc_muscimol, or mtc_lesion
+dataset = 'mtc_lesion';  % senLesion, mtc_muscimol, or mtc_lesion
 poolSenLesionConditions = true;  % whether to use all conditions or pool postBi and postContra
 splitEarlyLate = false;  % whether to split early and late post-lesion sessions
 if strcmp(dataset, 'senLesion')
@@ -865,16 +865,16 @@ subplot(1,3,1);
 scatter(areas, delta, scatSz, colors, 'filled')
 xlabel('lesion area (mm^2)'); ylabel('\Delta success rate')
 [r, pval] = corr(delta', areas');
-title(sprintf('r = %.2f, p = %.5f', r, pval), 'FontWeight', 'normal')
+title(sprintf('r = %.2f, p = %.2f', r, pval), 'FontWeight', 'normal')
 
 % paw height
 dv = getDvMatrix(data, 'preObsHgt', vars.condition, {'mouse'}, [figConditionals]) * 1000;
 delta = diff(dv(1:2,:), 1, 1);
 subplot(1,3,2);
 scatter(areas, delta, scatSz, colors, 'filled')
-xlabel('lesion area (mm^2)'); ylabel('leading forepaw height (mm)')
+xlabel('lesion area (mm^2)'); ylabel('\Delta leading forepaw height (mm)')
 [r, pval] = corr(delta', areas');
-title(sprintf('r = %.2f, p = %.5f', r, pval), 'FontWeight', 'normal')
+title(sprintf('r = %.2f, p = %.2f', r, pval), 'FontWeight', 'normal')
 
 % correlation
 tempConditionals = [figConditionals; conditionals.isLeading; conditionals.isFore];
@@ -882,11 +882,11 @@ dv = getSlopeMatrix(data, {'obsHgt', 'preObsHgt'}, vars.condition, {'mouse'}, {'
 delta = diff(dv(1:2,:), 1, 1);
 subplot(1,3,3);
 scatter(areas, delta, scatSz, colors, 'filled')
-xlabel('lesion area (mm^2)'); ylabel('paw-obstacle correlation')
+xlabel('lesion area (mm^2)'); ylabel('\Delta paw-obstacle correlation')
 [r, pval] = corr(delta', areas');
-title(sprintf('r = %.2f, p = %.5f', r, pval), 'FontWeight', 'normal')
+title(sprintf('r = %.2f, p = %.f', r, pval), 'FontWeight', 'normal')
 
-% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_lesionSizeCorrelations' suffix1 suffix2]), 'svg');
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'manipulations', [dataset '_lesionSizeCorrelations' suffix1 suffix2]), 'svg');
 
 
 

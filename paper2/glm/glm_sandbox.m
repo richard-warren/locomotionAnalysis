@@ -8,18 +8,18 @@ plotResidualGlms(session, neuron)
 
 %% train all residual GLMs
 
-overwrite = false;
+overwrite = true;
 
 [sessions, neurons] = getEphysSessions();
 sessions = repelem(sessions, cellfun(@length, neurons));
 neurons = cat(1, neurons{:});
 
-skipInds = 61;
+skipInds = [7 27 61];
 
 
 tic; fprintf('\nfitting residual GLMs for %i neurons...\n', length(sessions))
 
-parfor i = 1:length(sessions)
+parfor i = 1:length(sessions)  % individual sessions are repeated for each neuron in session
     if ~ismember(i, skipInds)
         try
             % fit models
@@ -43,7 +43,7 @@ parfor i = 1:length(sessions)
 end
 fprintf('\nfinished in %.1f minutes\n', toc/60)
 
-%% train GLMs for all sessions
+%% train GLMs for all sessions (upper lower GLMs)
 
 overwrite = false;
 
@@ -75,7 +75,7 @@ parfor i = 1:length(sessions)
 end
 fprintf('\nfinished in %.1f minutes\n', toc/60)
 
-%% GLM plots only for all sessions
+%% GLM, plots only for all sessions
 
 overwrite = true;
 

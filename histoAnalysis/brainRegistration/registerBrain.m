@@ -7,6 +7,11 @@ function registerBrain(mouse)
 % REGISTER
 % --------
 
+% settings
+maxDistance = 80;  % (microns) cells within maxDistance of a nucleus are assigned to that nucleus
+
+
+
 % load ccf, mouse brain, and cell locations
 fprintf('registering %s brain to allen brain common coordinate framework...\n', mouse)
 ccf = loadCCF();
@@ -23,9 +28,12 @@ unit_ids = cat(1, unit_ids{:});
 shank = repelem(ephysHistoTable.shankNum(bins), unitsPerSession);
 nunits = sum(unitsPerSession);
 
+% prepare nuclei names
+for i = 1:length(data.nuclei); data.nuclei{i} = lower(erase(data.nuclei{i}, {'Left', 'Right'})); end  % remove Left, Right, and make lowercase
 
-registration = table(sessions, unit_ids, shank, nan(nunits,3), nan(nunits,3), ...
-    'VariableNames', {'session', 'unit', 'shank', 'ccfMm', 'ccfPix'});
+
+registration = table(sessions, unit_ids, shank, nan(nunits,3), nan(nunits,3), cell(nunits,1), ...
+    'VariableNames', {'session', 'unit', 'shank', 'ccfMm', 'ccfPix', 'nucleus'});
 cellLocations = cat(1, cellLocations{:});  % ml ap dv
 
 
@@ -81,6 +89,44 @@ cellLocationsCcfPixels = [cellLocationsHistoPixels, ones(size(cellLocations,1),1
 cellLocationsCcfPixels = cellLocationsCcfPixels(:,1:3);
 cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 
+
+% determine nucleus for each unit
+
+% first 'dilate' the nuclei to include cells that are really close
+res = .025;  % resolution of resampled labels
+dvgrid = data.dv(1):res:data.dv(end);
+apgrid = data.ap(1):res:data.ap(end);
+mlgrid = data.ml(1):res:data.ml(end);
+
+maxPixelDif = round((maxDistance/1000) / res);  % units must be within this many pixels of a nucleus
+labels = interp3(data.dv, data.ap, data.ml, double(data.labels), ...
+    dvgrid', apgrid, mlgrid, 'nearest');  % interpolate such that x, y, and z resolution match and aren't too high
+labelsDilated = imdilate(labels, strel('sphere', maxPixelDif));  % dilate
+halo = labels==0 & labelsDilated>0;  % mask for pixels surrounding nuclei that are within maxPixelDif
+labels(halo) = labelsDilated(halo);  % only use dilated labeld within the mask, becuse the dilation will cause weird things to happen within the mask (due to max operation across class labels)
+labelsDilated = labels;
+
+% uncomment to visualize 'expansion' of nuclei via dilation
+% close all; figure('color', 'white', 'position', [2.00 722.00 1278.00 634.00]);
+% plotLabels3D(data.labels, 'downSampling', 2, 'surfArgs', {'FaceAlpha', 1}, ...
+%     'apGrid', data.ap, 'dvGrid', data.dv, 'mlGrid', data.ml); hold on;
+% plotLabels3D(labels, 'downSampling', 2, 'surfArgs', {'FaceAlpha', .1}, ...
+%     'apGrid', apgrid, 'dvGrid', dvgrid, 'mlGrid', mlgrid)
+
+% ... then assign units to nuclei!
+for i = 1:nunits
+    mlInd = knnsearch(mlgrid', cellLocationsHistoMm(i,1));
+    apInd = knnsearch(apgrid', cellLocationsHistoMm(i,2));
+    dvInd = knnsearch(dvgrid', cellLocationsHistoMm(i,3));
+    labelInd = labelsDilated(apInd, dvInd, mlInd);
+    if labelInd>0
+        registration{i, 'nucleus'} = {data.nuclei{labelInd}};
+    else
+        registration{i, 'nucleus'} = {'none'};
+    end
+end
+
+
 % save registration
 registration.ccfMm = cellLocationsCcfMm;
 registration.ccfPix = cellLocationsCcfPixels;
@@ -88,9 +134,20 @@ save(fullfile(getenv('SSD'), 'paper2', 'histo', 'registration', [mouse '_registr
     'mouse', 'registration')
 
 
+
 % ----
 % PLOT
 % ----
+
+
+% determine unit colors based on nuclei they are in
+colorsTemp = lines(3);
+scatColors = ones(nunits, 3);
+for i = 1:3
+    bins = strcmp(registration.nucleus, data.nuclei{i*2});  % a hack that assumes data.nuclei are format as {nuc1, nuc1, nuc2, nuc2, nuc3, nuc3}
+    if any(bins); scatColors(bins, :) = repmat(colorsTemp(i,:), sum(bins), 1); end
+end
+
 
 % 3d plot
 colors = repelem(lines(3),2,1);
@@ -99,7 +156,7 @@ plotLabels3D(ccf.labels, 'surfArgs', {'FaceAlpha', .1, 'edgealpha', .2}, 'colors
     'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml);
 plotLabels3D(warped, 'colors', colors, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml);
 scatter3(cellLocationsCcfMm(:,1), cellLocationsCcfMm(:,2), cellLocationsCcfMm(:,3), ...
-    50, [0 0 0], 'filled');
+    50, scatColors, 'filled', 'MarkerEdgeColor', [0 0 0], 'LineWidth', 3);
 savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_3D.fig']))
 
 % 2d plots
@@ -108,6 +165,7 @@ views = {'ap', 'dv', 'ml'};
 inds = {[1 3], [1 2], [2 3]};  % cellLocations inds for 'ap' and 'ml' views
 
 for i = 1:3
+    
     % zoomed out
     subplot(3,3,1 + (i-1)*3); hold on
     title('registered')
@@ -117,7 +175,7 @@ for i = 1:3
         'patchArgs', {'facecolor', [0 0 0], 'facealpha', .05, 'edgecolor', [0 0 0], 'edgealpha', .4}, ...
         'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, 'smoothing', 10)
     scatter(cellLocationsCcfMm(:,inds{i}(1)), cellLocationsCcfMm(:,inds{i}(2)), ...
-        30, 'black', 'filled', 'MarkerFaceAlpha', .6);
+        30, scatColors, 'filled', 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'black', 'LineWidth', 1);
 
     % original
     subplot(3,3,2 + (i-1)*3); hold on
@@ -125,7 +183,7 @@ for i = 1:3
     plotLabels2D(data.labels, 'dim', views{i}, ...
         'colors', colors, 'apGrid', data.ap, 'dvGrid', data.dv, 'mlGrid', data.ml)
     scatter(cellLocationsHistoMm(:,inds{i}(1)), cellLocationsHistoMm(:,inds{i}(2)), ...
-        30, 'black', 'filled', 'MarkerFaceAlpha', .6);
+        30, scatColors, 'filled', 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'black', 'LineWidth', 1);
     
     % registered
     subplot(3,3,3 + (i-1)*3); hold on
@@ -136,7 +194,7 @@ for i = 1:3
         'patchArgs', {'facecolor', 'none', 'edgecolor', [0 0 0], 'edgealpha', .4}, ...
         'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml)
     scatter(cellLocationsCcfMm(:,inds{i}(1)), cellLocationsCcfMm(:,inds{i}(2)), ...
-        30, 'black', 'filled', 'MarkerFaceAlpha', .6);
+        30, scatColors, 'filled', 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'black', 'LineWidth', 1);
 end
 
 saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_2D.png']))

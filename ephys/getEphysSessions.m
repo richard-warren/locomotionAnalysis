@@ -1,9 +1,10 @@
-function [sessions, neurons] = getEphysSessions()
+function [sessions, neurons, mice] = getEphysSessions()
 
 % returns all sessions in ephysInfo.xlsx for which include==1
 
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
-sessions = ephysInfo.session(ephysInfo.include==1);
+ephysInfo = ephysInfo(ephysInfo.include==1, :);
+sessions = ephysInfo.session;
 
 if nargout>1
     neurons = cell(1, length(sessions));
@@ -12,4 +13,8 @@ if nargout>1
         neuralData = load(filename);
         neurons{i} = neuralData.unit_ids;
     end
+end
+
+if nargout>2
+    mice = unique(ephysInfo.mouse);
 end

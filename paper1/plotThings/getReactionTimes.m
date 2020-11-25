@@ -132,8 +132,7 @@ for i = 1:length(dims)
     line([0 0], get(gca,'ylim'), 'color', [0 0 0])
 end
 
-% saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimes\reactionTimes.png']);
-% savefig(fullfile(getenv('OBSDATADIR'), 'figures\reactionTimes\reactionTimes.fig'))
+saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'reactionTimes.svg'), 'svg');
 
 
 
@@ -277,7 +276,7 @@ close all; figure('color', 'white', 'position', [550.00 715.00 560.00 420.00]);
 subplot(2,1,1); histogram(latencies, 20); set(gca, 'xlim', [-.1 .1])
 subplot(2,1,2); histogram(latenciesControl, 20); set(gca, 'xlim', [-.1 .1])
 
-fprintf('latency estimate: %.2f ms\n', nanmedian(latencies(latencies>0))*1000)
+fprintf('latency estimate: %.2f ms\n', nanmedian(latencies)*1000)
 
 % saveas(gcf, [getenv('OBSDATADIR') 'figures\reactionTimes\reactionTimeDistributions.png']);
 

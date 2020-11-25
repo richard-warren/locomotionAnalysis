@@ -844,9 +844,9 @@ dLightOn = cat(1, dLightOn{:});
 dObsOn = cat(1, dObsOn{:});
 dt = cat(1, dt{:});
 
-fprintf('\nlight on to nose distance: %.3f+=%.3f\n', nanmedian(dLightOn), nanstd(dLightOn))
-fprintf('obs on to nose distance:   %.3f+=%.3f\n', nanmedian(dObsOn), nanstd(dObsOn))
-fprintf('light on to nose time:     %.3f+=%.3f\n', nanmedian(dt), nanstd(dt))
+fprintf('\nlight on to nose distance: %.3f+-%.3f\n', nanmedian(dLightOn), nanstd(dLightOn))
+fprintf('obs on to nose distance:   %.3f+-%.3f\n', nanmedian(dObsOn), nanstd(dObsOn))
+fprintf('light on to nose time:     %.3f+-%.3f\n', nanmedian(dt), nanstd(dt))
 
 %% see how success rates vary with thresholds
 

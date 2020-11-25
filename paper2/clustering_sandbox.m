@@ -1,6 +1,7 @@
 %% play around with functional clustering across cells
 
 % create (and write to disk) clustering data struct
+aggregateResponses();  % only need to do once
 [data, cellInfo] = getClusteringData();
 
 % put nested importances in a matrix
@@ -13,7 +14,7 @@ ngroups = length(groups);
 ccf = loadCCF();
 
 %% plot stuff on ccf
-% ccf = loadCCF();
+ccf = loadCCF();
 
 % settings
 clims = [0 .05];

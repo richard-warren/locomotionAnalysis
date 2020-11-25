@@ -32,7 +32,7 @@ aggregates = table(cell(nRows,1), nan(nRows,2), repmat({nan(length(s.sessions),2
 
 % find x limits for each continuous variable for each session
 % (these will be used to compute global x limits for each predictor also compute total number of units)
-fprintf('getting xLims and nUnits for %i sessions: ', length(s.sessions))
+fprintf('getting xLims and nunits for %i sessions: ', length(s.sessions))
 nUnits = 0;
 for i = 1:length(s.sessions)
     fprintf('%i ', i)
