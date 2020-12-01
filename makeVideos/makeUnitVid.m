@@ -1,4 +1,4 @@
-function makeUnitVid(session, unit_id, fileName, opts)
+function makeUnitVid(session, unit_id, fileName, varargin)
 
 % creates videos of mouse running with the raw neural trace plotted in real time
 % along with the sound of the neuron // tell it the session, the unit_id
@@ -8,14 +8,13 @@ function makeUnitVid(session, unit_id, fileName, opts)
 % timeEpochs correspond to obs on and off times
 
 
-% TO DO:
-% gate sound of spikes
+% todo: gate sound of spikes
 
 
 
 % settings
 s.trialsToShow = 5; % how many random trials to show if specific trial numbers are not indicated
-s.vidType = 'showObsEvents'; % choose from 'showObsEvents' and 'showRewardEvents'.
+s.vidType = 'showObsEvents'; % choose from 'showObsEvents' or 'showRewardEvents' or 'showSpecificTimeWindows' // todo: should select automatically based on arguments
 s.specificObsTrials = []; % pick specific trials to show. Time is from obsOn to obsOff. Trial number refers to obsOn and obsOff times.
 s.specificRewardTrials = []; % pick specific trials to show. Time is reward delivery +- timeBuffer. Trial number refers to reward times.
 s.specificTimeWindows = []; % put in specific start times and end times for generating videos.
@@ -36,7 +35,7 @@ s.spkScatterColor = [1 1 0];
 s.lineColors = [.8 .4 1];
 
 % reassign settings contained in opts
-if exist('opts', 'var'); for i = 1:2:length(opts); s.(opts{i}) = opts{i+1}; end; end
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end
 
 
 
@@ -55,18 +54,18 @@ vidWriter = vision.VideoFileWriter(fileName, ...
 % vidWriter.VideoCompressor = 'MJPEG Compressor';
 
 % load spike data
-display('loading spike data...');
+disp('loading spike data...');
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'rewardTimes', 'wiskContactFrames', 'isLightOn', ...
     'obsPixPositions', 'frameTimeStampsWisk', 'wiskContactTimes')
 
 % get position where wisk frame should overlap with run frame
 if s.includeWiskCam    
-    display('figuring out overlapping b/w runWisk and run vid...');
+    disp('figuring out overlapping b/w runWisk and run vid...');
     obsInWiskCamInds = find(obsPixPositions>vid.Width-50 & obsPixPositions<vid.Width);    
     % find first time point at which both wisk and run cams have a frame and obs is in wisk cam
     for i = obsInWiskCamInds
-        wiskInd = find(frameTimeStampsWisk==frameTimeStamps(i));
+        wiskInd = find(frameTimeStampsWisk==frameTimeStamps(i), 1);
         if ~isempty(wiskInd); topInd = i; break; end
     end
     
@@ -83,10 +82,10 @@ end
 
 
 % get neural data
-display('getting neural data...');
+disp('getting neural data...');
 ephysInfo = getSessionEphysInfo(session);
-% [~, unit_ids, bestChannels] = getGoodSpkInds(session);
-[~, unit_ids, bestChannels] = getGoodSpkInds_old(session);
+[~, unit_ids] = getGoodSpkInds(session);  % does this need to be updated?
+bestChannels = getBestChannels(session, 'returnPhysicolLayout', true);
 bestChannel = bestChannels(unit_id==unit_ids);
 getVoltage = @(data, channel, inds) data.Data.Data(channel,inds);
 data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.ephysFolder, [ephysInfo.fileNameBase '_CHs.dat']), ...
@@ -99,7 +98,7 @@ audioSmpsPerFrame = round((1/initialFs) * ephysInfo.fs);
 
 
 % create low pass filter
-display('creating low pass filter...');
+disp('creating low pass filter...');
 if s.lowPassFreq
     lp = s.lowPassFreq * 2 / ephysInfo.fs;
     ls = s.lowPassFreq * 4 / ephysInfo.fs; % one octave above pass band
@@ -109,10 +108,9 @@ if s.lowPassFreq
 end
 
 
-
 % set up figure
-display('setting up fig for vid...');
-fig = figure('color', [0 0 0], 'position', [50, 50, frameDim(2), frameDim(1)], 'menubar', 'none');
+disp('setting up fig for vid...');
+fig = figure('color', [0 0 0], 'position', [50, 50, frameDim(2), frameDim(1)*(1/.8)], 'menubar', 'none');
 traceLength = s.voltageWindow*ephysInfo.fs;
 
 axes('position', [0 .2 1 .8], 'CLim', [0 255]); colormap gray
@@ -142,9 +140,9 @@ switch s.vidType
         timeEpochs = cat(2, obsOnTimes, obsOffTimes);
         minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
         maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
-        validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); % make sure trials aren't too long
+        validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime);  % make sure trials aren't too long
         
-        if length(s.specificObsTrials) == 0 & length(s.specificRewardTrials) == 0  % specific trials are not indicated 
+        if isempty(s.specificObsTrials) && isempty(s.specificRewardTrials)  % specific trials are not indicated 
             trialsToShow = validTrials(round(linspace(2,length(validTrials)-1,s.trialsToShow)));
             timeEpochs = timeEpochs(trialsToShow, :);
         else
@@ -159,7 +157,7 @@ switch s.vidType
         maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
         validTrials = find(timeEpochs(:,1)>minTime & timeEpochs(:,2)<maxTime); 
         % make sure trials aren't too long
-        if length(s.specificObsTrials) == 0 & length(s.specificRewardTrials) == 0  % specific trials are not indicated 
+        if isempty(s.specificObsTrials) && isempty(s.specificRewardTrials)  % specific trials are not indicated 
             trialsToShow = validTrials(round(linspace(1,length(validTrials),s.trialsToShow)));
             timeEpochs = timeEpochs(trialsToShow, :);
         else
@@ -169,17 +167,14 @@ switch s.vidType
         end
         
     case 'showSpecificTimeWindows'
-        timeEpochs = [];
-        timeWindows = s.specificTimeWindows;
-
         minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
         maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
-        for i = 1:size(timeWindows, 1)
-            if timeWindows(i, 1) < minTime || timeWindows(i, 2) > maxTime
-                disp(['WARNING: time windows ' num2str(i) ' you selected have exceeded the min/max unit time!!']);
-            else
-                timeEpochs = [timeEpochs; timeWindows(i, :)];       
-            end            
+        bins = s.specificTimeWindows(:,1)>minTime & s.specificTimeWindows(:,2)<maxTime;  % bins for epochs that fall within the valid times for the unit
+        timeEpochs = s.specificTimeWindows(bins,:);
+        if any(~bins)
+            fprintf('WARNING! Trials ')
+            fprintf('%i ', find(~bins))
+            fprintf('ommitted because they are out of the valid time range for the unit!\n')
         end
         trialsToShow = 1:size(timeEpochs, 1);        
 end

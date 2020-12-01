@@ -6,9 +6,9 @@ function [bestChannels, unit_ids] = getBestChannels(session, varargin)
 % and picking channel with highest peak to peak amplitude
 
 % settings
-s.spkWindow = [-.25 .5]; % ms pre and post spike time to plot
-s.spkSamples = 500; % take this many of all spikes to analyze (to save system resources)
-s.returnPhysicalLayout = false; % whether to return best channel numbers that match the probe physical layout. By default is false, which returns channel numbers used in kilosort/phy system.
+s.spkWindow = [-.25 .5];         % (ms) time pre and post spike time to plot
+s.spkSamples = 500;              % take this many of all spikes to analyze (to save system resources when manually computing spike averages)
+s.returnPhysicalLayout = false;  % whether to return best channel numbers that match the probe physical layout. By default is false, which returns channel numbers used in kilosort/phy system.
 
 
 % initializations
