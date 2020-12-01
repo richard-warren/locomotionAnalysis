@@ -33,6 +33,45 @@ end
 fprintf('finished in %.1f minutes\n', toc/60)
 
 
+%% histo
+
+load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
+mice = unique(ephysHistoTable.mouseID);
+
+overwrite = false;
+
+for i = 1:length(mice)
+    filename = ['E:\lab_files\paper2\histo\registration\' mice{i} '_registration.mat'];
+    if ~exist(filename, 'file') || overwrite
+        registerBrain(mice{i});
+    end
+end
+
+%% count total units in each nucleus
+
+nucleus = cell(1, length(mice));
+for i = 1:length(mice)
+    try
+        load(['E:\lab_files\paper2\histo\registration\' mice{i} '_registration.mat'], 'registration')
+        nucleus{i} = registration.nucleus;
+    catch expection
+        fprintf('%s: problem -> %s\n', mice{i}, expection.identifier)
+    end
+end
+nucleus = cat(1, nucleus{:});
+n = length(nucleus);
+
+fprintf('\n\nUNIT COUNTS\n')
+fprintf('-----------\n')
+fprintf('fastigial:    %3i/%i\n', sum(strcmp(nucleus, 'fastigial')), n)
+fprintf('interpositus: %3i/%i\n', sum(strcmp(nucleus, 'interpositus')), n)
+fprintf('dentate:      %3i/%i\n', sum(strcmp(nucleus, 'dentate')), n)
+fprintf('other:        %3i/%i\n', sum(strcmp(nucleus, 'none')), n)
+nucleiTotal = n-sum(strcmp(nucleus, 'none'));
+fprintf('nuclei:       %3i/%i (%.1f%%)\n', nucleiTotal, n, nucleiTotal*100/n)
+
+
+
 %% todo (automatically copy files from engram to local, skipping files that are already there...)
 
 

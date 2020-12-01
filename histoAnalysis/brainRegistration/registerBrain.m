@@ -13,7 +13,7 @@ maxDistance = 80;  % (microns) cells within maxDistance of a nucleus are assigne
 
 
 % load ccf, mouse brain, and cell locations
-fprintf('registering %s brain to allen brain common coordinate framework...\n', mouse)
+fprintf('registering %s to allen brain common coordinate framework... ', mouse)
 ccf = loadCCF();
 data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']));
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
@@ -91,6 +91,7 @@ cellLocationsCcfMm = cellLocationsCcfPixels * .025;
 
 
 % determine nucleus for each unit
+% todo: determine if above nuclei, and therefore in cerebellar cortex
 
 % first 'dilate' the nuclei to include cells that are really close
 res = .025;  % resolution of resampled labels
@@ -151,16 +152,16 @@ end
 
 % 3d plot
 colors = repelem(lines(3),2,1);
-figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
+figure('name', mouse, 'color', 'white', 'position', [79.00 48.00 1794.00 928.00]); hold on
 plotLabels3D(ccf.labels, 'surfArgs', {'FaceAlpha', .1, 'edgealpha', .2}, 'colors', colors, ...
     'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml);
 plotLabels3D(warped, 'colors', colors, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml);
 scatter3(cellLocationsCcfMm(:,1), cellLocationsCcfMm(:,2), cellLocationsCcfMm(:,3), ...
     50, scatColors, 'filled', 'MarkerEdgeColor', [0 0 0], 'LineWidth', 3);
-savefig(fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_3D.fig']))
+savefig(fullfile(getenv('SSD'), 'paper2', 'histo', 'registration', [mouse '_3D.fig']))
 
 % 2d plots
-figure('color', 'white', 'position', [79.00 48.00 1794.00 928.00]);
+figure('name', mouse, 'color', 'white', 'position', [79.00 48.00 1794.00 928.00]);
 views = {'ap', 'dv', 'ml'};
 inds = {[1 3], [1 2], [2 3]};  % cellLocations inds for 'ap' and 'ml' views
 
@@ -197,8 +198,8 @@ for i = 1:3
         30, scatColors, 'filled', 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'black', 'LineWidth', 1);
 end
 
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'figures', 'brainRegistration', [mouse '_2D.png']))
-disp('all done!')
+saveas(gcf, fullfile(getenv('SSD'), 'paper2', 'histo', 'registration', [mouse '_2D.png']))
+fprintf('all done!\n')
 
 
 
