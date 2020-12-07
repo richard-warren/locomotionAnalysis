@@ -25,6 +25,7 @@ s.insertTrialInfo = false;  % whether to insert trial info into bottom right cor
 s.trialNum = 10;            % number of trials (evenly spaced throughout session) to show
 s.trials = [];              % array of specific trials to show // if provided, s.trialNum is ignored
 s.rewardTrials = false;     % whether trials are considered reward delivery // otherwise considered obstacles
+s.tlims = [];               % nX2 matrix of start and stop times for epochs to include in video // if provided, trials, trialNum, and rewardTrials are ignored // use this to look at specific times, ignoring trial structure
 s.obsPosRange = [-.05 .1];  % (m) for each trial, show when obs is within this range of the mouse's nose
 s.rewardWindow = [2 .5];    % (s) if rewardTrials==true, seconds relative to previous reward for trial start, and relative to current reward to trial end
 s.blankTime = .15;          % (s) how many seconds of black frames (or fadeout time) to put in between trials
@@ -86,6 +87,9 @@ if isempty(s.trials)
     s.trials = floor(linspace(2, maxNum, min(s.trialNum, maxNum)));
 end
 
+% overwrite if tlims provided
+if ~isempty(s.tlims); s.trials = 1:size(s.tlims,1); end
+
 
 % set up figure
 fig = figure('name', session, 'color', [0 0 0], 'position', [800, 50, size(frame,2), size(frame,1)], 'menubar', 'none', 'visible', s.visible);
@@ -135,7 +139,10 @@ for i = s.trials
     fprintf('%i ', i)
     
     % find trial inds
-    if ~s.rewardTrials
+    if ~isempty(s.tlims)
+        trialInds = find(frameTimeStamps>=s.tlims(i,1) & frameTimeStamps<s.tlims(i,2));
+        
+    elseif ~s.rewardTrials
         obsAtNoseTime = obsTimes(find(obsPositionsFixed>=0 & obsTimes>obsOnTimes(i), 1, 'first'));
         obsAtNosePos = wheelPositions(find(wheelTimes>=obsAtNoseTime,1,'first'));
         inds = find((wheelPositions > obsAtNosePos+s.obsPosRange(1)) & (wheelPositions < obsAtNosePos+s.obsPosRange(2)));
@@ -143,6 +150,7 @@ for i = s.trials
         endInd = inds(end);
         endTime = min(wheelTimes(startInd)+s.maxTrialTime, wheelTimes(endInd));
         trialInds = find(frameTimeStamps>wheelTimes(startInd) & frameTimeStamps<endTime);
+        
     else
         trialInds = find(frameTimeStamps>rewardTimes(i-1)+s.rewardWindow(1) & ...
                          frameTimeStamps<rewardTimes(i)+s.rewardWindow(2));
@@ -150,7 +158,7 @@ for i = s.trials
     trialInds = trialInds(1) : s.dropFrames : trialInds(end);
     
     % get 'slow down' inds
-    if s.playBackSpeed ~= s.speedNearContact
+    if s.playBackSpeed ~= s.speedNearContact && isempty(s.tlims)  % don't do the slow down thing if tlims provided (because trial structure ignored in this case)
         contactInds = wiskContactTimes(wiskContactTimes>frameTimeStamps(trialInds(1)) & ...
                                        wiskContactTimes<frameTimeStamps(trialInds(end)));  % inds of whisker contacts within trial
         for j = contactInds

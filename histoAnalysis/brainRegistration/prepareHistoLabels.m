@@ -1,10 +1,15 @@
-function prepareHistoLabels(mouse, scaling)
+function prepareHistoLabels(mouse, filename, scaling)
 
 % inits
 if ~exist('scaling', 'var'); scaling=.2; end
 mmPerPixel = .002;  % this should be the same for all images
 spreadsheet = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'sessionInfo.xlsx'), 'Sheet', 'histology');
 sectionThickness = spreadsheet.sectionThickness_um_(strcmp(spreadsheet.mouse, mouse)) / 1000;  % mm
+
+if isempty(sectionThickness)
+    disp('WARNING! Could not determine sectionThickness from sessionInfo histology spreadsheet! Assuming 50 microns...')
+    sectionThickness = .05;
+end
 
 % import neurotrace brain images
 imgs = loadTiffStack(fullfile(getenv('OBSDATADIR'), 'histology', mouse, 'Neurotrace_final.tif'), 'scaling', scaling);
@@ -26,8 +31,7 @@ ap = (sectionThickness : sectionThickness : sectionThickness*size(labels,1));
 ml = (mmPerPixel : mmPerPixel : mmPerPixel*size(labels,3)) / scaling;
 dv = (mmPerPixel : mmPerPixel : mmPerPixel*size(labels,2)) / scaling;
 
-save(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_histoLabels.mat']), ...
-    'imgs', 'labels', 'scaling', 'mouse', 'nuclei', 'ap', 'ml', 'dv')
+save(filename, 'imgs', 'labels', 'scaling', 'mouse', 'nuclei', 'ap', 'ml', 'dv')
 
 % plot results
 figure; montage(permute(imgs, [2 3 1])); colormap(gray)
