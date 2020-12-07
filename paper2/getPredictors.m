@@ -126,7 +126,7 @@ end
 
 % swing/stance
 xzLocations = nan(length(frameTimeStamps), 2, 4);  % (time X xz X paw)
-for i = 1:length(pawNames); xzLocations(:,:,i) = pawXYZ_pixels.(pawNames{i})(:,[1,3]); end  % format for getStanceBins
+for i = 1:length(pawNames); xzLocations(:,:,i) = pawXYZ_pixels.(pawNames{i})(:,[1,3]); end  % format required by getStanceBins()
 stanceBins = getStanceBins(frameTimeStamps, xzLocations, wheelPositions, wheelTimes, wheelCenter, wheelRadius, fps, pixelsPerM);
 for i = 1:4
     epoch = logicalToEpochs(stanceBins(:,i), frameTimeStamps);

@@ -4,7 +4,7 @@ sessions = getEphysSessions();
 % sessions = sessions(1:33);  % temp
 % sessions = {'181020_001'};
 
-overwrite = true;
+overwrite = false;
 
 
 tic
@@ -18,7 +18,7 @@ parfor i = 1:length(sessions)
         end
         
         % plot neural responses
-        plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
+%         plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
 
         % design matrices
 %         filename = fullfile(folder, 'designMatrices', [sessions{i} '_designMatrix.mat']);

@@ -1,12 +1,8 @@
-%% assess tuning to paw contacts...
+%% assess tuning steps over obstacle...
 
 
 %% collect data
 
-% todo: check contact times against vids
-% watch ephys vid for responsive cell
-% inter event limit...
-% look into no error bar trials...
 
 % settings
 minTouchFrames = 4;  % only include touches in contact with obstacle for this number of consecutive frames (this is actually an approximation only... i use a simple medfilt for this, which is close to but not the same as duration thresholding)

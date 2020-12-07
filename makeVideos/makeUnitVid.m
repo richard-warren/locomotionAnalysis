@@ -55,14 +55,14 @@ vidWriter = vision.VideoFileWriter(fileName, ...
 % vidWriter.VideoCompressor = 'MJPEG Compressor';
 
 % load spike data
-display('loading spike data...');
+disp('loading spike data...');
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'obsOnTimes', 'obsOffTimes', 'rewardTimes', 'wiskContactFrames', 'isLightOn', ...
     'obsPixPositions', 'frameTimeStampsWisk', 'wiskContactTimes')
 
 % get position where wisk frame should overlap with run frame
 if s.includeWiskCam    
-    display('figuring out overlapping b/w runWisk and run vid...');
+    disp('figuring out overlapping b/w runWisk and run vid...');
     obsInWiskCamInds = find(obsPixPositions>vid.Width-50 & obsPixPositions<vid.Width);    
     % find first time point at which both wisk and run cams have a frame and obs is in wisk cam
     for i = obsInWiskCamInds
@@ -83,7 +83,7 @@ end
 
 
 % get neural data
-display('getting neural data...');
+disp('getting neural data...');
 ephysInfo = getSessionEphysInfo(session);
 % [~, unit_ids, bestChannels] = getGoodSpkInds(session);
 [~, unit_ids, bestChannels] = getGoodSpkInds_old(session);
@@ -99,7 +99,7 @@ audioSmpsPerFrame = round((1/initialFs) * ephysInfo.fs);
 
 
 % create low pass filter
-display('creating low pass filter...');
+disp('creating low pass filter...');
 if s.lowPassFreq
     lp = s.lowPassFreq * 2 / ephysInfo.fs;
     ls = s.lowPassFreq * 4 / ephysInfo.fs; % one octave above pass band
@@ -111,7 +111,7 @@ end
 
 
 % set up figure
-display('setting up fig for vid...');
+disp('setting up fig for vid...');
 fig = figure('color', [0 0 0], 'position', [50, 50, frameDim(2), frameDim(1)], 'menubar', 'none');
 traceLength = s.voltageWindow*ephysInfo.fs;
 

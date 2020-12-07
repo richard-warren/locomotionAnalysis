@@ -127,7 +127,7 @@ for i = 1:length(dims)
 
     % pimp fig
     set(gca, 'xlim', xlims, 'ylim', ylims)
-    ylabel(['\Delta' dims{i} ' (mm)'])
+    ylabel(['change in ' dims{i} ' (mm)'])
     xlabel('time from whisker contact (ms)')
     line([0 0], get(gca,'ylim'), 'color', [0 0 0])
 end

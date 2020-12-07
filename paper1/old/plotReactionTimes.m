@@ -168,7 +168,6 @@ savefig(fullfile(getenv('OBSDATADIR'), 'figures\reactionTimes\reactionTimes.fig'
 
 
 % find and plot latency distributions
-% !!! i think i computed the percentiles incorrectly // must check this!
 
 % latencies = nan(1,length(data));
 % for i = 1:length(data)

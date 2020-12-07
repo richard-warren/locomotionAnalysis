@@ -61,21 +61,6 @@ locationsTail(:,2,:) = locationsTail(:,2,:) - nosePos(2); % subtract midline fro
 locationsTail(:,3,:) = (wheelCenter(2)-wheelRadius) - locationsTail(:,3,:); % flip z and set s.t. top of wheel is zero
 if timeOperations; fprintf('getting xyz coords: %i seconds\n', round(toc)); end
 
-% % unravel x coordinates s.t. 0 is position of obs and x coordinates move forward over time ('unheadfixing')
-% % this is done trial by trial, with each trial ending at the last ind of the last mod step over the obs
-% prevInd = 1;
-% for j = 1:length(obsOnTimes)
-%     finalInd = find(frameTimeStamps>obsOffTimes(j) & all(isnan(modifiedStepIdentities),2), 1, 'first');
-%     if j==length(obsOnTimes); finalInd = length(frameTimeStamps); end
-%     
-%     locationsPaws(prevInd:finalInd,1,:) = locationsPaws(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-%     locationsTail(prevInd:finalInd,1,:) = locationsTail(prevInd:finalInd,1,:) - obsPixPositionsContinuous(j, prevInd:finalInd)';
-%     prevInd = finalInd+1;
-% end
-% locationsPaws = locationsPaws / pixelsPerM; % convert to meters
-% locationsTail = locationsTail / pixelsPerM; % convert to meters
-
-
 
 
 
