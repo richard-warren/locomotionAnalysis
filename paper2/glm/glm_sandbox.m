@@ -1,11 +1,6 @@
 %% play around with GLMs :)
 
 
-%% fit residual GLM
-session = '181020_001'; neuron = 66;
-[models, fitdata] = fitResidualGlm(session, neuron, 'parallel', false, 'save', true);
-plotResidualGlms(session, neuron)
-
 %% train all residual GLMs
 
 overwrite = true;

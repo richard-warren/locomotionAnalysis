@@ -89,11 +89,11 @@ for i = find(predictors.include)'
             if any(epochBins)
                 if nUnits==1
                     response(j,:,:) = interp1(t(epochBins), spkRates(:,epochBins), ...
-                        linspace(epoch(1), epoch(2), s.gridNum));
+                        linspace(epoch(1), epoch(2), s.gridNum));  % todo: !!! this should actually be min(t(epochBins)), max(t(epochBins)), which will be slightly different!
                 else
                     response(j,:,:) = interp2(t(epochBins), ...
                         [1:nUnits]', spkRates(:,epochBins), ...
-                        linspace(epoch(1), epoch(2), s.gridNum), [1:nUnits]', 'linear')';
+                        linspace(epoch(1), epoch(2), s.gridNum), [1:nUnits]', 'linear')';  % todo: !!! this should actually be min(t(epochBins)), max(t(epochBins)), which will be slightly different!
                 end
             end
         end
