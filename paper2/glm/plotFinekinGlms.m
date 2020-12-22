@@ -26,9 +26,9 @@ y = fitdata.yRate;
 dt = t(2) - t(1);
 r = predictors{'reward_all', 'data'}{1};  % reward times
 r = r(r>t(1) & r<t(end));
-xlims = r(floor(length(r)/2 + [0 1])) + [-1; 1];  % spanning two rewards
-
-
+% xlims = r(floor(length(r)/2 + [0 1])) + [-1; 1];  % spanning two rewards
+xlims = mean(r(floor(length(r)/2) + [0 1])) + [-2; 2];  % between middle two rewards
+bins = t>=xlims(1) & t<=xlims(2);  % only plot within xlims to speed things along
 
 fig = figure('name', sprintf('%s, neuron %i', session, neuron), 'color', 'white', 'position', [2.00 2.00 1278.00 1354.00]); hold on
 axes = cell(1,ngroups);
@@ -59,14 +59,15 @@ for j = 1:ngroups  % only groups for which models were trained
     
     % firing rate predictions
     axes{j} = subplot(ngroups+1, 1, j+1); hold on
-    plot(t, y, 'color', colors(1,:))
-    plot(t, yhat, 'color', colors(2,:), 'LineWidth', 1.5);
+    plot(t(bins), y(bins), 'color', colors(1,:))
+    plot(t(bins), yhat(bins), 'color', colors(2,:));
     
     % plot events
     for k = 1:length(events)
-        rewards = predictors{events{k}, 'data'}{1};
-        scatter(rewards, repelem(ylims(2), length(rewards)), 10, eventColors(k,:), 'filled')
-        plot(repmat(rewards',2,1), repmat(ylims',1,length(rewards)), 'color', eventColors(k,:))
+        e = predictors{events{k}, 'data'}{1};
+        e = e(e>xlims(1) & e<xlims(2));  % only plot events within xlims to speed things along
+        scatter(e, repelem(ylims(2), length(e)), 10, eventColors(k,:), 'filled')
+        plot(repmat(e',2,1), repmat(ylims',1,length(e)), 'color', eventColors(k,:))
     end
   
     % prettify

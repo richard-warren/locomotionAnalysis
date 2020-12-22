@@ -15,7 +15,7 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 events = {'reward_all', 'whiskerContact', 'lick'};
 eventColors = lines(length(events));
 folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
-load(fullfile(folder, 'glms', [session '_cell_' num2str(neuron) '_glm.mat']), 'models', 'fitdata');
+load(fullfile(folder, 'glms', 'upper_lower_glms', [session '_cell_' num2str(neuron) '_glm.mat']), 'models', 'fitdata');
 load(fullfile(folder, 'predictors', [session '_predictors.mat']), 'predictors');
 groups = models.Properties.RowNames;
 ngroups = length(groups);
@@ -25,7 +25,7 @@ dt = t(2) - t(1);
 r = predictors{'reward_all', 'data'}{1};  % reward times
 r = r(r>t(1) & r<t(end));
 xlims = r(floor(length(r)/2 + [0 1])) + [-2; 2];  % spanning two rewards
-
+bins = t>=xlims(1) & t<=xlims(2);  % only plot within xlims to speed things along
 
 
 fig = figure('name', sprintf('%s, neuron %i', session, neuron), 'color', 'white', 'position', [2.00 2.00 1278.00 1354.00]); hold on
@@ -43,21 +43,21 @@ for j = 1:ngroups
     scat_upper = scatter(inds, models{:,'dev_in'}(inds), 40, colors(2,:), 'filled');
     scat_lower = scatter(inds, models{:,'dev_out'}(inds), 40, colors(3,:), 'filled');
     if j==1; set(gca, 'XTick', 1:ngroups, 'XTickLabel', groups, 'XTickLabelRotation', 40); end
-    ylabel('deviance explained')
+    ylabel('dev explained')
     
     % firing rate predictions
     axes{j} = subplot(ngroups,cols,(j-1)*cols+[2:cols]); hold on
     props = {};
-    plot(t, y, 'color', colors(1,:), props{:})
-    plot(t, yhat_upper, 'color', colors(2,:), props{:})
-    if j>1; plot(t, yhat_lower, 'color', colors(3,:), props{:}); end
+    plot(t(bins), y(bins), 'color', colors(1,:), props{:})
+    plot(t(bins), yhat_upper(bins), 'color', colors(2,:), props{:})
+    if j>1; plot(t(bins), yhat_lower(bins), 'color', colors(3,:), props{:}); end
     
     % plot events
-%     ylims = ylim;
     for k = 1:length(events)
-        rewards = predictors{events{k}, 'data'}{1};
-        scatter(rewards, repelem(ylims(2), length(rewards)), 10, eventColors(k,:), 'filled')
-        plot(repmat(rewards',2,1), repmat(ylims',1,length(rewards)), 'color', eventColors(k,:))
+        e = predictors{events{k}, 'data'}{1};
+        e = e(e>xlims(1) & e<xlims(2));  % only plot events within xlims to speed things along
+        scatter(e, repelem(ylims(2), length(e)), 10, eventColors(k,:), 'filled')
+        plot(repmat(e',2,1), repmat(ylims',1,length(e)), 'color', eventColors(k,:))
     end
   
     % prettify
@@ -69,7 +69,7 @@ end
 linkaxes([axes{:}])
 
 if ~isempty(s.outputFileName)
-    savefig([s.outputFileName '.fig']);
+%     savefig([s.outputFileName '.fig']);
     saveas(gcf, [s.outputFileName '.png']);
 end
 
