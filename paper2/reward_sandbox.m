@@ -76,12 +76,16 @@ fignum = 1; offset = 0;
 
 
 tic
-for i = 1:height(data)
+for i = 1:10%:height(data)
     
     
     if (i-offset) > ncols*nrows
         offset = offset + ncols*nrows;
         saveas(gcf, ['E:\lab_files\paper2\plots\rewards\psths' num2str(fignum) '.png'])
+        
+        set(gcf, 'PaperOrientation', 'landscape');
+        print(gcf, ['E:\lab_files\paper2\plots\rewards\psths' num2str(fignum) '.pdf'], '-dpdf', '-bestfit')
+        
         fignum = fignum + 1;
         figure('name', 'reward responses', 'color', 'white', 'position', [1.00 1.00 2560.00 1363.00]); hold on
     end
@@ -110,6 +114,8 @@ end
 
 set(gca, 'xcolor', get(gca, 'ycolor'))  % time axis visible only for final subplot
 saveas(gcf, ['E:\lab_files\paper2\plots\rewards\psths' num2str(fignum) '.png'])
+
+set(gcf, 'PaperOrientation', 'landscape'); print(gcf, ['E:\lab_files\paper2\plots\rewards\psths' num2str(fignum) '.pdf'], '-dpdf', '-bestfit')
 toc
 
 
@@ -124,16 +130,16 @@ plot(xlim, xlim, 'Color', [0 0 0 .4])
 xlabel('no reward'); ylabel('full')
 
 subplot(1,3,2)
+mat = data{:, {'dev_noreward', 'dev_full'}}';
 deltas = diff(mat, [], 1);
 histogram(deltas, 'Normalization', 'probability', 'FaceColor', 'black', 'EdgeColor', 'none')
 xlabel('\Delta deviance explained')
 set(gca, 'box', 'off')
 
 subplot(1,3,3)
-mat = data{:, {'dev_noreward', 'dev_full'}}';
 barFancy(mat, 'ylabel', 'deviance explained', 'levelNames', {{'no reward', 'full'}}, ...
     'comparisons', [1 2], 'showViolins', true, 'showBars', false, 'barWidth', .5, ...
-    'scatterColors', [0 0 0], 'scatterAlpha', .05)
+    'scatterColors', [0 0 0], 'scatterAlpha', .05, 'showErrorBars', false)
 
 saveas(gcf, 'E:\lab_files\paper2\plots\rewards\scatters.png')
 
@@ -150,6 +156,7 @@ pred_noreward = cellfun(@(x) nanmean(x,1), data{:, 'predicted_noreward'}, 'Unifo
 pred_residual = resp - pred_noreward;
 responses = {resp, pred_noreward, pred_residual};
 bins = ~isnan(resp(:,1));
+zeroind = knnsearch(x', 0);
 
 % get sort inds
 [~, maxInds] = max(resp, [], 2);
@@ -159,7 +166,7 @@ for i = 1:length(responses)
     subplot(1, length(plots), i); hold on
     title(plots{i}, 'Interpreter', 'none')
     hmap = responses{i};
-%     hmap = (hmap - hmap(:,1));
+%     hmap = (hmap - hmap(:,zeroind));
 %     hmap = (hmap - responses{1}(:,1)) ./ data{:, 'std'};
     
     imagesc(x, 1:sum(bins), hmap(sortInds(bins),:))
