@@ -26,7 +26,8 @@ y = fitdata.yRate;
 dt = t(2) - t(1);
 r = predictors{'reward_all', 'data'}{1};  % reward times
 r = r(r>t(1) & r<t(end));
-xlims = r(floor(length(r)/2 + [0 1])) + [-1; 1];  % spanning two rewards
+xlims = r(floor(length(r)/2 + [0 1])) + [-.1; .1];  % spanning two rewards
+
 
 
 

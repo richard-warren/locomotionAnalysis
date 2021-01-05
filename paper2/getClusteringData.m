@@ -3,9 +3,6 @@ function [data, cellInfo] = getClusteringData()
 % create struct of tables containing per cell info on group importance,
 % responses, and locations // use to explore functional clustering
 
-% plot heatmaps of representative response variable for each response group
-% // sort by deviance explained to sanity check deviance metric
-
 % todo: refactor to not require aggregateResponses?
 
 

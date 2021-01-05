@@ -1,8 +1,8 @@
 %% prepare tracking data for sample session for andrea
 
 % settings
-session = '200819_000';
-outdir = 'C:\Users\rick\Desktop\andrea_files';
+session = '181215_003';
+outdir = 'C:\Users\richa\Desktop\adrea_files';
 
 % load tracking data
 sesFolder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
