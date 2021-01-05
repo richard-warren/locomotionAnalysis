@@ -17,7 +17,7 @@ load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'frameTimeStamps', 'wheelPositions', 'wheelTimes', 'wheelCenter', 'wheelRadius', ...
     'pixelsPerM', 'bodyAngles', 'obsPixPositions', 'obsOnTimes', 'obsOffTimes');
 wheelFs = 1/median(diff(wheelTimes));
-fps = 1/median(diff(frameTimeStamps));  % video frames per second
+fps = 1/nanmedian(diff(frameTimeStamps));  % video frames per second
 vel = getVelocity(wheelPositions, s.velTime, wheelFs);
 
 % get stance bins
@@ -26,6 +26,7 @@ pawNames = {'paw1LH', 'paw2LF', 'paw3RF', 'paw4RH'};
 xzLocations = nan(length(frameTimeStamps), 2, 4);  % (time X xz X paw)
 for i = 1:length(pawNames); xzLocations(:,:,i) = pawXYZ_pixels.(pawNames{i})(:,[1,3]); end  % format required by getStanceBins()
 stanceBins = getStanceBins(frameTimeStamps, xzLocations, wheelPositions, wheelTimes, wheelCenter, wheelRadius, fps, pixelsPerM);
+validBins = ~isnan(frameTimeStamps);
 
 % compute 'unheadfixed' x coords
 wheelPosInterp = interp1(wheelTimes, wheelPositions, frameTimeStamps);  % wheel positions at frame times
@@ -38,9 +39,9 @@ xunheadfixed = xunheadfixed + wheelPosInterp;
 stepData = cell(1,4);
 for i = 1:4
     % get step inds
-    temp = find(diff(stanceBins(:,i))==1);  % inds right before a stances start
-    startInds = temp(1:end-1)+1;            % inds for stance starts
-    endInds = temp(2:end);                  % ind before start of next stance
+    temp = find(diff(~stanceBins(:,i))==1);  % inds right before a swings start
+    startInds = temp(1:end-1)+1;             % inds for stance starts
+    endInds = temp(2:end);                   % ind before start of next stance
     
     % remove outlier steps
     dts = (endInds-startInds) / fps;
@@ -67,7 +68,7 @@ for i = 1:4
     stepData{i}.vel = interp1(wheelTimes, vel, times(:,1));
     
     % body angle
-    stepData{i}.bodyAngle = interp1(frameTimeStamps, bodyAngles, times(:,1));
+    stepData{i}.bodyAngle = interp1(frameTimeStamps(validBins), bodyAngles(validBins), times(:,1));
     
     % length
     stepData{i}.length = diff(xunheadfixed(inds), 1, 2);
@@ -79,8 +80,8 @@ for i = 1:4
     end
     
     % isStepOver
-    obsEndPos = interp1(frameTimeStamps, obsPixPositions, times(:,2));             % x positions of obs (in pixels) at the end of every step
-    pawEndPos = interp1(frameTimeStamps, pawXYZ_pixels{:, i+1}(:,1), times(:,2));  % x positions of paw (in pixels) at the end of every step
+    obsEndPos = interp1(frameTimeStamps(validBins), obsPixPositions(validBins), times(:,2));             % x positions of obs (in pixels) at the end of every step
+    pawEndPos = interp1(frameTimeStamps(validBins), pawXYZ_pixels{:, i+1}(validBins, 1), times(:,2));    % x positions of paw (in pixels) at the end of every step
     for j = 1:length(obsOnTimes)
         stepOverInd = find(times(:,2) > obsOnTimes(j) & ...
                            times(:,2) < (obsOffTimes(j)+1) & ...  % add one second buffer

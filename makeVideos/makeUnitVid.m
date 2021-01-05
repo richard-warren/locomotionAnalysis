@@ -84,8 +84,8 @@ end
 % get neural data
 disp('getting neural data...');
 ephysInfo = getSessionEphysInfo(session);
-[~, unit_ids] = getGoodSpkInds(session);  % does this need to be updated?
-bestChannels = getBestChannels(session, 'returnPhysicolLayout', true);
+[~, unit_ids] = getGoodSpkInds(session);
+bestChannels = getBestChannels(session, 'returnPhysicolLayout', true);  % should this be true or false?
 bestChannel = bestChannels(unit_id==unit_ids);
 getVoltage = @(data, channel, inds) data.Data.Data(channel,inds);
 data = memmapfile(fullfile(getenv('OBSDATADIR'), 'sessions', session, ephysInfo.ephysFolder, [ephysInfo.fileNameBase '_CHs.dat']), ...
@@ -170,7 +170,7 @@ switch s.vidType
         minTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'first'));
         maxTime = timeStamps(find(~isnan(spkRates(unitInd,:)),1,'last'));
         bins = s.specificTimeWindows(:,1)>minTime & s.specificTimeWindows(:,2)<maxTime;  % bins for epochs that fall within the valid times for the unit
-        timeEpochs = s.specificTimeWindows(bins,:);
+        timeEpochs = s.specificTimeWindows(bins,:); 
         if any(~bins)
             fprintf('WARNING! Trials ')
             fprintf('%i ', find(~bins))
