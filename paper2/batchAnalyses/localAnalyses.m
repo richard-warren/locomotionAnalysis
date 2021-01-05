@@ -10,7 +10,7 @@ overwrite = false;
 tic
 for i = 1:length(sessions)
     folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
-    try
+%     try
         % neural responses
         filename = fullfile(folder, 'responses', [sessions{i} '_responses.mat']);
         if overwrite || ~exist(filename, 'file')
@@ -18,7 +18,10 @@ for i = 1:length(sessions)
         end
         
         % plot neural responses
-%         plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
+        existingPlots = dir(['E:\lab_files\paper2\plots\responses\' sessions{i} '*']);
+        if overwrite || isempty(existingPlots)
+            plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
+        end
 
         % design matrices
         filename = fullfile(folder, 'designMatrices', [sessions{i} '_designMatrix.mat']);
@@ -26,9 +29,9 @@ for i = 1:length(sessions)
             makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'outputFileName', filename);
         end
         
-    catch exception
-        fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
-    end
+%     catch exception
+%         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
+%     end
 end
 fprintf('finished in %.1f minutes\n', toc/60)
 

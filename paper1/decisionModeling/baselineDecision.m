@@ -405,7 +405,7 @@ figure('color', 'white', 'menubar', 'none', 'position', [200 100.00 750.00 707.0
 plotBigStepKin(kin(:,[1,3],:), kinCtl(:,[1,3],:), [flat_sub.obsHgt], condition, [flat_sub.isBigStep]==1, ...
     'colors', decisionColors, 'xLims', xLims, 'addHistos', false, 'lineWid', 3, ...
     'contactInds', [flat_sub.contactIndInterp], 'histoHgt', .5, 'showSmpNum', false, 'obsColor', obsColor)
-saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_decision_kinematics'), 'svg');
+% saveas(gcf, fullfile(getenv('OBSDATADIR'), 'papers', 'hurdles_paper1', 'figures', 'matlabFigs', 'baseline_decision_kinematics'), 'svg');
 
 
 
