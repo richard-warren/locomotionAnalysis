@@ -13,8 +13,10 @@ n = height(data);
 % settings
 x = linspace(-.5, 2, 200);  % (s) x grid for responses
 init = repmat({nan(1,length(x))}, n, 1);
-tbl = table(init, init, init, init, init, nan(n,1), nan(n,1), nan(n,1), nan(n,1), 'VariableNames', ...
-    {'response', 'predicted_full', 'predicted_noreward', 'lick_response', 'vel_response', 'dev_noreward', 'dev_full', 'mean', 'std'});
+tbl = table(init, init, init, init, init, init, ...
+    nan(n,1), nan(n,1), nan(n,1), nan(n,1), 'VariableNames', ...
+    {'response', 'predicted_full', 'predicted_noreward', 'lick_response', 'vel_response', 'lick_psth', ...
+    'dev_noreward', 'dev_full', 'mean', 'std'});
 
 for i = 1:length(sessions)
     disp(i/length(sessions))
@@ -30,6 +32,7 @@ for i = 1:length(sessions)
     licks = predictors{'lick', 'data'}{1};
     [lickRate, lickTimes] = getFiringRate(licks, 'kernel', 'gauss', 'kernelSig', .05);
     lickResponses = interp1(lickTimes, lickRate, X);
+    Xlick = licks + x;
     
     % velocity
     velResponses = interp1(predictors{'velocity', 't'}{1}, predictors{'velocity', 'data'}{1}, X);
@@ -64,6 +67,9 @@ for i = 1:length(sessions)
             % lick rates and vel
             tbl{rowInd, 'lick_response'}{1} = lickResponses;  % todo: should be done with one linear across all units for session, or saved once pre session to avoid redundancy
             tbl{rowInd, 'vel_response'}{1} = velResponses;
+            
+            % lick psth
+            tbl{rowInd, 'lick_psth'}{1} = interp1(neuralData.timeStamps, neuralData.spkRates(j,:), Xlick);
         end
     end
 end
@@ -191,16 +197,16 @@ end
 saveas(gcf, 'E:\lab_files\paper2\plots\rewards\heatmaps.png')
 
 
-%% psth grids
+%% psth grids (vel, lick reward, reward_predictions, lick psth)
 
 % settings
 ncols = 8;  % divisible by length(paws) ideally
 tbins = 3;  % divide trials into this many bins
-plots = {'vel_response', 'lick_response', 'response', 'predicted_noreward'};
+plots = {'vel_response', 'lick_response', 'response', 'predicted_full', 'predicted_noreward', 'lick_psth'};
 xlims = [x(1) x(end)];
-figpos = [2.00 821.00 2554.00 535.00];
+figpos = [2.00 475.00 2554.00 881.00];
 colors = lines(length(plots));
-
+ylimMatchRows = [3,4];  % match y limits for these rows within each column
 
 % inits
 mask = linspace(1, 0, tbins);
@@ -211,7 +217,6 @@ fignum = 1; offset = 0;
 
 tic
 for i = 1:height(data)
-    
     
     if (i-offset) > ncols
         offset = offset + ncols;
@@ -226,15 +231,18 @@ for i = 1:height(data)
     
     subplotNum = i-offset;
     
-    slice = data{i, 'response'}{1}(:,1);  % slice of firing rate first time bin across trails
-    startInd = find(~isnan(slice), 1, 'first');
-    endInd = find(~isnan(slice), 1, 'last');
-    binNums = nan(1, length(slice));
-    binNums(startInd:endInd) = round(linspace(1, tbins, sum(~isnan(slice))));
+    ylims = nan(length(plots),2);
     
     for j = 1:length(plots)
         subplot(length(plots), ncols, subplotNum + (j-1)*ncols); hold on
         resp = data{i, plots{j}}{1};
+        
+        % get bins
+        slice = resp(:,1);  % slice of firing rate first time bin across trails
+        startInd = find(~isnan(slice), 1, 'first');
+        endInd = find(~isnan(slice), 1, 'last');
+        binNums = nan(1, length(slice));
+        binNums(startInd:endInd) = round(linspace(1, tbins, sum(~isnan(slice))));
         
         for k = 1:tbins
             if ~isempty(resp)
@@ -248,8 +256,9 @@ for i = 1:height(data)
             end
         end
         
-        yticks = get(gca, 'ytick');
-        set(gca, 'XLim', xlims, 'YTick', yticks([1,end]), 'xcolor', 'none')
+%         yticks = get(gca, 'ytick');
+        set(gca, 'XLim', xlims, 'xcolor', 'none')  % 'YTick', yticks([1,end]), 
+        ylims(j,:) = ylim;
         
         if j==1
             tit1 = sprintf('%s(%i)', data{i, 'session'}{1}, data{i, 'unit'});
@@ -264,6 +273,12 @@ for i = 1:height(data)
         end
     end
     
+    ylimMatched = [min(ylims(ylimMatchRows,1)), max(ylims(ylimMatchRows,2))];
+    for j = ylimMatchRows
+        subplot(length(plots), ncols, subplotNum + (j-1)*ncols); hold on
+        set(gca, 'ylim', ylimMatched)
+    end
+    
 end
 
 set(gca, 'xcolor', get(gca, 'ycolor'))  % time axis visible only for final subplot
@@ -273,7 +288,7 @@ toc
 %% find matched slowdowns!
 
 % settings
-session = sessions{50};
+session = sessions{30};
 xlims = [-2 1];
 nbest = 20;  % find nbest best matches
 c = lines(2); c = c(2,:);
@@ -286,8 +301,8 @@ rewardTimes = predictors{'reward_all', 'data'}{1};
 
 % get average response
 dt = nanmedian(diff(t));
-x = xlims(1) : dt : xlims(2);
-X = x + rewardTimes;
+xk = xlims(1) : dt : xlims(2);
+X = xk + rewardTimes;
 responses = interp1(t, vel, X);
 kernel = nanmean(responses, 1);
 
@@ -296,19 +311,19 @@ maskInds = knnsearch(t', X(:));
 vel(maskInds) = nan;
 
 
-n = length(kernel);
+nk = length(kernel);
 diffs = nan(1, length(vel));
-for i = 1 : length(vel)-n
+for i = 1 : length(vel)-nk
 %     diffs(i) = mean(abs(vel(i:i+n-1) - kernel));
-    diffs(i) = sum((vel(i:i+n-1) - kernel).^2);
+    diffs(i) = sum((vel(i:i+nk-1) - kernel).^2);
 end
 
 figure('color', 'white', 'position', [41.00 812.00 1186.00 411.00]);
 
 % mean slow down
 subplot(2,3,1); hold on
-plot(x, responses', 'color', [0 0 0 .1])
-plot(x, mean(responses,1), 'LineWidth', 3, 'color', [0 0 0])
+plot(xk, responses', 'color', [0 0 0 .1])
+plot(xk, mean(responses,1), 'LineWidth', 3, 'color', [0 0 0])
 set(gca, 'xlim', xlims);
 title('kernel')
 
@@ -321,17 +336,17 @@ set(gca, 'ylim', ylims)
 
 % find and plot peaks
 [~, peaks] = findpeaks(-diffs, t, 'SortStr', 'descend', 'MinPeakDistance', 5, 'NPeaks', nbest);
-peaks = peaks - x(1);  % shift to the left to compensate for how diffs was computed from left edge of kernel
+peaks = peaks - xk(1);  % shift to the left to compensate for how diffs was computed from left edge of kernel
 for i = 1:length(peaks)
-    xsub = x + peaks(i);
+    xsub = xk + peaks(i);
     plot(xsub, kernel, 'color', c, 'linewidth', 2)
 end
 
 % matched mean slow down
 subplot(2,3,2); hold on
-matched = interp1(t, vel, x + peaks');
-plot(x, matched', 'color', [c .1])
-plot(x, mean(matched, 1), 'LineWidth', 3, 'color', c)
+matched = interp1(t, vel, xk + peaks');
+plot(xk, matched', 'color', [c .1])
+plot(xk, mean(matched, 1), 'LineWidth', 3, 'color', c)
 set(gca, 'xlim', xlims);
 title('matched')
 
@@ -339,14 +354,14 @@ title('matched')
 subplot(2,3,3); hold on
 
 mn = mean(responses, 1);
-plot(x, mn, 'LineWidth', 3, 'color', [0 0 0])
+plot(xk, mn, 'LineWidth', 3, 'color', [0 0 0])
 stdev = std(responses, 1);
-patch([x fliplr(x)], [(-stdev+mn) fliplr(stdev+mn)], [0 0 0], 'FaceAlpha', .25, 'EdgeColor', 'none')
+patch([xk fliplr(xk)], [(-stdev+mn) fliplr(stdev+mn)], [0 0 0], 'FaceAlpha', .25, 'EdgeColor', 'none')
 
 mn = mean(matched, 1);
-plot(x, mn, 'LineWidth', 3, 'color', c)
+plot(xk, mn, 'LineWidth', 3, 'color', c)
 stdev = std(matched, 1);
-patch([x fliplr(x)], [(-stdev+mn) fliplr(stdev+mn)], c, 'FaceAlpha', .25, 'EdgeColor', 'none')
+patch([xk fliplr(xk)], [(-stdev+mn) fliplr(stdev+mn)], c, 'FaceAlpha', .25, 'EdgeColor', 'none')
 
 
 set(gca, 'xlim', xlims);

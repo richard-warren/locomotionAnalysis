@@ -36,8 +36,13 @@ for i = 1:length(mice)
         % load neural data for each session
         unit_ids = cell(1, length(sessions));
         for j = 1:length(sessions)
-            neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [sessions{j} '_neuralData.mat']));
-            unit_ids{j} = neuralData.unit_ids;
+            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [sessions{j} '_neuralData.mat']);
+            if exist(filename, 'file')
+                neuralData = load(filename);
+                unit_ids{j} = neuralData.unit_ids;
+            else
+                fprintf('WARNING! %s does not exist!\n', filename);
+            end
         end
         unitsPerSession = cellfun(@length, unit_ids);
         unit_ids = cat(1, unit_ids{:});

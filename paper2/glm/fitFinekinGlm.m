@@ -1,5 +1,6 @@
 function [models, fitdata] = fitFinekinGlm(session, neuron, varargin)
-
+% fit models with and without fine kinematic variables to see how much they
+% help above/beyond gross kinematics + step phase
 
 
 % settings
