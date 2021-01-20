@@ -1,4 +1,4 @@
-% function matchedTimes = findMatchedSignalTimes(sig, sigTimes, eventTimes, window, nbest, showPlot)
+function matchedTimes = findMatchedSignalTimes(sig, sigTimes, eventTimes, window, nbest, showPlot)
 
 % given a continuous signal and event times, find other times within the
 % signal whether the shape of the signal matches that of the peri-event
@@ -14,16 +14,6 @@
 % eventsTimes:  times of events
 % window:       (s) time surrounding events to measure sig, e.g. [-2 2]
 % nbest:        take nbest best matched periods
-
-% temp
-session = '180920_002';
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
-sig = predictors{'velocity', 'data'}{1};
-sigTimes = predictors{'velocity', 't'}{1};
-window = [-4 4];
-nbest = 20;  % find nbest best matches
-eventTimes = predictors{'reward_all', 'data'}{1};
-showPlot = true;
 
 % inits
 if ~exist('showPlot', 'var'); showPlot = false; end
@@ -51,15 +41,12 @@ end
 % find best matches
 [~, matchedTimes] = findpeaks(-mse, sigTimes, 'SortStr', 'descend', 'MinPeakDistance', 5, 'NPeaks', nbest);
 matchedTimes = matchedTimes - xk(1);  % shift to the left to compensate for how diffs was computed from left edge of kernel
+matchedTimes = matchedTimes(:);
 
-
-
-%%
 
 if showPlot
     
     % psth for events and matched events
-    close all
     figure('color', 'white', 'position', [222.00 655.00 1024.00 510.00]);
     c = lines(1);
 
@@ -75,7 +62,7 @@ if showPlot
     
     % matched events
     subplot(2,3,2); hold on
-    matched = interp1(sigTimes, sig, xk + matchedTimes');
+    matched = interp1(sigTimes, sig, xk + matchedTimes);
     plot(xk, matched', 'color', [c .1])
     plot(xk, mean(matched, 1), 'LineWidth', 3, 'color', c)
     set(gca, 'xlim', window, 'ylim', yLims);
@@ -91,6 +78,7 @@ if showPlot
     plot(xk, mn, 'LineWidth', 3, 'color', c)
     stdev = std(matched, 1);
     patch([xk fliplr(xk)], [(-stdev+mn) fliplr(stdev+mn)], c, 'FaceAlpha', .1, 'EdgeColor', 'none')
+    set(gca, 'ylim', yLims)
     
 
     % raw signal

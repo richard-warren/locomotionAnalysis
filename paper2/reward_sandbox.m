@@ -264,7 +264,7 @@ for i = 1:height(data)
             tit1 = sprintf('%s(%i)', data{i, 'session'}{1}, data{i, 'unit'});
             tit2 = data{i, 'nucleus'}{1};
             title({tit1, tit2}, ...
-                'Interpreter', 'none', 'FontWeight', 'normal', 'FontSize', 8)    
+                'Interpreter', 'none', 'FontWeight', 'normal', 'FontSize', 8)
         end
         
         if subplotNum==1
@@ -285,116 +285,123 @@ set(gca, 'xcolor', get(gca, 'ycolor'))  % time axis visible only for final subpl
 saveas(gcf, ['E:\lab_files\paper2\plots\rewards\overtime_psths\' num2str(fignum) '.png'])
 toc
 
-%% find matched slowdowns!
+%% matched lick bouts and slow downs!
 
 % settings
-session = sessions{30};
-xlims = [-2 1];
-nbest = 20;  % find nbest best matches
-c = lines(2); c = c(2,:);
+velWindow = [-2 6];
+lickWindow = [0 4];
+nbestVel = 20;
+nbestLick = 20;
+colors = flipud(lines(2));
+ncols = 10;
+figpos = [2.00 563.00 2558.00 793.00];
+smoothing = .1;  % (s)
+corrMaxLag = 2;  % (s)
 
 % inits
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
-vel = predictors{'velocity', 'data'}{1};
-t = predictors{'velocity', 't'}{1};
-rewardTimes = predictors{'reward_all', 'data'}{1};
+% data = getUnitInfo();
+xLims = [min(velWindow(1), lickWindow(1)), max(velWindow(2), lickWindow(2))];
+x = linspace(xLims(1), xLims(2), 1000);
+corrDt = .01;
+maxLagSmps = corrMaxLag/corrDt;
 
-% get average response
-dt = nanmedian(diff(t));
-xk = xlims(1) : dt : xlims(2);
-X = xk + rewardTimes;
-responses = interp1(t, vel, X);
-kernel = nanmean(responses, 1);
+close all
+figure('name', 'reward responses', 'color', 'white', 'position', figpos); hold on
+previousSession = '';
+figInd = 1;
 
-% mask out peri-event periods
-maskInds = knnsearch(t', X(:));
-vel(maskInds) = nan;
+% for session
+for i = 1:height(data)
+    session = data{i, 'session'}{1};
+    if ~strcmp(previousSession, session)
+        neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
+        
+        load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+        rewardTimes = predictors{'reward_all', 'data'}{1};
+        lickTimes = predictors{'lick', 'data'}{1};
+        [lickRate, lickRateTimes] = getFiringRate(lickTimes, 'kernel', 'gauss', 'kernelSig', .05, ...
+            'fs', 100, 'tLims', [neuralData.timeStamps(1) neuralData.timeStamps(end)]);
+        vel = predictors{'velocity', 'data'}{1};
+        velTimes = predictors{'velocity', 't'}{1};
+        
+        velMatches = findMatchedSignalTimes(vel, velTimes, rewardTimes, velWindow, nbestVel);
+        lickMatches = findMatchedSignalTimes(lickRate, lickRateTimes, rewardTimes, lickWindow, nbestLick);
+        
+        
+    end
+    unitInd = find(neuralData.unit_ids==data{i, 'unit'});
+    colInd = mod(i-1, ncols)+1;
+    
+    % compute smoother firing rates for matches epochs, bc far fewer trials
+    if any(neuralData.spkTimes{unitInd})
+        [smoothedSpks, smoothedSpksTimes] = getFiringRate(...
+            neuralData.spkTimes{unitInd}, 'kernel', 'gauss', 'kernelSig', .06);
 
+%         % vel
+        subplot(4,ncols,colInd)
+        resp = interp1(velTimes, vel, rewardTimes + x);
+        shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', [0 0 0]})
+        resp = interp1(velTimes, vel, velMatches + x);
+        shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', colors(1,:)})
+        if colInd==1; ylabel('velocity'); end
 
-nk = length(kernel);
-diffs = nan(1, length(vel));
-for i = 1 : length(vel)-nk
-%     diffs(i) = mean(abs(vel(i:i+n-1) - kernel));
-    diffs(i) = sum((vel(i:i+nk-1) - kernel).^2);
+        tit1 = sprintf('%s(%i)', data{i, 'session'}{1}, data{i, 'unit'});
+        tit2 = data{i, 'nucleus'}{1};
+        title({tit1, tit2}, 'Interpreter', 'none', 'FontWeight', 'normal', 'FontSize', 8)
+
+        % lick rate
+        subplot(4,ncols,colInd+ncols)
+        resp = interp1(lickRateTimes, lickRate, rewardTimes + x);
+        shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', [0 0 0]})
+        resp = interp1(lickRateTimes, lickRate, lickMatches + x);
+        shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', colors(2,:)})
+        if colInd==1; ylabel('lick rate'); end
+
+        % firing rate
+        subplot(4,ncols,colInd+2*ncols); hold on
+        resp = interp1(neuralData.timeStamps, neuralData.spkRates(unitInd,:), rewardTimes + x);
+        shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 2, 'color', [0 0 0]})
+        resp = interp1(smoothedSpksTimes, smoothedSpks, velMatches + x);
+        plot(x, nanmean(resp,1), 'color', [colors(1,:) .75], 'LineWidth', 2)
+        resp = interp1(smoothedSpksTimes, smoothedSpks, lickMatches + x);
+        plot(x, nanmean(resp,1), 'color', [colors(2,:) .75], 'LineWidth', 2)
+        if colInd==1; ylabel('firing rate'); xlabel('time after reward (s)'); end
+        
+        % xcorr
+        subplot(4,ncols,colInd+3*ncols); hold on
+        plot(corrMaxLag*[-1 1], [0 0], 'color', [1 1 1]*.6)  % line at y=0
+        plot([0 0], [-1 1], 'color', [1 1 1]*.6)            % line at x=0
+        
+        t = neuralData.timeStamps(~isnan(neuralData.spkRates(unitInd,:)));
+        t = t(1) : corrDt : t(end);  % interpole onto common .01 s time grid
+        velInterp = zscore(interp1(velTimes, vel, t));
+        lickRateInterp = zscore(interp1(lickRateTimes, lickRate, t));
+        frInterp = zscore(interp1(neuralData.timeStamps, neuralData.spkRates(unitInd,:), t));
+        
+        [corrVel, lags] = xcorr(frInterp, velInterp, maxLagSmps, 'unbiased');
+        corrLick = xcorr(frInterp, lickRateInterp, maxLagSmps, 'unbiased');
+        plot(lags*corrDt, corrVel, 'color', colors(1,:), 'LineWidth', 2)
+        plot(lags*corrDt, corrLick, 'color', colors(2,:), 'LineWidth', 2)
+        set(gca, 'ylim', [-1 1])
+        
+        if colInd==1
+            ylabel('correlation');
+            xlabel('\leftarrow brain leads (lag [s]) body leads \rightarrow');
+        end
+        
+    else
+        fprintf('WARNING! No spikes for %s unit %i\n', session, data{i, 'unit'})
+    end
+    
+    % make new figure if necessary
+    if mod(i, ncols)==0 || i==height(data)
+        saveas(gcf, ['E:\lab_files\paper2\plots\rewards\reward_matching\' num2str(figInd) '.png'])
+        if i<height(data)
+            figure('name', 'reward responses', 'color', 'white', 'position', figpos); hold on
+            figInd = figInd + 1;
+        end
+    end
 end
-
-figure('color', 'white', 'position', [41.00 812.00 1186.00 411.00]);
-
-% mean slow down
-subplot(2,3,1); hold on
-plot(xk, responses', 'color', [0 0 0 .1])
-plot(xk, mean(responses,1), 'LineWidth', 3, 'color', [0 0 0])
-set(gca, 'xlim', xlims);
-title('kernel')
-
-% raw signal
-subplot(2,3,4:6); hold on
-ylims = ylim;
-plot(repmat(rewardTimes,1,2), ylim, 'color', [.2 .2 .8])  % plot reward times
-plot(t, vel, 'color', [.4 .4 .4])
-set(gca, 'ylim', ylims)
-
-% find and plot peaks
-[~, peaks] = findpeaks(-diffs, t, 'SortStr', 'descend', 'MinPeakDistance', 5, 'NPeaks', nbest);
-peaks = peaks - xk(1);  % shift to the left to compensate for how diffs was computed from left edge of kernel
-for i = 1:length(peaks)
-    xsub = xk + peaks(i);
-    plot(xsub, kernel, 'color', c, 'linewidth', 2)
-end
-
-% matched mean slow down
-subplot(2,3,2); hold on
-matched = interp1(t, vel, xk + peaks');
-plot(xk, matched', 'color', [c .1])
-plot(xk, mean(matched, 1), 'LineWidth', 3, 'color', c)
-set(gca, 'xlim', xlims);
-title('matched')
-
-% matched over kernel
-subplot(2,3,3); hold on
-
-mn = mean(responses, 1);
-plot(xk, mn, 'LineWidth', 3, 'color', [0 0 0])
-stdev = std(responses, 1);
-patch([xk fliplr(xk)], [(-stdev+mn) fliplr(stdev+mn)], [0 0 0], 'FaceAlpha', .25, 'EdgeColor', 'none')
-
-mn = mean(matched, 1);
-plot(xk, mn, 'LineWidth', 3, 'color', c)
-stdev = std(matched, 1);
-patch([xk fliplr(xk)], [(-stdev+mn) fliplr(stdev+mn)], c, 'FaceAlpha', .25, 'EdgeColor', 'none')
-
-
-set(gca, 'xlim', xlims);
-title('kernel + matched')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
