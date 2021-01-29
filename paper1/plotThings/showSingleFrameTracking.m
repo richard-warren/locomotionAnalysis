@@ -12,6 +12,7 @@ s.wiskBorder = 4;  % white border to draw around whisker camera
 s.numPoints = 10;  % number of scatter points to show
 s.deltaFrames = 2;  % how many frames apart should each scatter point be
 s.pawColors = jet(4);
+s.ind = nan;
 s.featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
                     'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot', ...
                     'nose_top', 'nose_bot', 'tailMid_top', 'tailMid_bot', 'tailBase_top', 'tailBase_bot'};
@@ -19,8 +20,7 @@ s.featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
-vidTop = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runTop.mp4'));
-vidBot = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runBot.mp4'));
+vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
 load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
     'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPixPositions', 'pixelsPerM', 'frameTimeStampsWisk');
 locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
@@ -29,10 +29,13 @@ scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % sco
 
 
 % show image
-ind = find(frameTimeStamps > obsOnTimes(trial) & ...
-           frameTimeStamps < obsOffTimes(trial) & ...
-           obsPixPositions' < s.obsFramePixels, 1, 'first');  % ind of frame where mouse is getting over obstacle
-img = double(cat(1, rgb2gray(read(vidTop, ind)), rgb2gray(read(vidBot, ind))));
+if isnan(s.ind)
+    ind = find(frameTimeStamps > obsOnTimes(trial) & ...
+               frameTimeStamps < obsOffTimes(trial) & ...
+               obsPixPositions' < s.obsFramePixels, 1, 'first');  % ind of frame where mouse is getting over obstacle
+end
+% img = double(cat(1, rgb2gray(read(vidTop, ind)), rgb2gray(read(vidBot, ind))));
+img = double(rgb2gray(read(vid, ind)));
 img = uint8(img * (255/max(img(:))));
 img = imadjust(img, s.contrastLims, [0 1]);
 

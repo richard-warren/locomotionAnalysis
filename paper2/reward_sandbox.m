@@ -295,7 +295,6 @@ nbestLick = 20;
 colors = flipud(lines(2));
 ncols = 10;
 figpos = [2.00 563.00 2558.00 793.00];
-smoothing = .1;  % (s)
 corrMaxLag = 2;  % (s)
 
 % inits
@@ -317,17 +316,22 @@ for i = 1:height(data)
         neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
         
         load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
-        rewardTimes = predictors{'reward_all', 'data'}{1};
+        rewardNormal = predictors{'reward_normal', 'data'}{1};
+        rewardSurprise = predictors{'reward_surprise', 'data'}{1};
+        rewardOmission = predictors{'reward_omission', 'data'}{1};
+        
+        conditions = {'normal', 'surprise', 'omission'};
+        rewardTimes = {rewardNormal, rewardSurprise, rewardOmission};
+        rewardColors = [0 0 0 1; 0 .6 0 .5; .8 0 0 .5];
+        
         lickTimes = predictors{'lick', 'data'}{1};
         [lickRate, lickRateTimes] = getFiringRate(lickTimes, 'kernel', 'gauss', 'kernelSig', .05, ...
             'fs', 100, 'tLims', [neuralData.timeStamps(1) neuralData.timeStamps(end)]);
         vel = predictors{'velocity', 'data'}{1};
         velTimes = predictors{'velocity', 't'}{1};
         
-        velMatches = findMatchedSignalTimes(vel, velTimes, rewardTimes, velWindow, nbestVel);
-        lickMatches = findMatchedSignalTimes(lickRate, lickRateTimes, rewardTimes, lickWindow, nbestLick);
-        
-        
+        velMatches = findMatchedSignalTimes(vel, velTimes, rewardNormal, velWindow, nbestVel);
+        lickMatches = findMatchedSignalTimes(lickRate, lickRateTimes, rewardNormal, lickWindow, nbestLick);
     end
     unitInd = find(neuralData.unit_ids==data{i, 'unit'});
     colInd = mod(i-1, ncols)+1;
@@ -337,9 +341,9 @@ for i = 1:height(data)
         [smoothedSpks, smoothedSpksTimes] = getFiringRate(...
             neuralData.spkTimes{unitInd}, 'kernel', 'gauss', 'kernelSig', .06);
 
-%         % vel
-        subplot(4,ncols,colInd)
-        resp = interp1(velTimes, vel, rewardTimes + x);
+        % vel
+        subplot(5,ncols,colInd)
+        resp = interp1(velTimes, vel, rewardNormal + x);
         shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', [0 0 0]})
         resp = interp1(velTimes, vel, velMatches + x);
         shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', colors(1,:)})
@@ -350,16 +354,16 @@ for i = 1:height(data)
         title({tit1, tit2}, 'Interpreter', 'none', 'FontWeight', 'normal', 'FontSize', 8)
 
         % lick rate
-        subplot(4,ncols,colInd+ncols)
-        resp = interp1(lickRateTimes, lickRate, rewardTimes + x);
+        subplot(5,ncols,colInd+ncols)
+        resp = interp1(lickRateTimes, lickRate, rewardNormal + x);
         shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', [0 0 0]})
         resp = interp1(lickRateTimes, lickRate, lickMatches + x);
         shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 3, 'color', colors(2,:)})
         if colInd==1; ylabel('lick rate'); end
 
         % firing rate
-        subplot(4,ncols,colInd+2*ncols); hold on
-        resp = interp1(neuralData.timeStamps, neuralData.spkRates(unitInd,:), rewardTimes + x);
+        subplot(5,ncols,colInd+2*ncols); hold on
+        resp = interp1(neuralData.timeStamps, neuralData.spkRates(unitInd,:), rewardNormal + x);
         shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'lineProps', {'lineWidth', 2, 'color', [0 0 0]})
         resp = interp1(smoothedSpksTimes, smoothedSpks, velMatches + x);
         plot(x, nanmean(resp,1), 'color', [colors(1,:) .75], 'LineWidth', 2)
@@ -368,7 +372,7 @@ for i = 1:height(data)
         if colInd==1; ylabel('firing rate'); xlabel('time after reward (s)'); end
         
         % xcorr
-        subplot(4,ncols,colInd+3*ncols); hold on
+        subplot(5,ncols,colInd+3*ncols); hold on
         plot(corrMaxLag*[-1 1], [0 0], 'color', [1 1 1]*.6)  % line at y=0
         plot([0 0], [-1 1], 'color', [1 1 1]*.6)            % line at x=0
         
@@ -383,11 +387,16 @@ for i = 1:height(data)
         plot(lags*corrDt, corrVel, 'color', colors(1,:), 'LineWidth', 2)
         plot(lags*corrDt, corrLick, 'color', colors(2,:), 'LineWidth', 2)
         set(gca, 'ylim', [-1 1])
+        if colInd==1; ylabel('correlation'); xlabel('\leftarrow brain leads (lag [s]) body leads \rightarrow'); end
         
-        if colInd==1
-            ylabel('correlation');
-            xlabel('\leftarrow brain leads (lag [s]) body leads \rightarrow');
+        % fr responses to different reward types
+        subplot(5,ncols,colInd+4*ncols); hold on
+        for j = 1:3
+            resp = interp1(smoothedSpksTimes, smoothedSpks, rewardTimes{j} + x);
+            shadedErrorBar(x, resp, {@nanmean, @nanstd}, 'patchSaturation', .1, ...
+                'lineProps', {'lineWidth', 3, 'color', rewardColors(j,:)})
         end
+        if colInd==1; ylabel('firing rate'); xlabel('time after reward (s)'); end
         
     else
         fprintf('WARNING! No spikes for %s unit %i\n', session, data{i, 'unit'})
@@ -403,6 +412,112 @@ for i = 1:height(data)
     end
 end
 
+%% responses to different reward types (fr, vel, lick rate)
+
+
+% settings
+xLims = [-2 6];
+ncols = 10;  % 10
+colors = [0 0 0 1; 0 .6 0 .5; .8 0 0 .5];
+figpos = [2.00 827.00 2558.00 529.00];
+sortCols = {'nucleus', 'session'};
+
+
+% inits
+% data = getUnitInfo();  % only run once
+x = linspace(xLims(1), xLims(2), 1000);
+[~, sortInds] = sortrows(data, sortCols);
+
+close all
+figure('name', 'reward responses', 'color', 'white', 'position', figpos); hold on
+previousSession = '';
+figInd = 1;
+
+% for session
+for i = 1:height(data)
+    session = data{sortInds(i), 'session'}{1};
+    if ~strcmp(previousSession, session)
+        neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
+        
+        load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
+        rewardNormal = predictors{'reward_normal', 'data'}{1};
+        rewardSurprise = predictors{'reward_surprise', 'data'}{1};
+        rewardOmission = predictors{'reward_omission', 'data'}{1};
+        
+        conditions = {'normal', 'surprise', 'omission'};
+        rewardTimes = {rewardNormal, rewardSurprise, rewardOmission};
+        
+        
+        lickTimes = predictors{'lick', 'data'}{1};
+        [lickRate, lickRateTimes] = getFiringRate(lickTimes, 'kernel', 'gauss', 'kernelSig', .05, ...
+            'fs', 100, 'tLims', [neuralData.timeStamps(1) neuralData.timeStamps(end)]);
+        vel = predictors{'velocity', 'data'}{1};
+        velTimes = predictors{'velocity', 't'}{1};
+    end
+    
+    unitInd = find(neuralData.unit_ids==data{sortInds(i), 'unit'});
+    colInd = mod(i-1, ncols)+1;
+    
+    if any(neuralData.spkTimes{unitInd})
+        
+        % compute smoother firing rates for matches epochs, bc far fewer trials
+        [smoothedSpks, smoothedSpksTimes] = getFiringRate(...
+            neuralData.spkTimes{unitInd}, 'kernel', 'gauss', 'kernelSig', .06);
+        
+        % times all times and firing rate into tableR
+        unitData = table({velTimes, lickRateTimes, smoothedSpksTimes}', ...
+                         {vel, lickRate, smoothedSpks}', ...
+                         'VariableNames', {'t', 'data'}, ...
+                         'RowNames', {'velocity', 'lick rate', 'firing rate'});
+        
+        for row = 1:height(unitData)
+            subplot(height(unitData), ncols, colInd+(row-1)*ncols); hold on
+            
+            for j = 1:3  % for each of 3 response types
+                rewardBins = rewardTimes{j}>=smoothedSpksTimes(1) & rewardTimes{j}<=smoothedSpksTimes(end);  % bins where unit is not nan
+                resp = interp1(unitData{row, 't'}{1}, ...
+                               unitData{row, 'data'}{1}, ...
+                               rewardTimes{j}(rewardBins) + x);
+                mn = nanmean(resp,1);
+                dev = nanstd(resp,1);
+                patch([x fliplr(x)], [mn+dev fliplr(mn-dev)], colors(j,1:3), ...
+                    'EdgeColor', 'none', 'FaceAlpha', .1)
+                plot(x, mn, 'Color', colors(j,:), 'LineWidth', 3)
+            end
+            yLims = ylim;
+            plot([0 0], yLims, 'Color', [0 0 0 .5])  % line at x=0
+            set(gca, 'ylim', yLims)
+            
+            if colInd==1
+                ylabel(unitData.Properties.RowNames{row});
+                xlabel('time after reward (s)');
+                if row==height(unitData)
+                    for k = 1:3; lines(k) = plot([nan nan], 'color', colors(k,:), 'LineWidth', 2); end % create dummy lines
+                    legend(lines, conditions, 'Location', 'best', 'Box', 'off', ...
+                        'AutoUpdate', 'off', 'FontSize', 8)
+                end
+            end
+            
+            if row==1
+                tit1 = sprintf('%s(%i)', data{sortInds(i), 'session'}{1}, data{sortInds(i), 'unit'});
+                tit2 = data{sortInds(i), 'nucleus'}{1};
+                title({tit1, tit2}, 'Interpreter', 'none', 'FontWeight', 'normal', 'FontSize', 8)
+            end
+        end
+        
+    else
+        fprintf('WARNING! No spikes for %s unit %i\n', session, data{i, 'unit'})
+    end
+    
+    % make new figure if necessary
+    if mod(i, ncols)==0 || i==height(data)
+        saveas(gcf, ['E:\lab_files\paper2\plots\rewards\reward_types\' num2str(figInd) '.png'])
+        if i<height(data)
+            figure('name', 'reward responses', 'color', 'white', 'position', figpos); hold on
+            figInd = figInd + 1;
+        end
+    end
+end
 
 
 
