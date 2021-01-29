@@ -43,7 +43,7 @@ fprintf('finished in %.1f minutes\n', toc/60)
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
 mice = unique(ephysHistoTable.mouseID);
 
-overwrite = true;
+overwrite = false;
 
 for i = 1:length(mice)
     

@@ -12,7 +12,9 @@ s.wiskBorder = 4;  % white border to draw around whisker camera
 s.numPoints = 10;  % number of scatter points to show
 s.deltaFrames = 2;  % how many frames apart should each scatter point be
 s.pawColors = jet(4);
+s.otherColors = [.8 .8 .8];
 s.ind = nan;
+s.removeRows = [];  % start and end rows to remove from the image // use to cut out the bright line separating top and bottom views
 s.featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
                     'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot', ...
                     'nose_top', 'nose_bot', 'tailMid_top', 'tailMid_bot', 'tailBase_top', 'tailBase_bot'};
@@ -28,54 +30,36 @@ scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % sco
 [locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 
 
-% show image
+% find frame number
 if isnan(s.ind)
-    ind = find(frameTimeStamps > obsOnTimes(trial) & ...
-               frameTimeStamps < obsOffTimes(trial) & ...
-               obsPixPositions' < s.obsFramePixels, 1, 'first');  % ind of frame where mouse is getting over obstacle
+    s.ind = find(frameTimeStamps > obsOnTimes(trial) & ...
+                 frameTimeStamps < obsOffTimes(trial) & ...
+                 obsPixPositions' < s.obsFramePixels, 1, 'first');  % ind of frame where mouse is getting over obstacle
 end
-% img = double(cat(1, rgb2gray(read(vidTop, ind)), rgb2gray(read(vidBot, ind))));
-img = double(rgb2gray(read(vid, ind)));
-img = uint8(img * (255/max(img(:))));
-img = imadjust(img, s.contrastLims, [0 1]);
+
+
+% load frame
+if s.addWiskCam
+    vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
+    img = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, s.ind, 'runContrast', s.contrastLims);
+else
+    img = imadjust(read(vid, s.ind), s.contrastLims);
+end
+
+if ~isempty(s.removeRows)
+    img(s.removeRows(1):s.removeRows(2),:) = [];
+    locations(:,2,:) = locations(:,2,:) - ...
+        (locations(:,2,:)>s.removeRows(2))*diff(s.removeRows);  % shift tracking to compenstate for taking out rows in the middle
+end
+
+
 
 figure('name', sprintf('%s, trial %i', session, trial), ...
     'Color', 'white', 'Position', [100 100 size(img,2) size(img,1)], 'MenuBar', 'none')
 colormap gray
 image(img, 'cdatamapping', 'scaled'); hold on;
-set(gca, 'XLim', [1, size(img,2)], 'YLim', [1, size(img,2)], ...
-    'visible', 'off', 'Units', 'pixels', 'Position', [1 1 size(img,2) size(img,1)]);
-
-
-% add whisker frame
-if s.addWiskCam
-    
-    % get whisker frame and frame alignment
-    vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
-    indWisk = knnsearch(frameTimeStampsWisk, frameTimeStamps(ind));
-    frameWisk = rgb2gray(read(vidWisk, indWisk));
-    frameTop = rgb2gray(read(vidTop, ind));
-    [yWiskPos, xWiskPos, wiskScaling] = getSubFramePosition(frameTop(:,:), frameWisk(:,:), .35:.005:.45);
-    
-    % adjust whisker frame
-    frameWisk = imresize(frameWisk, wiskScaling);
-    frameWisk = imadjust(frameWisk, [.5 1], [0 1]);
-    frameWisk = 255 - frameWisk;
-    
-    % add border to frame
-    frameWisk([1:s.wiskBorder, end-s.wiskBorder:end], :) = 255;
-    frameWisk(:, [1:s.wiskBorder, end-s.wiskBorder:end]) = 255;
-    frameWisk = repmat(frameWisk,1,1,3);
-    
-    xInds = xWiskPos:xWiskPos+size(frameWisk,2)-1;
-    yInds = yWiskPos:yWiskPos+size(frameWisk,1)-1;
-    image(xInds, yInds, frameWisk);
-    
-    xLims = [1, max(size(img,2), xInds(end))];
-    yLims = [min(1,yWiskPos), size(img,1)];
-    set(gcf, 'position', [100 100 range(xLims) range(yLims)])
-    set(gca, 'xlim', xLims, 'ylim', yLims, 'units', 'normalized', 'position', [0 0 1 1])
-end
+set(gca, 'XLim', [1, size(img,2)], 'YLim', [1, size(img,1)], ...
+    'visible', 'off', 'Units', 'normalized', 'Position', [0 0 1 1]);
 
 
 % add kinematic traces or scatters
@@ -87,11 +71,11 @@ for i = 1:length(features)
             pawNum = str2double(features{i}(4));
             color = s.pawColors(pawNum,:);
         else
-            color = [.8 .8 .8];
+            color = s.otherColors;
         end
 
         % traces
-        inds = ind-s.deltaFrames*(s.numPoints-1) : s.deltaFrames : ind;
+        inds = s.ind-s.deltaFrames*(s.numPoints-1) : s.deltaFrames : s.ind;
         x = locations(inds, 1, i);
         y = locations(inds, 2, i);
         for j = 1:s.numPoints
@@ -101,7 +85,8 @@ for i = 1:length(features)
 end
 
 
-% add obstacle
-obsPos = obsPixPositions(ind);
-rectangle('Position', [obsPos-s.obsWidth, vidTop.Height, s.obsWidth*2, vidBot.Height], ...
-    'EdgeColor', 'none', 'FaceColor', [1 1 1 .6]);
+% % add obstacle
+% obsPos = obsPixPositions(s.ind);
+% rectangle('Position', [obsPos-s.obsWidth, vidTop.Height, s.obsWidth*2, vidBot.Height], ...
+%     'EdgeColor', 'none', 'FaceColor', [1 1 1 .6]);
+
