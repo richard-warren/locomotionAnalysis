@@ -19,11 +19,12 @@ data = load(fullfile(getenv('SSD'), 'paper2', 'histo', 'histoLabels', [mouse '_h
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
 
 % make table for data storage
-bins = strcmp(ephysHistoTable.mouseID, mouse);
+bins = strcmp(ephysHistoTable.mouseID, mouse);  %  & ~cellfun(@isempty, ephysHistoTable.GC_Points)
 cellLocations = ephysHistoTable.GC_Points(bins);
 unitsPerSession = cellfun(@(x) size(x,1), cellLocations);
 sessions = repelem(ephysHistoTable.session(bins), unitsPerSession);
 unit_ids = ephysHistoTable.GC_ids(bins);
+unit_ids = cellfun(@(x) x(:), unit_ids, 'UniformOutput', false);  % temp // make sure all unit_ids are column vectors
 unit_ids = cat(1, unit_ids{:});
 shank = repelem(ephysHistoTable.shankNum(bins), unitsPerSession);
 nunits = sum(unitsPerSession);
