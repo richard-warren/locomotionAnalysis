@@ -1,4 +1,21 @@
-% tracking example frames for running and licking
+%% inits, overall settings
+
+% select example cells
+units = struct();
+units(1).session = '200624_000'; units(1).unit = 67;
+units(2).session = '200722_000'; units(2).unit = 341;
+units(3).session = '201217_000'; units(3).unit = 76;
+
+rewardColor = [.3 .3 .9];
+nucleiColors = lines(3);
+nuclei = {'dentate', 'interpositus', 'fastigial'};  % don't change
+kernelSz = .1;  % for smoothing firing rate, lick rate
+
+data = getUnitInfo();
+ncols = length(units);
+
+
+%% tracking example frames for running and licking
 
 session = '200709_000';
 scatSize = 80;
@@ -32,20 +49,21 @@ end
 
 %% show predictor traces surrounding reward delivery
 
-session = '201016_000'; unit = 195;
-rewardNum = 20;
+% session = '201016_000'; unit = 195;
+unitnum = 2;
+rewardNum = 35;  % 35
 vars = {'jaw',  'velocity', 'bodyAngle',  'paw4RH_x', 'whiskerAngle'};
 names = {'jaw', 'velocity', 'body angle', 'paw',      'whiskers'};
-tlims = [-6 4];  % (s) time pre and post reward
+tlims = [-5 4];  % (s) time pre and post reward
 offset = 5;  % (std) vertical offset for traces
-blue = [.5 .5 1];
-figpos = [200.00 871.00 952.00 480.00];
+figpos = [369.00 389.00 850.00 485.00];
 glmColor = lines(1);
 
 % inits
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 close all;
 
+session = units(unitnum).session; unit = units(unitnum).unit;
 figure('color', 'white', 'menubar', 'none', 'position', figpos);
 subplot(2,1,1); hold on
 rewardTime = predictors{'reward_normal', 'data'}{1}(rewardNum);
@@ -63,16 +81,16 @@ for i = 1:length(vars)
     
     if strcmp(vars{i}, 'jaw')
         y = interp1(t(bins), sig, lickTimes);
-        scatter(lickTimes, y, 40, blue, 'filled')
+        scatter(lickTimes, y, 40, rewardColor, 'filled')
     end
 end
 
 % add line at reward time
-yLims = ylim;
-ln = plot([rewardTime rewardTime], ylim, 'color', blue, 'LineWidth', 2);
+ylims = ylim;
+ln = plot([rewardTime rewardTime], ylim, 'color', rewardColor, 'LineWidth', 2);
 uistack(ln, 'bottom')
 
-set(gca, 'xlim', xlims, 'ylim', ylim, 'Visible', 'off')
+set(gca, 'xlim', xlims, 'ylim', ylims, 'Visible', 'off')
 
 
 % firing rate vs. predicted firing rate
@@ -80,10 +98,18 @@ subplot(2,1,2); hold on
 load(['E:\lab_files\paper2\modelling\glms\upper_lower_glms\' session '_cell_' num2str(unit) '_glm.mat'], 'fitdata');
 bins = fitdata.t>=xlims(1) & fitdata.t<=xlims(2);
 
-plot(fitdata.t(bins), fitdata.yRate(bins), 'color', [1 1 1]*.2)
-plot(fitdata.t(bins), fitdata.yhat(bins), 'color', glmColor)
+plot(fitdata.t(bins), fitdata.yRate(bins), 'color', [1 1 1]*.2, 'LineWidth', 1.5)
+plot(fitdata.t(bins), fitdata.yhat(bins), 'color', glmColor, 'LineWidth', 1.5)
 set(gca, 'XLim', xlims, 'Visible', 'off')
-legend('firing rate', 'predicted firing rate')
+legend('firing rate', 'predicted firing rate', 'autoupdate', 'off')
+
+% add time scale
+plot(xlims(1) + [0 0 1], ylims(1) + [50 0 0], 'color', 'black', 'LineWidth', 3)
+
+text(xlims(1)+.5, yLims(1)-diff(yLims)*.05, '1 second', ...
+    'VerticalAlignment', 'top', 'HorizontalAlignment', 'center')
+text(xlims(1)-diff(xlims)*.01, yLims(1)+25, '50 Hz', 'Rotation', 90, ...
+    'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center')
 
 saveas(gcf, 'Y:\loco\obstacleData\other\feedingGrantFigure\predictors', 'svg');
 
@@ -94,19 +120,11 @@ saveas(gcf, 'Y:\loco\obstacleData\other\feedingGrantFigure\predictors', 'svg');
 close all
 
 % settings
-x = linspace(-2, 5, 200);  % x grid
-units = struct();
-units(1).session = '200624_000'; units(1).unit = 67;
-units(2).session = '200722_000'; units(2).unit = 341;
+x = linspace(-2, 6, 200);  % x grid
 colors = [0 0 0 1; 0 .6 0 .5; .8 0 0 .5];
-corrDt = .01;
-corrMaxLag = 1;  % (s)
-kernelSz = .1;
 
 
-figure('color', 'white', 'menubar', 'none', 'position', [200.00 660.00 341.00*length(units) 691.00]);
-ncols = length(units);
-maxLagSmps = corrMaxLag/corrDt;
+figure('color', 'white', 'menubar', 'none', 'position', [200.00 660.00 341.00*length(units) 400]);
 
 for i = 1:ncols
    
@@ -136,7 +154,7 @@ for i = 1:ncols
                      'RowNames', {'lick rate', 'firing rate'});
     
     for row = 1:height(unitData)
-        subplot(height(unitData)+1, ncols, i+(row-1)*ncols); hold on
+        subplot(height(unitData), ncols, i+(row-1)*ncols); hold on
 
         for j = 1:3  % for each of 3 response types
             rewardBins = rewardTimes{j}>=frTimes(1) & rewardTimes{j}<=frTimes(end);  % bins where unit is not nan
@@ -151,7 +169,7 @@ for i = 1:ncols
         end
         yLims = ylim;
         plot([0 0], yLims, 'Color', [0 0 0 .5])  % line at x=0
-        set(gca, 'ylim', yLims, 'xlim', [x(1) x(end)])
+        set(gca, 'ylim', yLims, 'xlim', [x(1) x(end)], 'TickDir', 'out')
 
         if i==1
             ylabel(unitData.Properties.RowNames{row});
@@ -163,62 +181,32 @@ for i = 1:ncols
                     'AutoUpdate', 'off', 'FontSize', 8)
             end
         end
+        if row<height(unitData); set(gca, 'XTickLabel', []); end
     end
-    
-    % xcorr
-    subplot(height(unitData)+1, ncols, i+2*ncols); hold on
-    t = neuralData.timeStamps(~isnan(neuralData.spkRates(unitInd,:)));
-    t = t(1) : corrDt : t(end);  % interpole onto common .01 s time grid
-    lickRateInterp = zscore(interp1(lickRateTimes, lickRate, t));
-    frInterp = zscore(interp1(neuralData.timeStamps, neuralData.spkRates(unitInd,:), t));
-    [corrLick, lags] = xcorr(frInterp, lickRateInterp, maxLagSmps, 'unbiased');
-    plot(lags*corrDt, corrLick, 'LineWidth', 2, 'color', 'black')
-    ylims = ylim;
-    plot([0 0], ylims, 'color', [1 1 1]*.4);
-    [~, maxInd] = max(abs(corrLick));
-    scatter(lags(maxInd)*corrDt, corrLick(maxInd), 50, 'black', 'filled');
-    xlabel('<- brain leads (lag [s]) body leads ->');
-    ylabel('correlation');
 end
 
 saveas(gcf, 'Y:\loco\obstacleData\other\feedingGrantFigure\reward_types', 'svg');
 
 
 %% example cells, lick rate comparison
-% lick rate, broken down by integral
-% firing rate, broken down by integral
-% lick rate, by reward condition
-% firing rate, by reward condition
-% xcorr
+
 close all
 
-% settings
-units = struct();
-units(1).session = '200624_000'; units(1).unit = 67;
-units(2).session = '200722_000'; units(2).unit = 341;
-
-% fastigialBins = strcmp(data.nucleus, 'fastigial');
-% units = struct('session', data.session(fastigialBins), ...
-%                'unit', num2cell(data.unit(fastigialBins)));
-% units = units(61:end);
-
-x = linspace(-2, 5, 200);  % x grid
-nbins = 3;  % number of lick response bins
-colors = [lines(1)*.5; lines(1)];
-corrDt = .01;
-corrMaxLag = 1;  % (s)
-kernelSz = .1;
+x = linspace(-2, 6, 200);  % x grid
 highLowPercentiles = [20 80];
-conditions = {'low lick rate', 'high lick rate'};
+conditions = {'fewer licks', 'more licks'};
 
 
-figure('color', 'white', 'menubar', 'none', 'position', [200.00 660.00 341.00*length(units) 691.00]);
-ncols = length(units);
-maxLagSmps = corrMaxLag/corrDt;
+figure('color', 'white', 'menubar', 'none', 'position', [200.00 660.00 341.00*length(units) 400]);
 
 for i = 1:ncols
-   
-    session = units(i).session; unit = units(i).unit;
+    
+    session = units(i).session;
+    unit = units(i).unit;
+    nucleus = data.nucleus{strcmp(data.session, session) & data.unit==unit};
+    nucleusColor = nucleiColors(strcmp(nuclei, nucleus),:);
+    colors = [nucleusColor*.5; nucleusColor];
+    
     neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
     unitInd = find(neuralData.unit_ids==unit);
     [fr, frTimes] = getFiringRate(neuralData.spkTimes{unitInd}, 'kernel', 'gauss', 'kernelSig', kernelSz);
@@ -246,7 +234,7 @@ for i = 1:ncols
                      'RowNames', {'lick rate', 'firing rate'});
     
     for row = 1:height(unitData)
-        subplot(height(unitData)+1, ncols, i+(row-1)*ncols); hold on
+        subplot(height(unitData), ncols, i+(row-1)*ncols); hold on
 
         for j = 1:2  % for each of 2 lick conditions
             rewardBins = binNums==j;  % bins where unit is not nan
@@ -261,7 +249,7 @@ for i = 1:ncols
         end
         yLims = ylim;
         plot([0 0], yLims, 'Color', [0 0 0 .5])  % line at x=0
-        set(gca, 'ylim', yLims, 'xlim', [x(1) x(end)])
+        set(gca, 'ylim', yLims, 'xlim', [x(1) x(end)], 'TickDir', 'out')
 
         if i==1
             ylabel(unitData.Properties.RowNames{row});
@@ -273,23 +261,8 @@ for i = 1:ncols
                     'AutoUpdate', 'off', 'FontSize', 8)
             end
         end
-        if row==1; title(sprintf('%s (%i)', session, unit), 'Interpreter', 'none'); end
+        if row<height(unitData); set(gca, 'XTickLabel', []); end
     end
-    
-    % xcorr
-    subplot(height(unitData)+1, ncols, i+2*ncols); hold on
-    t = neuralData.timeStamps(~isnan(neuralData.spkRates(unitInd,:)));
-    t = t(1) : corrDt : t(end);  % interpole onto common .01 s time grid
-    lickRateInterp = zscore(interp1(lickRateTimes, lickRate, t));
-    frInterp = zscore(interp1(neuralData.timeStamps, neuralData.spkRates(unitInd,:), t));
-    [corrLick, lags] = xcorr(frInterp, lickRateInterp, maxLagSmps, 'unbiased');
-    plot(lags*corrDt, corrLick, 'LineWidth', 2, 'color', 'black')
-    ylims = ylim;
-    plot([0 0], ylims, 'color', [1 1 1]*.4);
-    [~, maxInd] = max(abs(corrLick));
-    scatter(lags(maxInd)*corrDt, corrLick(maxInd), 50, 'black', 'filled');
-    xlabel('<- brain leads (lag [s]) body leads ->');
-    ylabel('correlation');
 end
 
 saveas(gcf, 'Y:\loco\obstacleData\other\feedingGrantFigure\high_low_licks', 'svg');
@@ -297,17 +270,12 @@ saveas(gcf, 'Y:\loco\obstacleData\other\feedingGrantFigure\high_low_licks', 'svg
 
 %% histo panels
 
-units = struct();
-units(1).session = '200624_000'; units(1).unit = 67;
-units(2).session = '200722_000'; units(2).unit = 341;
-
-
 ccf = loadCCF();
 
 %%
 close all
 figure('color', 'white', 'menubar', 'none', 'position', [757.00 583.00 313.00 646.00]);
-colors = repelem(lines(3), 2, 1);
+colors = repelem(nucleiColors, 2, 1);
 args = {'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml};
 planeColor = lines(1);
 
@@ -315,7 +283,7 @@ subplot(2,1,1); hold on
 plotLabels3D(ccf.coarseLabels, 'downSampling', 7, 'colors', zeros(3,3), ...
     'surfArgs', {'FaceAlpha', .04, 'EdgeColor', 'none'}, args{:})
 plotLabels3D(ccf.labels, 'colors', colors, 'downSampling', 2, ...
-    'surfArgs', {'EdgeColor', 'none', 'FaceAlpha', .8}, args{:})
+    'surfArgs', {'EdgeColor', 'none', 'FaceAlpha', .6}, args{:})
 scatter3(data.ccfMm(:,1), data.ccfMm(:,2), data.ccfMm(:,3), ...
     4, 'black', 'filled', 'MarkerFaceAlpha', 1, 'MarkerEdgeColor', 'none');
 set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
@@ -337,10 +305,20 @@ patch([xlims(1) xlims(2) xlims(2) xlims(1)], ...
       [ylims(1) ylims(1) ylims(2) ylims(2)], ...
       planeColor, 'EdgeColor', planeColor, 'FaceColor', 'none', 'linewidth', 1)  % (ml, ap, dv)
 
-
-% set(gca, 'ylim', [2.5 5])
+% all units
 scatter(data.ccfMm(:,1), data.ccfMm(:,3), ...
         10, 'black', 'filled', 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'none');
+
+for i = 1:length(units)
+    session = units(i).session;
+    unit = units(i).unit;
+    dataBin = strcmp(data.session, session) & data.unit==unit;
+    nucleus = data.nucleus{dataBin};
+    loc = data.ccfMm(dataBin,:);
+    nucleusColor = nucleiColors(strcmp(nuclei, nucleus),:);
+    scatter(loc(1), loc(3), 100, nucleusColor, 'filled', 'MarkerEdgeColor', 'black', 'LineWidth', 2)
+    text(loc(1), loc(3), sprintf('%i',i), 'FontSize', 20, 'color', 'white')
+end
 
 set(gcf, 'Renderer', 'painters')
 saveas(gcf, 'Y:\loco\obstacleData\other\feedingGrantFigure\histo', 'svg');
