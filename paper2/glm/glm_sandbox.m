@@ -213,13 +213,129 @@ session = '200622_000'; unit = 264;
 
 data = getUnitInfo();
 
+tic
 for i = 1:height(data)
     try
-        fitEpochGlm(data.session{i}, data.unit(i), 'parallel', true, 'closeFig', true);
+        fitEpochGlm(data.session{i}, data.unit(i), 'parallel', false, 'closeFig', true);
     catch exception
         fprintf('%s (%i): PROBLEM! -> %s\n', data.session{i}, data.unit(i), exception.identifier)
     end
 end
+fprintf('\nfinished in %.1f minutes\n', toc/60)
+
+%% plot reward vs predicted reward vs delta heatmaps
+
+% settings
+x = linspace(-2, 4, 200);
+nclusters = 3;
+colors = lines(nclusters);
+pcutoff = .001;
+
+% get data tbl and add reponse columns
+data = getUnitInfo();
+m = height(data);
+n = length(x);
+tbl = table(nan(m,n), nan(m,n), nan(m,n), nan(m,1), ...
+    'VariableNames', {'resp', 'resp_pred', 'resp_delta', 'p'});
+data = cat(2, data, tbl);
+
+
+% get all responses
+for i = 1:height(data)
+    disp(i/height(data))
+    
+    modelname = sprintf('E:\\lab_files\\paper2\\modelling\\glms\\epoch_glms\\%s_cell_%i_glm.mat', data.session{i}, data.unit(i));
+    
+    if exist(modelname, 'file')
+        d = load(modelname);
+        r = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'runAnalyzed', [data.session{i} '_runAnalyzed.mat']), ...
+            'rewardTimes', 'omissionTimes');
+        reward_all = [r.rewardTimes; r.omissionTimes];
+
+        t    = d.fitdata.t;
+        y    = d.fitdata.yRate;                    % actual firing rate
+        yhat = d.models{'postreward', 'yhatout'};  % predicted from model trained outside rewards
+        
+        % normalize
+        mn = mean(y);
+        stdev = std(y);
+        y = (y - mn) / stdev;
+        yhat = (yhat - mn) / stdev;
+        
+        % remove prediction outliers
+        yhat(yhat<min(y)) = min(y);
+        yhat(yhat>max(y)) = max(y);
+
+        % compute responses for each trial
+        unit_resp  = interp1(t, y, reward_all + x);     % response matrix for unit
+        unit_pred  = interp1(t, yhat, reward_all + x);  % predicted response matrix for unit
+        unit_delta = unit_resp - unit_pred;
+        
+        % add mean responses to table
+        data.resp(i,:) = nanmean(unit_resp, 1);
+        data.resp_pred(i,:) = nanmean(unit_pred, 1);
+        data.resp_delta(i,:) = nanmean(unit_delta, 1);
+
+        % response significance
+        pre  = nanmean(unit_resp(:,x<=0), 2);
+        post = nanmean(unit_resp(:,x>0), 2);
+        [~, data.p(i)] = ttest(pre, post);
+    end
+end
+
+%%
+
+close all;
+figure('color', 'white', 'menubar', 'none', 'position', [2.00 722.00 1278.00 688.00])
+bins = data.p < pcutoff;
+nrows = sum(bins);
+clims = [-5 5];
+cmap = customcolormap([0 .5 1], [1 .2 .2; 1 1 1; .2 .2 1]);
+
+
+
+% actual response
+subplot(1,3,1)
+imagesc(x, 1:nrows, data.resp(bins,:), clims)
+colormap(cmap); colorbar
+
+% predicted
+subplot(1,3,2)
+imagesc(x, 1:nrows, data.resp_pred(bins,:), clims)
+colormap(cmap); colorbar
+
+% actual - predicted
+subplot(1,3,3)
+imagesc(x, 1:nrows, data.resp_delta(bins,:), clims)
+colormap(cmap); colorbar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

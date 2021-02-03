@@ -57,6 +57,32 @@ for i = 1:length(mice)
     end
 end
 
+%% copy runAnalyzed.mat from engram to local SSD
+
+% copy runAnalyzed.mat from engram to local folder for faster reading
+
+% settings
+overwrite = false;
+
+data = getUnitInfo();
+sessions = unique(data.session);
+
+for i = 1:length(sessions)
+    engramfile = fullfile(getenv('OBSDATADIR'), 'sessions', sessions{i}, 'runAnalyzed.mat');
+    localfile = fullfile(getenv('SSD'), 'paper2', 'modelling', 'runAnalyzed', ...
+        [sessions{i} '_runAnalyzed.mat']);
+    
+    if ~exist(localfile, 'file')
+        fprintf('(%3i/%i) copying %s from engram to local SSD\n', ...
+            i, length(sessions), sessions{i})
+        copyfile(engramfile, localfile);
+    end
+end
+
+
+
+
+
 %% todo (automatically copy files from engram to local, skipping files that are already there...)
 
 

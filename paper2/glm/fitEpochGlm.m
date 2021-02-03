@@ -78,32 +78,34 @@ n = length(epochNames);
 models = table(cell(n+1,1), cell(n+1,1), ...
     nan(n+1,1), nan(n+1,1), nan(n+1,1), nan(n+1,1), ...
     nan(n+1, 1), nan(n+1, 1), nan(n+1, length(t)), ...
-    nan(n+1, length(t)), nan(n+1, length(t)), ...
+    nan(n+1, length(t)), nan(n+1, length(t)), cell(n+1, 1), ...
     'RowNames', [{'full'}, s.epochs.Properties.RowNames], ...
     'VariableNames', {'modelin', 'modelout', 'modelin_devin', 'modelin_devout', ...
-    'modelout_devin', 'modelout_devout', 'full_in', 'full_out', 'bins', 'yhatin', 'yhatout'});
+    'modelout_devin', 'modelout_devout', 'full_in', 'full_out', 'bins', 'yhatin', 'yhatout', 'eventTimes'});
 
 
 % full
 model_full = fitModel(X, y, s.lambdas);
 models{'full', 'modelin'}{1} = model_full;
-models{'full', 'modelin_devin'} = ...
+models{'full', 'modelin_devin'} = ...  % there is no 'in' vs 'out' for the full model, so just store deviance and yhat in 'in' column
     cvdeviance(X, y, model_full, 'holdout', true, 'bestLambdaOnly', true);
+models{'full', 'yhatin'} = exp(model_full.fit_preval)' / dt;
 
 for i = 1:height(s.epochs)
     % identify epoch time bins
     epochName = s.epochs.Properties.RowNames{i};
     eventName = s.epochs{i, 'event'}{1};
     events = predictors{eventName, 'data'}{1};
+    models{epochName, 'eventTimes'} = {events};
     epochs = events + s.epochs{i, 'window'};         % start and end time of each epoch
     bins = any(t>=epochs(:,1) & t<=epochs(:,2), 1);  % time bins for epoch
     models{epochName, 'bins'} = bins;
     
     % deviance for full model in and out of epoch
     models{epochName, 'full_in'} = cvdeviance(X, y, model_full, ...
-        'holdout', true, 'bestLambdaOnly', true, 'timeBins', bins');
+        'holdout', true, 'bestLambdaOnly', true, 'timeBins', bins);
     models{epochName, 'full_out'} = cvdeviance(X, y, model_full, ...
-        'holdout', true, 'bestLambdaOnly', true, 'timeBins', ~bins');
+        'holdout', true, 'bestLambdaOnly', true, 'timeBins', ~bins);
     
     % train in, then out of epoch models
     for j = [{bins, 'in'}', {~bins, 'out'}']
@@ -120,10 +122,11 @@ for i = 1:height(s.epochs)
         models{epochName, ['yhat' c]}(~b) = yhat(:, model.lambda_min_id) / dt;
 
         % compute deviance for data in and out of training set
+        holdout = all(b==bins);
         models{epochName, ['model' c '_devin']} = ...
-            cvdeviance(X(b,:), y(b), model, 'holdout', true, 'bestLambdaOnly', true);
+            cvdeviance(X, y, model, 'holdout', holdout, 'bestLambdaOnly', true, 'timeBins', bins);
         models{epochName, ['model' c '_devout']} = ...
-            cvdeviance(X(~b,:), y(~b), model, 'holdout', false, 'bestLambdaOnly', true);
+            cvdeviance(X, y, model, 'holdout', ~holdout, 'bestLambdaOnly', true, 'timeBins', ~bins);
     end
 end
 
@@ -149,11 +152,11 @@ if s.plot
     fig = figure('color', 'white', 'position', [2.00 722.00 1600 height(s.epochs)*250]); hold on
     eventToShow = {'reward_all', 'whiskerContact', 'lick'};
     eventColors = lines(length(eventToShow));
+    yhatfull = models{'full', 'yhatin'};  % predictions for full model
 
     for i = 1:height(s.epochs)
 
         yhatout = models{epochName, 'yhatout'};  % predictions for model trained outside of epochs
-        yhatfull = exp(models{'full', 'modelin'}{1}.fit_preval)' / dt;  % predictions for full model
 
         % sample trace
         subplot(height(s.epochs), 5, (i-1)*4+(1:3)); hold on
@@ -171,13 +174,13 @@ if s.plot
         plot(t(bins), yhatfull(bins), 'color', s.colors(2,:));     % trained outside of epoch
         plot(t(bins), yhatout(bins), 'color', s.colors(3,:));     % trained outside of epoch
 
-        legend('actual', 'full', ['no ' epochName], 'autoupdate', 'off')
+        legend('actual', 'train all', 'train out', 'autoupdate', 'off')
 
         % shade in epochs
         ylims = ylim;
-        X = (events + [s.epochs.window(i,:) fliplr(s.epochs.window(i,:))])';  % every column has verticies of one rectangle
-        Y = repmat([ylims(1) ylims(1) ylims(2) ylims(2)]', 1, length(events));
-        obj = patch(X, Y, s.colors(3,:), 'EdgeColor', 'none', 'FaceAlpha', .1);
+        Xs = (events + [s.epochs.window(i,:) fliplr(s.epochs.window(i,:))])';  % every column has verticies of one rectangle
+        Ys = repmat([ylims(1) ylims(1) ylims(2) ylims(2)]', 1, length(events));
+        obj = patch(Xs, Ys, s.colors(3,:), 'EdgeColor', 'none', 'FaceAlpha', .1);
         uistack(obj, 'bottom')
 
         % add time bar
@@ -197,7 +200,7 @@ if s.plot
         % psth
         xlims = s.epochs.window(i,:) + range(s.epochs.window(i,:))/2 * [-1 1];  % add half of window range as padding on either side
         x = linspace(xlims(1), xlims(2), 200);
-        sigs = table([spkRate; yhatout; yhatfull], ...
+        sigs = table([spkRate; yhatfull; yhatout], ...
                      {'actual', 'full', ['no ' epochName]}', ...
                      'VariableNames', {'signal', 'name'});  % pack all signals into a table
         events = predictors{s.epochs.event{i}, 'data'}{1};
@@ -224,15 +227,14 @@ if s.plot
                models{epochName, 'modelin_devout'} models{epochName, 'modelin_devin'}
                models{epochName, 'modelout_devout'} models{epochName, 'modelout_devin'}];  % (full x in x out) // (out x in)
         barFancy(repmat(mat,1,1,2), ...
-            'levelNames', {{'trainall', 'train in', 'train out'}, {'test in', 'test out'}}, ...
-            'showScatter', false, 'lineThickness', .1, 'YLim', [0 .4], ...
+            'levelNames', {{'train all', 'train in', 'train out'}, {'test out', 'test in'}}, ...
+            'showScatter', false, 'lineThickness', .1, ...
             'colors', repelem([s.colors(2,:); .2 .2 .2; s.colors(3,:)], 2, 1))
     end
     
     if s.save; saveas(gcf, [s.outputFileName(1:end-4) '.png']); end
     if s.closeFig; close(fig); end
 end
-
 
 
 
