@@ -1,10 +1,20 @@
 %% inits, overall settings
 
 % select example cells
+
+% these are all the units nate is cool with
+% units(1).session = '201118_000'; units(1).unit = 196;
+% units(2).session = '201215_000'; units(2).unit = 188;
+% units(3).session = '201228_000'; units(3).unit = 49;
+% units(4).session = '200708_000'; units(4).unit = 66;
+% units(5).session = '200722_000'; units(5).unit = 341;
+% units(6).session = '201208_000'; units(6).unit = 171;
+
 units = struct();
-units(1).session = '200624_000'; units(1).unit = 67;
-units(2).session = '200722_000'; units(2).unit = 341;
-units(3).session = '201217_000'; units(3).unit = 76;
+units(1).session = '201118_000'; units(1).unit = 196;
+units(2).session = '201228_000'; units(2).unit = 49;
+units(3).session = '200722_000'; units(3).unit = 341;
+
 
 rewardColor = [.3 .3 .9];
 nucleiColors = lines(3);
@@ -50,7 +60,7 @@ end
 %% show predictor traces surrounding reward delivery
 
 % session = '201016_000'; unit = 195;
-unitnum = 2;
+unitnum = 3;
 rewardNum = 35;  % 35
 vars = {'jaw',  'velocity', 'bodyAngle',  'paw4RH_x', 'whiskerAngle'};
 names = {'jaw', 'velocity', 'body angle', 'paw',      'whiskers'};
@@ -60,10 +70,10 @@ figpos = [369.00 389.00 850.00 485.00];
 glmColor = lines(1);
 
 % inits
+session = units(unitnum).session; unit = units(unitnum).unit;
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 close all;
 
-session = units(unitnum).session; unit = units(unitnum).unit;
 figure('color', 'white', 'menubar', 'none', 'position', figpos);
 subplot(2,1,1); hold on
 rewardTime = predictors{'reward_normal', 'data'}{1}(rewardNum);
@@ -105,7 +115,7 @@ legend('firing rate', 'predicted firing rate', 'autoupdate', 'off')
 
 % add time scale
 plot(xlims(1) + [0 0 1], ylims(1) + [50 0 0], 'color', 'black', 'LineWidth', 3)
-
+yLims = ylim;
 text(xlims(1)+.5, yLims(1)-diff(yLims)*.05, '1 second', ...
     'VerticalAlignment', 'top', 'HorizontalAlignment', 'center')
 text(xlims(1)-diff(xlims)*.01, yLims(1)+25, '50 Hz', 'Rotation', 90, ...
@@ -127,7 +137,7 @@ colors = [0 0 0 1; 0 .6 0 .5; .8 0 0 .5];
 figure('color', 'white', 'menubar', 'none', 'position', [200.00 660.00 341.00*length(units) 400]);
 
 for i = 1:ncols
-   
+%     pause(1)
     session = units(i).session; unit = units(i).unit;
     neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
         
@@ -182,6 +192,7 @@ for i = 1:ncols
             end
         end
         if row<height(unitData); set(gca, 'XTickLabel', []); end
+        limitTicks;
     end
 end
 
@@ -195,7 +206,8 @@ close all
 x = linspace(-2, 6, 200);  % x grid
 highLowPercentiles = [20 80];
 conditions = {'fewer licks', 'more licks'};
-
+colorNuclei = false;  % whether to color units based on their nucleus
+noxticks = true;
 
 figure('color', 'white', 'menubar', 'none', 'position', [200.00 660.00 341.00*length(units) 400]);
 
@@ -205,7 +217,11 @@ for i = 1:ncols
     unit = units(i).unit;
     nucleus = data.nucleus{strcmp(data.session, session) & data.unit==unit};
     nucleusColor = nucleiColors(strcmp(nuclei, nucleus),:);
-    colors = [nucleusColor*.5; nucleusColor];
+    if colorNuclei
+        colors = [nucleusColor*.5; nucleusColor];
+    else
+        colors = [.6 .6 .6; 0 0 0];
+    end
     
     neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
     unitInd = find(neuralData.unit_ids==unit);
@@ -253,7 +269,7 @@ for i = 1:ncols
 
         if i==1
             ylabel(unitData.Properties.RowNames{row});
-            if row==height(unitData); xlabel('time after reward (s)'); end
+            if row==height(unitData) && ~noxticks; xlabel('time after reward (s)'); end
             if row==1
                 temp = [];
                 for k = 1:2; temp(k) = plot([nan nan], 'color', colors(k,:), 'LineWidth', 2); end % create dummy lines
@@ -262,6 +278,8 @@ for i = 1:ncols
             end
         end
         if row<height(unitData); set(gca, 'XTickLabel', []); end
+        limitTicks;
+        if noxticks; set(gca, 'XTickLabel', []); end
     end
 end
 

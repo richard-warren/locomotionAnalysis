@@ -23,10 +23,17 @@ for i = 1:length(sessions)
             plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
         end
 
-        % design matrices
+        % design matrices (default)
         filename = fullfile(folder, 'designMatrices', [sessions{i} '_designMatrix.mat']);
         if overwrite || ~exist(filename, 'file')
             makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'outputFileName', filename);
+        end
+        
+        % design matrices (epochs)
+        filename = fullfile(folder, 'designMatrices', 'epochs', [sessions{i} '_designMatrix.mat']);
+        if overwrite || ~exist(filename, 'file')
+            makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'outputFileName', filename, ...
+                'predictorSpreadsheet', 'C:\Users\richa\Desktop\github\locomotionAnalysis\paper2\glm\epoch_predictorSettings.xlsx');
         end
         
 %     catch exception

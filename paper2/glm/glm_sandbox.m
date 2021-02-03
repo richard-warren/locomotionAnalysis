@@ -202,3 +202,34 @@ figure('position', [280.00 89.00 560.00 420.00]); plot(smoothings, maxCorrs)
 corr(smoothed, paw')
 
 
+%% fit epoch glms
+
+%% fit single epoch glm
+session = '200622_000'; unit = 264;
+[models, fitdata] = fitEpochGlm(session, unit, 'parallel', true, 'save', true);
+
+
+%% fit all epoch glms
+
+data = getUnitInfo();
+
+for i = 1:height(data)
+    try
+        fitEpochGlm(data.session{i}, data.unit(i), 'parallel', true, 'closeFig', true);
+    catch exception
+        fprintf('%s (%i): PROBLEM! -> %s\n', data.session{i}, data.unit(i), exception.identifier)
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+

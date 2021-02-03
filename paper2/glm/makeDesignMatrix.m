@@ -6,14 +6,14 @@ function [dmat, t, reward_all] = makeDesignMatrix(session, varargin)
 % settings
 s.timeDegrees = 0;    % add time polynomial of degree timeDegrees (constant term is excluded)
 s.outputFileName = '';  % if provided saves design matrix to disk
+s.predictorSpreadsheet = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.xlsx');
 
 % inits
 fprintf('making design matrix for %s... ', session)
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 reward_all = predictors{'reward_all', 'data'}{1};
-settings = readtable(fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.xlsx'), ...
-    'Sheet', 'predictors');
+settings = readtable(s.predictorSpreadsheet, 'Sheet', 'predictors');
 settings = settings(logical(settings.include),:);
 t = predictors.t{1};  % assumes first predictor is continuous
 dt = t(2)-t(1);
