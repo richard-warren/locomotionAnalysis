@@ -1,27 +1,36 @@
-function clusterIds = clusterResponses(responses, nclusters)
+function [clusterIds, mahaDistances, projection] = clusterResponses(responses, varargin)
 % given a (response x time) matrix, clusters responses // first compress
-% responses using pca, then cluster using gaussian mixture models
+% responses using pca, then cluster using gaussian mixture models // number
+% of clusters determined
 
+% settings
+s.pcs = 5;
+s.plot = false;
+s.nclusters = [];  % if empty, nclusters automatically determined
+s.clustermetric = 'bic';  % 'bic' or 'aic' // information criterion for selecting number of clusters
+s.maxclusters = 8;
+s.suppressWarning = false;
+
+
+
+% inits
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
+s.maxclusters = max(s.maxclusters, s.nclusters);
 
 % pca
-[coeff, score, ~, ~, explained] = pca(img);
-if s.plotPcs
-    figure
-    pcsToShow = 5;
-    subplot(2,1,1); plot(cumsum(explained));
-    subplot(2,1,2); plot(coeff(:,1:pcsToShow), 'LineWidth', 2);
-end
-
+[coeff, score, ~, ~, explained] = pca(responses);
 
 % fit gmms
-maxGroups = 8;
-aic = nan(1, maxGroups);
-bic = nan(1, maxGroups);
-gmm = cell(1, maxGroups);
-for i = 1:maxGroups
-    gmm{i} = fitgmdist(score(:,1:s.gmmPcs), i, ...
+aic = nan(1, s.maxclusters);
+bic = nan(1, s.maxclusters);
+gmm = cell(1, s.maxclusters);
+if ~isempty(s.nclusters); inds = s.nclusters; else; inds = 1:s.maxclusters; end
+
+for i = inds
+    gmm{i} = fitgmdist(score(:,1:s.pcs), i, ...
         'CovarianceType', 'full', 'SharedCovariance', false, ...
-        'RegularizationValue', .01, 'Replicates', 10, 'Options', statset('MaxIter', 1000));
+        'RegularizationValue', .001, 'Replicates', 10, ...
+        'Options', statset('MaxIter', 1000));
     aic(i) = gmm{i}.AIC;
     bic(i) = gmm{i}.BIC;
 end
@@ -31,25 +40,68 @@ if s.suppressWarning
     warning('on', 'stats:gmdistribution:FailedToConvergeReps');
 end
 
+% determine number of clusters
+if isempty(s.nclusters)
+    switch s.clustermetric
+        case 'bic'
+            [~, s.nclusters] = min(bic);
+        case 'aic'
+            [~, s.nclusters] = min(aic);
+    end
+end
 
-if isempty(s.nGroups); [~, s.nGroups] = min(bic); end
-[groups, ~, ~, ~, maha] = gmm{s.nGroups}.cluster(score(:,1:s.gmmPcs));
+% cluster!
+[clusterIds, ~, ~, ~, mahaDistances] = ...
+    gmm{s.nclusters}.cluster(score(:,1:s.pcs));
+mahaDistances = mahaDistances(sub2ind(size(mahaDistances), (1:size(mahaDistances,1))', clusterIds));
 
+% project responses on PCs
+projection = score(:,1:s.pcs) * coeff(:,1:s.pcs)';
 
 
 % show clustering
-if s.plotClustering
-    figure('color', 'white', 'position', [680.00 190.00 424.00 788.00]);
-    subplot(2,1,1); hold on
-    plot(aic)
-    plot(bic)
+if s.plot
+    figure('color', 'white', 'position', [202.00 768.00 960.00 512.00]);
+    
+    % pca
+    subplot(2,3,1);
+    plot(cumsum(explained(1:10)), 'LineWidth', 2);
+    xlabel('number of PCs'); ylabel('variance explained')
+    set(gca, 'box', 'off')
+    
+    subplot(2,3,2); hold on
+    colors = copper(s.pcs);
+    for i = 1:s.pcs
+        plot(coeff(:,i), 'LineWidth', 2, 'color', colors(i,:));
+    end
+    legendNames = split(sprintf('PC%i ', 1:5));
+    legend(legendNames(1:end-1))
+    
+    
+    
+    subplot(2,3,4); hold on
+    plot(aic, 'LineWidth', 2)
+    plot(bic, 'LineWidth', 2)
     legend('aic', 'bic')
     title('BIC and AIC scores')
     
-    subplot(2,1,2); hold on;
-    groupMeans = coeff(:,1:s.gmmPcs) * gmm{s.nGroups}.mu';  % project back onto PCs
+    subplot(2,3,5); hold on;
+    groupMeans = coeff(:,1:s.pcs) * gmm{s.nclusters}.mu';  % project back onto PCs
     plot(groupMeans, 'LineWidth', 2)
-    title('group means')
+    title('cluster means (of pc projections)')
+    
+    % heatmap
+    subplot(2,3,[3 6]); hold on;
+    [sortedIds, sortInds] = sort(clusterIds);
+    imagesc(1:s.pcs, 1:size(responses,1), score(sortInds,1:s.pcs))
+    colors = lines(s.nclusters);
+    for j = 1:(s.nclusters)
+        ystart = find(sortedIds==j, 1, 'first')-.5;
+        yend = find(sortedIds==j, 1, 'last')+.5;
+        plot([1 1]*.5, [ystart yend], ...
+            'linewidth', 3, 'color', colors(j,:))
+    end
+    set(gca, 'xlim', [.5 s.pcs+.5], 'ylim', [1 size(responses,1)])
 end
 
 

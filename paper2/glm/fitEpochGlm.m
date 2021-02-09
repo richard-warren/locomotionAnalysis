@@ -30,7 +30,7 @@ s.closeFig = false;
 
 % inits
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
-if s.verbose; fprintf('%s: fitting models for neuron %i... ', session, unit); end
+if s.verbose; fprintf('%s: fitting models for neuron %3i... ', session, unit); end
 
 % load design matrix
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'epochs', [session '_designMatrix.mat']), ...

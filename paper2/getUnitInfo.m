@@ -56,9 +56,11 @@ end
 
 data = cat(1, data{:});
 
-fprintf('\n\nUNIT COUNTS\n')
-fprintf('-----------\n')
+fprintf('\n\n----------------------------\n')
+fprintf('UNIT COUNTS\n')
+fprintf('----------------------------\n')
 for label = unique(data.nucleus)'; printCounts(data, label{1}); end
+fprintf('----------------------------\n\n')
 
 end
 

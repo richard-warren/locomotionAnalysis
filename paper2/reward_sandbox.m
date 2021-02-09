@@ -13,13 +13,14 @@ n = height(data);
 % settings
 x = linspace(-.5, 2, 200);  % (s) x grid for responses
 init = repmat({nan(1,length(x))}, n, 1);
-tbl = table(init, init, init, init, init, init, ...
+tbl = table(init, init, init, init, init, init, init, ...
     nan(n,1), nan(n,1), nan(n,1), nan(n,1), 'VariableNames', ...
-    {'response', 'predicted_full', 'predicted_noreward', 'lick_response', 'vel_response', 'lick_psth', ...
+    {'response', 'predicted_full', 'predicted_noreward', 'lick_response', 'vel_response', 'phase_response', 'lick_psth', ...
     'dev_noreward', 'dev_full', 'mean', 'std'});
 
 for i = 1:length(sessions)
     disp(i/length(sessions))
+    
     % load ephys info
     neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [sessions{i} '_neuralData.mat']), ...
         'unit_ids', 'spkRates', 'timeStamps');
@@ -36,41 +37,49 @@ for i = 1:length(sessions)
     
     % velocity
     velResponses = interp1(predictors{'velocity', 't'}{1}, predictors{'velocity', 'data'}{1}, X);
+    
+    % phase
+    phaseResponses = interp1(predictors{'paw4RH_phase', 't'}{1}, predictors{'paw4RH_phase', 'data'}{1}, X);
         
     for j = 1:length(unit_ids)
         
         % load models
         rowInd = find(strcmp(data.session, sessions{i}) & data.unit==unit_ids(j));
         fname = ['E:\lab_files\paper2\modelling\glms\upper_lower_glms\' sessions{i} '_cell_' num2str(unit_ids(j)) '_glm.mat'];
+        
         if exist(fname, 'file')
             models = load(fname);
             t = models.fitdata.t;
             dt = t(2) - t(1);
-
-            % neural response
-            tbl{rowInd, 'response'}{1} = interp1(neuralData.timeStamps, neuralData.spkRates(j,:), X);
-            tbl{rowInd, 'mean'} = nanmean(neuralData.spkRates(j,:));
-            tbl{rowInd, 'std'} = nanmean(neuralData.spkRates(j,:));
-
+            
             % predicted response (full)
             yhat = exp(models.models{'full', 'model_in'}{1}.fit_preval) / dt;
             tbl{rowInd, 'predicted_full'}{1} = interp1(t, yhat, X);
 
-            % predicted response (no reward)
+            % predicted response (no reward basis)
             yhat = exp(models.models{'reward', 'model_out'}{1}.fit_preval) / dt;
             tbl{rowInd, 'predicted_noreward'}{1} = interp1(t, yhat, X);
 
             % deviance explained
             tbl{rowInd, 'dev_noreward'} = models.models{'full', 'dev_in'} - models.models{'reward', 'dev_out'};
             tbl{rowInd, 'dev_full'} = models.models{'full', 'dev_in'};
-            
-            % lick rates and vel
-            tbl{rowInd, 'lick_response'}{1} = lickResponses;  % todo: should be done with one linear across all units for session, or saved once pre session to avoid redundancy
-            tbl{rowInd, 'vel_response'}{1} = velResponses;
-            
-            % lick psth
-            tbl{rowInd, 'lick_psth'}{1} = interp1(neuralData.timeStamps, neuralData.spkRates(j,:), Xlick);
+        else
+            t = neuralData.timeStamps(~isnan(neuralData.spkRates(j,:)));
         end
+
+        % neural response
+        trailBins = rewardTimes>t(1) & rewardTimes<t(end);  % reward events for which unit is recorded
+        tbl{rowInd, 'response'}{1} = interp1(neuralData.timeStamps, neuralData.spkRates(j,:), X(trailBins,:));
+        tbl{rowInd, 'mean'} = nanmean(neuralData.spkRates(j,:));
+        tbl{rowInd, 'std'} = nanmean(neuralData.spkRates(j,:));
+
+        % lick, vel, phase responses
+        tbl{rowInd, 'lick_response'}{1} = lickResponses(trailBins,:);
+        tbl{rowInd, 'vel_response'}{1} = velResponses(trailBins,:);
+        tbl{rowInd, 'phase_response'}{1} = phaseResponses(trailBins,:);
+
+        % lick psth
+        tbl{rowInd, 'lick_psth'}{1} = interp1(neuralData.timeStamps, neuralData.spkRates(j,:), Xlick(trailBins,:));
     end
 end
 data = cat(2, data, tbl);
@@ -520,8 +529,153 @@ for i = 1:height(data)
 end
 
 
+%% sharp 'blip' reward response broken down by velocity and phase
+
+clims = [-3 3];
+cmap = customcolormap([0 .5 1], [1 .2 .2; 1 1 1; .2 .2 1]);
+
+% determine amount of sharp blip in responses
+responses = cellfun(@(x) nanmean(x,1), data.response, 'UniformOutput', false);
+responses = cat(1, responses{:});
+responses = (responses - data.mean) ./ data.std;
+
+[~, blipind] = max(nanmean(responses,1));
+blipiness = responses(:, blipind);
+[~, sortInds] = sort(blipiness, 'descend');
+
+close all; figure('color', 'white', 'position', [783.00 218.00 378.00 1098.00]);
+imagesc(x, 1:height(data), responses(sortInds,:), clims)
+colormap(cmap);
+
+saveas(gcf, 'E:\lab_files\paper2\plots\blips\blips_sorted.png')
 
 
+
+%%
+
+
+% settings
+ncols = 8;  % divisible by length(paws) ideally
+nbins = 2;
+plots = {'vel_response', 'phase_response'};  % bin by each of these plot types
+xlims = [x(1) x(end)];
+figpos = [2.00 475.00 2554.00 881.00];
+% figpos = [2.00 722.00 1278.00 688.00];
+colors = lines(length(plots));
+
+% inits
+mask = linspace(0, 1, nbins);
+close all
+figure('name', 'reward responses', 'color', 'white', 'position', figpos, 'menubar', 'none'); hold on
+fignum = 1; offset = 0;
+zeroind = knnsearch(x', 0);
+
+
+tic
+for i = 1:height(data)
+    dind = sortInds(i);
+    
+    if (i-offset) > ncols
+        offset = offset + ncols;
+        saveas(gcf, ['E:\lab_files\paper2\plots\blips\' num2str(fignum) '.png'])
+        
+        set(gcf, 'PaperOrientation', 'landscape');
+        print(gcf, ['E:\lab_files\paper2\plots\blips' num2str(fignum) '.pdf'], '-dpdf', '-bestfit')
+        close(gcf)
+        
+        fignum = fignum + 1;
+        figure('name', 'reward responses', 'color', 'white', 'position', figpos); hold on
+    end
+    
+    subplotNum = i-offset;
+    
+    ylims = nan(length(plots),2);
+    
+    for j = 1:length(plots)
+        
+        % plot binning var (e.g. vel, phase)
+        subplot(length(plots)*2, ncols, subplotNum + (j-1)*ncols*2); hold on
+        resp = data{dind, plots{j}}{1};
+        
+        % get bins
+        [~, ~, binNums] = histcounts(resp(:, zeroind), nbins);
+        
+        for k = 1:nbins
+            bins = binNums==k;
+            mn = nanmean(resp(bins,:), 1);
+            stdev = nanstd(resp(bins,:), 1);
+            patch([x fliplr(x)], [(-stdev+mn) fliplr(stdev+mn)], colors(j,:).*mask(k), ...
+                'FaceAlpha', .25, 'EdgeColor', 'none')           % shaded error bars
+            plot(x, mn, 'color', colors(j,:).*mask(k), 'lineWidth', 2)  % mean
+        end
+        
+        if subplotNum==1
+            ylabel(plots{j}, 'Interpreter', 'none', 'FontWeight', 'bold')
+            if j==length(plots); set(gca, 'xcolor', get(gca, 'ycolor')); end
+        end
+        ylims = ylim;
+        plot([0 0], ylims, 'color', [0 0 0 .4])               % vertical line at t=0
+        set(gca, 'XLim', xlims, 'ylim', ylims); limitticks
+        
+        % add title
+        if j==1
+            tit1 = sprintf('%s (%i)', data{dind, 'session'}{1}, data{dind, 'unit'});
+            tit2 = data{dind, 'nucleus'}{1};
+            title({tit1, tit2}, ...
+                'Interpreter', 'none', 'FontWeight', 'normal', 'FontSize', 8)
+        end
+        
+        % neural reponse
+        subplot(length(plots)*2, ncols, subplotNum + (j-1)*ncols*2 + ncols); hold on
+        resp = data{dind, 'response'}{1};
+        
+        for k = 1:nbins
+            bins = binNums==k;
+            mn = nanmean(resp(bins,:), 1);
+            stdev = nanstd(resp(bins,:), 1);
+            patch([x fliplr(x)], [(-stdev+mn) fliplr(stdev+mn)], colors(j,:).*mask(k), ...
+                'FaceAlpha', .25, 'EdgeColor', 'none')           % shaded error bars
+            plot(x, mn, 'color', colors(j,:).*mask(k), 'lineWidth', 2)  % mean
+        end
+        
+        if subplotNum==1
+            ylabel('firing rate', 'Interpreter', 'none', 'FontWeight', 'bold')
+            if j==length(plots); set(gca, 'xcolor', get(gca, 'ycolor')); end
+        end
+        ylims = ylim;
+        plot([0 0], ylim, 'color', [0 0 0 .4])               % vertical line at t=0
+        set(gca, 'XLim', xlims, 'ylim', ylims); limitticks
+    end
+end
+
+set(gca, 'xcolor', get(gca, 'ycolor'))  % time axis visible only for final subplot
+saveas(gcf, ['E:\lab_files\paper2\plots\blips\' num2str(fignum) '.png'])
+toc
+
+
+%% blipiness on the ccf
+
+
+% settings
+clims = [-1 1];
+colors = [lines(3); zeros(2,3)];  % nuclei colors
+cmap = customcolormap([0 .5 1], [1 .2 .2; 1 1 1; .2 .2 1]);  % blue - white - red cmap for activation scatters
+
+
+close all
+figure('color', 'white', 'menubar', 'none', 'position', [2.00 722.00 1278.00 688.00])
+ccf = loadCCF();
+nucBins = ismember(data.nucleus, {'fastigial', 'interpositus', 'dentate'});
+
+% histo
+respColors = interp1(linspace(clims(1), clims(2), size(cmap,1))', ...
+    cmap, blipiness, 'nearest');
+plotLabels2D(ccf.labels, 'dim', 'dv', 'colors', zeros(6,3), 'patchArgs', {'facecolor', 'none'}, ...
+    'apGrid', ccf.ap, 'mlGrid', ccf.ml, 'dvGrid', ccf.dv)
+scatter(data.ccfMm(nucBins,1), data.ccfMm(nucBins,2), ...
+    [], respColors(nucBins,:), 'filled', 'MarkerFaceAlpha', .8, 'markeredgecolor', 'black')
+
+saveas(gcf, 'E:\lab_files\paper2\plots\blips\scatters.png')
 
 
 
