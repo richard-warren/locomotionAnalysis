@@ -1,19 +1,16 @@
 %% prepare tracking data for sample session for andrea
 
 % settings
-session = '181215_003';
+session = '200819_000';
 outdir = 'C:\Users\richa\Desktop\adrea_files';
 
 % load tracking data
 sesFolder = fullfile(getenv('OBSDATADIR'), 'sessions', session);
 [pawXYZ, pawXYZ_pixels] = getPawXYZ(session);  % in pixels
-load(fullfile(sesFolder, 'runAnalyzed.mat'), ...
-    'rewardTimes', 'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', ...
-    'wheelPositions', 'wheelTimes', 'whiskerAngle', 'frameTimeStampsWisk', ...
-    'lickTimes', 'bodyAngles')
+data = load(['E:\lab_files\paper2\modelling\runAnalyzed\' session '_runAnalyzed.mat']);
 locationsWisk = readtable(fullfile(sesFolder, 'trackedFeaturesRaw_wisk.csv'));
-t = frameTimeStamps;
-obstacleTimes = [obsOnTimes, obsOffTimes];
+t = data.frameTimeStamps;
+obstacleTimes = [data.obsOnTimes, data.obsOffTimes];
 
 % pack locations into a matrix
 [paws, paws_pixels] = deal(nan(length(frameTimeStamps), 4, 3));

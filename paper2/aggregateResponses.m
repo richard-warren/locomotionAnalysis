@@ -15,7 +15,6 @@ function aggregateResponses(varargin)
 s.binNum = 100;  % x axis resolution
 s.eventLims = [-.25 .5];
 s.epochLims = [-.25 1.25];
-s.sessions = {};
 
 % todo: add std, density... // check that everyone has the same
 % predictors!!! // utilize 'include' field
@@ -23,24 +22,21 @@ s.sessions = {};
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-if isempty(s.sessions); s.sessions = getEphysSessions(); end
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [s.sessions{1} '_responses.mat']), 'responses');  % load sample session
-nRows = height(responses);
-aggregates = table(cell(nRows,1), nan(nRows,2), repmat({nan(length(s.sessions),2)}, nRows, 1), responses.type, cell(nRows,1), ...
+cellInfo = getUnitInfo();
+sessions = unique(cellInfo.session, 'stable');
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [sessions{1} '_responses.mat']), 'responses');  % load sample session
+nrows = height(responses);  % todo: check that different responses don't have different heights!
+nunits = height(cellInfo);
+aggregates = table(cell(nrows,1), nan(nrows,2), repmat({nan(length(sessions),2)}, nrows, 1), responses.type, cell(nrows,1), ...
     'VariableNames', {'aggregate', 'xLims', 'xLimsAll', 'type', 'include'}, 'RowNames', responses.Properties.RowNames);
 
 
 % find x limits for each continuous variable for each session
 % (these will be used to compute global x limits for each predictor also compute total number of units)
-fprintf('getting xLims and nunits for %i sessions: ', length(s.sessions))
-nUnits = 0;
-for i = 1:length(s.sessions)
+fprintf('getting xLims and nunits for %i sessions: ', length(sessions))
+for i = 1:length(sessions)
     fprintf('%i ', i)
-    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [s.sessions{i} '_responses.mat']), 'responses');
-    responseSize = size(responses.response{find(responses.include,1,'first')});
-    
-    nUnits = nUnits + responseSize(end);  % different units are stored in the last dimension of responses
-    
+    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [sessions{i} '_responses.mat']), 'responses');
     for j = 1:height(responses)  % loop over predictors
         aggregates.xLimsAll{j}(i,:) = responses.xLims(j,:);
     end
@@ -62,69 +58,66 @@ fprintf('\n')
 % initializations
 xEvent = linspace(s.eventLims(1), s.eventLims(2), s.binNum);
 xEpoch = linspace(s.epochLims(1), s.epochLims(2), s.binNum);
-aggregates.aggregate = repmat({nan(nUnits, s.binNum)}, height(aggregates), 1);
-aggregates.include = repmat({nan(nUnits, 1)}, height(aggregates), 1);
-cellInfo = table(cell(nUnits,1), nan(nUnits,1), ...
-    'VariableNames', {'session', 'unit'});
+aggregates.aggregate = repmat({nan(nunits, s.binNum)}, height(aggregates), 1);
+aggregates.include = repmat({nan(nunits, 1)}, height(aggregates), 1);
 
 
-
-% for all sessions
-rowInd = 0;
-for i = 1:length(s.sessions)
+previousSession = '';
+for i = 1:height(cellInfo)  % for all units
+    session = cellInfo.session{i};
+    unit = cellInfo.unit(i);
+    fprintf('%s, unit %i: (%i/%i) adding responses...\n', session, unit, i, height(cellInfo))
     
-    fprintf('%s: (%i/%i) adding responses...\n', s.sessions{i}, i, length(s.sessions))
-    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [s.sessions{i} '_neuralData.mat']), ...
-        'spkRates', 'unit_ids');
-    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [s.sessions{i} '_responses.mat']), 'responses');
-	
-    % for all cells
-    for j = 1:length(unit_ids)
-        rowInd = rowInd + 1;
-        cellMean = nanmean(spkRates(j,:));
-        cellStd = nanstd(spkRates(j,:));
+    % load session data if new session reached
+    if ~strcmp(previousSession, session)
+        load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']), ...
+            'spkRates', 'unit_ids');
+        load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses');
+        previousSession = session;
+    end
+    
+    unitind = find(unit==unit_ids);
+    unitMean = nanmean(spkRates(unitind,:));
+    unitStd = nanstd(spkRates(unitind,:));
 
-        % for each predictor
-        for k = 1:height(responses)
-            
-            aggregates.include{k}(rowInd) = responses.include(k);
-            
-            if responses.include(k)
-                if responses.type(k)=='event'
-                    y = nanmean(responses.response{k}(:,:,j),1);
-                    y = (y-cellMean) / cellStd;
-                    if any(~isnan(y))
-                        x = linspace(responses.xLims(k,1), responses.xLims(k,2), length(y));  % original x axis
-                        aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xEvent);
-                    end
+    % for each predictor
+    for k = 1:nrows
 
-                elseif responses.type(k)=='epoch'
-                    y = nanmean(responses.response{k}(:,:,j),1);
-                    y = (y-cellMean) / cellStd;
-                    if any(~isnan(y))
-                        x = linspace(responses.xLims(k,1), responses.xLims(k,2), length(y));  % original x axis
-                        aggregates.aggregate{k}(rowInd,:) = interp1(x, y, xEpoch);
-                    end
+        aggregates.include{k}(i) = responses.include(k);
 
-                elseif responses.type(k)=='continuous'
-                    y = responses.response{k}(:,j);
-                    y = (y-cellMean) / cellStd;
-                    if any(~isnan(y))
-                        x = linspace(responses.xLims(k,1), responses.xLims(k,2), length(y));  % original x axis
-                        xi = linspace(aggregates.xLims(k,1), aggregates.xLims(k,2), s.binNum);
-                        validInds = ~isnan(y);
-                        temp = interp1(x(validInds), y(validInds), xi, 'linear');
-                        temp = fillmissing(temp, 'linear', 'EndValues', 'nearest');  % in case response doesn't cover domain, extend on left and right...
-                        aggregates.aggregate{k}(rowInd,:) = temp;
-                    end
+        if responses.include(k)
+            if responses.type(k)=='event'
+                y = nanmean(responses.response{k}(:,:,unitind),1);
+                y = (y-unitMean) / unitStd;
+                if any(~isnan(y))
+                    x = linspace(responses.xLims(k,1), responses.xLims(k,2), length(y));  % original x axis
+                    aggregates.aggregate{k}(i,:) = interp1(x, y, xEvent);
+                end
+
+            elseif responses.type(k)=='epoch'
+                y = nanmean(responses.response{k}(:,:,unitind),1);
+                y = (y-unitMean) / unitStd;
+                if any(~isnan(y))
+                    x = linspace(responses.xLims(k,1), responses.xLims(k,2), length(y));  % original x axis
+                    aggregates.aggregate{k}(i,:) = interp1(x, y, xEpoch);
+                end
+
+            elseif responses.type(k)=='continuous'
+                y = responses.response{k}(:,unitind);
+                y = (y-unitMean) / unitStd;
+                if any(~isnan(y))
+                    x = linspace(responses.xLims(k,1), responses.xLims(k,2), length(y));  % original x axis
+                    xi = linspace(aggregates.xLims(k,1), aggregates.xLims(k,2), s.binNum);
+                    validInds = ~isnan(y);
+                    temp = interp1(x(validInds), y(validInds), xi, 'linear');
+                    temp = fillmissing(temp, 'linear', 'EndValues', 'nearest');  % in case response doesn't cover domain, extend on left and right...
+                    aggregates.aggregate{k}(i,:) = temp;
                 end
             end
         end
-        
-    cellInfo.session{rowInd} = s.sessions{i};
-    cellInfo.unit(rowInd) = unit_ids(j);
     end
 end
+
 
 file = fullfile(getenv('SSD'), 'paper2', 'modelling', 'response_aggregates.mat');
 fprintf('saving results to: %s\n', file);

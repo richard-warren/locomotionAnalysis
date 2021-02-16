@@ -1,42 +1,6 @@
 %% play around with GLMs :)
 
 
-%% train all residual GLMs
-
-overwrite = true;
-
-[sessions, neurons] = getEphysSessions();
-sessions = repelem(sessions, cellfun(@length, neurons));
-neurons = cat(1, neurons{:});
-
-skipInds = [7 27 61];
-
-
-tic; fprintf('\nfitting residual GLMs for %i neurons...\n', length(sessions))
-
-parfor i = 1:length(sessions)  % individual sessions are repeated for each neuron in session
-    if ~ismember(i, skipInds)
-        try
-            % fit models
-            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
-                [sessions{i} '_cell_' num2str(neurons(i)) '_glm.mat']);
-            if overwrite || ~exist(filename, 'file')
-                fprintf('(%3i/%i) %s, cell %3i: fitting GLMs\n', i, length(sessions), sessions{i}, neurons(i));
-                fitResidualGlm(sessions{i}, neurons(i), 'verbose', false, 'parallel', false, 'save', true);
-            end
-
-            % plot
-            plotFilename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
-                [sessions{i} '_cell_' num2str(neurons(i)) '_glm.png']);
-            if (overwrite || ~exist(plotFilename, 'file')) && exist(filename, 'file')
-                plotResidualGlms(sessions{i}, neurons(i), 'save', true, 'visible', false)
-            end
-        catch exception
-            fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
-        end
-    end
-end
-fprintf('\nfinished in %.1f minutes\n', toc/60)
 
 %% UPPER_LOWER GLMS
 

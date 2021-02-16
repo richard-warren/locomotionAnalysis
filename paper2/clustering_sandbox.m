@@ -1,49 +1,60 @@
 %% play around with functional clustering across cells
 
 % create (and write to disk) clustering data struct
-aggregateResponses();  % only need to do once
+% aggregateResponses();  % only need to do once
 [data, cellInfo] = getClusteringData();
 
 % put nested importances in a matrix
 groups = fieldnames(data);
-importance = nan(height(cellInfo), length(groups));
-for i = 1:length(groups)
-    importance(:,i) = data.(groups{i}).tbl.importance;
-end
+colNames = cellfun(@(x) ['importance_' x], groups, 'UniformOutput', false);
 ngroups = length(groups);
+nucbins = ismember(cellInfo.nucleus, {'fastigial', 'interpositus', 'dentate'});  % rows where unit is in nucleus
+
 ccf = loadCCF();
 
 %% plot stuff on ccf
-ccf = loadCCF();
 
 % settings
-clims = [0 .05];
+nucleusonly = true;
+percentileLims = [75 95];  % units are white benathe first percentile, and max color beyond second percentile, and linearly interpolated between
+% percentileLims = [0 95];
 
 % inits
-close all; figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
+close all
+figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
 colors = lines(ngroups);
 views = {'ap', 'dv'}; dims = [1 3; 1 2];
+if nucleusonly; bins = nucbins; else; bins = true(height(cellInfo),1); end
 
 for i = 1:ngroups
+    % determine percentile based color map
+    imp = cellInfo.(['importance_' groups{i}]);
+    imp(imp<0) = 0;
+    cmap = customcolormap([0 1], [colors(i,:); 1 1 1], 1000);
+    clims = prctile(imp(bins), percentileLims);
+    c = interp1(linspace(clims(1), clims(2), 1000), cmap, imp, 'nearest', 'extrap');
+    
     for j = 1:2
         subplot(ngroups, 2, i*2-(j==1))
         title(groups{i})
-        imp = data.(groups{i}).tbl.importance;
         plotLabels2D(ccf.labels, 'dim', views{j}, 'patchArgs', {'FaceColor', 'none', 'EdgeColor', 'black'}, ...
             'apGrid', ccf.ap, 'mlGrid', ccf.ml, 'dvGrid', ccf.dv)
         set(gca, 'xtick', [], 'ytick', [])
-        cmap = customcolormap([0 1], [colors(i,:); 1 1 1]);
-        scatter(cellInfo.ccf(:,dims(j,1)), cellInfo.ccf(:,dims(j,2)), 30, imp, 'filled', ...
+        
+        scatter(cellInfo.ccfMm(bins, dims(j,1)), cellInfo.ccfMm(bins, dims(j,2)), 30, c(bins,:), 'filled', ...
             'MarkerFaceAlpha', .8, 'MarkerEdgeColor', 'black');
-        colormap(gca, cmap)
-        caxis(clims)
     end
 end
 savefig('E:\lab_files\paper2\plots\clustering\ccf_importance.fig')
 
 %% group pair scatters
 
+% settings
+nucleusonly = true;
+
+% inits
 close all; figure('color', 'white', 'position', [2.00 247.00 1278.00 1109.00])
+if nucleusonly; bins = nucbins; else; bins = true(height(cellInfo),1); end
 pairs = nchoosek(1:length(groups), 2);
 
 for i = 1:ngroups
@@ -51,10 +62,13 @@ for i = 1:ngroups
         if j<i
             ind = sub2ind([ngroups ngroups]-1, j, i-1);
             subplot(ngroups-1, ngroups-1, ind)
-            x = importance(:,j);
-            y = importance(:,i);
+            x = cellInfo.(['importance_' groups{j}]);
+            y = cellInfo.(['importance_' groups{i}]);
             
-            scatter(x, y, 20, 'black', 'filled', 'MarkerFaceAlpha', .4)
+            x(x<0) = 0;
+            y(y<0) = 0;
+            
+            scatter(x(bins), y(bins), 20, 'black', 'filled', 'MarkerFaceAlpha', .4)
             xlabel(groups{j})
             ylabel(groups{i})
 %             set(gca, 'xlim', [0 .2], 'ylim', [0 .2])
@@ -69,14 +83,14 @@ for i = 1:ngroups
 end
 savefig('E:\lab_files\paper2\plots\clustering\importance_scatters.fig')
 
-%% percentages by nucleus
+%% tuning by nucleus (bars)
 
 imp = nan(3, length(groups), height(cellInfo));  % fast, int, dent
 
 names = {'fastigial', 'interpositus', 'dentate'};
 for i = 1:3
-    bins = strcmp(cellInfo.target, names{i});
-    imp(i,:,bins) = importance(bins,:)';
+    bins = strcmp(cellInfo.nucleus, names{i});
+    imp(i,:,bins) = cellInfo{bins, colNames}';
 end
 imp = permute(imp, [2 1 3]);
 
@@ -89,45 +103,32 @@ savefig('E:\lab_files\paper2\plots\clustering\nucleus_importance.fig')
 
 %% clustering heatmaps and bar plots
 
-% gmm clustering
-maxGroups = 10;
-aic = nan(1, maxGroups);
-bic = nan(1, maxGroups);
-gmm = cell(1, maxGroups);
-for i = 2:maxGroups
-    gmm{i} = fitgmdist(importance, i, ...
-        'CovarianceType', 'full', 'SharedCovariance', false, ...
-        'RegularizationValue', 1e-6, 'Replicates', 40, 'Options', statset('MaxIter', 1000));
-    aic(i) = gmm{i}.AIC;
-    bic(i) = gmm{i}.BIC;
-end
+% settings
+maxImportance = inf;  % threhsold values above maxImportance
+nclusters = 6;
 
-% select best number of groups
-[~, nclusters] = min(bic);
-[groupid, ~, ~, ~, maha] = gmm{nclusters}.cluster(importance);
+% gmm clustering
+% close all
+clusterbins = ~any(isnan(cellInfo{:, colNames}), 2) & nucbins;
+cellInfoSub = cellInfo(clusterbins,:);
+importance = cellInfo{clusterbins, colNames};
+importance(importance>maxImportance) = maxImportance;
+groupid = clusterResponses(importance, ...
+    'pcs', 0, 'plot', true, 'nclusters', nclusters);
+nclusters = length(unique(groupid));
 colors = lines(nclusters);
 
 
-% kmeans clustering
-% nclusters = 6;
-% groupid = kmeans(importance, nclusters, 'distance', 'cosine');
 
-close all; figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
+figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
 
 % unsorted
-subplot(3,2,1)
-bins = ~any(isnan(importance),2);
-imagesc(-importance(bins,:)); colormap gray
+subplot(3,2,[1 3])
+clusterbins = ~any(isnan(importance),2);
+imagesc(-importance(clusterbins,:)); colormap gray
 set(gca, 'box', 'off', 'tickdir', 'out', 'xtick', 1:ngroups, ...
     'XTickLabel', groups, 'XTickLabelRotation', 20, 'ytick', [])
 title('unclustered')
-
-subplot(3,2,3); hold on
-plt = plot([bic; aic]', 'LineWidth', 2);
-legend(plt, 'BIC', 'AIC', 'AutoUpdate','off')
-set(gca, 'box', 'off', 'xlim', [1 maxGroups], 'tickdir', 'out')
-plot(nclusters*[1 1], ylim, 'color', [1 1 1]*.2)
-xlabel('clusters'); ylabel('BIC score')
 
 % sorted
 subplot(3,2,[2 4]); hold on
@@ -146,28 +147,29 @@ set(gca, 'box', 'off', 'tickdir', 'out', 'xtick', 1:ngroups, ...
 
 % bar plots
 subplot(3,2,[5 6])
-imp = nan(nclusters, ngroups, height(cellInfo));
+imp = nan(nclusters, ngroups, height(cellInfoSub));
 for i = 1:nclusters
-    bins = groupid==i;
-    imp(i,:,bins) = importance(bins,:)';
+    clusterbins = groupid==i;
+    imp(i,:,clusterbins) = importance(clusterbins,:)';
 end
 
 clusternames = cellstr(num2str((1:nclusters).', 'clusters %i'))';
 barFancy(imp, 'showBars', true, 'levelNames', {clusternames, groups}, ...
-    'colors', repelem(lines(nclusters),ngroups,1), 'showScatter', true, 'YLim', [0 .25], ...
+    'colors', repelem(lines(nclusters),ngroups,1), 'showScatter', true, 'YLim', [0 .3], ...
     'showViolins', false, 'showErrorBars', false, 'scatterCondColor', true)
 
 savefig('E:\lab_files\paper2\plots\clustering\clustering.fig')
 
-%% custering on ccf (run cell above first)
+% custering on ccf (run cell above first)
 
 % settings
-clims = [0 .05];
+skipmode = true;
 
 % inits
-close all; figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
+figure('color', 'white', 'position', [592.00 372.00 628.00 818.00])
 colors = lines(nclusters);
 views = {'ap', 'dv'}; dims = [1 3; 1 2];
+modalgroup = mode(groupid);
 
 for i = 1:2
     subplot(2,1,i); hold on
@@ -177,8 +179,10 @@ for i = 1:2
     
     for j = 1:nclusters
         bins = groupid==j;
-        scatter(cellInfo.ccf(bins,dims(i,1)), cellInfo.ccf(bins,dims(i,2)), 100, colors(j,:), 'filled', ...
-            'MarkerFaceAlpha', .8, 'MarkerEdgeColor', 'none');
+        if ~skipmode || j~=modalgroup
+            scatter(cellInfoSub.ccfMm(bins, dims(i,1)), cellInfoSub.ccfMm(bins, dims(i,2)), [], colors(j,:), 'filled', ...
+                'MarkerFaceAlpha', .8, 'MarkerEdgeColor', 'none');
+        end
     end
 end
 savefig('E:\lab_files\paper2\plots\clustering\ccf_groups.fig')
@@ -186,15 +190,17 @@ savefig('E:\lab_files\paper2\plots\clustering\ccf_groups.fig')
 
 %% plot responses sorted by importance
 
-close all; figure('color', 'white', 'position', [2.00 2.00 1865.00 1354.00])
+
+% settings
+histoBins = 10;
+traceNum = 5;
 
 
 % inits
-histoBins = 10;
-traceNum = 10;
+close all; figure('color', 'white', 'position', [2.00 2.00 1865.00 1354.00])
 colors = lines(length(groups));
 cols = length(groups);
-cmap = customcolormap([0 .5 1], [1 .2 .2; 1 1 1; .2 .2 1]);
+cmap = customcolormap([0 .5 1], [1 .2 .2; 1 1 1; .2 .2 1]);  % blue to red
 
 for i = 1:length(groups)
     
@@ -202,12 +208,15 @@ for i = 1:length(groups)
     tbl = data.(groups{i}).tbl;
     x = data.(groups{i}).x;
     predictor = data.(groups{i}).predictor;
-    [~, sortInds] = sort(tbl.importance);
+    imp = tbl.importance;
+    imp(imp<0 | isnan(imp)) = 0;
+    
+    [~, sortInds] = sort(imp);
     finalInd = find(~isnan(tbl.importance(sortInds)), 1, 'last');
 
     % histogram
     subplot(5,cols,i); hold on
-    [~, clusterCenters] = kmeans(tbl.importance(~isnan(tbl.importance)), 2);
+    [~, clusterCenters] = kmeans(imp, 2);
     thresh = mean(clusterCenters);
     histogram(tbl.importance, histoBins, 'EdgeColor', 'none', 'FaceColor', colors(i,:))
     xlabel('deviance explained')
@@ -239,4 +248,15 @@ end
 savefig('E:\lab_files\paper2\plots\clustering\group_responses.fig')
 
 
+%%
 
+
+
+
+
+
+
+
+
+
+    
