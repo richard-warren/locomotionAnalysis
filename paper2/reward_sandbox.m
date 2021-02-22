@@ -559,6 +559,43 @@ saveas(gcf, 'E:\lab_files\paper2\plots\blips\blips_sorted.png')
 blip_data = data(sortInds, {'mouse', 'session', 'unit', 'nucleus', 'rewardTimes', 'blipiness', 'blip_mean'});
 save('Y:\loco\obstacleData\data_transfer\to_remote\blip_data.mat', 'blip_data')
 
+%% relate blipiness to other tuning categories
+
+[~, clusterData] = getClusteringData();
+
+if ~isequal(data(:, {'session', 'unit'}), clusterData(:, {'session', 'unit'}))
+    disp('WARNING! cellInfo is not up to date. Rerun aggregate responses please :)')
+else
+    colbins = contains(clusterData.Properties.VariableNames, 'importance_');
+    data = cat(2, data, clusterData(:, colbins));
+end
+
+
+%%
+
+groups = data.Properties.VariableNames(contains(data.Properties.VariableNames, 'importance_'));
+close all; figure('color', 'white', 'position', [32.00 1110.00 2009.00 201.00], 'menubar', 'none');
+
+for i = 1:length(groups)
+    subplot(1, length(groups), i)
+    imp = data.(groups{i});
+    imp(imp<0) = 0;
+    scatter(data.blip_mean, imp, [], 'black', 'filled', 'MarkerFaceAlpha', .2)
+    
+    % corr
+    bins = ~isnan(imp) & ~isnan(data.blip_mean);
+    r = corr(imp(bins), data.blip_mean(bins));
+    xlims = xlim; ylims = ylim;
+    text(xlims(2), ylims(2), sprintf('r=%.2f', r), ...
+        'HorizontalAlignment', 'right')
+    
+    xlabel('blipiness')
+    ylabel(erase(groups{i}, 'importance_'))
+    
+end
+
+
+
 %% for each unit, determine extent to which blip is modulated by vel, phase, licks
 
 % velocity
@@ -746,9 +783,6 @@ end
 
 
 
-%% videos sorted by blipiness within session
-
-% find the 
 
 
 
