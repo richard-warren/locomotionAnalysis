@@ -32,15 +32,18 @@ fprintf('finished in %.1f minutes\n', toc/60)
 
 %% histo
 
+% settings
+overwrite = false;
+
+
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
 mice = unique(ephysHistoTable.mouseID);
-
-overwrite = false;
 
 for i = 1:length(mice)
     filename = ['E:\lab_files\paper2\histo\registration\' mice{i} '_registration.mat'];
     if ~exist(filename, 'file') || overwrite
         registerBrain(mice{i});
+        close all
     end
 end
 
@@ -50,6 +53,7 @@ end
 
 % settings
 overwrite = false;
+
 
 data = getUnitInfo();
 sessions = unique(data.session);
@@ -65,7 +69,7 @@ for i = 1:length(sessions)
         copyfile(engramfile, localfile);
     end
 end
-
+disp('all done!')
 
 
 

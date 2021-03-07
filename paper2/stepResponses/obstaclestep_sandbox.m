@@ -1,7 +1,28 @@
 %% assess tuning steps over obstacle...
 
 
-% get neural responses
+
+%% get step tuning (via residual model // use to write vids on lab comp sorted by step importance)
+
+data = getUnitInfo(true);
+data = data(ismember(data.nucleus, {'fastigial', 'interpositus', 'dentate'}), :);
+
+% add importance for every unit (based on additional deviance explained in residual glm models)
+data.stepImportance = nan(height(data), 1);
+for i = 1:height(data)
+    disp(i/height(data))
+    fname = fullfile('E:\lab_files\paper2\modelling\glms\residual_glms', ...
+        sprintf('%s_cell_%i_glm.mat', data.session{i}, data.unit(i)));
+    if exist(fname, 'file')
+        load(fname, 'models');
+        data.stepImportance(i) = max(0, models{'pawKinematics', 'dev'});
+    end
+end
+
+save('Y:\loco\obstacleData\data_transfer\to_remote\dataWithStepImportance.mat', 'data')
+
+
+%% get neural responses
 data = getStepResponses();
 save(fullfile(getenv('SSD'), 'paper2', 'modelling', 'stepData', 'stepData.mat'), 'data');
 
