@@ -105,8 +105,8 @@ end
 
 unitLocationsCcfPixels = unitLocationsCcfPixels(:,1:3);
 registration.ccfPix = unitLocationsCcfPixels;
-registration.ccfMm = unitLocationsCcfPixels * .025;
 unitLocationsCcfMm = unitLocationsCcfPixels * .025;
+registration.ccfMm = unitLocationsCcfMm;
 
 
 
