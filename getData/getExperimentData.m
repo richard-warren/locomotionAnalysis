@@ -87,7 +87,7 @@ for mouseVar = 1:length(mouseVars)
     [g.expData(1:length(g.mice)).(mouseVars{mouseVar})] = temp{:};
 end
 
-% loop over mice
+% loop over mic
 disp('getting experiment data...')
 for mouse = 1:length(g.mice)
     g.mouse = mouse;
@@ -125,6 +125,7 @@ for mouse = 1:length(g.mice)
             % load data from session, or compute if necessary
             if exist(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'file')
                 g.sesKinData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'kinData.mat'), 'kinData');
+                g.sesKinData = g.sesKinData.kinData;
             else
                 try
                     g.sesKinData = getKinematicData(g.sessions{session});
@@ -132,7 +133,6 @@ for mouse = 1:length(g.mice)
                     fprintf('%s: problem with getKinematicData!', g.sessions{session});
                 end
             end
-            g.sesKinData = g.sesKinData.kinData;
             g.sesKinInds = find([g.sesKinData.isTrialAnalyzed]);
             g.sesData = load(fullfile(getenv('OBSDATADIR'), 'sessions', g.sessions{session}, 'runAnalyzed.mat'));
             warning('off', 'MATLAB:load:variableNotFound');

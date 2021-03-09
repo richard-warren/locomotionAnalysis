@@ -8,6 +8,8 @@ function getPredictors(session, varargin)
 % settings
 s.dt = .010;  % (s) everything interpolated onto new time axis with this temporal resolution
 s.velTime = .05;  % (s) velocity is computed over this interval
+s.velTimeSlow = .2;  % (s) user-selected variables are computed with slower velocity time
+s.lickKernel = .05;  % (s) std of gaussian kernel used to compute lick rate
 s.percentileLims = [.1 99.9];  % remove and interpolate tracking outside this percentile range
 s.plot = true;
 s.visible = 'on';  % whether predictors plot is visible
@@ -51,7 +53,7 @@ vel = getVelocity(wheelPositions, s.velTime, 1/nanmedian(diff(wheelTimes)));
 vel = interp1(wheelTimes, vel, t);
 addPredictor('velocity', vel(:)', 'continuous', t)
 
-% paw position and pahse
+% paw position and phase
 [pawXYZ, pawXYZ_pixels] = getPawXYZ(session);
 for i = 1:length(pawNames)
     for j = 1:3
@@ -108,15 +110,25 @@ lickBins = histcounts(lickTimes, [t (t(end)+s.dt)]);
 satiation = cumsum(lickBins) / sum(lickBins);
 addPredictor('satiation', satiation, 'continuous', t)
 
+% lick rate
+[lickRate, lickRateTimes] = getFiringRate(lickTimes, 'kernel', 'gauss', 'kernelSig', .1);
+lickRate = interp1(lickRateTimes, lickRate, t);
+addPredictor('lickRate', lickRate, 'continuous', t)
+
 % velocity for continuous predictors
 % (expect for those listed in 'exclude')
-excludeVars = {'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase'};  % don't compute velocity for these predictors
+excludeVars = {'satiation', 'paw1LH_phase', 'paw2LF_phase', 'paw3RF_phase', 'paw4RH_phase', 'velocity', 'lickRate'};  % DON'T compute velocity for these predictors
+% slowVelVars = {'velocity', 'lickRate'};  % vars that will use s.velTimeSlow instead of s.velTime
+slowVelVars = {};  % vars that will use s.velTimeSlow instead of s.velTime
 for row = predictors.Properties.RowNames'
     if ~ismember(row{1}, excludeVars)
-        vel = getVelocity(predictors{row{1}, 'data'}{1}, s.velTime, 1/s.dt);
+        if ismember(row{1}, slowVelVars); vt = s.velTimeSlow; else; vt = s.velTime; end
+        vel = getVelocity(predictors{row{1}, 'data'}{1}, vt, 1/s.dt);
         addPredictor([row{1} '_vel'], vel, 'continuous', t)
     end
 end
+
+
 
 
 

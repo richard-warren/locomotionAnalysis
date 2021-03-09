@@ -7,16 +7,19 @@ s.kernelRise = .005;     % (s) rise for double exponential kernel
 s.kernelFall = .02;      % (s) fall for double exponential kernel
 
 s.fs = 1000;             % (smps/s) sampling frequency of instantaneous firing rate
-s.tLims = [];           % (s) [min max] times for x axis
+s.tLims = [];            % (s) [min max] times for x axis
+s.times = [];            % if provided, uses this as the time vector // needs to be uniformly spaced and monotonically increasing
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
-
+if ~isempty(s.times)
+    s.fs = 1 / (s.times(2) - s.times(1));
+end
 
 % create kernel
 if strcmp(s.kernel, 'gauss')
-    kernelX = 0 : 1/s.fs : s.kernelFall*10;
+    kernelX = 0 : 1/s.fs : s.kernelSig*10;
     kernelX = [-fliplr(kernelX(2:end)) kernelX];  % ensures x axis is centered at 0
     kernel = arrayfun(@(x) (1/(s.kernelSig*sqrt(2*pi))) * exp(-.5*(x/s.kernelSig)^2), kernelX);
     kernel = kernel/sum(kernel);
@@ -30,10 +33,15 @@ end
 
 
 % make time axis
-if isempty(s.tLims)
-    s.tLims = [min(spkTimes)-length(kernel)/s.fs, max(spkTimes)+length(kernel)/s.fs];
+if ~isempty(s.times)
+    times = s.times;
+else
+    if isempty(s.tLims)
+        s.tLims = [min(spkTimes)-length(kernel)/s.fs, max(spkTimes)+length(kernel)/s.fs];
+    end
+    times = s.tLims(1) : (1/s.fs) : s.tLims(2);
 end
-times = s.tLims(1) : (1/s.fs) : s.tLims(2);
+
 
 
 % convert spike times to binary vector

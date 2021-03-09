@@ -1,12 +1,12 @@
 %% perform analyses that require access to engram, which is slow from home ethernet
 
 sessions = getEphysSessions();
-overwrite = false;
+overwrite = true;
 dt = .01;
 
 tic
-for i = 1:length(sessions)
-%     try
+  parfor i = 73:length(sessions)
+    try
         % format ephys data
         filename = fullfile(getenv('OBSDATADIR'), 'data_transfer', 'neuralData', [sessions{i} '_neuralData.mat']);
         if overwrite || ~exist(filename, 'file')
@@ -31,9 +31,9 @@ for i = 1:length(sessions)
             getStepData(sessions{i}, 'outputFileName', filename);
         end
             
-%     catch exception
-%         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
-%     end
+    catch exception
+        fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
+    end
 end 
 fprintf('finished in %.1f minutes\n', toc/60)
 
@@ -43,7 +43,7 @@ fprintf('finished in %.1f minutes\n', toc/60)
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
 mice = unique(ephysHistoTable.mouseID);
 
-overwrite = false;
+overwrite = true;
 
 for i = 1:length(mice)
     
