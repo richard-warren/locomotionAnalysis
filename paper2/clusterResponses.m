@@ -3,8 +3,10 @@ function [clusterIds, mahaDistances, projection] = clusterResponses(responses, v
 % responses using pca, then cluster using gaussian mixture models // number
 % of clusters determined
 
+% todo: add nan handling
+
 % settings
-s.pcs = 5;
+s.pcs = 5;  % set to 0 to bypass pca compression
 s.plot = false;
 s.nclusters = [];  % if empty, nclusters automatically determined
 s.clustermetric = 'bic';  % 'bic' or 'aic' // information criterion for selecting number of clusters
@@ -15,10 +17,14 @@ s.suppressWarning = false;
 
 % inits
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end % reassign settings passed in varargin
-s.maxclusters = max(s.maxclusters, s.nclusters);
 
 % pca
-[coeff, score, ~, ~, explained] = pca(responses);
+if s.pcs>0
+    [coeff, score, ~, ~, explained] = pca(responses);
+    score = score(:, 1:s.pcs);
+else
+    score = responses;
+end
 
 % fit gmms
 aic = nan(1, s.maxclusters);
@@ -26,8 +32,9 @@ bic = nan(1, s.maxclusters);
 gmm = cell(1, s.maxclusters);
 if ~isempty(s.nclusters); inds = s.nclusters; else; inds = 1:s.maxclusters; end
 
+
 for i = inds
-    gmm{i} = fitgmdist(score(:,1:s.pcs), i, ...
+    gmm{i} = fitgmdist(score, i, ...
         'CovarianceType', 'full', 'SharedCovariance', false, ...
         'RegularizationValue', .001, 'Replicates', 10, ...
         'Options', statset('MaxIter', 1000));
@@ -52,11 +59,15 @@ end
 
 % cluster!
 [clusterIds, ~, ~, ~, mahaDistances] = ...
-    gmm{s.nclusters}.cluster(score(:,1:s.pcs));
+    gmm{s.nclusters}.cluster(score);
 mahaDistances = mahaDistances(sub2ind(size(mahaDistances), (1:size(mahaDistances,1))', clusterIds));
 
 % project responses on PCs
-projection = score(:,1:s.pcs) * coeff(:,1:s.pcs)';
+if s.pcs>0
+    projection = score * coeff(:,1:s.pcs)';
+else
+    projection = nan;
+end
 
 
 % show clustering
@@ -64,36 +75,46 @@ if s.plot
     figure('color', 'white', 'position', [202.00 768.00 960.00 512.00]);
     
     % pca
-    subplot(2,3,1);
-    plot(cumsum(explained(1:10)), 'LineWidth', 2);
-    xlabel('number of PCs'); ylabel('variance explained')
-    set(gca, 'box', 'off')
+    if s.pcs>0
+        subplot(2,3,1);
+        plot(cumsum(explained(1:min(10, size(responses,2)))), 'LineWidth', 2);
+        xlabel('number of PCs'); ylabel('variance explained')
+        set(gca, 'box', 'off')
     
-    subplot(2,3,2); hold on
-    colors = copper(s.pcs);
-    for i = 1:s.pcs
-        plot(coeff(:,i), 'LineWidth', 2, 'color', colors(i,:));
+        subplot(2,3,2); hold on
+        colors = copper(s.pcs);
+        for i = 1:s.pcs
+            plot(coeff(:,i), 'LineWidth', 2, 'color', colors(i,:));
+        end
+        legendNames = split(sprintf('PC%i ', 1:5));
+        legend(legendNames(1:end-1))
     end
-    legendNames = split(sprintf('PC%i ', 1:5));
-    legend(legendNames(1:end-1))
     
-    
-    
+    % information criteria for ncluster determination
     subplot(2,3,4); hold on
     plot(aic, 'LineWidth', 2)
     plot(bic, 'LineWidth', 2)
     legend('aic', 'bic')
     title('BIC and AIC scores')
     
+    % average responses per group
+    % todo: should i plot the true mean regardless of whether using pca?
     subplot(2,3,5); hold on;
-    groupMeans = coeff(:,1:s.pcs) * gmm{s.nclusters}.mu';  % project back onto PCs
+    if s.pcs>0
+        groupMeans = coeff(:,1:s.pcs) * gmm{s.nclusters}.mu';  % project back onto PCs
+    else
+        groupMeans = nan(size(score,2), s.nclusters);
+        for i = 1:s.nclusters
+            groupMeans(:,i) = nanmean(score(clusterIds==i,:),1);
+        end
+    end
     plot(groupMeans, 'LineWidth', 2)
     title('cluster means (of pc projections)')
     
     % heatmap
     subplot(2,3,[3 6]); hold on;
     [sortedIds, sortInds] = sort(clusterIds);
-    imagesc(1:s.pcs, 1:size(responses,1), score(sortInds,1:s.pcs))
+    imagesc(1:s.pcs, 1:size(responses,1), score(sortInds,:))
     colors = lines(s.nclusters);
     for j = 1:(s.nclusters)
         ystart = find(sortedIds==j, 1, 'first')-.5;
@@ -101,7 +122,7 @@ if s.plot
         plot([1 1]*.5, [ystart yend], ...
             'linewidth', 3, 'color', colors(j,:))
     end
-    set(gca, 'xlim', [.5 s.pcs+.5], 'ylim', [1 size(responses,1)])
+    set(gca, 'xlim', [.5 size(score,2)+.5], 'ylim', [1 size(score,1)])
 end
 
 

@@ -24,11 +24,11 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 if s.verbose; fprintf('%s: fitting models for neuron %i... ', session, neuron); end
 
 % load design matrix
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '_designMatrix.mat']), ...
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'residual', [session '_designMatrix.mat']), ...
     'dmat', 't', 'reward_all')
 
 % load predictor info
-filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.xlsx');
+filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'residual_predictorSettings.xlsx');
 predictorInfo = readtable(filename, 'sheet', 'predictors', 'ReadRowNames', true);
 predictorInfo = predictorInfo(dmat.Properties.VariableNames(1:end-1), :);  % end-1 because last predictor is time in dmat
 groups = unique(predictorInfo.group);
@@ -181,7 +181,7 @@ function fit = fitModel(X, y, lambdas, bins)
         ids = [];
     end
     
-    if any(all(X==0,1)); disp('WARNING! Column with all zero predictors!!!'); end  % check for all-zero predictors
+%     if any(all(X==0,1)); disp('WARNING! Column with all zero predictors!!!'); end  % check for all-zero predictors
     
     options = struct('alpha', 0, 'lambda', lambdas, 'standardize', true);
     fit = cvglmnet(X(bins,:), y(bins), 'poisson', options, [], s.folds, ids, s.parallel, true);

@@ -4,13 +4,13 @@ sessions = getEphysSessions();
 % sessions = sessions(1:33);  % temp
 % sessions = {'181020_001'};
 
-overwrite = false;
+overwrite = true;
 
 
 tic
-for i = 1:length(sessions)
+parfor i = 1:length(sessions)
     folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
-%     try
+    try
         % neural responses
         filename = fullfile(folder, 'responses', [sessions{i} '_responses.mat']);
         if overwrite || ~exist(filename, 'file')
@@ -23,37 +23,27 @@ for i = 1:length(sessions)
             plotNeuralResponses(sessions{i}, 'visible', false, 'showImportance', false)
         end
 
-        % design matrices (default)
-        filename = fullfile(folder, 'designMatrices', [sessions{i} '_designMatrix.mat']);
-        if overwrite || ~exist(filename, 'file')
-            makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'outputFileName', filename);
-        end
-        
-        % design matrices (epochs)
-        filename = fullfile(folder, 'designMatrices', 'epochs', [sessions{i} '_designMatrix.mat']);
-        if overwrite || ~exist(filename, 'file')
-            makeDesignMatrix(sessions{i}, 'timeDegrees', 3, 'outputFileName', filename, ...
-                'predictorSpreadsheet', 'C:\Users\richa\Desktop\github\locomotionAnalysis\paper2\glm\epoch_predictorSettings.xlsx');
-        end
-        
-%     catch exception
-%         fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
-%     end
+    catch exception
+        fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
+    end
 end
 fprintf('finished in %.1f minutes\n', toc/60)
 
 
 %% histo
 
+% settings
+overwrite = false;
+
+
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
 mice = unique(ephysHistoTable.mouseID);
-
-overwrite = false;
 
 for i = 1:length(mice)
     filename = ['E:\lab_files\paper2\histo\registration\' mice{i} '_registration.mat'];
     if ~exist(filename, 'file') || overwrite
         registerBrain(mice{i});
+        close all
     end
 end
 
@@ -63,6 +53,7 @@ end
 
 % settings
 overwrite = false;
+
 
 data = getUnitInfo();
 sessions = unique(data.session);
@@ -78,7 +69,7 @@ for i = 1:length(sessions)
         copyfile(engramfile, localfile);
     end
 end
-
+disp('all done!')
 
 
 

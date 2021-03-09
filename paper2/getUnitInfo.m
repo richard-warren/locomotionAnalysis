@@ -1,4 +1,4 @@
-function data = getUnitInfo()
+function data = getUnitInfo(verbose)
 % returns table with every recorded unit getting a row // records:
 % - mouse
 % - session
@@ -7,6 +7,9 @@ function data = getUnitInfo()
 % - nucleus        (nucleus we ended up in, according to reconstruction)
 % - ccf location   (3D mm location in allen brain common coordinate framework)
 
+
+% inits
+if ~exist('verbose', 'var'); verbose = false; end
 
 % get mice and sessions
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
@@ -56,11 +59,13 @@ end
 
 data = cat(1, data{:});
 
-fprintf('\n\n----------------------------\n')
-fprintf('UNIT COUNTS\n')
-fprintf('----------------------------\n')
-for label = unique(data.nucleus)'; printCounts(data, label{1}); end
-fprintf('----------------------------\n\n')
+if verbose
+    fprintf('\n\n----------------------------\n')
+    fprintf('UNIT COUNTS\n')
+    fprintf('----------------------------\n')
+    for label = unique(data.nucleus)'; printCounts(data, label{1}); end
+    fprintf('----------------------------\n\n')
+end
 
 end
 

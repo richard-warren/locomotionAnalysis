@@ -58,25 +58,3 @@ for s = 1:length(sessions)
         copyfile(fullfile(sesFolder, copyFiles{i}), fullfile(outdir, copyFiles{i}));
     end
 end
-
-disp('all done!')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
