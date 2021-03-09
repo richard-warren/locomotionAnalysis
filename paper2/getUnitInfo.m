@@ -1,4 +1,4 @@
-function data = getUnitInfo(verbose)
+function data = getUnitInfo(varargin)
 % returns table with every recorded unit getting a row // records:
 % - mouse
 % - session
@@ -8,8 +8,12 @@ function data = getUnitInfo(verbose)
 % - ccf location   (3D mm location in allen brain common coordinate framework)
 
 
+% settings
+s.verbose = false;
+s.nucleiOnly = true;  % whether to only include units in the cerebellar nuclei
+
 % inits
-if ~exist('verbose', 'var'); verbose = false; end
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 
 % get mice and sessions
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
@@ -59,12 +63,16 @@ end
 
 data = cat(1, data{:});
 
-if verbose
+if s.verbose
     fprintf('\n\n----------------------------\n')
     fprintf('UNIT COUNTS\n')
     fprintf('----------------------------\n')
     for label = unique(data.nucleus)'; printCounts(data, label{1}); end
     fprintf('----------------------------\n\n')
+end
+
+if s.nucleiOnly
+    data = data(ismember(data.nucleus, {'fastigial', 'interpositus', 'dentate'}),:);
 end
 
 end
