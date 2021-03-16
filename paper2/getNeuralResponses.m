@@ -38,7 +38,7 @@ nUnits = length(unit_ids);
 if nUnits==1
     spkRates = interp1(timeStamps, spkRates, t, 'linear');
 else
-    spkRates = interp2(timeStamps, [1:nUnits]', spkRates, t, [1:nUnits]', 'linear');
+    spkRates = interp2(timeStamps, (1:nUnits)', spkRates, t, (1:nUnits)', 'linear');  % should use interp1
 end
 clear timeStamps
 
@@ -92,15 +92,15 @@ for i = find(predictors.include)'
                         linspace(epoch(1), epoch(2), s.gridNum));  % todo: !!! this should actually be min(t(epochBins)), max(t(epochBins)), which will be slightly different!
                 else
                     response(j,:,:) = interp2(t(epochBins), ...
-                        [1:nUnits]', spkRates(:,epochBins), ...
-                        linspace(epoch(1), epoch(2), s.gridNum), [1:nUnits]', 'linear')';  % todo: !!! this should actually be min(t(epochBins)), max(t(epochBins)), which will be slightly different!
+                        (1:nUnits)', spkRates(:,epochBins), ...
+                        linspace(epoch(1), epoch(2), s.gridNum), (1:nUnits)', 'linear')';  % todo: !!! this should actually be min(t(epochBins)), max(t(epochBins)), which will be slightly different!
                 end
             end
         end
         response = fillmissing(response, 'linear', 2, 'EndValues', 'nearest');
         responses.response{i} = response;
         responses.xLims(i,:) = s.epochLims;
-        % todo: determine if cell should be included here? as opposed to predictor?
+        % todo: determine if unit should be included here? as opposed to predictor?
         
 
     elseif predictors.type(i)=='continuous'

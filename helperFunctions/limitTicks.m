@@ -20,14 +20,13 @@ function ticks = limitticks_(ticks)
         yticksNum = cellfun(@str2num, yticksSub);  % convert to nums
 
         % if zero is present, use 0 and whichever label is furthest from zero
-        zeroInd = find(yticksNum==0);
-
-        if ~isempty(zeroInd)
-            [~, maxInd] = max(abs(yticksNum));
+        % axis is symmetric around zero, keep biggest label on both sides of zero
+        if any(yticksNum==0)
+            absMax = max(abs(yticksNum));
 
             % set all but zero and max ind to empty arrays
             inds = 1:length(yticksSub);
-            inds([zeroInd maxInd]) = [];
+            inds(ismember(abs(yticksNum), [0 absMax])) = [];
             yticksSub(inds) = {''};
 
         % otherwise just use first and last tick

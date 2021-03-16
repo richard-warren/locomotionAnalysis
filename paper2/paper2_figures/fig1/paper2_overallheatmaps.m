@@ -8,7 +8,7 @@ paper2_config;
 % events are: reward_pevious, (obsOn, wisk, obsOff)x3, reward
 
 % settings
-preObsOn = 2;    % (s) create initial event preObsOn s before first obs on
+preObsOn = 1.5;    % (s) create initial event preObsOn s before first obs on
 postReward = 5;  % (s) create final event postReward s after reward
 tres = .01;      % (s) temporal resolution
 
@@ -57,7 +57,7 @@ meanEventTimes = mean(events{:,:}, 1);  % average of median times of 10 events a
 
 
 inits = repelem({cell(length(sessions),1)}, 6);
-data = cat(2, events, table(inits{:}, ...
+sesInfo = cat(2, events, table(inits{:}, ...
     'VariableNames', {'vel', 'lickRate', 'spkRates', 'unit_ids', 't', 't_stretched'}));
 
 
@@ -105,12 +105,12 @@ for i = 1:length(sessions)
         end
     end
     
-    data.vel{i} = vel;
-    data.lickRate{i} = lickRate;
-    data.spkRates{i} = spkRates;
-    data.unit_ids{i} = e.unit_ids;
-    data.t{i} = t;
-    data.t_stretched{i} = t_stretched;
+    sesInfo.vel{i} = vel;
+    sesInfo.lickRate{i} = lickRate;
+    sesInfo.spkRates{i} = spkRates;
+    sesInfo.unit_ids{i} = e.unit_ids;
+    sesInfo.t{i} = t;
+    sesInfo.t_stretched{i} = t_stretched;
 end
 toc
 
@@ -122,17 +122,17 @@ windowSz = .01;  % fraction of x axis
 
 
 x = linspace(meanEventTimes(1), meanEventTimes(end), 1000);
-data.vel_mean = nan(length(sessions), length(x));
-data.lickrate_mean = nan(length(sessions), length(x));
+sesInfo.vel_mean = nan(length(sessions), length(x));
+sesInfo.lickrate_mean = nan(length(sessions), length(x));
 unitInfo.frMean = nan(height(unitInfo), length(x));
 win = range(x) * windowSz * [-.5 .5];  % sliding widndow range
 
 for i = 1:length(sessions)
     disp(i/length(sessions))
-    t = data{sessions{i}, 't_stretched'}{1};
-    stacked = [data{sessions{i}, 'spkRates'}{1}; ...
-               data{sessions{i}, 'vel'}{1}; ...
-               data{sessions{i}, 'lickRate'}{1}];
+    t = sesInfo{sessions{i}, 't_stretched'}{1};
+    stacked = [sesInfo{sessions{i}, 'spkRates'}{1}; ...
+               sesInfo{sessions{i}, 'vel'}{1}; ...
+               sesInfo{sessions{i}, 'lickRate'}{1}];
     means = nan(size(stacked,1), length(x));
     
     for j = 1:length(x)
@@ -142,13 +142,13 @@ for i = 1:length(sessions)
         end
     end
     
-    data.vel_mean(i,:) = means(end-1,:);
-    data.lickrate_mean(i,:) = means(end,:);
+    sesInfo.vel_mean(i,:) = means(end-1,:);
+    sesInfo.lickrate_mean(i,:) = means(end,:);
     
     unitInds = find(strcmp(unitInfo.session, sessions{i}) & ...
-        ismember(unitInfo.unit, data{sessions{i}, 'unit_ids'}{1}));
+        ismember(unitInfo.unit, sesInfo{sessions{i}, 'unit_ids'}{1}));
     for j = 1:length(unitInds)
-        sesBin = data{sessions{i}, 'unit_ids'}{1} == unitInfo.unit(unitInds(j));
+        sesBin = sesInfo{sessions{i}, 'unit_ids'}{1} == unitInfo.unit(unitInds(j));
         unitInfo.frMean(unitInds(j), :) = means(sesBin, :);
     end
 end
@@ -182,8 +182,8 @@ patch(X, Y, cfg.obsColor, 'EdgeColor', 'none', 'FaceAlpha', .1);
 
 % vel
 yyaxis left;
-mn = mean(data.vel_mean,1);
-st = std(data.vel_mean,[],1);
+mn = mean(sesInfo.vel_mean,1);
+st = std(sesInfo.vel_mean,[],1);
 plot(x, mn, 'LineWidth', 2, 'Color', cfg.velColor);
 patch([x fliplr(x)], [mn+st fliplr(mn-st)], cfg.velColor, 'EdgeColor', 'none', 'FaceAlpha', .1)
 ylabel('velocity (m/s)')
@@ -191,8 +191,8 @@ set(gca, 'YColor', cfg.velColor, 'YLim', velLims, cfg.axArgs{:}); limitticks
 
 % licks
 yyaxis right;
-mn = mean(data.lickrate_mean,1);
-st = std(data.lickrate_mean,[],1);
+mn = mean(sesInfo.lickrate_mean,1);
+st = std(sesInfo.lickrate_mean,[],1);
 plot(x, mn, 'LineWidth', 2, 'Color', cfg.lickColor);
 patch([x fliplr(x)], [mn+st fliplr(mn-st)], cfg.lickColor, 'EdgeColor', 'none', 'FaceAlpha', .1)
 ylabel('lick rate (licks/s)')
