@@ -1,15 +1,19 @@
 % all units, all tracks on ccf
 
-data = getUnitInfo('nucleiOnly', false);
+% settings
+rasterize3d = false;  % this stretches the image a little atm
+
+
+unitInfo = getUnitInfo('nucleiOnly', false);
 ccf = loadCCF();
 paper2_config;
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), ...
     'ephysHistoTable')
 
-nucbins = ismember(data.nucleus, {'fastigial', 'interpositus', 'dentate'});
+nucbins = ismember(unitInfo.nucleus, {'fastigial', 'interpositus', 'dentate'});
 
 % get colors for scatter points
-[~, cind] = ismember(data.nucleus, {'dentate', 'interpositus', 'fastigial'});
+[~, cind] = ismember(unitInfo.nucleus, {'dentate', 'interpositus', 'fastigial'});
 cind(cind==0) = 4;
 scatColors = [cfg.nucleusColors; 0 0 0];
 scatColors = scatColors(cind,:);
@@ -18,9 +22,9 @@ colorRep = repelem(cfg.nucleusColors,2,1);
 
 % 3D
 close all
-figure('color', 'white', 'position', [68.00 747.00 1116.00 520.00], 'menubar', 'none');
+figure('color', 'white', 'position', [231.00 529.00 319.00 275.00], 'menubar', 'none');
 
-subplot(2,2,[1 3])
+if rasterize3d; props = get(gca); end
 plotLabels3D(ccf.coarseLabels==2, 'method', 'contours', 'colors', [0 0 0], 'smoothing', 5, 'contourAlpha', .05, ...
     'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, 'downSampling', 2, 'slices', {'dv', 'ap'}, 'nLines', 30);
 plotLabels3D(ccf.labels, 'method', 'boundary', 'colors', colorRep, ...
@@ -67,70 +71,39 @@ for i = 1:height(ephysHistoTable)  % loop over shanks for all recordings
 end
 
 % scatter units
-scatter3(data.ccfMm(nucbins,1), data.ccfMm(nucbins,2), data.ccfMm(nucbins,3), ...
-        15, 'black', 'filled', 'MarkerFaceAlpha', 1);
-scatter3(data.ccfMm(~nucbins,1), data.ccfMm(~nucbins,2), data.ccfMm(~nucbins,3), ...
-        15, 'black', 'MarkerEdgeAlpha', .6);
+scatter3(unitInfo.ccfMm(nucbins,1), unitInfo.ccfMm(nucbins,2), unitInfo.ccfMm(nucbins,3), ...
+        5, 'black', 'filled', 'MarkerFaceAlpha', 1);
+scatter3(unitInfo.ccfMm(~nucbins,1), unitInfo.ccfMm(~nucbins,2), unitInfo.ccfMm(~nucbins,3), ...
+        5, 'black', 'MarkerEdgeAlpha', .6);
 
 
 % add axis labels
 len = .5;  % mm
 args = {'LineWidth', 2, 'color', get(gca, 'XColor')};
 axloc = [4 11 7];  % (mm) ml ap dv
-plot3(axloc(1)+[0 len], axloc(2)+[0 0], axloc(3)+[0 0], args{:});  text(axloc(1)+len*1.5, axloc(2), axloc(3), 'ML');
-plot3(axloc(1)+[0 0], axloc(2)+[0 -len], axloc(3)+[0 0], args{:}); text(axloc(1), axloc(2)-len*1.5, axloc(3), 'AP');
-plot3(axloc(1)+[0 0], axloc(2)+[0 0], axloc(3)+[0 -len], args{:}); text(axloc(1), axloc(2), axloc(3)-len*1.5, 'DV');
+plot3(axloc(1)+[0 len], axloc(2)+[0 0], axloc(3)+[0 0], args{:});  text(axloc(1)+len*2, axloc(2), axloc(3), 'ML');
+plot3(axloc(1)+[0 0], axloc(2)+[0 -len], axloc(3)+[0 0], args{:}); text(axloc(1), axloc(2)-len*2, axloc(3), 'AP');
+plot3(axloc(1)+[0 0], axloc(2)+[0 0], axloc(3)+[0 -len], args{:}); text(axloc(1), axloc(2), axloc(3)-len*2, 'DV');
 
 % fancify
 set(gca, 'visible', 'off', 'View', [45 30])
 
-
-%% 2D projections
-views = {'ap', 'dv'};
-inds = {[1 3], [1 2]};
-
-for i = 1:2
-    subplot(2,2,(i-1)*2+2); hold on
+if rasterize3d
+    frame = getframe(gca);
+    frame = frame2im(frame);
     cla
-    plotLabels2D(ccf.labels, 'dim', views{i}, ...
-        'colors', colorRep, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, ...
-        'patchArgs', {'FaceColor', 'none'})  
-    
-    scatter(data.ccfMm(nucbins,inds{i}(1)), data.ccfMm(nucbins,inds{i}(2)), ...
-        15, scatColors(nucbins,:), 'filled', 'MarkerFaceAlpha', .6);
-    scatter(data.ccfMm(~nucbins,inds{i}(1)), data.ccfMm(~nucbins,inds{i}(2)), ...
-        15, 'black', 'MarkerEdgeAlpha', .6);
-    
-    % scale bars
-    isflipped = strcmp(get(gca, 'YDir'), 'reverse');
-    xlims = xlim; ylims = ylim;
-    xlabel = get(get(gca, 'XLabel'), 'string');
-    ylabel = get(get(gca, 'YLabel'), 'string');
-    if isflipped
-        plot(xlims(1)+[0 0 len], ylims(2)+[-len 0 0], args{:});
-        text(xlims(1), ylims(2)-.5*len, ylabel, 'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle')
-        text(xlims(1)+len*.5, ylims(2), xlabel, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')
-    else
-        plot(xlims(1)+[0 0 len], ylims(1)+[len 0 0], args{:});
-        text(xlims(1), ylims(1)+.5*len, ylabel, 'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle')
-        text(xlims(1)+len*.5, ylims(1), xlabel, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')
-    end
+    for p = fieldnames(props)'; try; set(gca, p{1}, props.(p{1})); catch; end; end
+    image(frame)
     set(gca, 'visible', 'off')
 end
 
 % save
 set(gcf, 'Renderer', 'painters')  % ensures export is not rasterized
-saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\ccf_allunits', 'svg')
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\ccf_allunits3D.svg')
 
-
-
-%%
-
-close all
-figure('position', [411.00 625.00 560.00 420.00])
-scatter3(rand(1,10), rand(1,10), rand(1,10))
-
-
+%% 2D projections
+plotUnitsOnCcf(unitInfo, 'colors', scatColors, 'figpos', [767.00 532.00 253.00 400.00])
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\ccf_allunits2D.svg')
 
 
 

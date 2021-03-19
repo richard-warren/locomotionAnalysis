@@ -13,19 +13,22 @@ s.numPoints = 10;  % number of scatter points to show
 s.deltaFrames = 2;  % how many frames apart should each scatter point be
 s.pawColors = jet(4);
 s.otherColors = [.8 .8 .8];
+s.jawColor = s.otherColors;  % this color is used for both jaw and tongue
 s.ind = nan;
 s.removeRows = [];  % start and end rows to remove from the image // use to cut out the bright line separating top and bottom views
+s.sessionsFolder = fullfile(getenv('OBSDATADIR'), 'sessions');  % overwrite if working remotely where engram access is slow
 s.featuresToShow = {'paw1LH_top', 'paw2LF_top', 'paw3RF_top', 'paw4RH_top', ...
                     'paw1LH_bot', 'paw2LF_bot', 'paw3RF_bot', 'paw4RH_bot', ...
-                    'nose_top', 'nose_bot', 'tailMid_top', 'tailMid_bot', 'tailBase_top', 'tailBase_bot'};
+                    'nose_top', 'nose_bot', 'tailMid_top', 'tailMid_bot', ...
+                    'tailBase_top', 'tailBase_bot', 'jaw', 'tongue'};
 
 
 % initializations
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
-vid = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'run.mp4'));
-load(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runAnalyzed.mat'), ...
+vid = VideoReader(fullfile(s.sessionsFolder, session, 'run.mp4'));
+load(fullfile(s.sessionsFolder, session, 'runAnalyzed.mat'), ...
     'obsOnTimes', 'obsOffTimes', 'frameTimeStamps', 'obsPixPositions', 'pixelsPerM', 'frameTimeStampsWisk');
-locationsTable = readtable(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'trackedFeaturesRaw.csv')); % get raw tracking data
+locationsTable = readtable(fullfile(s.sessionsFolder, session, 'trackedFeaturesRaw.csv')); % get raw tracking data
 scoreThresh = getScoreThresh(session, 'trackedFeaturesRaw_metadata.mat');  % scoreThresh depends on whether deeplabcut (old version) or deepposekit was used
 [locations, features] = fixTracking(locationsTable, frameTimeStamps, pixelsPerM, 'scoreThresh', scoreThresh);
 
@@ -40,7 +43,7 @@ end
 
 % load frame
 if s.addWiskCam
-    vidWisk = VideoReader(fullfile(getenv('OBSDATADIR'), 'sessions', session, 'runWisk.mp4'));
+    vidWisk = VideoReader(fullfile(s.sessionsFolder, session, 'runWisk.mp4'));
     img = getFrameWithWisk(vid, vidWisk, frameTimeStamps, frameTimeStampsWisk, s.ind, 'runContrast', s.contrastLims);
 else
     img = imadjust(read(vid, s.ind), s.contrastLims);
@@ -70,6 +73,8 @@ for i = 1:length(features)
         if contains(features{i}, 'paw')
             pawNum = str2double(features{i}(4));
             color = s.pawColors(pawNum,:);
+        elseif ismember(features{i}, {'jaw', 'tongue'})
+            color = s.jawColor;
         else
             color = s.otherColors;
         end

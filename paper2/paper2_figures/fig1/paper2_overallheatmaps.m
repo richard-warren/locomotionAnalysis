@@ -236,6 +236,21 @@ text(0, 0, '2 seconds', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\overallheatmaps', 'svg')
 
 
+%% create example tracking frames to put on top of the plot
+
+% settings
+session = '200624_000';
+inds = [143 2803 4902];
+% colorsTemp = stepColors([4 2 1 3], :);  % this is a hack that makes the colors align with leading, lagging, fore, hind conditions
+
+close all
+for i = 1:length(inds)
+    showSingleFrameTracking(session, [], 'ind', inds(i), ...
+        'contrastLims', [0 .8], 'addWiskCam', true, 'pawColors', repmat(cfg.velColor, 4, 1), ...
+        'sessionsFolder', 'E:\lab_files\paper2\sessions_local', 'mainSize', 60, ...
+        'trailingSizes', [5 20], 'jawColor', cfg.lickColor);
+    saveas(gcf, sprintf('E:\\lab_files\\paper2\\paper_figures\\matlab\\tracking%i.png', i))
+end
 
 
 
@@ -251,5 +266,3 @@ saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\overallheatmaps', 
 
 
 
-
-%%
