@@ -1,6 +1,6 @@
 % all units, all tracks on ccf
 
-data = getUnitInfo(false);
+data = getUnitInfo('nucleiOnly', false);
 ccf = loadCCF();
 paper2_config;
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), ...
@@ -124,7 +124,11 @@ saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\ccf_allunits', 'sv
 
 
 
+%%
 
+close all
+figure('position', [411.00 625.00 560.00 420.00])
+scatter3(rand(1,10), rand(1,10), rand(1,10))
 
 
 

@@ -264,6 +264,44 @@ py.sklearn.feature_selection.mutual_info_regression([x1', x2'], y)
 toc
 
 
+%% try circular statistics toolbox
+
+% inits
+smp1 = randn(1,100);
+smp2 = randn(1,100)+pi;
+res = 40;
+
+close all
+p = circ_kuipertest(smp1, smp2, res, true)
+set(gcf, 'position', [556.00 708.00 560.00 420.00])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

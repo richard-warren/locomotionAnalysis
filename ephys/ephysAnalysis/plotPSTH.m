@@ -14,7 +14,7 @@ function plotPSTH(spkTimes, events, varargin)
 
 % x axis
 s.eventLims = [-.25 .5];  % (s) x limits for events
-s.epochLims = [-.25 1.25];  % (fraction of epoch) x limits for epochs
+s.epochLims = [0 1];  % (fraction of epoch) x limits for epochs
 s.binNum = 500;  % number of points on the axis
 
 % raster
@@ -35,7 +35,8 @@ s.conditionNames = {};
 s.epochDurationLims = [];  % (percentiles) only include epochs of duration within these limits
 s.xlabel = '';
 s.removeNoSpikeTrials = false;  % whether to automatically remove trials with no spikes
-s.maxEpochs = 2000;  % if using epoch events and there are more than maxEpochs, limit to epochs of central duration // set to 0 to bypass
+s.maxEpochs = 0;  % if using epoch events and there are more than maxEpochs, limit to epochs of central duration // set to 0 to bypass
+s.subplots = [];  % 2x3 matrix whether each row is the subplot args for the top and bottom plot
 
 
 % initializations
@@ -58,12 +59,13 @@ if isEpoch; xLims = s.epochLims; else; xLims = s.eventLims; end
 x = linspace(xLims(1), xLims(2), s.binNum);
 
 % if too many epochs find the elements of central duration
-if isEpoch && s.maxEpochs
+if isEpoch && s.maxEpochs>0
     durations = diff(events,1,2);
     if size(events,1)>s.maxEpochs
         middleIndsSorted = floor(length(durations)/2 - s.maxEpochs*.5) + (1:s.maxEpochs);
         [~, sortInds] = sort(durations);
         inds = sortInds(middleIndsSorted)';  % !!! should maybe pick random intead of central-duration epochs
+        inds = sort(inds);
         
         events = events(inds,:);
         s.conditions = s.conditions(inds);
@@ -92,8 +94,8 @@ for i = 1:length(events)
         bins = spkRatesTimes>=epoch(1) & spkRatesTimes<=epoch(2);
         if any(bins)
             responseRate(i,:) = interp1(spkRatesTimes(bins), spkRates(bins), ...
-                linspace(epoch(1), epoch(2), s.binNum), 'linear');
-            responseRate(i,:) = fillmissing(responseRate(i,:), 'linear', 'EndValues', 'nearest');
+                linspace(epoch(1), epoch(2), s.binNum), 'linear', 'extrap');
+%             responseRate(i,:) = fillmissing(responseRate(i,:), 'linear', 'EndValues', 'nearest');
             
             trialSpks = spkTimes(spkTimes>=epoch(1) & spkTimes<=epoch(2));
             responseSpks{i} = (trialSpks-events(i,1)) * (range(xLims) / range(epoch));  % rescale and shift onto new x axis
@@ -127,11 +129,14 @@ end
 
 % plot
 % ----
-figure('color', 'white', 'menubar', 'none', 'position', [1380.00 157.00 331.00 847.00])
+if isempty(s.subplots)
+    figure('color', 'white', 'menubar', 'none', 'position', [1380.00 157.00 331.00 847.00])
+end
 meanLines = nan(length(conditions), 1);
 
 % firing rate
-subplot(3,1,1); hold on
+% keyboard
+if isempty(s.subplots); subplot(3,1,1); else; sp = s.subplots(1,:); subplot(sp(1),sp(2),sp(3)); end; hold on
 for i = 1:length(conditions)
     bins = s.conditions==conditions(i);
     condMean = nanmean(responseRate(bins,:),1);
@@ -145,14 +150,15 @@ end
 
 yLims = max(get(gca, 'YLim'), 0);
 addVerticalLines(isEpoch, xLims, yLims);
-set(gca, 'xlim', xLims, 'ylim', yLims)
+set(gca, 'xlim', xLims, 'ylim', yLims, 'xcolor', 'none')
 if ~isempty(s.conditionNames)
     legend(meanLines, s.conditionNames, 'Location', 'best', 'Box', 'off')
 end
-ylabel('firing rate (hz)')
+ylabel('firing rate (Hz)')
+limitticks
 
 % histogram
-subplot(3,1,2:3); hold on
+if isempty(s.subplots); subplot(3,1,2:3); else; sp = s.subplots(2,:); subplot(sp(1),sp(2),sp(3)); end; hold on
 [conditionsSorted, sortInds] = sort(s.conditions);
 responseSpksSorted = responseSpks(sortInds);
 xScat = cat(1, responseSpksSorted{:});
