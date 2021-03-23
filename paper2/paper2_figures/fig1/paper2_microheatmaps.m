@@ -1,6 +1,6 @@
 % heatmaps to show tuning to 'micro' structure of task: steps, licks, wisk contacts
 
-unitInfo = getUnitInfo('nucleiOnly', true);
+unitInfo = getUnitInfo('nucleiOnly', true, 'frstats', true);
 % unitInfo = unitInfo(1:20,:);  % !!! temp
 sessions = unique(unitInfo.session);
 paper2_config;
@@ -15,7 +15,7 @@ maxLickInterval = .5;
 
 wiskPre  = [-.15 .05];  % window for pre and post periods for wisk stats
 wiskPost = [0 .1];
-p_thresh = .01 / height(unitInfo);  % bonferroni corrected p value
+p_thresh = .05 / height(unitInfo);  % bonferroni corrected p value
 
 
 %% compute neural and behavioral responses for steps, licks, and whisker contactsd
@@ -44,8 +44,6 @@ for dv = {'step', 'lick', 'wisk'}
     unitInfo.([dv{1} '_k']) = nan(height(unitInfo), 1);
     unitInfo.([dv{1} '_phase']) = cell(height(unitInfo), 1);  % phase at which spikes occurred
 end
-unitInfo.mean = nan(height(unitInfo), 1);
-unitInfo.std = nan(height(unitInfo), 1);
 
 
 
@@ -85,7 +83,7 @@ for i = 1:height(sesInfo)
     
     phase.lick = nan(size(t));
     for j = 1:size(events.lickEpoch,1)  % for each lick
-        bins = (t>=events.lickEpoch(j,1)) & (t<events.lickEpoch(j,2));  % +-.5 buffer to include edge samples in interpolation :)
+        bins = (t>=events.lickEpoch(j,1)) & (t<events.lickEpoch(j,2));
         phase.lick(bins) = interp1(events.lickEpoch(j,:), [0 2*pi], t(bins), 'linear', 'extrap');
     end
     
@@ -121,10 +119,6 @@ for i = 1:height(sesInfo)
             unitInfo{unitInds(j), [dv{1} '_respFull']} = {squeeze(responses.(dv{1})(sesInd,:,:))'};  % matrix of response across trials
             unitInfo{unitInds(j), [dv{1} '_resp']} = nanmean(responses.(dv{1})(sesInd,:,:), 3);      % mean response
             
-            % unit mean and std (for z scoring later)
-            unitInfo.mean(unitInds(j)) = nanmean(e.spkRates(sesInd,:));
-            unitInfo.std(unitInds(j)) = nanstd(e.spkRates(sesInd,:));
-            
             % statistical tests
             if strcmp(dv{1}, 'wisk')
                 resp = unitInfo.wisk_respFull{unitInds(j)};
@@ -133,16 +127,10 @@ for i = 1:height(sesInfo)
                 unitInfo{unitInds(j), [dv{1} '_sig']} = ranksum(pre, post);
             else
                 phaseAtSpks = interp1(t, phase.(dv{1}), e.spkTimes{sesInd}, 'nearest');
-                shuffled = interp1(t(randperm(length(t))), phase.(dv{1}), e.spkTimes{sesInd}, 'nearest');
-                
-%                 if strcmp(dv{1}, 'step'); keyboard; end
                 phaseAtSpks = phaseAtSpks(~isnan(phaseAtSpks));
-                shuffled = shuffled(~isnan(shuffled));
-                
-                unitInfo{unitInds(j), [dv{1} '_k']} = kuipertest2(linspace(0,2*pi,500), phaseAtSpks, 40, false);
-                
-                % save phase at which spikes occured
-                unitInfo{unitInds(j), [dv{1} '_phase']} = {phaseAtSpks};
+                [unitInfo{unitInds(j), [dv{1} '_k']}, unitInfo{unitInds(j), [dv{1} '_sig']}] = ...
+                    ktestnull(phaseAtSpks, 'res', 40, 'bootstraps', 100, 'plot', false);
+                unitInfo{unitInds(j), [dv{1} '_phase']} = {phaseAtSpks};  % save phase at which spikes occured
             end
         end
     end
@@ -156,7 +144,7 @@ for dv = {'step', 'lick'}
     unitInfo.([dv{1} '_mi']) = (maxs-mins) ./ (maxs + mins);
 end
 
-save('E:\lab_files\paper2\intermediate_analysis\microheatmaps.mat', 'sesInfo', 'unitInfo')
+save('E:\lab_files\paper2\intermediate_analysis\microheatmaps.mat', 'sesInfo', 'unitInfo', '-v7.3')
 
 
 
@@ -164,89 +152,122 @@ save('E:\lab_files\paper2\intermediate_analysis\microheatmaps.mat', 'sesInfo', '
 
 %% plot :)
 
-% todo: limit to significant responses // sort to look dope!
-
 % settings
-% lims = [-1 1];  % (z-score)
+% k_thresh = .05;
 
-close all; figure('color', 'white', 'menubar', 'none', 'position', [555.00 158.00 361.00 1081.00])
+
+% close all; figure('color', 'white', 'menubar', 'none', 'position', [846.00 92.00 248.00 1079.00])
+close all; figure('color', 'white', 'menubar', 'none', 'position', [243.00 567.00 724.00 608.00])
+nrows = nan(1,3);  % number of rows for each plot
 
 % steps
-subplot(9,1,1); hold on
-mask = linspace(.5, 1, 3);
+subplot(3,3,1); hold on
+% subplot(9,1,1); hold on
+mask = linspace(.5, 1, 3);  % creates color gradient from cfg.velColor
 lns = nan(1,3);
 for j = 1:3
     resp = squeeze(sesInfo.step_mean(:,j,:));
     c = cfg.velColor * mask(j);
-    errorplot(x.step, resp - nanmean(resp,2), 'color', c, 'linewidth', 3)
-    lns(j) = plot(nan, nan, 'Color', c, 'LineWidth', 3);
+    errorplot(x.step, resp - nanmean(resp,2), 'color', c, 'linewidth', 2)
+    lns(j) = plot(nan, nan, 'Color', c, 'LineWidth', 2);
 end
-legend(lns, {'x', 'y', 'z'}, 'AutoUpdate', 'off');
-ylabel('paw position');
+legend(lns, {'x', 'y', 'z'}, 'AutoUpdate', 'off', 'FontName', cfg.font, 'FontSize', cfg.fontsize);
+addylabel('paw position', cfg.font, cfg.fontsize)
+addscalebar(.01, 'y', '10 mm', cfg.font, cfg.fontsize);
+set(gca, 'xlim', [x.step(1) x.step(end)], 'xcolor', 'none', 'ycolor', 'none', cfg.axArgs{:})
 
-addylabel('paw position')
-addscalebar(.01, 'y', '10 mm');
-set(gca, 'xlim', [x.step(1) x.step(end)], 'xcolor', 'none', 'ycolor', 'none')
+subplot(3,3,[4 7]); hold on
+% subplot(9,1,2:3); hold on
 
-subplot(9,1,2:3); hold on
-resp = (unitInfo.step_resp - unitInfo.mean) ./ unitInfo.std;  % z score based on overall fr
-resp = resp(unitInfo.step_k>.05, :);  % sig limit
+mn = cellfun(@(x) nanmean(x(:)), unitInfo.step_respFull);
+st = cellfun(@(x) nanstd(x(:)), unitInfo.step_respFull);
+resp = (unitInfo.step_resp - mn) ./ st;  % z score based on response period firing rate
+% resp = (unitInfo.step_resp - unitInfo.mean) ./ unitInfo.std;  % z score based on overall fr
+resp = resp(unitInfo.step_sig<p_thresh, :);  % sig limit
+nrows(1) = size(resp,1);
 clims = max(abs(resp(:))) * [-1 1];
 [~, maxInds] = max(resp, [], 2); [~, sortInds] = sort(maxInds, 'descend');
-% [~, sortInds] = sort(resp(:, find(x.step>.5,1,'first')));
 
 imagesc(x.step, 1:size(resp,1), resp(sortInds,:), clims)
 colormap(cfg.heatmapColors)
 xlabel('fraction of step');
 set(gca, 'XLim', [x.step(1) x.step(end)], 'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:}); limitticks
-addylabel('firing rate (z-score)')
+addylabel('firing rate (z-score)', cfg.font, cfg.fontsize)
 
 % licks
-subplot(9,1,4); hold on
-errorplot(x.lick, sesInfo.lick_mean, 'color', cfg.lickColor, 'linewidth', 3)
-set(gca, 'xcolor', 'none', 'ycolor', 'none', 'xlim', [x.lick(1) x.lick(end)])
-addylabel('jaw position')
-addscalebar(.001, 'y', '1 mm');
+subplot(3,3,2); hold on
+% subplot(9,1,4); hold on
+errorplot(x.lick, sesInfo.lick_mean*1000, 'color', cfg.lickColor, 'linewidth', 2)  % for some fucked up reason multiplying by 1000 causes the text to be editable when exporting to illustrating... took me 2 hours to figure this our... :(
+set(gca, 'xcolor', 'none', 'ycolor', 'none', 'xlim', [x.lick(1) x.lick(end)], cfg.axArgs{:})
+addylabel('jaw position', cfg.font, cfg.fontsize)
+addscalebar(.001*1000, 'y', '1 mm', cfg.font, cfg.fontsize);
 
-subplot(9,1,5:6); hold on
-resp = (unitInfo.lick_resp - unitInfo.mean) ./ unitInfo.std;
-resp = resp(unitInfo.lick_k>.05, :);  % sig limit
+subplot(3,3,[5 8]); hold on
+% subplot(9,1,5:6); hold on
+mn = cellfun(@(x) nanmean(x(:)), unitInfo.lick_respFull);
+st = cellfun(@(x) nanstd(x(:)), unitInfo.lick_respFull);
+resp = (unitInfo.lick_resp - mn) ./ st;  % z score based on response period firing rate
+% resp = (unitInfo.lick_resp - unitInfo.mean) ./ unitInfo.std;
+resp = resp(unitInfo.lick_sig<p_thresh, :);  % sig limit
+nrows(2) = size(resp,1);
 clims = max(abs(resp(:))) * [-1 1];
-% [~, maxInds] = max(resp, [], 2); [~, sortInds] = sort(maxInds, 'descend');
 [~, sortInds] = sort(resp(:, find(x.lick>0,1,'first')));
-% [~, sortInds] = sort(unitInfo.lick_mi, 'descend');
 imagesc(x.lick, 1:size(resp,1), resp(sortInds,:), clims)
-set(gca, 'XLim', [x.lick(1) x.lick(end)], 'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:}); limitticks
 xlabel('time from lick (s)');
-addylabel('firing rate (z-score)')
+set(gca, 'XLim', [x.lick(1) x.lick(end)], 'xtick', [x.lick(1) 0 x.lick(end)], ...
+    'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:});
+% addylabel('firing rate (z-score)', cfg.font, cfg.fontsize)
 
 % wisk
-subplot(9,1,7); hold on
-errorplot(x.wisk, sesInfo.wisk_mean, 'color', cfg.wiskColor, 'linewidth', 3)
+subplot(3,3,3); hold on
+% subplot(9,1,7); hold on
+errorplot(x.wisk, sesInfo.wisk_mean, 'color', cfg.wiskColor, 'linewidth', 2);
 set(gca, 'xcolor', 'none', 'ycolor', 'none', 'xlim', [x.wisk(1) x.wisk(end)])
-addylabel('whisker angle')
-addscalebar(10, 'y', '10 degrees');
+addylabel('whisker angle', cfg.font, cfg.fontsize);
+addscalebar(10, 'y', '10 degrees', cfg.font, cfg.fontsize);
 
-subplot(9,1,8:9); hold on
-resp = (unitInfo.wisk_resp - unitInfo.mean) ./ unitInfo.std;
+subplot(3,3,[6 9]); hold on
+% subplot(9,1,8:9); hold on
+mn = cellfun(@(x) nanmean(x(:)), unitInfo.wisk_respFull);
+st = cellfun(@(x) nanstd(x(:)), unitInfo.wisk_respFull);
+resp = (unitInfo.wisk_resp - mn) ./ st;  % z score based on response period firing rate
+% resp = (unitInfo.wisk_resp - unitInfo.mean) ./ unitInfo.std;
 resp = resp(unitInfo.wisk_sig < p_thresh, :);
+nrows(3) = size(resp,1);
 clims = max(abs(resp(:))) * [-1 1];
 
-% colbins = x.wisk>-.05 & x.wisk<.05;
 colbins = x.wisk>-0 & x.wisk<.1;
 [~, sortInds] = sort(nanmean(resp(:, colbins),2));
 
-% groups = clusterResponses(resp, 'plot', false, 'nclusters', 4, 'pcs', 2);
-% respMag = resp(:, find(x.wisk>.06,1,'first'));
-% [~, sortInds] = sortrows([groups respMag], 'ascend');
+imagesc(x.wisk, 1:size(resp,1), resp(sortInds,:), clims);
+set(gca, 'XLim', [x.wisk(1) x.wisk(end)], 'xtick', [0 x.wisk(end)], ...
+    'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:});
+xlabel({'time from', 'whisker contact (s)'});
+% addylabel('firing rate (z-score)', cfg.font, cfg.fontsize)
 
-imagesc(x.wisk, 1:size(resp,1), resp(sortInds,:), clims)
-set(gca, 'XLim', [x.wisk(1) x.wisk(end)], 'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:}); limitticks
-xlabel('time from whisker contact (s)');
-addylabel('firing rate (z-score)')
 
+
+% adjust heatmaps to reflect number of rows
+pos = get(gca, 'position');
+hgts = (nrows / max(nrows)) * pos(4);  % target heights for each heatmap
+for i = 1:3
+    subplot(3,3,[3 6]+i);
+    pos = get(gca, 'position');
+    set(gca, 'Position', [pos(1) pos(2)+(max(hgts-hgts(i))) pos(3) hgts(i)])
+end
+
+% adjust heatmaps to reflect number of rows
+% pos = get(gca, 'position');
+% hgts = (nrows / max(nrows)) * pos(4);  % target heights for each heatmap
+% for i = 1:3
+%     subplot(9,1,[-1 0]+i*3);
+%     pos = get(gca, 'position');
+%     set(gca, 'Position', [pos(1) pos(2)+(max(hgts)-hgts(i)) pos(3) hgts(i)])
+% end
+
+
+set(gcf, 'Renderer', 'painters')
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\microheatmaps', 'svg')
-
 
 
 
@@ -342,8 +363,8 @@ for i = 1:ncols
     subplots = [6,ncols,i+2*ncols; 6,ncols,i+3*ncols];
     plotPSTH(spktimes, evts, 'kernel', 'gauss', 'eventLims', [x.lick(1) x.lick(end)], ...
         'color', cfg.lickColor, 'subplots', subplots, 'scatSize', scatsz); rasterize
-    set(gca, 'xtick', [x.lick(1) 0 x.lick(end)])
     if i==1; xlabel('time from lick (s)'); else; ylabel(''); subplot(6,ncols,i+2*ncols); ylabel(''); end
+    set(gca, 'xtick', [x.lick(1) 0 x.lick(end)])
 end
 
 
@@ -365,18 +386,56 @@ for i = 1:ncols
     subplots = [6,ncols,i+4*ncols; 6,ncols,i+5*ncols];
     plotPSTH(spktimes, evts, 'kernel', 'doubleExp', 'eventLims', [x.wisk(1) x.wisk(end)], ...
         'color', cfg.wiskColor, 'subplots', subplots, 'scatSize', scatsz); rasterize
+    if i==1; xlabel('time from whisker contact (s)'); else; ylabel(''); subplot(6,ncols,i+4*ncols); ylabel(''); end
     set(gca, 'xtick', [x.wisk(1) 0 x.wisk(end)])
-    if i==1; xlabel('time from whisker contact (s)'); else; ylabel(''); subplot(6,ncols,i+2*ncols); ylabel(''); end
 end
 
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\sample_units', 'svg')
 
 
-%%
+%%  test k stats
 
 close all
-plotPSTH(spktimes, evts);
-set(gcf, 'position', [876.00 319.00 331.00 847.00])
-rasterize
-saveas(gcf, 'temp', 'svg')
+for i = 1:10
+    smp = unitInfo.step_phase{i};
+    [knew(i), p] = ktestnull(smp, 'plot', true, 'res', 40, 'bootstraps', 100);
+    pause(.1)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

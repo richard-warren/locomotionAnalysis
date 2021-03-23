@@ -1,7 +1,10 @@
 % define global parameters for paper2
 
 
-cfg.axArgs = {'TickDir', 'out', 'box', 'off'};
+cfg.font = 'Arial';
+cfg.fontsize = 8;
+cfg.axArgs = {'TickDir', 'out', 'box', 'off', ...
+    'FontName', cfg.font, 'FontSize', cfg.fontsize};
 
 % colors
 cfg.nucleusColors = lines(3);  % dentate, interpositus, fastigial

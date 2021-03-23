@@ -1,6 +1,6 @@
 % heatmaps for all units showing responses to entire trial structure
 
-unitInfo = getUnitInfo('nucleiOnly', true);
+unitInfo = getUnitInfo('nucleiOnly', true, 'frstats', true);
 sessions = unique(unitInfo.session);
 paper2_config;
 
@@ -117,11 +117,11 @@ toc
 %% compute average vel, lick rate, firing rates per session
 
 % settings
-pts = 20;       % points along x axis
-windowSz = .01;  % fraction of x axis
+pts = 500;          % points along x axis
+windowSz = 3/pts;   % (fraction of x axis) moving window size
 
 
-x = linspace(meanEventTimes(1), meanEventTimes(end), 1000);
+x = linspace(meanEventTimes(1), meanEventTimes(end), pts);
 sesInfo.vel_mean = nan(length(sessions), length(x));
 sesInfo.lickrate_mean = nan(length(sessions), length(x));
 unitInfo.frMean = nan(height(unitInfo), length(x));
@@ -154,7 +154,7 @@ for i = 1:length(sessions)
 end
 
 
-%%
+%% plot!
 
 % settings
 velLims = [0 .6];
@@ -163,16 +163,16 @@ nclusters = 12;
 pcs = 6;
 
 close all
-figure('position', [98.00 69.00 584.00 1216.00], 'color', 'white', 'menubar', 'none')
+figure('position', [683.00 859.00 233.00 468.00], 'color', 'white', 'menubar', 'none')
 subplot(4,1,1); hold on
 
 
 % events
 wiskt = meanEventTimes(contains(events.Properties.VariableNames, 'wisk'));
-plot(repelem(wiskt,2,1), velLims, '-', 'color', cfg.wiskColor, 'LineWidth', 2)  % wisk
+plot(repelem(wiskt,2,1), velLims, '-', 'color', cfg.wiskColor, 'LineWidth', 1)  % wisk
 
 rewardt = meanEventTimes(contains(events.Properties.VariableNames, 'reward'));
-plot(repelem(rewardt,2,1), velLims, '-', 'color', cfg.lickColor, 'LineWidth', 2)  % wisk
+plot(repelem(rewardt,2,1), velLims, '-', 'color', cfg.lickColor, 'LineWidth', 1)  % wisk
 
 ont  = meanEventTimes(contains(events.Properties.VariableNames, 'on'));
 offt = meanEventTimes(contains(events.Properties.VariableNames, 'off'));
@@ -184,7 +184,7 @@ patch(X, Y, cfg.obsColor, 'EdgeColor', 'none', 'FaceAlpha', .1);
 yyaxis left;
 mn = mean(sesInfo.vel_mean,1);
 st = std(sesInfo.vel_mean,[],1);
-plot(x, mn, 'LineWidth', 2, 'Color', cfg.velColor);
+plot(x, mn, 'LineWidth', 1, 'Color', cfg.velColor);
 patch([x fliplr(x)], [mn+st fliplr(mn-st)], cfg.velColor, 'EdgeColor', 'none', 'FaceAlpha', .1)
 ylabel('velocity (m/s)')
 set(gca, 'YColor', cfg.velColor, 'YLim', velLims, cfg.axArgs{:}); limitticks
@@ -193,18 +193,17 @@ set(gca, 'YColor', cfg.velColor, 'YLim', velLims, cfg.axArgs{:}); limitticks
 yyaxis right;
 mn = mean(sesInfo.lickrate_mean,1);
 st = std(sesInfo.lickrate_mean,[],1);
-plot(x, mn, 'LineWidth', 2, 'Color', cfg.lickColor);
+plot(x, mn, 'LineWidth', 1, 'Color', cfg.lickColor);
 patch([x fliplr(x)], [mn+st fliplr(mn-st)], cfg.lickColor, 'EdgeColor', 'none', 'FaceAlpha', .1)
 ylabel('lick rate (licks/s)')
 set(gca, 'XLim', [x(1) x(end)], 'YLim', lickLims, 'XColor', 'none', 'YColor', cfg.lickColor, cfg.axArgs{:}); limitticks
 
 % heatmaps
-lims = [-6 6];  % (z-score)
+lims = [-3 3];  % (z-score)
 
 % zscore, remove outliers
-resp = (unitInfo.frMean - nanmean(unitInfo.frMean,2)) ./ nanstd(unitInfo.frMean,[],2);
+resp = (unitInfo.frMean - unitInfo.mean) ./ unitInfo.std;
 resp = resp(~any(isnan(resp),2),:);  % rows with no nans
-resp(resp<lims(1)) = lims(1); resp(resp>lims(2)) = lims(2);
 nrows = size(resp,1);
 
 % cluster and sort by response type
@@ -215,11 +214,11 @@ groups = clusterResponses(resp, 'plot', false, 'nclusters', nclusters, 'pcs', pc
 
 % plot
 subplot(4,1,2:4); hold on
-imagesc(x, 1:nrows, resp(sortInds,:), lims)
+imagesc(x, 1:nrows, resp(sortInds,:), lims);
 colormap(cfg.heatmapColors)
 
-plot(repelem(wiskt,2,1), [.5 nrows+.5], '-', 'color', cfg.wiskColor, 'LineWidth', 2)  % wisk
-plot(repelem(rewardt,2,1), [.5 nrows+.5], '-', 'color', cfg.lickColor, 'LineWidth', 2)  % wisk
+plot(repelem(wiskt,2,1), [.5 nrows+.5], '-', 'color', cfg.wiskColor, 'LineWidth', 1)  % wisk
+plot(repelem(rewardt,2,1), [.5 nrows+.5], '-', 'color', cfg.lickColor, 'LineWidth', 1)  % wisk
 Y = repmat([nrows+.5 nrows+.5 .5 .5]', 1, 3);
 patch(X, Y, cfg.obsColor, 'EdgeColor', 'none', 'FaceAlpha', .1);
 
@@ -230,17 +229,18 @@ text(wiskt(1), nrows, 'obstacle', 'Color', cfg.obsColor, ...
     'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
 text(rewardt(1), nrows, 'water reward', 'Color', cfg.lickColor, ...
     'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
-plot([0 2], [.5 .5], 'color', 'black', 'LineWidth', 2)
+plot([0 2], [.5 .5], 'color', 'black', 'LineWidth', 1)
 text(0, 0, '2 seconds', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'top')
 
-saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\overallheatmaps', 'svg')
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\overallheatmaps', 'svg')
 
 
 %% create example tracking frames to put on top of the plot
 
 % settings
 session = '200624_000';
-inds = [143 2803 4902];
+inds = [143 2803 4902];  % run, obstacle, lick frames
+wiskCrop = [160 200];  % crop zoomed in whisker image from top left corner to this row, col
 % colorsTemp = stepColors([4 2 1 3], :);  % this is a hack that makes the colors align with leading, lagging, fore, hind conditions
 
 close all
@@ -252,8 +252,12 @@ for i = 1:length(inds)
     saveas(gcf, sprintf('E:\\lab_files\\paper2\\paper_figures\\matlab\\tracking%i.png', i))
 end
 
-
-
+% save image of whisker camera only
+vid = VideoReader(['E:\lab_files\paper2\sessions_local\' session '\runWisk.mp4']);
+img = 255 - read(vid, inds(end));
+img = img(10:wiskCrop(1), 1:wiskCrop(2));
+close all; figure; image(img); colormap gray
+imwrite(img, 'E:\lab_files\paper2\paper_figures\matlab\lick_zoomed_in.png')
 
 
 
