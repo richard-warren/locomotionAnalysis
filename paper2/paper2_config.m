@@ -13,3 +13,4 @@ cfg.lickColor = [48 135 227]*.75 / 255;  % from paper1
 cfg.velColor = [1 .3 0];
 cfg.obsColor = [1 .7 0];  % from paper1
 cfg.wiskColor = cfg.obsColor * .5;
+cfg.diiColor = [.99 .33 1];  % dii color for probe traces

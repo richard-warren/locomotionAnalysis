@@ -7,8 +7,7 @@ rasterize3d = false;  % this stretches the image a little atm
 unitInfo = getUnitInfo('nucleiOnly', false);
 ccf = loadCCF();
 paper2_config;
-load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), ...
-    'ephysHistoTable')
+load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), 'ephysHistoTable')
 
 nucbins = ismember(unitInfo.nucleus, {'fastigial', 'interpositus', 'dentate'});
 
@@ -67,7 +66,6 @@ for i = 1:height(ephysHistoTable)  % loop over shanks for all recordings
         % aaaaaaaaaand plot
         plot3(pts(:,1), pts(:,2), pts(:,3), 'Color', [0 0 0 .3], 'LineWidth', 1)
     end
-    
 end
 
 % scatter units

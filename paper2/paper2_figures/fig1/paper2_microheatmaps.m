@@ -317,11 +317,11 @@ units.wisk.unit    = [30 254 199];
 
 % inits
 close all
-figure('color', 'white', 'position', [439.00 394.00 586.00 932.00], 'menubar', 'none')
-ncols = length(units.step.session);  % assumes same numer of units for all dvs!
+figure('color', 'white', 'position', [523.00 592.00 543.00 466.00], 'menubar', 'none')
+nunits = length(units.step.session);  % assumes same numer of units for all dvs!
 
 % step
-for i = 1:ncols
+for i = 1:nunits
     session = units.step.session{i};
     unit = units.step.unit(i);
     
@@ -337,15 +337,16 @@ for i = 1:ncols
     evts = evts(validSteps, :);
     evts = evts(evts(:,1)>tstart & evts(:,2)<tend, :);
     
-    subplots = [6,ncols,i+0*ncols; 6,ncols,i+1*ncols];
+%     subplots = [6,ncols,i+0*ncols; 6,ncols,i+1*ncols];
+    subplots = [nunits*2,3,(i-1)*6+1; nunits*2,3,(i-1)*6+4];
     plotPSTH(spktimes, evts, 'kernel', 'gauss', 'eventLims', [x.lick(1) x.lick(end)], ...
-        'color', cfg.velColor, 'subplots', subplots, 'maxEpochs', maxtrials, 'scatSize', scatsz); rasterize
-    if i==1; xlabel('fraction of step cycle'); else; ylabel(''); subplot(6,ncols,i+0*ncols); ylabel(''); end
+        'color', cfg.velColor, 'subplots', subplots, 'maxEpochs', maxtrials, 'scatSize', scatsz, 'binNum', 100); rasterize
+    if i==nunits; xlabel('fraction of step cycle'); else; set(gca, 'XTickLabel', []); end
     set(gca, 'xtick', [x.step(1) x.step(end)])
 end
 
 % lick
-for i = 1:ncols
+for i = 1:nunits
     session = units.lick.session{i};
     unit = units.lick.unit(i);
     
@@ -360,16 +361,18 @@ for i = 1:ncols
     evts = evts(evts>tstart & evts<tend);
     evts = evts(sort(randperm(length(evts), min(maxtrials, length(evts)))), :);
     
-    subplots = [6,ncols,i+2*ncols; 6,ncols,i+3*ncols];
+%     subplots = [6,ncols,i+2*ncols; 6,ncols,i+3*ncols];
+    subplots = [nunits*2,3,(i-1)*6+2; nunits*2,3,(i-1)*6+5];
     plotPSTH(spktimes, evts, 'kernel', 'gauss', 'eventLims', [x.lick(1) x.lick(end)], ...
-        'color', cfg.lickColor, 'subplots', subplots, 'scatSize', scatsz); rasterize
-    if i==1; xlabel('time from lick (s)'); else; ylabel(''); subplot(6,ncols,i+2*ncols); ylabel(''); end
+        'color', cfg.lickColor, 'subplots', subplots, 'scatSize', scatsz, 'binNum', 100); rasterize
+    if i==nunits; xlabel('time from lick (s)'); else; set(gca, 'XTickLabel', []); end
     set(gca, 'xtick', [x.lick(1) 0 x.lick(end)])
+    ylabel(''); subplot(nunits*2,3,(i-1)*6+2); ylabel('');
 end
 
 
 % wisk
-for i = 1:ncols
+for i = 1:nunits
     session = units.wisk.session{i};
     unit = units.wisk.unit(i);
     
@@ -383,11 +386,13 @@ for i = 1:ncols
     evts = p.predictors{'whiskerContact', 'data'}{1};
     evts = evts(evts>tstart & evts<tend);
     
-    subplots = [6,ncols,i+4*ncols; 6,ncols,i+5*ncols];
+%     subplots = [6,ncols,i+4*ncols; 6,ncols,i+5*ncols];
+    subplots = [nunits*2,3,(i-1)*6+3; nunits*2,3,(i-1)*6+6];
     plotPSTH(spktimes, evts, 'kernel', 'doubleExp', 'eventLims', [x.wisk(1) x.wisk(end)], ...
-        'color', cfg.wiskColor, 'subplots', subplots, 'scatSize', scatsz); rasterize
-    if i==1; xlabel('time from whisker contact (s)'); else; ylabel(''); subplot(6,ncols,i+4*ncols); ylabel(''); end
+        'color', cfg.wiskColor, 'subplots', subplots, 'scatSize', scatsz, 'binNum', 100); rasterize
     set(gca, 'xtick', [x.wisk(1) 0 x.wisk(end)])
+    if i==nunits; xlabel('time from whisker contact (s)'); else; set(gca, 'XTickLabel', []); end
+    ylabel(''); subplot(nunits*2,3,(i-1)*6+3); ylabel('');
 end
 
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\sample_units', 'svg')
@@ -398,7 +403,7 @@ saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\sample_units', 'svg')
 close all
 for i = 1:10
     smp = unitInfo.step_phase{i};
-    [knew(i), p] = ktestnull(smp, 'plot', true, 'res', 40, 'bootstraps', 100);
+    [k, p] = ktestnull(smp, 'plot', true, 'res', 40, 'bootstraps', 100);
     pause(.1)
 end
 
