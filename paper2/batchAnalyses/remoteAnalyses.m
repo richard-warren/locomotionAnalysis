@@ -5,7 +5,7 @@ overwrite = true;
 dt = .01;
 
 tic
-  parfor i = 73:length(sessions)
+parfor i = 1:length(sessions)
     try
         % format ephys data
         filename = fullfile(getenv('OBSDATADIR'), 'data_transfer', 'neuralData', [sessions{i} '_neuralData.mat']);
@@ -44,13 +44,15 @@ load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHisto
 mice = unique(ephysHistoTable.mouseID);
 
 overwrite = true;
+scaling = .2;
 
-for i = 1:length(mice)
+for i = 6:length(mice)
     
     % prepare histo labels
     filename = fullfile(getenv('OBSDATADIR'), 'data_transfer', 'histoLabels', [mice{i} '_histoLabels.mat']);
     if ~exist(filename, 'file') || overwrite
-        prepareHistoLabels(mice{i}, filename)
+        fprintf('\n\n%s\n-----\n', mice{i})
+        prepareHistoLabels(mice{i}, filename, scaling)
     end
     pause(.1)  % allows figure to render properly
 end

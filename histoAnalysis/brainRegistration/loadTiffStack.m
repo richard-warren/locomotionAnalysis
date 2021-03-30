@@ -21,12 +21,12 @@ bitDepth = double(metadata(1).BitsPerSample(1));  % bit depth for original image
 
 
 % collect images
-fprintf('loading %s with %.2f scaling, image number: ', fileName, s.scaling)
+fprintf('loading %s with %.2f scaling, image number:       ', fileName, s.scaling)
 temp = imresize(zeros(hgt, wid), s.scaling);  % for getting the size of scaled images
 tiffStack = cast(zeros(imgNum, size(temp,1), size(temp,2)), s.dataType);
 for i = 1:imgNum
     img = readImg();
-    fprintf('%i ', i)
+    fprintf('\b\b\b\b\b\b%2i/%2i ', i, imgNum)
     tiffStack(i,:,:) = img(:,:,1);
 end
 fprintf('all done!\n')
