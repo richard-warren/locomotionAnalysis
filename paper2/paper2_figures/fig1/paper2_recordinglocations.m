@@ -1,38 +1,33 @@
-%% all units, all tracks on ccf
+% all units, all tracks on ccf
 
-data = getUnitInfo(false);
+% settings
+rasterize3d = false;  % this stretches the image a little atm
+
+
+unitInfo = getUnitInfo('nucleiOnly', false);
 ccf = loadCCF();
 paper2_config;
 load(fullfile(getenv('OBSDATADIR'), 'histology', '0_ephysHistoData', 'ephysHistoTable.mat'), ...
     'ephysHistoTable')
 
+nucbins = ismember(unitInfo.nucleus, {'fastigial', 'interpositus', 'dentate'});
+
 % get colors for scatter points
-[~, cind] = ismember(data.nucleus, {'interpositus', 'dentate', 'fastigial'});
+[~, cind] = ismember(unitInfo.nucleus, {'dentate', 'interpositus', 'fastigial'});
 cind(cind==0) = 4;
 scatColors = [cfg.nucleusColors; 0 0 0];
 scatColors = scatColors(cind,:);
-
-%%
-
+colorRep = repelem(cfg.nucleusColors,2,1);
 
 
 % 3D
 close all
-figure('color', 'white', 'position', [429.00 574.00 770.00 701.00]);
+figure('color', 'white', 'position', [231.00 529.00 319.00 275.00], 'menubar', 'none');
 
-% wires, cerebellum only outline
+if rasterize3d; props = get(gca); end
 plotLabels3D(ccf.coarseLabels==2, 'method', 'contours', 'colors', [0 0 0], 'smoothing', 5, 'contourAlpha', .05, ...
     'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, 'downSampling', 2, 'slices', {'dv', 'ap'}, 'nLines', 30);
-
-% % flat, cerebellum only outline
-% plotLabels3D(ccf.coarseLabels==2, 'method', 'boundary', 'colors', [0 0 0], 'smoothing', 5, ...
-%     'surfArgs', {'edgecolor', 'none', 'facealpha', .05}, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, 'downSampling', 2);
-
-% % flat, entire brain outline
-% plotLabels3D(ccf.coarseLabels, 'method', 'boundary', 'colors', zeros(3,3), 'smoothing', 5, ...
-%     'surfArgs', {'edgecolor', 'none', 'facealpha', .05}, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, 'downSampling', 2);
-
-plotLabels3D(ccf.labels, 'method', 'boundary', 'colors', repelem(cfg.nucleusColors,2,1), ...
+plotLabels3D(ccf.labels, 'method', 'boundary', 'colors', colorRep, ...
     'surfArgs', {'edgecolor', 'none', 'facealpha', .4}, 'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml);
 
 
@@ -75,13 +70,40 @@ for i = 1:height(ephysHistoTable)  % loop over shanks for all recordings
     
 end
 
+% scatter units
+scatter3(unitInfo.ccfMm(nucbins,1), unitInfo.ccfMm(nucbins,2), unitInfo.ccfMm(nucbins,3), ...
+        5, 'black', 'filled', 'MarkerFaceAlpha', 1);
+scatter3(unitInfo.ccfMm(~nucbins,1), unitInfo.ccfMm(~nucbins,2), unitInfo.ccfMm(~nucbins,3), ...
+        5, 'black', 'MarkerEdgeAlpha', .6);
 
-% add units
-scatter3(data.ccfMm(:,1), data.ccfMm(:,2), data.ccfMm(:,3), ...
-        20, 'black', 'filled', 'MarkerFaceAlpha', 1);
+
+% add axis labels
+len = .5;  % mm
+args = {'LineWidth', 2, 'color', get(gca, 'XColor')};
+axloc = [4 11 7];  % (mm) ml ap dv
+plot3(axloc(1)+[0 len], axloc(2)+[0 0], axloc(3)+[0 0], args{:});  text(axloc(1)+len*2, axloc(2), axloc(3), 'ML');
+plot3(axloc(1)+[0 0], axloc(2)+[0 -len], axloc(3)+[0 0], args{:}); text(axloc(1), axloc(2)-len*2, axloc(3), 'AP');
+plot3(axloc(1)+[0 0], axloc(2)+[0 0], axloc(3)+[0 -len], args{:}); text(axloc(1), axloc(2), axloc(3)-len*2, 'DV');
+
+% fancify
 set(gca, 'visible', 'off', 'View', [45 30])
+
+if rasterize3d
+    frame = getframe(gca);
+    frame = frame2im(frame);
+    cla
+    for p = fieldnames(props)'; try; set(gca, p{1}, props.(p{1})); catch; end; end
+    image(frame)
+    set(gca, 'visible', 'off')
+end
+
+% save
 set(gcf, 'Renderer', 'painters')  % ensures export is not rasterized
-saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\ccf_allunits', 'svg')
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\ccf_allunits3D.svg')
+
+%% 2D projections
+plotUnitsOnCcf(unitInfo, 'colors', scatColors, 'figpos', [767.00 532.00 253.00 400.00])
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\ccf_allunits2D.svg')
 
 
 
@@ -95,4 +117,19 @@ saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab_exports\ccf_allunits', 'sv
 
 
 
-%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-function data = getUnitInfo(verbose)
+function unitInfo = getUnitInfo(varargin)
 % returns table with every recorded unit getting a row // records:
 % - mouse
 % - session
@@ -8,14 +8,19 @@ function data = getUnitInfo(verbose)
 % - ccf location   (3D mm location in allen brain common coordinate framework)
 
 
+% settings
+s.verbose = false;
+s.nucleiOnly = true;  % whether to only include units in the cerebellar nuclei
+s.frstats = false;    % whether to compute mean and std for each unit
+
 % inits
-if ~exist('verbose', 'var'); verbose = false; end
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % parse name-value pairs
 
 % get mice and sessions
 ephysInfo = readtable(fullfile(getenv('OBSDATADIR'), 'spreadSheets', 'ephysInfo.xlsx'));
 ephysInfo = ephysInfo(ephysInfo.include==1, :);
 mice = unique(ephysInfo.mouse);
-data = cell(1, length(mice));
+unitInfo = cell(1, length(mice));
 
 
 for i = 1:length(mice)
@@ -33,7 +38,7 @@ for i = 1:length(mice)
         unitsPerSession = nan(1, length(sessions));
         for j = 1:length(sessions); unitsPerSession(j) = sum(strcmp(registration.session, sessions{j}));end
         target_nuclei = repelem(target_nuclei, unitsPerSession);
-        data{i} = cat(2, table(repmat(mice(i), height(tbl), 1), target_nuclei(:), ...
+        unitInfo{i} = cat(2, table(repmat(mice(i), height(tbl), 1), target_nuclei(:), ...
             'VariableNames', {'mouse', 'nucleus_target'}), tbl);  % add mouse name column
     else
         % load neural data for each session
@@ -52,19 +57,44 @@ for i = 1:length(mice)
         n = length(unit_ids);
         sessions = repelem(sessions, unitsPerSession);
         target_nuclei = repelem(target_nuclei, unitsPerSession);
-        data{i} = table(repmat(mice(i),n,1), target_nuclei(:), sessions(:), unit_ids, repmat({'unregistered'},n,1), nan(n,3), ...
+        unitInfo{i} = table(repmat(mice(i),n,1), target_nuclei(:), sessions(:), unit_ids, repmat({'unregistered'},n,1), nan(n,3), ...
             'VariableNames', {'mouse', 'nucleus_target', 'session', 'unit', 'nucleus', 'ccfMm'});
     end
 end
 
-data = cat(1, data{:});
+unitInfo = cat(1, unitInfo{:});
 
-if verbose
+% compute mean and std for each unit
+if s.frstats
+    prevSes = '';
+    unitInfo.mean = nan(height(unitInfo), 1);
+    unitInfo.std = nan(height(unitInfo), 1);
+    
+    for i = 1:height(unitInfo)
+        
+        % load new session data if necessary
+        if ~strcmp(prevSes, unitInfo.session{i})
+            e = load(['E:\lab_files\paper2\modelling\neuralData\' unitInfo.session{i} '_neuralData.mat']);
+            prevSes = unitInfo.session{i};
+        end
+        unitBin = ismember(e.unit_ids, unitInfo.unit(i));
+        unitInfo.mean(i) = nanmean(e.spkRates(unitBin,:));
+        unitInfo.std(i) = nanstd(e.spkRates(unitBin,:));
+    end
+end
+
+
+
+if s.verbose
     fprintf('\n\n----------------------------\n')
     fprintf('UNIT COUNTS\n')
     fprintf('----------------------------\n')
-    for label = unique(data.nucleus)'; printCounts(data, label{1}); end
+    for label = unique(unitInfo.nucleus)'; printCounts(unitInfo, label{1}); end
     fprintf('----------------------------\n\n')
+end
+
+if s.nucleiOnly
+    unitInfo = unitInfo(ismember(unitInfo.nucleus, {'fastigial', 'interpositus', 'dentate'}),:);
 end
 
 end
