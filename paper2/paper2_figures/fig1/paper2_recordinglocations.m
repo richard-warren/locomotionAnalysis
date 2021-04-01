@@ -1,7 +1,6 @@
 % all units, all tracks on ccf
 
-% settings
-rasterize3d = false;  % this stretches the image a little atm
+
 
 
 unitInfo = getUnitInfo('nucleiOnly', false);
@@ -23,7 +22,7 @@ colorRep = repelem(cfg.nucleusColors,2,1);
 close all
 figure('color', 'white', 'position', [231.00 529.00 319.00 275.00], 'menubar', 'none');
 
-if rasterize3d; props = get(gca); end
+
 plotLabels3D(ccf.coarseLabels==2, 'method', 'contours', 'colors', [0 0 0], 'smoothing', 5, 'contourAlpha', .05, ...
     'apGrid', ccf.ap, 'dvGrid', ccf.dv, 'mlGrid', ccf.ml, 'downSampling', 2, 'slices', {'dv', 'ap'}, 'nLines', 30);
 plotLabels3D(ccf.labels, 'method', 'boundary', 'colors', colorRep, ...
@@ -86,16 +85,8 @@ plot3(axloc(1)+[0 0], axloc(2)+[0 0], axloc(3)+[0 -len], args{:}); text(axloc(1)
 % fancify
 set(gca, 'visible', 'off', 'View', [45 30])
 
-if rasterize3d
-    frame = getframe(gca);
-    frame = frame2im(frame);
-    cla
-    for p = fieldnames(props)'; try; set(gca, p{1}, props.(p{1})); catch; end; end
-    image(frame)
-    set(gca, 'visible', 'off')
-end
-
 % save
+% todo: save as PNG rather than rasterizing...
 set(gcf, 'Renderer', 'painters')  % ensures export is not rasterized
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\ccf_allunits3D.svg')
 

@@ -12,14 +12,17 @@ s.scalebar = .25;
 s.half = true;
 s.views = {'ap', 'dv'};
 s.figpos = [767.00 532.00 253.00 200*length(s.views)];
+s.scatArgs = {};
+s.scatSz = 15;
+s.subplots = [];  % each row is 3 element args to subplot()
 
 % inits
 if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 ccf = loadCCF();
 paper2_config;
 nucColors = repelem(cfg.nucleusColors,2,1);
-close all
-figure('color', 'white', 'position', s.figpos, 'menubar', 'none')
+
+if isempty(s.subplots); figure('color', 'white', 'position', s.figpos, 'menubar', 'none'); end
 
 if s.half
     leftIds = find(contains(ccf.nuclei, 'Left'));
@@ -38,7 +41,13 @@ end
 dims = {'ml', 'ap', 'dv'};  % names of axes (eg names of columns in unitInfo.ccfMm)
 
 for i = 1:length(s.views)
-    subplot(length(s.views),1,i); hold on
+    if ~isempty(s.subplots)
+        subplot(s.subplots(i,1), s.subplots(i,2), s.subplots(i,3));
+    else
+        subplot(length(s.views),1,i);
+    end
+    hold on
+    
     inds = find(~strcmp(dims, s.views{i}));  % indices into 3D dimenions for x and y axes of this plot
     
     plotLabels2D(labels, 'dim', s.views{i}, ...
@@ -46,7 +55,7 @@ for i = 1:length(s.views)
         'patchArgs', {'FaceColor', 'none'})
     
     scatter(unitInfo.ccfMm(:, inds(1)), unitInfo.ccfMm(:, inds(2)), ...
-        15, s.colors, 'filled', 'MarkerFaceAlpha', .6);
+        s.scatSz, s.colors, 'filled', 'MarkerFaceAlpha', .6, s.scatArgs{:});
     
     % adjust axis limits
     for j = 1:2  % for x, then y axis
@@ -65,11 +74,13 @@ for i = 1:length(s.views)
     xlabel = get(get(gca, 'XLabel'), 'string');
     ylabel = get(get(gca, 'YLabel'), 'string');
     
-    x = xlims(1+xflip) + [0 0 s.scalebar*(1-2*xflip)];
-    y = ylims(1+yflip) + [s.scalebar*(1-2*yflip) 0 0];
-    plot(x, y, 'LineWidth', 2, 'color', get(gca, 'XColor'));
-    text(x(1), mean(y(1:2)), ylabel, 'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle')
-    text(mean(x(2:3)), y(2), xlabel, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')
+    if s.scalebar>0
+        x = xlims(1+xflip) + [0 0 s.scalebar*(1-2*xflip)];
+        y = ylims(1+yflip) + [s.scalebar*(1-2*yflip) 0 0];
+        plot(x, y, 'LineWidth', 2, 'color', get(gca, 'XColor'));
+        text(x(1), mean(y(1:2)), ylabel, 'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle')
+        text(mean(x(2:3)), y(2), xlabel, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')
+    end
     set(gca, 'visible', 'off')
 end
 
