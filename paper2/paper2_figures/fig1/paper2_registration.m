@@ -19,7 +19,6 @@ probes.locCcf = nan(height(probes), 2, 3);
 % add probe tracks
 for i = 1:height(probes)  % loop over shanks for all recordings
     
-    
     surfaceLoc = probes.BS_crossPoints(i,:);  % get entry point of shank in original histo coordinates
     unitLocs = probes.GC_Points{i};  % get location of lowest unit
     
@@ -163,13 +162,17 @@ saveas(gca, 'E:\lab_files\paper2\paper_figures\matlab\histo_tracing.png')
 % projection coordinates from plotLabels2D and plot these manually every
 % time to avoid re-computation
 
+% settings
+plotProbes = false;
+showAllUnits = true;
+
 % figpos = [153.00 226.00 2213.00 1038.00];
 figpos = [22.00 178.00 1772.00 1152.00];
 
 close all
 figure('color', 'white', 'position', figpos, 'menubar', 'none'); hold on
 
-unitInfo = getUnitInfo('nucleiOnly', true);
+unitInfo = getUnitInfo('nucleiOnly', ~showAllUnits);
 
 % get colors for scatter points
 [~, cind] = ismember(unitInfo.nucleus, {'dentate', 'interpositus', 'fastigial'});
@@ -194,16 +197,16 @@ for i = 1:length(mice)
         'scatArgs', {'MarkerEdgeColor', 'black'}, 'scatSz', 30, ...
         'scalebar', 0, 'subplots', subplots);
     
-    probloc = probes(strcmp(probes.mouseID, mice{i}),:).locCcf;
+    if plotProbes; probloc = probes(strcmp(probes.mouseID, mice{i}),:).locCcf; end
     
     subplot(nrows, ncols, sind); hold on
     title(mice{i})
-    lns = plot(probloc(:,:,1)', probloc(:,:,3)', 'LineWidth', 1.5, 'color', cfg.diiColor); uistack(lns, 'bottom');
+    if plotProbes; lns = plot(probloc(:,:,1)', probloc(:,:,3)', 'LineWidth', 1.5, 'color', cfg.diiColor); uistack(lns, 'bottom'); end
     set(gca, 'visible', 'on', 'xcolor', 'none', 'ycolor', 'none')  % make sure title is visible but not axes
     axpostop = get(gca, 'position');
     
     subplot(nrows, ncols, sind+ncols);hold on
-    lns = plot(probloc(:,:,1)', probloc(:,:,2)', 'LineWidth', 1.5, 'color', cfg.diiColor); uistack(lns, 'bottom');
+    if plotProbes; lns = plot(probloc(:,:,1)', probloc(:,:,2)', 'LineWidth', 1.5, 'color', cfg.diiColor); uistack(lns, 'bottom'); end
     axposbot = get(gca, 'position');
     vshift = axpostop(2)-axposbot(2)-axposbot(4);  % shift up to butt against plot above
     set(gca, 'position', [axposbot(1) axposbot(2)+vshift axposbot(3) axposbot(4)])

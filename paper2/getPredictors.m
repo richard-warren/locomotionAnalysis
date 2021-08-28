@@ -261,7 +261,7 @@ end
 
 
 function addPredictor(name, data, type, t)
-    % extends predictors table by add a new row
+    % extends predictors table by adding a new row
     % include=0 when there are no events, no epochs, or all of the
     % continuous dta are NaN (occurs when pcProject fails)
     

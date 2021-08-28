@@ -1,7 +1,7 @@
 %% play around with functional clustering across cells
 
 % create (and write to disk) clustering data struct
-aggregateResponses();  % only need to do once
+% aggregateResponses();  % only need to do once
 [data, cellInfo] = getClusteringData();
 
 % put nested importances in a matrix

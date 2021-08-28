@@ -43,7 +43,7 @@ end
 
 if s.plot
     figure('color', 'white', 'menubar', 'none', ...
-        'position', [400 938.00 381.00*((s.bootstraps>0)+1) 290.00])
+        'position', [400 100 381.00*((s.bootstraps>0)+1) 290.00])
     if s.bootstraps>0; subplot(1,2,1); end
     
     x = b(1:end-1) + (b(2)-b(1))/2;  % bin centers

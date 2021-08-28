@@ -19,7 +19,7 @@ p_thresh = .05 / height(unitInfo);  % bonferroni corrected p value
 
 
 %% compute neural and behavioral responses for steps, licks, and whisker contactsd
-% this is slow because requires interpolating over variable duraction steps
+% this is slow because requires interpolating over variable duration steps
 % can load E:\lab_files\paper2\intermediate_analysis\microheatmaps.mat if
 % already computed...
 
