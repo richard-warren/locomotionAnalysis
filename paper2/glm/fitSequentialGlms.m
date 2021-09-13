@@ -1,11 +1,7 @@
-function [models, fitdata] = fitResidualGlm(session, neuron, varargin)
+function [models, fitdata] = fitSequentialGlms(session, neuron, varargin)
 
-% for each group of predictors, trained GLM on RESIDUALS after regressing
-% away user-specified groups
-
-% temp
-% session = '181020_001';
-% neuron = 69;
+% train null GLMs, and gradually add predictor groups one by one until we
+% get to the full model.
 
 % settings
 s.lambdas = logspace(-8, -1, 40);    % ridge regression coefficients
@@ -14,7 +10,7 @@ s.parallel = false;                  % whether crossval analyses are parallelize
 s.verbose = true;
 s.save = true;
 s.outputFileName = fullfile(...
-    getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
+    getenv('SSD'), 'paper2', 'modelling', 'glms', 'sequential_glms', ...
     [session '_cell_' num2str(neuron) '_glm.mat']);
 
 
@@ -28,6 +24,7 @@ load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'residual'
     'dmat', 't', 'reward_all')
 
 % load predictor info
+% TODO: update settings spreadsheet with groups and order of interest
 filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'settings', 'residual_predictorSettings.xlsx');
 predictorInfo = readtable(filename, 'sheet', 'predictors', 'ReadRowNames', true);
 predictorInfo = predictorInfo(dmat.Properties.VariableNames(1:end-1), :);  % end-1 because last predictor is time in dmat
@@ -66,32 +63,33 @@ end
 
 
 % initialize table
+% TODO: update col and row names (what needs to be stored?)
 nrows = length(groups) + 1;
-rowNames = ['full', groups'];
-models = table(cell(nrows,1), cell(nrows,1), cell(nrows,1), nan(nrows, 1), nan(nrows,1), true(nrows, length(t)), ...
-    'RowNames', rowNames, 'VariableNames', {'groups_pre', 'model_pre', 'model', 'dev_pre', 'dev', 'bins'});
+rowNames = ['null', groups'];
+models = table(cell(nrows,1), nan(nrows,1), ...
+    'RowNames', rowNames, 'VariableNames', {'model', 'dev'});
 
 % get names of columns in X
 colNames = cell(1,length(dmat.Properties.VariableNames));
 for i = 1:length(dmat.Properties.VariableNames)
-    colNames{i} = repelem({dmat.Properties.VariableNames{i}}, length(dmat{1,i}));  % number of 
+    colNames{i} = repelem({dmat.Properties.VariableNames{i}}, length(dmat{1,i}));
 end
 colNames = cat(2, colNames{:});
 
-
 % train full model
+% (the full model corresponds to the addition of the final group)
 X_full = table2array(dmat);
 modelFull = fitModel(X_full, y, s.lambdas);
-models{'full', 'model'}{1} = modelFull;
-models{'full', 'dev'} = cvdeviance(X_full, y, modelFull, 'holdout', true, 'bestLambdaOnly', true);
+models{groups{end}, 'model'}{1} = modelFull;
+models{groups{end}, 'dev'} = cvdeviance(X_full, y, modelFull, 'holdout', true, 'bestLambdaOnly', true);
 lambda_min = modelFull.lambda_min;
 
 % train time only model
 colBins = strcmp(colNames, 'time');
 X = X_full(:, colBins);
 model = fitModel(X, y, lambda_min);
-models{'full', 'model_pre'}{1} = model;
-models{'full', 'dev_pre'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
+models{'null', 'model'}{1} = model;
+models{'null', 'dev'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly', true);
 
 % check that rick's deviance matches glmnet deviance for full model evaluated on training data
 glmnet_dev = modelFull.glmnet_fit.dev(modelFull.lambda_min_id);
@@ -102,60 +100,27 @@ if abs(glmnet_dev - rick_dev)>.02
 end
 
 
-
-
-% assess importance of groups of features
-for i = 1:length(groups)
-%     disp(groups{i})
+% add groups one by one! (note we already computed the final, full model)
+for i = 1:(length(groups)-1)
+    % TODO: compute models for reward and non-reward times separately?
     
-    % determine time bins relevant to single group models
-    % deviance will only be computed at these times
-    restrictTime = ~isnan(groupInfo{groups{i}, 'restrict_time'}{1});
+    % find predictors belonging to groups 1:i
+    members = predictorInfo.name(ismember(predictorInfo.group, groups(1:i)));
     
-    if restrictTime
-        colBins = ismember(colNames, groupInfo{groups{i}, 'restrict_time'});  % only restrict time based on predictor listed in restrict_time column
-        timeBins = any(X_full(:,colBins)>0,2);
-        models{groups{i}, 'bins'} = timeBins';
-    else
-        timeBins = true(size(X_full,1),1);
-    end
-    
-    if any(timeBins)
-    
-        % find predictors for 'pre' group
-        members = {'time'};  % members of pre group
-        if ~isnan(groupInfo{groups{i}, 'residuals'}{1})
-            preGroups = split(groupInfo{groups{i}, 'residuals'}{1}, ' ');
-            models{groups{i}, 'groups_pre'}{1} = preGroups;
-            members = [members; predictorInfo.Properties.RowNames(ismember(predictorInfo.group, preGroups))];
-        end
-
-        % train pre model
-        preColBins = ismember(colNames, members);
-        X = X_full(:, preColBins);
-        model = fitModel(X, y, lambda_min, timeBins);
-        models{groups{i}, 'model_pre'}{1} = model;
-        models{groups{i}, 'dev_pre'} = cvdeviance(X(timeBins,:), y(timeBins), model, ...
-            'holdout', true, 'bestLambdaOnly', true);
-
-        % train model
-        members = predictorInfo.Properties.RowNames(strcmp(predictorInfo.group, groups{i}));  % members of group
-        colBins = ismember(colNames, members) | preColBins;
-        X = X_full(:, colBins);
-%         if i==5; keyboard; end
-        model = fitModel(X, y, lambda_min, timeBins);
-        models{groups{i}, 'model'}{1} = model;
-        dev = cvdeviance(X(timeBins,:), y(timeBins), model, ...
-            'holdout', true, 'bestLambdaOnly', true);
-        models{groups{i}, 'dev'} = dev - models{groups{i}, 'dev_pre'};
-    end
+    % train model
+    colBins = ismember(colNames, [members; 'time']);
+    X = X_full(:, colBins);
+    model = fitModel(X, y, lambda_min);
+    models{groups{i}, 'model'}{1} = model;
+    models{groups{i}, 'dev'} = cvdeviance(X, y, model, ...
+        'holdout', true, 'bestLambdaOnly', true);  % should i subtract the null deviance?
 end
 
 if s.verbose; disp('all done!'); end
 
 
 % save some objects for convenience...
-yhat = exp(models{'full', 'model'}{1}.fit_preval) / dt;
+yhat = exp(models{groups{end}, 'model'}{1}.fit_preval) / dt;
 fitdata.t = t;
 fitdata.y = y;
 fitdata.yRate = spkRate;

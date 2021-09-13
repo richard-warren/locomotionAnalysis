@@ -23,9 +23,11 @@ dmat = table();
 
 % add predictors one at time, apply settings defined in predictorSettings.csv
 for i = 1:height(settings)
-    name = settings.name{i};
-    type = predictors{name, 'type'};
-    data = predictors{name, 'data'}{1};
+    try
+        name = settings.name{i};
+        type = predictors{name, 'type'};
+        data = predictors{name, 'data'}{1};
+    catch; keyboard; end
     
     if predictors{name, 'include'}
         if type=='event'

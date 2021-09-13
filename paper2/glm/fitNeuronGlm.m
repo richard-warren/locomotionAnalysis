@@ -2,7 +2,7 @@ function [models, fitdata] = fitNeuronGlm(session, neuron, varargin)
 
 % fit (several) glms for a neuron: full model, single model for each
 % predictor group, and models with each predictor group removed // either
-% fits single model on all data (method 'none'), or additional assesses
+% fits single model on all data (method 'none'), or additionally assesses
 % importance of each feature group by making models with just that group
 % included, and just that group excluded // either does this by refitting
 % models for with and without each group (method 'refit') or by shuffling
