@@ -23,10 +23,48 @@ fprintf('finished in %.1f minutes\n', toc/60)
 
 %% fit model for single unit
 
-fitSequentialGlms('201227_000', 194)
+% bad
+% session = '200622_000'; unit = 256;
+% session = '200201_000'; unit = 94;
+% session = '200201_000'; unit = 96;
+% session = '201119_000'; unit = 200;
+% session = '201117_000'; unit = 77;
+% session = '200622_000'; unit = 258;
+session = '200721_000'; unit = 274;  % fix this one first!
+
+% good
+% session = '200116_000'; unit = 128;
+% session = '200708_000'; unit = 118;
+
+[models, fitdata] = fitSequentialGlms(session, unit);
+% plotSequentialGlms(session, unit);
 
 
-%%  STUFF IS NOT FIXED BEYOND THIS POINT!
+% plot all predictions
+
+load(['E:\lab_files\paper2\modelling\glms\sequential_glms\' session '_cell_' num2str(unit) '_glm.mat'], ...
+    'models', 'fitdata');
+close all;
+figure('color', 'white', 'position', [2.00 722.00 1278.00 634.00]); hold on;
+plot(fitdata.t, [fitdata.yRate; fitdata.yhat'])
+plot(fitdata.t, models{end, 'model'}{1}.fit_preval)
+
+%% explore deviances
+fullDeviances = model.glmnet_fit.dev;
+partialModels = models{end, 'model'}{1}.models;
+partialDeviances = nan(length(fullDeviances), length(partialModels));  % lambda X model
+for i = 1:length(partialModels)
+    partialDeviances(:, i) = partialModels{i}.dev;
+end
+
+close all;
+figure('color', 'white', 'menubar', 'none', 'position', [454.00 841.00 560.00 420.00]); hold on
+plot(partialDeviances, 'color', [0 0 0 .4])
+plot(fullDeviances, 'color', lines(1), 'LineWidth', 2)
+xlabel('\lambda')
+plot(mean(partialDeviances, 2), 'color', 'red')
+lambda_id = models{end, 'model'}{1}.lambda_min_id;
+plot([lambda_id lambda_id], ylim)
 
 %% fit models for all units
 
@@ -35,7 +73,7 @@ overwrite = true;
 
 
 data = getUnitInfo();
-tic; fprintf('\nfitting residual GLMs for %i neurons...\n', height(data))
+tic; fprintf('\nfitting sequential GLMs for %i neurons...\n', height(data))
 
 parfor i = 1:height(data)  % individual sessions are repeated for each neuron in session
     session = data{i, 'session'}{1};
@@ -43,19 +81,19 @@ parfor i = 1:height(data)  % individual sessions are repeated for each neuron in
     
     try
         % fit models
-        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
+        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'sequential_glms', ...
             [session '_cell_' num2str(unit) '_glm.mat']);
         if overwrite || ~exist(filename, 'file')
             fprintf('(%3i/%i) %s, cell %3i: fitting GLMs\n', i, height(data), session, unit);
-            fitResidualGlm(session, unit, 'verbose', false, 'parallel', false, 'save', true);
+            fitSequentialGlms(session, unit, 'verbose', false, 'parallel', false, 'save', true);
         end
 
-        % plot
-        plotFilename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'residual_glms', ...
-            [session '_cell_' num2str(unit) '_glm.png']);
-        if (overwrite || ~exist(plotFilename, 'file')) && exist(filename, 'file')
-            plotResidualGlms(session, unit, 'save', true, 'visible', false)
-        end
+%         % plot (temp commented out)
+%         plotFilename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'sequential_glms', ...
+%             [session '_cell_' num2str(unit) '_glm.png']);
+%         if (overwrite || ~exist(plotFilename, 'file')) && exist(filename, 'file')
+%             plotSequentialGlms(session, unit, 'save', true, 'visible', false)
+%         end
     catch exception
         fprintf('%s: PROBLEM! -> %s, unit %i\n', session, unit, exception.identifier)
     end

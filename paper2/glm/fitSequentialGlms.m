@@ -25,11 +25,11 @@ load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'residual'
 
 % load predictor info
 % TODO: update settings spreadsheet with groups and order of interest
-filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'settings', 'residual_predictorSettings.xlsx');
+filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'settings', 'sequential_predictorSettings.xlsx');
 predictorInfo = readtable(filename, 'sheet', 'predictors', 'ReadRowNames', true);
 predictorInfo = predictorInfo(dmat.Properties.VariableNames(1:end-1), :);  % end-1 because last predictor is time in dmat
-groups = unique(predictorInfo.group);
 groupInfo = readtable(filename, 'sheet', 'groups', 'ReadRowNames', true);
+groups = groupInfo.group;
 
 % load neuron
 neuralData = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']));
@@ -47,7 +47,6 @@ end
 % prep data for model
 dmat = dmat(inds,:);
 y = histcounts(spkTimes, [t-dt/2 t(end)+dt/2])';
-% y = y + randi(2, length(y), 1);
 
 
 % define cross-validation folds
@@ -79,6 +78,7 @@ colNames = cat(2, colNames{:});
 % train full model
 % (the full model corresponds to the addition of the final group)
 X_full = table2array(dmat);
+keyboard
 modelFull = fitModel(X_full, y, s.lambdas);
 models{groups{end}, 'model'}{1} = modelFull;
 models{groups{end}, 'dev'} = cvdeviance(X_full, y, modelFull, 'holdout', true, 'bestLambdaOnly', true);
@@ -93,10 +93,10 @@ models{'null', 'dev'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly
 
 % check that rick's deviance matches glmnet deviance for full model evaluated on training data
 glmnet_dev = modelFull.glmnet_fit.dev(modelFull.lambda_min_id);
-rick_dev = cvdeviance(X_full, y, modelFull, 'holdout', false, 'bestLambdaOnly', true);  % don't use heldout data to match glmnet_fit deviance
+rick_dev = cvdeviance(X_full, y, modelFull, 'holdout', true, 'bestLambdaOnly', true);  % don't use heldout data to match glmnet_fit deviance (not sure if this is correct...)
 if abs(glmnet_dev - rick_dev)>.02
-    fprintf('WARNING! Deviance computed by Glmnet %.3f off from rick deviance!\n', ...
-        glmnet_dev - rick_dev)
+    fprintf('WARNING (%s_unit_%i)! Deviance diff of %.3f between glmnet (%.3f) and rick (%.3f)!\n', ...
+        session, neuron, (glmnet_dev - rick_dev), glmnet_dev, rick_dev)
 end
 
 
