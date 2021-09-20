@@ -3,7 +3,30 @@
 data = getUnitInfo;
 paper2_config;
 
-%% example unit model predictions
+%% load model performance
+
+% load sample glm
+models = load(fullfile('E:\lab_files\paper2\modelling\glms\sequential_glms', ...
+    sprintf('%s_cell_%i_glm.mat', data.session{1}, data.unit(1))));
+modelNames = models.models.Properties.RowNames;
+data.deviances = nan(height(data), length(modelNames));
+data.r2s = nan(height(data), length(modelNames));
+
+% load all GLMs
+for i = 1:height(data)
+    fileName = fullfile('E:\lab_files\paper2\modelling\glms\sequential_glms', ...
+    sprintf('%s_cell_%i_glm.mat', data.session{i}, data.unit(i)));
+    if exist(fileName, 'file')
+        models = load(fileName);
+        data{i, 'deviances'} = models.models.dev';
+        for j = 1:height(models.models)
+            r2 = getModelR2(models.models{j, 'model'}{1}, models.fitdata);
+            data.r2s(i, j) = r2;
+        end
+    else
+        fprintf('SKIPPING %s\n', fileName)
+    end
+end
 
 %% show predictor traces surrounding reward delivery
 close all;
@@ -114,49 +137,88 @@ for s = 1:length(sessions)
 end
 
 
-
-
-
 %% model performance for sequential models
-
-% load sample glm
-models = load(fullfile('E:\lab_files\paper2\modelling\glms\sequential_glms', ...
-    sprintf('%s_cell_%i_glm.mat', data.session{1}, data.unit(1))));
-modelNames = models.models.Properties.RowNames;
-data.deviances = nan(height(data), length(modelNames));
-
-% load all GLMs
-for i = 1:height(data)
-    fileName = fullfile('E:\lab_files\paper2\modelling\glms\sequential_glms', ...
-    sprintf('%s_cell_%i_glm.mat', data.session{i}, data.unit(i)));
-    if exist(fileName, 'file')
-        models = load(fileName);
-        data{i, 'deviances'} = models.models.dev';
-    else
-        fprintf('SKIPPING %s\n', fileName)
-    end
-end
-
-%% plot
 dmat = data.deviances';
-close all; figure('color', 'white', 'position', [603.00 791.00 282.00 287.00], 'menubar', 'none')
-bins = logical([0 1 1 1]);
-
 dmatLog = dmat; dmatLog(dmatLog<=0) = nan; dmatLog = log(dmatLog);
-barFancy(dmatLog(bins,:), 'showBars', false, 'showViolins', true, 'showErrorBars', false, ...
-    'lineAtZero', false, 'levelNames', {modelNames(bins)'}, 'scatterColors', [0 0 0], ...
-    'scatterSize', 10, 'ylabel', 'deviance explained', 'barWidth', .8, ...
-    'colors', cfg.sequentialColors(bins,:), 'scatterCondColor', true, ...
-    'comparisons', [1 2; 2 3], 'test', 'signrank', 'YLim', [-4.5 0]);
+bins = logical([1 1 1 1]);  % which models to show
+close all; figure('color', 'white', 'position', [603.00 791.00 282.00 287.00], 'menubar', 'none')
+
+% violin
+% barFancy(dmatLog(bins,:), 'showBars', false, 'showViolins', true, 'showErrorBars', false, ...
+%     'lineAtZero', false, 'levelNames', {modelNames(bins)'}, 'scatterColors', [0 0 0], ...
+%     'scatterSize', 10, 'ylabel', 'deviance explained', 'barWidth', .8, ...
+%     'colors', cfg.sequentialColors(bins,:), 'scatterCondColor', true, ...
+%     'comparisons', [1 2; 2 3], 'test', 'signrank', 'YLim', [-4.5 0]);
+
+% bar plot
 % barFancy(dmat, 'showBars', true, 'showViolins', false, 'showErrorBars', true, ...
 %     'comparisons', [1 2; 2 3; 3 4], 'test', 'signrank', ...
 %     'lineAtZero', true, 'levelNames', {modelNames'}, 'scatterColors', [0 0 0], ...
 %     'scatterSize', 10, 'ylabel', 'deviance explained', 'barSeparation', 0, ...
 %     'colors', cfg.sequentialColors, 'scatterCondColor', true, 'showScatter', false, ...
 %     'barAlpha', 1, 'YLim', [0 .15], 'errorFunction', @(x) nanstd(x) / sqrt(length(x)));
-limitticks
-set(gca, cfg.axArgs{:});
+
+% box plot
+newModelNames = {'null', 'basic', 'basic & phase', 'full model'};
+colors = flipud(cfg.sequentialColors(bins,:));
+boxplot(dmatLog(bins,:)', newModelNames(bins), ...
+    'Symbol', '', 'Notch', 'on')
+ylabel('log(fraction deviance explained)')
+h = findobj(gca,'Tag','Box');
+for j = 1:length(h)
+    patch(get(h(j),'XData'), get(h(j), 'YData'), colors(j,:), 'FaceAlpha',.5);
+end
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+set(lines, 'Color', [0 0 0], 'linewidth', 2);
+set(gca, 'ylim', [-10 -0], cfg.axArgs{:})
+limitticks(true)
 
 % save
-% set(gcf, 'Renderer', 'painters')  % ensures export is not rasterized
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\sequential_model_deviance.svg')
+
+%% scatter r2 against deviance explained
+
+close all; figure('position', [504.00 724.00 343.00 285.00], 'color', 'white', 'menubar', 'none');
+dev = data.deviances(:,4);
+devLog = dev; devLog(devLog<0)=min(devLog(devLog>0))'; devLog = log(devLog);
+r2 = data.r2s(:,4);
+scatterHistoRick(dev, r2, 'colors', [0 0 0], 'scatAlpha', .1)
+xlabel('deviance explained')
+ylabel('R^2')
+
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\deviance_vs_r2.svg')
+
+%% model performance on allen brain atlas
+
+%% play around with functional clustering across cells
+
+% create (and write to disk) clustering data struct
+% aggregateResponses();  % only need to do once
+[data, cellInfo] = getClusteringData();
+
+% put nested importances in a matrix
+groups = fieldnames(data);
+colNames = cellfun(@(x) ['importance_' x], groups, 'UniformOutput', false);
+ngroups = length(groups);
+nucbins = ismember(cellInfo.nucleus, {'fastigial', 'interpositus', 'dentate'});  % rows where unit is in nucleus
+
+ccf = loadCCF();
+
+%% plot stuff on ccf
+
+% settings
+percentileLims = [10 90];
+
+% inits
+close all
+
+dev = data.deviances(:, end);
+% determine percentile based color map
+clims = prctile(dev, percentileLims);
+colors = interp1(clims, [cfg.sequentialColors(1,:); cfg.sequentialColors(end,:)], dev, 'nearest', 'extrap');
+
+plotUnitsOnCcf(data, 'colors', colors)
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\ccf_deviance.svg')
+
+
+

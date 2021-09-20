@@ -1,4 +1,9 @@
-%% description goes here!
+%% compare models with different numbers of predictors, starting with null
+% model (time basis only), then 'base' model containing things like wheel
+% vel and lick times, then adding locomotion phase, and finally add all the
+% fancy kinematic vars... idea is to test whether all the fancy stuff
+% actually helps us predict anything
+
 
 
 %% compute design matrices
@@ -24,13 +29,9 @@ fprintf('finished in %.1f minutes\n', toc/60)
 %% fit model for single unit
 
 % bad
-% session = '200622_000'; unit = 256;
-% session = '200201_000'; unit = 94;
-% session = '200201_000'; unit = 96;
-% session = '201119_000'; unit = 200;
-% session = '201117_000'; unit = 77;
-% session = '200622_000'; unit = 258;
-session = '200721_000'; unit = 274;  % fix this one first!
+% session = '191009_003'; unit = 267;
+% session = '200713_000'; unit = 285;
+session = '201012_000'; unit = 93;
 
 % good
 % session = '200116_000'; unit = 128;
@@ -41,9 +42,8 @@ session = '200721_000'; unit = 274;  % fix this one first!
 
 
 % plot all predictions
-
-load(['E:\lab_files\paper2\modelling\glms\sequential_glms\' session '_cell_' num2str(unit) '_glm.mat'], ...
-    'models', 'fitdata');
+% load(['E:\lab_files\paper2\modelling\glms\sequential_glms\' session '_cell_' num2str(unit) '_glm.mat'], ...
+%     'models', 'fitdata');
 close all;
 figure('color', 'white', 'position', [2.00 722.00 1278.00 634.00]); hold on;
 plot(fitdata.t, [fitdata.yRate; fitdata.yhat'])
@@ -88,12 +88,12 @@ parfor i = 1:height(data)  % individual sessions are repeated for each neuron in
             fitSequentialGlms(session, unit, 'verbose', false, 'parallel', false, 'save', true);
         end
 
-%         % plot (temp commented out)
-%         plotFilename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'sequential_glms', ...
-%             [session '_cell_' num2str(unit) '_glm.png']);
-%         if (overwrite || ~exist(plotFilename, 'file')) && exist(filename, 'file')
-%             plotSequentialGlms(session, unit, 'save', true, 'visible', false)
-%         end
+        % plot (temp commented out)
+        plotFilename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'sequential_glms', ...
+            [session '_cell_' num2str(unit) '_glm.png']);
+        if (overwrite || ~exist(plotFilename, 'file')) && exist(filename, 'file')
+            plotSequentialGlms(session, unit, 'save', true, 'visible', false)
+        end
     catch exception
         fprintf('%s: PROBLEM! -> %s, unit %i\n', session, unit, exception.identifier)
     end

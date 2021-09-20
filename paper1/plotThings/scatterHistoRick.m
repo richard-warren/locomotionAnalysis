@@ -39,6 +39,9 @@ if groupNum>1
         groupX(i) = s.groupFcn(x(s.groupId==i));
         groupY(i) = s.groupFcn(y(s.groupId==i));
     end
+else
+    groupX = ones(1, length(x));
+    groupY = ones(1, length(y));
 end
 
 
@@ -102,9 +105,9 @@ if groupNum>1; scatter(groupX, groupY, 50, s.colors, 'filled', 'MarkerEdgeColor'
 if s.showCrossHairs
     if groupNum>1 % average across groups
         line(nanmean(groupX) * [1 1], nanmean(groupY) + [-1 1]*nanstd(groupY), ...
-            'linewidth', 5, 'color', 'black')
+            'linewidth', 2, 'color', 'black')
         line(nanmean(groupX) + [1 -1]*nanstd(groupX), nanmean(groupY)*[1 1], ...
-            'linewidth', 5, 'color', 'black')
+            'linewidth', 2, 'color', 'black')
         
         % add thin lines that extend to edges of figure
         line(nanmean(groupX) * [1 1], s.yLims, 'linewidth', 1, 'color', [0 0 0 .5])
@@ -112,9 +115,9 @@ if s.showCrossHairs
         
     else % average across individual samples
         line(nanmean(x) * [1 1], nanmean(y) + [-1 1]*nanstd(y), ...
-            'linewidth', 5, 'color', 'black')
+            'linewidth', 2, 'color', 'black')
         line(nanmean(x) + [1 -1]*nanstd(x), nanmean(y)*[1 1], ...
-            'linewidth', 5, 'color', 'black')
+            'linewidth', 2, 'color', 'black')
         
         % add thin lines that extend to edges of figure
         line(nanmean(groupX) * [1 1], s.yLims, 'linewidth', 1, 'color', [0 0 0 .5])

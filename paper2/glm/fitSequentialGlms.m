@@ -20,7 +20,7 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 if s.verbose; fprintf('%s: fitting models for neuron %i... ', session, neuron); end
 
 % load design matrix
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'residual', [session '_designMatrix.mat']), ...
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'sequential', [session '_designMatrix.mat']), ...
     'dmat', 't', 'reward_all')
 
 % load predictor info
@@ -78,7 +78,6 @@ colNames = cat(2, colNames{:});
 % train full model
 % (the full model corresponds to the addition of the final group)
 X_full = table2array(dmat);
-keyboard
 modelFull = fitModel(X_full, y, s.lambdas);
 models{groups{end}, 'model'}{1} = modelFull;
 models{groups{end}, 'dev'} = cvdeviance(X_full, y, modelFull, 'holdout', true, 'bestLambdaOnly', true);
@@ -93,17 +92,14 @@ models{'null', 'dev'} = cvdeviance(X, y, model, 'holdout', true, 'bestLambdaOnly
 
 % check that rick's deviance matches glmnet deviance for full model evaluated on training data
 glmnet_dev = modelFull.glmnet_fit.dev(modelFull.lambda_min_id);
-rick_dev = cvdeviance(X_full, y, modelFull, 'holdout', true, 'bestLambdaOnly', true);  % don't use heldout data to match glmnet_fit deviance (not sure if this is correct...)
+rick_dev = cvdeviance(X_full, y, modelFull, 'holdout', false, 'bestLambdaOnly', true);  % don't use heldout data to match glmnet_fit deviance
 if abs(glmnet_dev - rick_dev)>.02
     fprintf('WARNING (%s_unit_%i)! Deviance diff of %.3f between glmnet (%.3f) and rick (%.3f)!\n', ...
         session, neuron, (glmnet_dev - rick_dev), glmnet_dev, rick_dev)
 end
 
-
 % add groups one by one! (note we already computed the final, full model)
 for i = 1:(length(groups)-1)
-    % TODO: compute models for reward and non-reward times separately?
-    
     % find predictors belonging to groups 1:i
     members = predictorInfo.name(ismember(predictorInfo.group, groups(1:i)));
     
@@ -117,7 +113,6 @@ for i = 1:(length(groups)-1)
 end
 
 if s.verbose; disp('all done!'); end
-
 
 % save some objects for convenience...
 yhat = exp(models{groups{end}, 'model'}{1}.fit_preval) / dt;

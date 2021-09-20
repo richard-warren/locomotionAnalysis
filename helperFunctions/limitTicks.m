@@ -1,11 +1,15 @@
-function limitticks()
+function limitticks(yonly)
 % removes all but two tick labels for y axis of current figure
 % todo: add x or y limits only option
 
 pause(.001)
+if ~exist('yonly', 'var'); yonly = false; end
 
-xticks = limitticks_(get(gca, 'XTickLabel'));
-set(gca, 'XTickLabel', xticks)
+
+if ~yonly
+    xticks = limitticks_(get(gca, 'XTickLabel'));
+    set(gca, 'XTickLabel', xticks)
+end
 
 yticks = limitticks_(get(gca, 'YTickLabel'));
 set(gca, 'YTickLabel', yticks)
