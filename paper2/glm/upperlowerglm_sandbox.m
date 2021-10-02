@@ -1,61 +1,68 @@
-%% play around with GLMs :)
+%% upper lower glms
+% TODO: add description
 
 
+%% compute design matrices
 
-%% UPPER_LOWER GLMS
+data = getUnitInfo();
+sessions = unique(data.session);
+spreadsheet = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'settings', 'upperlower_predictorSettings.xlsx');
+
+tic
+parfor i = 1:length(sessions)
+    try
+        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', ...
+            'designMatrices', 'upperlower', [sessions{i} '_designMatrix.mat']);
+        makeDesignMatrix(sessions{i}, spreadsheet, ...
+            'timeDegrees', 3, 'outputFileName', filename);
+    catch exception
+        fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
+    end
+end
+fprintf('finished in %.1f minutes\n', toc/60)
+
 
 %% fit single upper_lower glm
 session = '200622_000'; unit = 264;
-[models, fitdata] = fitNeuronGlm(session, unit, 'parallel', true, 'save', true);
-filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+[models, fitdata] = fitUpperLowerGlm(session, unit, 'parallel', true, 'save', true);
+filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upperlower_glms', ...
     [session '_cell_' num2str(unit) '_glm']);
-plotGlmModels(session, unit, 'outputFileName', filename, 'visible', false)
+plotUpperLowerGlms(session, unit, 'outputFileName', filename, 'visible', false)
 
 %% train upper_lower GLMs for all sessions
 
 overwrite = false;
 
-[sessions, neurons] = getEphysSessions();
-sessions = repelem(sessions, cellfun(@length, neurons));
-neurons = cat(1, neurons{:});
+data = getUnitInfo();
 
-skipInds = [7 27 61];
+tic; fprintf('\nfitting upperlower GLMs for %i neurons...\n', height(data))
 
-tic; fprintf('\nfitting models for %i neurons...\n', length(sessions))
-parfor i = 1:length(sessions)
-    if ~ismember(i, skipInds)
-        try
-            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
-                [sessions{i} '_cell_' num2str(neurons(i)) '_glm.mat']);
-            if overwrite || ~exist(filename, 'file')
-                % train model
-                fprintf('(%3i/%i) %s, cell %3i: fitting GLMs\n', i, length(sessions), sessions{i}, neurons(i));
-                fitNeuronGlm(sessions{i}, neurons(i), 'verbose', false, ...
-                    'method', 'refit', 'parallel', false, 'outputFileName', filename);
+parfor i = 1:height(data)
+    session = data{i, 'session'}{1};
+    unit = data{i, 'unit'};
+    
+    try
+        filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upperlower_glms', ...
+            [session '_cell_' num2str(unit) '_glm.mat']);
+        if overwrite || ~exist(filename, 'file')
+            % train model
+            fprintf('(%3i/%i) %s, cell %3i: fitting GLMs\n', i, height(data), session, unit);
+            fitUpperLowerGlm(session, unit, 'verbose', false, ...
+                'method', 'refit', 'parallel', false, 'outputFileName', filename);
 
-                % plot
-                filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
-                    [sessions{i} '_cell_' num2str(neurons(i)) '_glm']);
-                plotGlmModels(sessions{i}, neurons(i), 'outputFileName', filename, 'visible', false)
-            end
-
-        catch exception
-            fprintf('%s: PROBLEM! -> %s\n', sessions{i}, exception.identifier)
+            % plot
+            filename = fullfile(getenv('SSD'), 'paper2', 'modelling', 'glms', 'upperlower_glms', ...
+                [session '_cell_' num2str(unit) '_glm']);
+            plotUpperLowerGlms(session, unit, 'outputFileName', filename, 'visible', false)
         end
+
+    catch exception
+        fprintf('%s: PROBLEM! -> %s\n', session, exception.identifier)
     end
 end
 fprintf('\nfinished in %.1f minutes\n', toc/60)
 
 
-%% compute session durations
-
-for i = 1:length(neurons)
-    session = neurons{i}{1};
-    load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '_designMatrix.mat']), ...
-        'dmat', 't', 'reward_all')
-    duration = (t(end) - t(1)) / 60;
-    fprintf('%s: %.1f minutes\n', session, duration)
-end
 
 
 %% compute single model and show predictions

@@ -1,4 +1,4 @@
-function [models, fitdata] = fitNeuronGlm(session, neuron, varargin)
+function [models, fitdata] = fitUpperLowerGlm(session, neuron, varargin)
 
 % fit (several) glms for a neuron: full model, single model for each
 % predictor group, and models with each predictor group removed // either
@@ -24,7 +24,7 @@ s.method = 'refit';                  % 'shuffle', or 'refit', or 'mask' (see des
 s.verbose = true;
 s.save = true;
 s.outputFileName = fullfile(...
-    getenv('SSD'), 'paper2', 'modelling', 'glms', 'upper_lower_glms', ...
+    getenv('SSD'), 'paper2', 'modelling', 'glms', 'upperlower_glms', ...
     [session '_cell_' num2str(neuron) '_glm.mat']);
 
 
@@ -35,11 +35,11 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 if s.verbose; fprintf('%s: fitting models for neuron %i... ', session, neuron); end
 
 % load design matrix
-load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', [session '_designMatrix.mat']), ...
+load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'designMatrices', 'upperLower', [session '_designMatrix.mat']), ...
     'dmat', 't', 'reward_all')
 
 % load predictor info
-filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'predictorSettings.xlsx');
+filename = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'settings', 'upperlower_predictorSettings.xlsx');
 predictorInfo = readtable(filename, 'sheet', 'predictors', 'ReadRowNames', true);
 predictorInfo = predictorInfo(dmat.Properties.VariableNames(1:end-1), :);  % end-1 because last predictor is time in dmat
 groups = unique(predictorInfo.group);
@@ -89,7 +89,7 @@ lambda_min = model.lambda_min;
 % check that rick's deviance matches glmnet deviance for full model evaluated on training data
 glmnet_dev = model.glmnet_fit.dev(model.lambda_min_id);
 rick_dev = cvdeviance(X_full, y, model, 'holdout', false, 'bestLambdaOnly', true);  % don't use heldout data to match glmnet_fit deviance
-if abs(glmnet_dev - rick_dev)>.01
+if abs(glmnet_dev - rick_dev)>.02
     fprintf('WARNING! Deviance computed by Glmnet %.3f off from rick deviance!\n', ...
         glmnet_dev - rick_dev)
 end

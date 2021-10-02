@@ -1,4 +1,4 @@
-function plotGlmModels(session, neuron, varargin)
+function plotUpperLowerGlms(session, neuron, varargin)
 % plots true and predicted firing rate for full glm, plus glm with only
 % each predictor group included... also shows upper and lower bound
 % deviance explained for each predictor group
@@ -15,7 +15,7 @@ if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = var
 events = {'reward_all', 'whiskerContact', 'lick'};
 eventColors = lines(length(events));
 folder = fullfile(getenv('SSD'), 'paper2', 'modelling');
-load(fullfile(folder, 'glms', 'upper_lower_glms', [session '_cell_' num2str(neuron) '_glm.mat']), 'models', 'fitdata');
+load(fullfile(folder, 'glms', 'upperlower_glms', [session '_cell_' num2str(neuron) '_glm.mat']), 'models', 'fitdata');
 load(fullfile(folder, 'predictors', [session '_predictors.mat']), 'predictors');
 groups = models.Properties.RowNames;
 ngroups = length(groups);

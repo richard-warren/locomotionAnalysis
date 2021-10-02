@@ -16,3 +16,7 @@ cfg.wiskColor = cfg.obsColor * .5;
 cfg.diiColor = [.99 .33 1];  % dii color for probe traces
 cfg.predictionColor = colorme(1, 'saturation', .7, 'offset', .7, 'showSamples', false);
 cfg.sequentialColors = interp1([0 1], [.2 .2 .2; cfg.predictionColor], linspace(0, 1, 4));  % null, base, phase, full
+cfg.groupColors = winter(7);  % predictor groups // TODO: don't hard code this :)
+
+% models
+cfg.sequentialModelNames = {'null', 'basic', 'basic & phase', 'full model'};

@@ -142,7 +142,6 @@ for i = 1:length(groups)
         members = predictorInfo.Properties.RowNames(strcmp(predictorInfo.group, groups{i}));  % members of group
         colBins = ismember(colNames, members) | preColBins;
         X = X_full(:, colBins);
-%         if i==5; keyboard; end
         model = fitModel(X, y, lambda_min, timeBins);
         models{groups{i}, 'model'}{1} = model;
         dev = cvdeviance(X(timeBins,:), y(timeBins), model, ...

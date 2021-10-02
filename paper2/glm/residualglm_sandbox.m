@@ -5,7 +5,7 @@
 
 data = getUnitInfo();
 sessions = unique(data.session);
-spreadsheet = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'residual_predictorSettings.xlsx');
+spreadsheet = fullfile(getenv('GITDIR'), 'locomotionAnalysis', 'paper2', 'glm', 'settings', 'residual_predictorSettings.xlsx');
 
 tic
 parfor i = 1:length(sessions)
