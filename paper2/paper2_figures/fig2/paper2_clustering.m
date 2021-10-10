@@ -166,6 +166,49 @@ end
 
 saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\importance_ccf_' metric '.svg'])
 
+%% tuning by nucleus bars
+
+% settings
+metric = 'lower';
+
+close all; figure('color', 'white', 'position', [722.00 948.00 433.00 306.00], 'menubar', 'none'); hold on
+
+x = (1 : (length(groups)*3)) + ...
+    repelem(0:length(groups)-1, 3) * .5;  % offset each group
+patches = nan(1, 3);
+
+for i = 1:length(groups)
+    for j = 1:3
+        xind = (i-1) * 3 + j;
+        bins = strcmp(data.nucleus, nucleiNames{j});
+        d = data.(metric)(bins, i);
+        c = cfg.nucleusColors(j,:);
+        
+        % compute stats
+        mn = nanmedian(d);
+        blims = prctile(d, [25 75]);  % top and bottom of box
+        iqr = diff(blims);  % interquartile range
+        outlims = [blims(1)-iqr*1.5 blims(2)+iqr*1.5];  % data outside this range are considered outliers (https://www.mathworks.com/help/stats/boxplot.html)
+        
+        % whiskers extend to most extreme non-outlier value
+        validBins = d>outlims(1) & d<outlims(2);
+        whiskerLims = [min(d(validBins)) max(d(validBins))];
+        
+        patches(j) = patch(x(xind)+[-.5 .5 .5 -.5], [blims(1) blims(1) blims(2) blims(2)], c, ...
+            'EdgeColor', 'none', 'FaceAlpha', .8);  % box
+        plot(x(xind)+[-.5 .5], [mn mn], 'LineWidth', 1.5, 'Color', [.15 .15 .15])  % median
+        plot(x(xind)*[1 1], [blims(1) whiskerLims(1)], 'color', [.15 .15 .15])  % bottom whisker
+        plot(x(xind)*[1 1], [blims(2) whiskerLims(2)], 'color', [.15 .15 .15])  % top whisker
+    end
+end
+
+set(gca, 'xtick', x(2:3:length(x)), 'XTickLabel', groups, 'XTickLabelRotation', 45, cfg.axArgs{:})
+ylabel('deviance explained')
+limitticks(true)
+legend(patches, nucleiNames, 'box', 'off')
+
+saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\deviance_bars_' metric '.svg'])
+
 %% scatter importance for all group pairs
 
 % settings
