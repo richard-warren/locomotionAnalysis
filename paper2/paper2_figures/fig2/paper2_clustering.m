@@ -35,6 +35,34 @@ for i = 1:length(metricNames)
 end
 
 
+%% overall upp lower bars
+
+
+close all
+figure('color', 'white', 'menubar', 'none', 'position', [227.00 396.00 306.00 294.00]); hold on
+
+halfWid = .3;  % half width of bar
+
+for i = 1:ngroups
+    lower = data.lower(:,i);
+    upper = data.upper(:,i);
+    low = nanmean(lower);
+    upp = nanmean(upper);
+    lowSem = nanstd(lower) / sqrt(height(data));
+    uppSem = nanstd(upper) / sqrt(height(data));
+    
+    patch([-1 1 1 -1]*halfWid + i, [low low upp upp], ...
+        cfg.groupColors(i,:), 'EdgeColor', 'none'); hold on
+    
+    plot([i i], upp+[-1 1]*uppSem, 'color', 'black', 'LineWidth', 2)
+    plot([i i], low+[-1 1]*lowSem, 'color', 'black', 'LineWidth', 2)
+end
+
+set(gca, 'XTick', 1:ngroups, 'XTickLabel', groups, 'XTickLabelRotation', 45);
+ylabel({'deviance explained', '(lower and upper bounds)'})
+
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\upper_lower_bars.svg')
+
 %% scatters to explore correlations between different tuning metrics
 
 scatPlots = {{'upper', 'lower'}, {'upper', 'residual'}, {'residual', 'lower'}};
@@ -69,43 +97,52 @@ end
 
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\tuning_metric_correlations.svg')
 
-%% umap embeddings
 
-% TODO: color by discovered groups?
+%% distros for upper and lower per group
 
-metric = 'upper';  % residual, upper, lower
-groupsToExclude = {'vision', 'obstacle'};
+% settings
+xlims = [0 .2; 0 .8];  % lower lims; upper lims
+ylims = [0 height(data)];
+nbins = 20;
 
-groupBins = ~ismember(groups, groupsToExclude);
-d = data.(metric)(:, groupBins);
-bins = ~any(isnan(d), 2);
-embedding = nan(height(data), 2);
-embedding(bins, :) = run_umap(d(bins, :), 'sgd_tasks', 1, 'verbose', 'text');
+close all
+figure('color', 'white', 'menubar', 'none', 'position', [603.00 362.00 368.00 918.00])
+ngroups = length(groups);
+colors = cfg.upperLowerColors;
 
-close all;
-figure('color', 'white', 'menubar', 'none', 'position', [881.00 820.00 306.00 288.00]); hold on
+histArgs = {'EdgeColor', 'none'};
+colLabels = {'deviance lower bound', 'deviance upper bound'};
 
-% scatter by nucleus
-nuclei = {'dentate', 'interpositus', 'fastigial'};
-scats = nan(1, 3);
-for i = 1:length(nuclei)
-    nucleusBins = strcmp(data.nucleus, nuclei{i});
-    scats(i) = scatter(embedding(nucleusBins, 1), embedding(nucleusBins, 2), 10, 'filled', ...
-        'MarkerFaceColor', cfg.nucleusColors(i,:), 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'none');
+for i = 1:ngroups
+    upperAndLower = {data.lower(:, i), data.upper(:, i)};
+    for j = 1:2
+        subplot(ngroups, 2, (i-1)*2+j); hold on
+        d = upperAndLower{j};
 
+        % histos
+        binEdges = linspace(xlims(j,1), xlims(j,2), nbins+1);
+        histLow = histogram(d, binEdges, 'FaceColor', colors(j,:), histArgs{:});
+        set(gca, 'XLim', xlims(j,:), cfg.axArgs{:})
+        set(gca, cfg.axArgs{:})
+
+        % add medians
+        plot([1 1]*nanmedian(d), ylim, 'LineWidth', 2, 'color', colors(j,:))
+
+        % fancify
+        if j==1; ylabel(groups{i}); end
+        if i<ngroups; set(gca, 'XTickLabel', []); end
+        if i==ngroups; xlabel(colLabels{j}); end
+        limitticks(true)
+    end
 end
 
-set(gca, 'XColor', 'none', 'YColor', 'none', cfg.axArgs{:})
-title('UMAP Embeddings')
-legend(scats, nuclei, 'location', 'best')
-
-saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\umap_' metric '.svg'])
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\histos_lower.svg')
 
 
 %% scatter importance on ccf for each group
 
 % settings
-metric = 'residual';  % residual, upper, lower
+metric = 'lower';  % residual, upper, lower
 percentileLims = [10 90];
 
 % inits
@@ -162,12 +199,92 @@ end
 
 saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\importance_scatters_' metric '.svg'])
 
-%% cluster!
+%% heatmaps sorted by deviance for each group
+
+% settings
+histoBins = 30;
+metric = 'lower';  % residual, upper, lower
+histlims = [0 .3];
+
+% inits
+colors = cfg.groupColors;
+cols = length(groups);
+cmap = cfg.heatmapColors;
+ngroups = length(groups);
+binEdges = linspace(histlims(1), histlims(2), histoBins+1);
+
+load('E:\lab_files\paper2\modelling\response_aggregates.mat', ...
+    'aggregates', 'cellInfo')
+groupInfo = readtable('C:\Users\richa\Desktop\github\locomotionAnalysis\paper2\glm\settings\residual_predictorSettings.xlsx', ...
+    'sheet', 'groups', 'ReadRowNames', true);
+if cellInfo.unit ~= data.unit
+    disp('WARNING! DATA DOES NOT MATCH AGGERGATE ORDERING!')
+    keyboard
+end
+
+
+close all; figure('color', 'white', 'position', [208.00 98.00 909.00 1219.00])
+for i = 1:ngroups  % rows
+    importance = data.(metric)(:,i);
+    [~, sortInds] = sort(importance);
+    
+%     finalInd = find(~isnan(importance(sortInds)), 1, 'last');
+    
+    % histogram
+    subplot(ngroups+1, ngroups, i); hold on
+%     [~, clusterCenters] = kmeans(imp, 2);
+    thresh = .05;
+    histogram(importance, binEdges, 'EdgeColor', [.2 .2 .2], ...
+        'FaceColor', colors(i,:), 'Normalization', 'count')
+    xlabel('dev explained')
+    set(gca, 'box', 'off', 'XLim', histlims)
+    plot([thresh thresh], ylim, 'color', [1 1 1]*.2)
+    title(sprintf('%s (%.1f%%)', groups{i}, mean(importance>thresh)*100))
+%     title(groups{i})
+    
+    for j = 1:ngroups  % cols
+        
+        var = groupInfo{groups{j}, 'response'}{1};  % name of representative group predictor
+        resp = aggregates{var, 'aggregate'}{1};
+        xlims = aggregates{var, 'xLims'};
+        x = linspace(xlims(1), xlims(2), size(resp, 2));
+        
+
+        % heatmap
+        subplot(ngroups+1, ngroups, (ngroups*i) + j); hold on
+        imagesc(x, 1:size(resp,1), resp(sortInds,:));
+        colormap(cmap)
+        
+        if i==j
+            y = [find(importance(sortInds)>thresh, 1, 'first'), ...
+                 find(importance(sortInds)>thresh, 1, 'last')] + [-.5 .5];
+            if length(y)==2
+                plot([x(1) x(1)], y, 'Color', colors(i,:), 'LineWidth', 5)
+            end
+        end
+
+        if i==ngroups; xlabel(var, 'Interpreter', 'none'); end
+        if j==1; ylabel(groups{i}); end 
+        set(gca, 'box', 'off', 'ytick', [], 'TickDir', 'out', ...
+            'ydir', 'normal', 'ylim', [1 size(resp,1)], ...
+            'xlim', [x(1) x(end)])
+        
+    end
+end
+
+saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\heatmaps_sorted_' metric '.svg'])
+
+
+
+
+
+%% cluster! (run these cell serially)
 
 %% clustering heatmaps and bar plots
 
 % settings
-metric = 'residual';  % residual, upper, lower
+rng(1)
+metric = 'lower';  % residual, upper, lower
 groupsToExclude = {'vision', 'obstacle'};
 nclusters = [];
 
@@ -175,81 +292,102 @@ nclusters = [];
 close all
 groupBins = ~ismember(groups, groupsToExclude);
 importance = data.(metric)(:, groupBins);
+% isModulated = any(importance>thresh, 2);
+
+% importance = importance ./ nanstd(importance, 1);
+
 bins = ~any(isnan(importance), 2);
 groupid = nan(height(data), 1);
-groupid(bins) = clusterResponses(importance(bins,:), ...
-    'pcs', 0, 'plot', true, 'nclusters', nclusters, 'clusterMetric', 'aic');
-nclusters = length(unique(groupid));
-colors = lines(nclusters);
+[groupid(bins), ~, ~, bic] = clusterResponses(importance(bins,:), ...
+    'pcs', 0, 'plot', true, 'nclusters', nclusters, ...
+    'clusterMetric', 'bic', 'maxclusters', 8);
+set(gca, 'XTickLabel', groups(groupBins), 'XTickLabelRotation', 45)
+nclusters = length(unique(groupid(~isnan(groupid))));
+colors = [lines(nclusters); 0 0 0];  % black for no group
+groupid(isnan(groupid)) = nclusters+1;  % make new group for ungrouped units
+disp(['n clusters: ' num2str(nclusters)])
 
-%%
+%% umap embeddings
+scatColors = colors(groupid,:);
+embedding = nan(height(data), 2);
+embedding(bins, :) = run_umap(importance(bins, :), ...
+    'sgd_tasks', 1, 'verbose', 'text');
 
-figure('color', 'white', 'position', [2.00 2.00 1278.00 1354.00])
+figure('color', 'white', 'menubar', 'none', 'position', [482.00 431.00 674.00 288.00]);
+subplot(1,2,2); hold on
+scatter(embedding(:, 1), embedding(:, 2), 10, scatColors, 'filled', ...
+    'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'none');
+set(gca, 'XColor', 'none', 'YColor', 'none', cfg.axArgs{:})
+title('UMAP Embeddings')
 
-% unsorted
-subplot(3,2,[1 3])
-clusterbins = ~any(isnan(importance),2);
-imagesc(-importance(clusterbins,:)); colormap gray
-set(gca, 'box', 'off', 'tickdir', 'out', 'xtick', 1:ngroups, ...
-    'XTickLabel', groups, 'XTickLabelRotation', 20, 'ytick', [])
-title('unclustered')
+% scatter by nucleus
+subplot(1,2,1); hold on
+nuclei = {'dentate', 'interpositus', 'fastigial'};
+scats = nan(1, 3);
+for i = 1:length(nuclei)
+    nucleusBins = strcmp(data.nucleus, nuclei{i});
+    scats(i) = scatter(embedding(nucleusBins, 1), embedding(nucleusBins, 2), 10, 'filled', ...
+        'MarkerFaceColor', cfg.nucleusColors(i,:), 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'none');
 
-% sorted
-subplot(3,2,[2 4]); hold on
-title('clustered')
-[groupidSorted, sortInds] = sortrows([groupid, mean(importance,2)]);
-
-finalInd = find(~isnan(groupid(sortInds)), 1, 'last');
-imagesc(-importance(sortInds(1:finalInd),:)); colormap gray
-for i = 1:nclusters
-    y = [find(groupidSorted==i,1,'first') find(groupidSorted==i,1,'last')] + [-.5 .5];
-    plot([.5 .5], y, 'color', colors(i,:), 'LineWidth', 5)
 end
-set(gca, 'box', 'off', 'tickdir', 'out', 'xtick', 1:ngroups, ...
-    'XTickLabel', groups, 'XTickLabelRotation', 20, ...
-    'xlim', [0 ngroups]+.5, 'ylim', [0 finalInd], 'ytick', [])
-% 
-% % bar plots
-% subplot(3,2,[5 6])
-% imp = nan(nclusters, ngroups, height(cellInfoSub));
-% for i = 1:nclusters
-%     clusterbins = groupid==i;
-%     imp(i,:,clusterbins) = importance(clusterbins,:)';
-% end
-% 
-% clusternames = cellstr(num2str((1:nclusters).', 'clusters %i'))';
-% barFancy(imp, 'showBars', true, 'levelNames', {clusternames, groups}, ...
-%     'colors', repelem(lines(nclusters),ngroups,1), 'showScatter', true, 'YLim', [0 .3], ...
-%     'showViolins', false, 'showErrorBars', false, 'scatterCondColor', true)
-% 
-% savefig('E:\lab_files\paper2\plots\clustering\clustering.fig')
-% 
-% % custering on ccf (run cell above first)
-% 
-% % settings
-% skipmode = true;
-% 
-% % inits
-% figure('color', 'white', 'position', [592.00 372.00 628.00 818.00])
-% colors = lines(nclusters);
-% views = {'ap', 'dv'}; dims = [1 3; 1 2];
-% modalgroup = mode(groupid);
-% 
-% for i = 1:2
-%     subplot(2,1,i); hold on
-%     plotLabels2D(ccf.labels, 'dim', views{i}, 'patchArgs', {'FaceColor', 'none', 'EdgeColor', 'black'}, ...
-%         'apGrid', ccf.ap, 'mlGrid', ccf.ml, 'dvGrid', ccf.dv)
-%     set(gca, 'xtick', [], 'ytick', [])
-%     
-%     for j = 1:nclusters
-%         bins = groupid==j;
-%         if ~skipmode || j~=modalgroup
-%             scatter(cellInfoSub.ccfMm(bins, dims(i,1)), cellInfoSub.ccfMm(bins, dims(i,2)), [], colors(j,:), 'filled', ...
-%                 'MarkerFaceAlpha', .8, 'MarkerEdgeColor', 'none');
-%         end
-%     end
-% end
-% savefig('E:\lab_files\paper2\plots\clustering\ccf_groups.fig')
+
+set(gca, 'XColor', 'none', 'YColor', 'none', cfg.axArgs{:})
+title('UMAP Embeddings')
+legend(scats, nuclei, 'location', 'best')
+
+saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\tuning_umap_' metric '.svg'])
+
+%% bic and heatmaps
+
+% settings
+percentileLim = 99.5;  % percentile
+
+
+% inits
+% close all;
+figure('color', 'white', 'position', [778.00 567.00 245.00 650.00], 'menubar', 'none');
+
+subplot(5, 1, 2:5); hold on
+tuning = data.(metric)(:, groupBins);
+clims = [0 prctile(tuning(:), percentileLim)];
+% [~, sortInds] = sort(groupid);
+
+% for each cluster, sort by most active channel within the group
+temp = ones(size(groupid));
+for i = 1:nclusters
+    bins = (groupid==i);
+    isBigGroup = sum(bins)>(height(data)/2);  % don't sort within the big group, which is heterogeneous
+    if ~isBigGroup
+        [~, maxInd] = max(nanmean(tuning(bins,:),1));  % ind of most active group for this cluster
+        temp(groupid==i) = tuning(bins, maxInd);
+    end
+end
+[~, sortInds] = sortrows([groupid temp]);
+
+
+% heatmap
+imagesc(tuning(sortInds, :), clims); colormap gray;
+
+% add lines on the side for groups
+for i = 1:nclusters
+    ystart = find(groupid(sortInds)==i, 1, 'first');
+    yend = find(groupid(sortInds)==i, 1, 'last');
+    plot([.5 .5], [ystart-.5 yend+.5], 'Color', colors(i,:), 'LineWidth', 5)
+end
+
+set(gca, 'ylim', [.5 sum(groupid<=nclusters)+.5], 'YTick', [], ...
+    'XTick', 1:sum(groupBins), 'XTickLabel', groups(groupBins), ...
+    'XTickLabelRotation', 45, 'XLim', [.5 sum(groupBins)+.5], cfg.axArgs{:})
+
+% bic plot
+subplot(5, 1, 1)
+plot(1:length(bic), bic, 'color', [.2 .2 .2], 'LineWidth', 3)
+ylabel('BIC score')
+xlabel('number of clusters')
+set(gca, 'XLim', [1 length(bic)], 'box', 'off', cfg.axArgs{:})
+limitticks
+
+saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\cluster_heatmaps_' metric '.svg'])
 
 
 

@@ -1,4 +1,4 @@
-function [clusterIds, mahaDistances, projection] = clusterResponses(responses, varargin)
+function [clusterIds, mahaDistances, projection, bic, aic] = clusterResponses(responses, varargin)
 % given a (response x time) matrix, clusters responses // first compress
 % responses using pca, then cluster using gaussian mixture models // number
 % of clusters determined
@@ -35,8 +35,8 @@ if ~isempty(s.nclusters); inds = s.nclusters; else; inds = 1:s.maxclusters; end
 
 for i = inds
     gmm{i} = fitgmdist(score, i, ...
-        'CovarianceType', 'diagonal', 'SharedCovariance', false, ...
-        'RegularizationValue', .001, 'Replicates', 10, ...
+        'CovarianceType', 'full', 'SharedCovariance', false, ...
+        'RegularizationValue', .001, 'Replicates', 20, ...
         'Options', statset('MaxIter', 1000));
     aic(i) = gmm{i}.AIC;
     bic(i) = gmm{i}.BIC;
