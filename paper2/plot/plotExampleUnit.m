@@ -1,21 +1,23 @@
-function plotExampleUnit(session, unit)
+function plotExampleUnit(session, unit, groups, groupDevExplained)
 % plot unit firing rate and predictor traces around reward, and a handful
-% of PSTHs to show tuning to different predictors
+% of PSTHs to show tuning to different predictors // `groupDevExplained` is
+% a 2 X ngroups matrix of the lower and upper bounds of deviance explained
+% for each group in `groups`
 
 % settings
 paper2_config;  % creates 'cfg' variable
 s.predictors = {'velocity', 'paw4RH_x', 'jaw'};
 s.predictorNames = {'velocity', 'right fore', 'jaw'};
-s.psths = {'velocity', 'reward_normal', 'whiskerContact', 'paw4RH_stride'};
-s.psthNames = {'velocity', 'reward', 'whisker contact', 'phase'};
-s.xlabels = {'velocity (m/s)', 'time from reward (s)', 'time from whisker contact (s)', 'fraction of stride'};
 
-s.tlims = [-4 2];  % (s) time pre and post reward
-s.offset = 5;  % (std) vertical offset for traces
+s.psths = {'velocity', 'paw4RH_stride', 'reward_normal', 'lick', 'whiskerContact'};
+s.psthNames = {'velocity', 'phase', 'reward', 'lick', 'whisker contact'};
+s.xlabels = {'velocity (m/s)', 'fraction of stride', 'time from reward (s)', 'time from lick (s)', 'time from whisker contact (s)'};
+s.psthxlims = [nan nan; 0 1; -.4 1; -.2 .2; -.2 .4];  % nan for auto determination
+s.psthColors = [cfg.velColor; cfg.velColor; cfg.lickColor; cfg.lickColor; cfg.wiskColor];
 
 s.predictorColors = [cfg.velColor; cfg.velColor; cfg.lickColor];
-s.psthColors = [cfg.velColor; cfg.lickColor; cfg.wiskColor; cfg.velColor];
-s.psthxlims = [nan nan; -.4 1; -.2 .4; 0 1];  % nan for auto determination
+s.tlims = [-4 2];  % (s) time pre and post reward
+s.offset = 5;  % (std) vertical offset for traces
 s.nscatters = 1000;  % scatter points to include for continuous variables
 
 
@@ -32,7 +34,20 @@ fr.fr = fr.spkRates(unitInd, :);
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses');
 
 figure('color', 'white', 'menubar', 'none', 'position', [7.00 1156.00 1265.00 139.00])
-ncols = length(s.psths)+2;
+ncols = length(s.psths) + 3;
+
+
+% DEVIANCE EXPLAINED
+subplot(1, ncols, 3); hold on
+x = 1:length(groups);
+plot([x; x], groupDevExplained, 'color', [.15 .15 .15])
+scatter(x, groupDevExplained(1,:), 10, cfg.upperLowerColors(1,:), 'filled');
+scatter(x, groupDevExplained(2,:), 10, cfg.upperLowerColors(2,:), 'filled');
+set(gca, 'xtick', x, 'XTickLabel', groups, 'XTickLabelRotation', 30, ...
+    cfg.axArgs{:}, 'FontSize', 6)
+limitticks(true)
+
+% SAMPLE TIME TRACES
 subplot(1, ncols, 1:2); hold on
 
 validt = fr.timeStamps(~isnan(fr.fr));
@@ -79,6 +94,9 @@ end
 set(gca, 'xlim', xlims, 'YLim', ylims, 'Visible', 'off')
 
 
+
+% PSTHS
+
 % add time scale
 % TODO: add firing rate
 plot(xlims(1) + [0 .2], ylims(1) + [0 0], 'color', 'black', 'LineWidth', 1.5)
@@ -87,7 +105,7 @@ text(xlims(1)+.1, yLims(1)-diff(yLims)*.05, '.2 second', ...
     'VerticalAlignment', 'top', 'HorizontalAlignment', 'center')
 
 for i = 1:length(s.psths)
-    subplot(1, ncols, 2+i); hold on
+    subplot(1, ncols, 3+i); hold on
     title(s.psthNames{i})
     
     type = responses{s.psths{i}, 'type'};
@@ -127,13 +145,16 @@ for i = 1:length(s.psths)
         plot(x, mn, 'color', s.psthColors(i,:), 'lineWidth', 2);  % mean
         
         if type == 'event'
+            ylims = ylim;
             plot([0 0], ylim, 'color', [.4 .4 .4], 'LineWidth', 1, 'color', [0 0 0 .4]);
+            set(gca, 'ylim', ylims);
         end
     end
     
     if ~any(isnan(s.psthxlims(i,:))); xlims = s.psthxlims(i,:); end
     set(gca, 'XLim', xlims, cfg.axArgs{:})
     xlabel(s.xlabels{i})
+    limitticks
     
     if i==1; ylabel('firing rate'); end
 end

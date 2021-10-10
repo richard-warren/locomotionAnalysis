@@ -7,13 +7,15 @@ paper2_config;
 
 groups = {'grossKinematics', 'lick', 'obstacle', 'pawKinematics', 'reward', 'vision', 'whiskers'};
 metricNames = {'residual', 'upper', 'lower'};  % metrics for the tuning of a unit to a predictor group
+nucleiNames = {'dentate', 'interpositus', 'fastigial'};
+ngroups = length(groups);
 for i = 1:length(metricNames)
     data.(metricNames{i}) = nan(height(data), length(groups));
 end
 
 
 for i = 1:height(data)
-    disp(i)
+    disp(i / height(data))
     
     % load up dem models
     try
@@ -36,7 +38,6 @@ end
 
 
 %% overall upp lower bars
-
 
 close all
 figure('color', 'white', 'menubar', 'none', 'position', [227.00 396.00 306.00 294.00]); hold on
@@ -62,6 +63,7 @@ set(gca, 'XTick', 1:ngroups, 'XTickLabel', groups, 'XTickLabelRotation', 45);
 ylabel({'deviance explained', '(lower and upper bounds)'})
 
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\upper_lower_bars.svg')
+
 
 %% scatters to explore correlations between different tuning metrics
 
@@ -171,7 +173,8 @@ saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\importance_ccf_' metric '
 % settings
 metric = 'lower';
 
-close all; figure('color', 'white', 'position', [722.00 948.00 433.00 306.00], 'menubar', 'none'); hold on
+close all;
+figure('color', 'white', 'position', [722.00 948.00 433.00 306.00], 'menubar', 'none'); hold on
 
 x = (1 : (length(groups)*3)) + ...
     repelem(0:length(groups)-1, 3) * .5;  % offset each group
@@ -318,9 +321,6 @@ end
 saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\heatmaps_sorted_' metric '.svg'])
 
 
-
-
-
 %% cluster! (run these cell serially)
 
 %% clustering heatmaps and bar plots
@@ -337,7 +337,7 @@ groupBins = ~ismember(groups, groupsToExclude);
 importance = data.(metric)(:, groupBins);
 % isModulated = any(importance>thresh, 2);
 
-% importance = importance ./ nanstd(importance, 1);
+% importance = importance ./ nanstd(importance, 1);  % scale each group by variance of deviance
 
 bins = ~any(isnan(importance), 2);
 groupid = nan(height(data), 1);
@@ -365,10 +365,9 @@ title('UMAP Embeddings')
 
 % scatter by nucleus
 subplot(1,2,1); hold on
-nuclei = {'dentate', 'interpositus', 'fastigial'};
 scats = nan(1, 3);
-for i = 1:length(nuclei)
-    nucleusBins = strcmp(data.nucleus, nuclei{i});
+for i = 1:length(nucleiNames)
+    nucleusBins = strcmp(data.nucleus, nucleiNames{i});
     scats(i) = scatter(embedding(nucleusBins, 1), embedding(nucleusBins, 2), 10, 'filled', ...
         'MarkerFaceColor', cfg.nucleusColors(i,:), 'MarkerFaceAlpha', .6, 'MarkerEdgeColor', 'none');
 
@@ -376,7 +375,7 @@ end
 
 set(gca, 'XColor', 'none', 'YColor', 'none', cfg.axArgs{:})
 title('UMAP Embeddings')
-legend(scats, nuclei, 'location', 'best')
+legend(scats, nucleiNames, 'location', 'best')
 
 saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\tuning_umap_' metric '.svg'])
 
@@ -431,6 +430,30 @@ set(gca, 'XLim', [1 length(bic)], 'box', 'off', cfg.axArgs{:})
 limitticks
 
 saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\cluster_heatmaps_' metric '.svg'])
+
+
+%% example units
+
+sessions = {'200116_000' '200623_001', '191007_003', '201014_000'};
+units = [30 270 3 193];
+close all
+for i = 1:length(sessions)
+    unitbin = strcmp(data.session, sessions{i}) & data.unit==units(i);
+    groupDevExplained = [data.lower(unitbin,:); data.upper(unitbin,:)];
+    plotExampleUnit(sessions{i}, units(i), groups, groupDevExplained);
+    saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\unit_example_' num2str(i) '.svg'])
+end
+
+
+
+
+
+
+
+
+
+
+
 
 
 
