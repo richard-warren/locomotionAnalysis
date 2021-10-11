@@ -1,4 +1,4 @@
-function plotExampleUnit(session, unit, groups, groupDevExplained)
+function plotExampleUnit(session, unit, groups, groupDevExplained, varargin)
 % plot unit firing rate and predictor traces around reward, and a handful
 % of PSTHs to show tuning to different predictors // `groupDevExplained` is
 % a 2 X ngroups matrix of the lower and upper bounds of deviance explained
@@ -19,13 +19,14 @@ s.predictorColors = [cfg.velColor; cfg.velColor; cfg.lickColor];
 s.tlims = [-4 2];  % (s) time pre and post reward
 s.offset = 5;  % (std) vertical offset for traces
 s.nscatters = 1000;  % scatter points to include for continuous variables
-
+s.showDeviance = true;
 
 
 
 
 
 % inits
+if exist('varargin', 'var'); for i = 1:2:length(varargin); s.(varargin{i}) = varargin{i+1}; end; end  % reassign settings passed in varargin
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'predictors', [session '_predictors.mat']), 'predictors');
 fr = load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'neuralData', [session '_neuralData.mat']), ...
     'unit_ids', 'spkRates', 'timeStamps');
@@ -34,18 +35,20 @@ fr.fr = fr.spkRates(unitInd, :);
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses');
 
 figure('color', 'white', 'menubar', 'none', 'position', [7.00 1156.00 1265.00 139.00])
-ncols = length(s.psths) + 3;
+ncols = length(s.psths) + 2 + s.showDeviance;
 
 
 % DEVIANCE EXPLAINED
-subplot(1, ncols, 3); hold on
-x = 1:length(groups);
-plot([x; x], groupDevExplained, 'color', [.15 .15 .15])
-scatter(x, groupDevExplained(1,:), 10, cfg.upperLowerColors(1,:), 'filled');
-scatter(x, groupDevExplained(2,:), 10, cfg.upperLowerColors(2,:), 'filled');
-set(gca, 'xtick', x, 'XTickLabel', groups, 'XTickLabelRotation', 30, ...
-    cfg.axArgs{:}, 'FontSize', 6)
-limitticks(true)
+if s.showDeviance
+    subplot(1, ncols, 3); hold on
+    x = 1:length(groups);
+    plot([x; x], groupDevExplained, 'color', [.15 .15 .15])
+    scatter(x, groupDevExplained(1,:), 10, cfg.upperLowerColors(1,:), 'filled');
+    scatter(x, groupDevExplained(2,:), 10, cfg.upperLowerColors(2,:), 'filled');
+    set(gca, 'xtick', x, 'XTickLabel', groups, 'XTickLabelRotation', 30, ...
+        cfg.axArgs{:}, 'FontSize', 6)
+    limitticks(true)
+end
 
 % SAMPLE TIME TRACES
 subplot(1, ncols, 1:2); hold on
@@ -99,13 +102,13 @@ set(gca, 'xlim', xlims, 'YLim', ylims, 'Visible', 'off')
 
 % add time scale
 % TODO: add firing rate
-plot(xlims(1) + [0 .2], ylims(1) + [0 0], 'color', 'black', 'LineWidth', 1.5)
+plot(xlims(1) + [0 .5], ylims(1) + [0 0], 'color', 'black', 'LineWidth', 1.5)
 yLims = ylim;
-text(xlims(1)+.1, yLims(1)-diff(yLims)*.05, '.2 second', ...
+text(xlims(1)+.1, yLims(1)-diff(yLims)*.05, '.5 second', ...
     'VerticalAlignment', 'top', 'HorizontalAlignment', 'center')
 
 for i = 1:length(s.psths)
-    subplot(1, ncols, 3+i); hold on
+    subplot(1, ncols, 2+s.showDeviance+i); hold on
     title(s.psthNames{i})
     
     type = responses{s.psths{i}, 'type'};

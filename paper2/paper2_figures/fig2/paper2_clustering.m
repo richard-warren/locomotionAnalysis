@@ -138,7 +138,7 @@ for i = 1:ngroups
     end
 end
 
-saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\histos_lower.svg')
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\histos_upper_lower.svg')
 
 
 %% scatter importance on ccf for each group
@@ -174,13 +174,18 @@ saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\importance_ccf_' metric '
 metric = 'lower';
 
 close all;
-figure('color', 'white', 'position', [722.00 948.00 433.00 306.00], 'menubar', 'none'); hold on
+figure('color', 'white', 'position', [448.00 633.00 328.00 306.00], 'menubar', 'none'); hold on
 
 x = (1 : (length(groups)*3)) + ...
     repelem(0:length(groups)-1, 3) * .5;  % offset each group
 patches = nan(1, 3);
 
 for i = 1:length(groups)
+    
+    overallMed = nanmedian(data.(metric)(:, i));  % median across nuclei
+    xvals = x((i-1)*3+2) + [-1.5 1.5];
+    medianLn = plot(xvals, overallMed+[0 0], 'Color', [0 0 0 .3], 'LineWidth', 1.5);
+    
     for j = 1:3
         xind = (i-1) * 3 + j;
         bins = strcmp(data.nucleus, nucleiNames{j});
@@ -203,6 +208,7 @@ for i = 1:length(groups)
         plot(x(xind)*[1 1], [blims(1) whiskerLims(1)], 'color', [.15 .15 .15])  % bottom whisker
         plot(x(xind)*[1 1], [blims(2) whiskerLims(2)], 'color', [.15 .15 .15])  % top whisker
     end
+    uistack(medianLn, 'top')
 end
 
 set(gca, 'xtick', x(2:3:length(x)), 'XTickLabel', groups, 'XTickLabelRotation', 45, cfg.axArgs{:})
@@ -440,7 +446,8 @@ close all
 for i = 1:length(sessions)
     unitbin = strcmp(data.session, sessions{i}) & data.unit==units(i);
     groupDevExplained = [data.lower(unitbin,:); data.upper(unitbin,:)];
-    plotExampleUnit(sessions{i}, units(i), groups, groupDevExplained);
+    plotExampleUnit(sessions{i}, units(i), groups, groupDevExplained, ...
+        'showDeviance', false);
     saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\unit_example_' num2str(i) '.svg'])
 end
 
