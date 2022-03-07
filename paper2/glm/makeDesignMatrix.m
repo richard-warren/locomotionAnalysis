@@ -73,6 +73,7 @@ end
 
 % add time polynomial
 if s.timeDegrees>0
+    % TODO: should i normalize these predictors?
     bases = nan(rows, s.timeDegrees);
     tNorm = t - mean(t);  % not sure if this affects anything...
     for i = 1:s.timeDegrees

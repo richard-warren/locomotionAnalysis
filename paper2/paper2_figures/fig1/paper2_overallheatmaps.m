@@ -163,8 +163,8 @@ nclusters = 12;
 pcs = 6;
 
 close all
-figure('position', [683.00 859.00 233.00 468.00], 'color', 'white', 'menubar', 'none')
-subplot(4,1,1); hold on
+figure('position', [1803.00 234.00 288.00 743.00], 'color', 'white', 'menubar', 'none')
+subplot(5,1,1); hold on
 
 
 % events
@@ -213,9 +213,11 @@ groups = clusterResponses(resp, 'plot', false, 'nclusters', nclusters, 'pcs', pc
 [~, sortInds] = sortrows([groups maxind], 'descend');
 
 % plot
-subplot(4,1,2:4); hold on
+subplot(5,1,2:5); hold on
 imagesc(x, 1:nrows, resp(sortInds,:), lims);
 colormap(cfg.heatmapColors)
+c = colorbar('southoutside');
+c.Label.String = 'z score';
 
 plot(repelem(wiskt,2,1), [.5 nrows+.5], '-', 'color', cfg.wiskColor, 'LineWidth', 1)  % wisk
 plot(repelem(rewardt,2,1), [.5 nrows+.5], '-', 'color', cfg.lickColor, 'LineWidth', 1)  % wisk

@@ -37,7 +37,6 @@ units = [3 193];
 predictorRows = 5;  % number of subplot rows occupied by predictors
 exampleColors = lines(length(sessions));
 
-modelsToShow = [2 3 4];
 vars  = {'velocity', 'bodyAngle', 'paw1LH_x', 'paw2LF_x', 'paw3RF_x', 'paw4RH_x', '', 'whiskerAngle', 'jaw', 'reward_normal'};
 names = {'velocity', 'body angle', 'left hind', 'left fore', 'right fore', 'right hind', '', 'whiskers', 'jaw', 'reward'};
 colors = [repmat(cfg.velColor, 6, 1); .4 .4 .4; cfg.wiskColor; cfg.lickColor; cfg.lickColor];
@@ -48,7 +47,7 @@ figpos = [436.00 507.00 406.00 469.00];
 
 
 for s = 1:length(sessions)
-    try
+%     try
         session = sessions{s};
         unit = units(s);
 
@@ -60,7 +59,7 @@ for s = 1:length(sessions)
         validTLims = [min(validt) max(validt)];
         
         figure('color', 'white', 'menubar', 'none', 'position', figpos);
-        subplot(predictorRows+length(modelsToShow), 1, 1:predictorRows); hold on
+        subplot(predictorRows+length(cfg.sequentialModels)-1, 1, 1:predictorRows); hold on
         rewardTimes = predictors{'reward_normal', 'data'}{1};
         rewardTimes = rewardTimes(rewardTimes>validTLims(1) & rewardTimes<validTLims(end));
         rewardTime = rewardTimes(fix(length(rewardTimes)/2));
@@ -113,13 +112,14 @@ for s = 1:length(sessions)
         bins = fitdata.t>=xlims(1) & fitdata.t<=xlims(2);
         dt = t(2)-t(1);
         ymax = max(fitdata.yRate(bins));
-        for j = 1:length(modelsToShow)
-            subplot(predictorRows+length(modelsToShow), 1, predictorRows+j); hold on
-            yhat = exp(models{modelsToShow(j), 'model'}{1}.fit_preval) / dt;
+        for j = 2:length(cfg.sequentialModels)  % skip null model
+            subplot(predictorRows+length(cfg.sequentialModels)-1, 1, predictorRows+j-1); hold on
+            yhat = exp(models{cfg.sequentialModels{j}, 'model'}{1}.fit_preval) / dt;
             plot(fitdata.t(bins), fitdata.yRate(bins), 'color', [0 0 0 .6], 'LineWidth', 1.5)
-            plot(fitdata.t(bins), yhat(bins), 'color', cfg.sequentialColors(modelsToShow(j),:), 'LineWidth', 1.5)
-            set(gca, 'XLim', xlims, 'Visible', 'off')
-            text(xlims(1), ymax, cfg.sequentialModelNames{modelsToShow(j)}, 'HorizontalAlignment', 'left')
+            plot(fitdata.t(bins), yhat(bins), 'color', cfg.sequentialColors(j,:), 'LineWidth', 1.5)
+            if j==2; ylims = ylim; end
+            set(gca, 'XLim', xlims, 'YLim', ylims, 'Visible', 'off')
+            text(xlims(1), ymax, cfg.sequentialModelNames{j}, 'HorizontalAlignment', 'left')
         end
 
         % add time scale
@@ -139,14 +139,16 @@ for s = 1:length(sessions)
         % save svgs for actual figgy
         saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\model_example_' num2str(s) '.svg'])
 
-    catch
-        fprintf('ERROR WITH %s unit %i\n', session, unit)
-    end
+%     catch
+%         fprintf('ERROR WITH %s unit %i\n', session, unit)
+%     end
 end
 
 
 %% model performance for sequential models
-dmat = data.deviances';
+
+
+dmat = data.deviances(:, cfg.sequentialModelBins)';
 dmatLog = dmat; dmatLog(dmatLog<=0) = nan; dmatLog = log(dmatLog);
 % close all
 figure('color', 'white', 'position', [603.00 791.00 282.00 287.00], 'menubar', 'none')
@@ -184,13 +186,13 @@ set(gca, 'ylim', [-.05 .3], cfg.axArgs{:})
 limitticks(true)
 hold on
 
-% add lines showing example units (need to run previous cell first!)
-x = 1:length(newModelNames);
-for i = 1:length(sessions)
-    ind = find(strcmp(data.session, sessions{i}) & data.unit==units(i));
-    y = dmat(:,ind);
-    plot(x, y, '--', 'Color', [exampleColors(i,:) .6])
-end
+% % add lines showing example units (need to run previous cell first!)
+% x = 1:length(newModelNames);
+% for i = 1:length(sessions)
+%     ind = find(strcmp(data.session, sessions{i}) & data.unit==units(i));
+%     y = dmat(:,ind);
+%     plot(x, y, '--', 'Color', [exampleColors(i,:) .6])
+% end
 
 % save
 saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\sequential_model_deviance.svg')

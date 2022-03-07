@@ -37,7 +37,7 @@ for i = 1:length(metricNames)
 end
 
 
-%% overall upp lower bars
+%% overall upper lower bars
 
 close all
 figure('color', 'white', 'menubar', 'none', 'position', [227.00 396.00 306.00 294.00]); hold on
@@ -251,82 +251,6 @@ end
 
 saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\importance_scatters_' metric '.svg'])
 
-%% heatmaps sorted by deviance for each group
-
-% settings
-histoBins = 30;
-metric = 'lower';  % residual, upper, lower
-histlims = [0 .3];
-
-% inits
-colors = cfg.groupColors;
-cols = length(groups);
-cmap = cfg.heatmapColors;
-ngroups = length(groups);
-binEdges = linspace(histlims(1), histlims(2), histoBins+1);
-
-load('E:\lab_files\paper2\modelling\response_aggregates.mat', ...
-    'aggregates', 'cellInfo')
-groupInfo = readtable('C:\Users\richa\Desktop\github\locomotionAnalysis\paper2\glm\settings\residual_predictorSettings.xlsx', ...
-    'sheet', 'groups', 'ReadRowNames', true);
-if cellInfo.unit ~= data.unit
-    disp('WARNING! DATA DOES NOT MATCH AGGERGATE ORDERING!')
-    keyboard
-end
-
-
-close all; figure('color', 'white', 'position', [208.00 98.00 909.00 1219.00])
-for i = 1:ngroups  % rows
-    importance = data.(metric)(:,i);
-    [~, sortInds] = sort(importance);
-    
-%     finalInd = find(~isnan(importance(sortInds)), 1, 'last');
-    
-    % histogram
-    subplot(ngroups+1, ngroups, i); hold on
-%     [~, clusterCenters] = kmeans(imp, 2);
-    thresh = .05;
-    histogram(importance, binEdges, 'EdgeColor', [.2 .2 .2], ...
-        'FaceColor', colors(i,:), 'Normalization', 'count')
-    xlabel('dev explained')
-    set(gca, 'box', 'off', 'XLim', histlims)
-    plot([thresh thresh], ylim, 'color', [1 1 1]*.2)
-    title(sprintf('%s (%.1f%%)', groups{i}, mean(importance>thresh)*100))
-%     title(groups{i})
-    
-    for j = 1:ngroups  % cols
-        
-        var = groupInfo{groups{j}, 'response'}{1};  % name of representative group predictor
-        resp = aggregates{var, 'aggregate'}{1};
-        xlims = aggregates{var, 'xLims'};
-        x = linspace(xlims(1), xlims(2), size(resp, 2));
-        
-
-        % heatmap
-        subplot(ngroups+1, ngroups, (ngroups*i) + j); hold on
-        imagesc(x, 1:size(resp,1), resp(sortInds,:));
-        colormap(cmap)
-        
-        if i==j
-            y = [find(importance(sortInds)>thresh, 1, 'first'), ...
-                 find(importance(sortInds)>thresh, 1, 'last')] + [-.5 .5];
-            if length(y)==2
-                plot([x(1) x(1)], y, 'Color', colors(i,:), 'LineWidth', 5)
-            end
-        end
-
-        if i==ngroups; xlabel(var, 'Interpreter', 'none'); end
-        if j==1; ylabel(groups{i}); end 
-        set(gca, 'box', 'off', 'ytick', [], 'TickDir', 'out', ...
-            'ydir', 'normal', 'ylim', [1 size(resp,1)], ...
-            'xlim', [x(1) x(end)])
-        
-    end
-end
-
-saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\heatmaps_sorted_' metric '.svg'])
-
-
 %% cluster! (run these cell serially)
 
 %% clustering heatmaps and bar plots
@@ -440,18 +364,88 @@ saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\cluster_heatmaps_' metric
 
 %% example units
 
-sessions = {'200116_000' '200623_001', '191007_003', '201014_000'};
-units = [30 270 3 193];
+sessions = {'200116_000', '200623_001', '191007_003', '201014_000', ...
+            '201217_000', '201214_000', '201209_000', '201208_000', ...
+            '201119_000', '201117_000', '201116_000', '201031_000'};
+units = [30  270 3   193 ...
+         76  8   198 191 ...
+         203 130 131 104];
+showDeviance = false;  % whether to include show plot with deviance explained for each group
+
+% sessions = sessions(1:4);  % temp
+
 close all
+figure('color', 'white', 'position', [85.00 8.00 1116.00 1331.00], 'menubar', 'none');
 for i = 1:length(sessions)
     unitbin = strcmp(data.session, sessions{i}) & data.unit==units(i);
-    groupDevExplained = [data.lower(unitbin,:); data.upper(unitbin,:)];
+    if showDeviance == true
+        groupDevExplained = [data.lower(unitbin,:); data.upper(unitbin,:)];
+    else
+        groupDevExplained = NaN;
+        groups = NaN;
+    end
+    
+    if i==1; hideTraceText=false; else; hideTraceText=true; end
+    if i==1; hideTitles=false; else; hideTitles=true; end
+    if i==length(sessions); hideX=false; else; hideX=true; end
+    
     plotExampleUnit(sessions{i}, units(i), groups, groupDevExplained, ...
-        'showDeviance', false);
-    saveas(gcf, ['E:\lab_files\paper2\paper_figures\matlab\unit_example_' num2str(i) '.svg'])
+        'showDeviance', showDeviance, 'subplotCols', length(sessions), 'subplotColIdx', i, ...
+        'hideTraceText', hideTraceText, 'hideTitles', hideTitles, 'hideX', hideX);
 end
 
+set(gcf, 'Renderer', 'painters')  % ensures export is not rasterized
+saveas(gcf, 'E:\lab_files\paper2\paper_figures\matlab\unit_examples.svg')
 
+%% mixed selectivity states
+
+thresh = 0.02;
+nTunedGroups = sum(data.lower > thresh, 2);
+mean(nTunedGroups > 1)  % fraction units tuned to >1 group
+
+
+%% plot PSTHs for all units
+
+rows = 9;
+
+
+data_ = sortrows(data, "nucleus");
+sessions = data_.session;
+units = data_.unit;
+nuclei = data_.nucleus;
+
+% sessions = sessions(1:4);  % temp
+
+close all
+for i = 1:length(sessions)
+    
+    row = mod(i - 1, rows) + 1;
+    
+    % make new figure
+    if row == 1
+        figure('color', 'white', 'position', [85.00 8.00 1116.00 1331.00], 'menubar', 'none');
+    end
+    
+    unitbin = strcmp(data.session, sessions{i}) & data.unit==units(i);
+    
+    if row==1; hideTraceText=false; else; hideTraceText=true; end
+    if row==1; hideTitles=false; else; hideTitles=true; end
+    if row==length(sessions); hideX=false; else; hideX=true; end
+    
+    title = sprintf('%s: %s (%i)', nuclei{i}, sessions{i}, units(i));
+    plotExampleUnit(sessions{i}, units(i), nan, nan, ...
+        'showDeviance', false, 'subplotRows', rows, 'subplotColIdx', row, ...
+        'hideTraceText', hideTraceText, 'hideTitles', hideTitles, 'hideX', hideX, ...
+        'title', title);
+    
+    % save previous figure
+    if row == rows || (i == length(sessions))
+        n = ceil(i / rows);
+        saveas(gcf, sprintf('E:\\lab_files\\paper2\\plots\\all_unit_psths\\page_%i.png', n))
+        close(gcf)
+    end
+    
+end
 
 
 

@@ -1,7 +1,6 @@
 % heatmaps to show tuning to 'micro' structure of task: steps, licks, wisk contacts
 
 unitInfo = getUnitInfo('nucleiOnly', true, 'frstats', true);
-% unitInfo = unitInfo(1:20,:);  % !!! temp
 sessions = unique(unitInfo.session);
 paper2_config;
 
@@ -188,11 +187,13 @@ nrows(1) = size(resp,1);
 clims = max(abs(resp(:))) * [-1 1];
 [~, maxInds] = max(resp, [], 2); [~, sortInds] = sort(maxInds, 'descend');
 
-imagesc(x.step, 1:size(resp,1), resp(sortInds,:), clims)
+imagesc(x.step, 1:size(resp,1), resp(sortInds,:), clims); hold on
 colormap(cfg.heatmapColors)
+colorbar('south')
 xlabel('fraction of step');
 set(gca, 'XLim', [x.step(1) x.step(end)], 'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:}); limitticks
 addylabel('firing rate (z-score)', cfg.font, cfg.fontsize)
+fprintf('step modulated: %i/%i units\n', size(resp, 1), height(unitInfo))
 
 % licks
 subplot(3,3,2); hold on
@@ -213,10 +214,13 @@ nrows(2) = size(resp,1);
 clims = max(abs(resp(:))) * [-1 1];
 [~, sortInds] = sort(resp(:, find(x.lick>0,1,'first')));
 imagesc(x.lick, 1:size(resp,1), resp(sortInds,:), clims)
+colorbar('south')
 xlabel('time from lick (s)');
 set(gca, 'XLim', [x.lick(1) x.lick(end)], 'xtick', [x.lick(1) 0 x.lick(end)], ...
     'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:});
 % addylabel('firing rate (z-score)', cfg.font, cfg.fontsize)
+fprintf('lick modulated: %i/%i units\n', size(resp, 1), height(unitInfo))
+
 
 % wisk
 subplot(3,3,3); hold on
@@ -240,11 +244,12 @@ colbins = x.wisk>-0 & x.wisk<.1;
 [~, sortInds] = sort(nanmean(resp(:, colbins),2));
 
 imagesc(x.wisk, 1:size(resp,1), resp(sortInds,:), clims);
+colorbar('south')
 set(gca, 'XLim', [x.wisk(1) x.wisk(end)], 'xtick', [0 x.wisk(end)], ...
     'ylim', [.5 size(resp,1)+.5], 'ycolor', 'none', cfg.axArgs{:});
 xlabel({'time from', 'whisker contact (s)'});
 % addylabel('firing rate (z-score)', cfg.font, cfg.fontsize)
-
+fprintf('wisk modulated: %i/%i units\n', size(resp, 1), height(unitInfo))
 
 
 % adjust heatmaps to reflect number of rows

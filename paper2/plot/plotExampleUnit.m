@@ -21,6 +21,14 @@ s.offset = 5;  % (std) vertical offset for traces
 s.nscatters = 1000;  % scatter points to include for continuous variables
 s.showDeviance = true;
 
+% a hack to stack subplots on top of eachother in an other loop
+s.subplotRows = 1;
+s.subplotColIdx = 1; 
+s.hideTraceText = false;
+s.hideTitles = false;
+s.hideX = false;
+
+s.title = '';
 
 
 
@@ -34,13 +42,13 @@ unitInd = find(fr.unit_ids==unit);
 fr.fr = fr.spkRates(unitInd, :);
 load(fullfile(getenv('SSD'), 'paper2', 'modelling', 'responses', [session '_responses.mat']), 'responses');
 
-figure('color', 'white', 'menubar', 'none', 'position', [7.00 1156.00 1265.00 139.00])
+if s.subplotRows == 1; figure('color', 'white', 'menubar', 'none', 'position', [7.00 1156.00 1265.00 139.00]); end
 ncols = length(s.psths) + 2 + s.showDeviance;
 
 
 % DEVIANCE EXPLAINED
 if s.showDeviance
-    subplot(1, ncols, 3); hold on
+    subplot(s.subplotRows, ncols, 3 + ncols*(s.subplotColIdx-1)); hold on
     x = 1:length(groups);
     plot([x; x], groupDevExplained, 'color', [.15 .15 .15])
     scatter(x, groupDevExplained(1,:), 10, cfg.upperLowerColors(1,:), 'filled');
@@ -51,7 +59,7 @@ if s.showDeviance
 end
 
 % SAMPLE TIME TRACES
-subplot(1, ncols, 1:2); hold on
+subplot(s.subplotRows, ncols, (1:2) + ncols*(s.subplotColIdx-1)); hold on
 
 validt = fr.timeStamps(~isnan(fr.fr));
 validTLims = [min(validt) max(validt)];
@@ -72,7 +80,9 @@ offsets = fliplr((0:length(s.predictors)) * s.offset);
 for i = 1:length(s.predictors)
     sig = zscore(predictors{s.predictors{i}, 'data'}{1}(bins)) + offsets(i);
     plot(t(bins), sig, 'LineWidth', 1.5, 'color', [s.predictorColors(i, :) .6])
-    text(xlims(1) - .01*diff(xlims), offsets(i), s.predictorNames{i}, 'HorizontalAlignment', 'right')
+    if ~s.hideTraceText
+        text(xlims(1) - .01*diff(xlims), offsets(i), s.predictorNames{i}, 'HorizontalAlignment', 'right')
+    end
 end
 
 % firing rate
@@ -80,22 +90,30 @@ bins = fr.timeStamps>=xlims(1) & fr.timeStamps<=xlims(2);
 sig = zscore(fr.fr(bins));
 ymin = min(sig);
 plot(fr.timeStamps(bins), sig, 'LineWidth', 1.5, 'color', [.15 .15 .15])
-text(xlims(1) - .01*diff(xlims), 0, 'firing rate', 'HorizontalAlignment', 'right')
+if ~s.hideTraceText; text(xlims(1) - .01*diff(xlims), 0, 'firing rate', 'HorizontalAlignment', 'right'); end
 
 % add line for events
 ylims = ylim; ylims(1) = ymin;
 ln = plot([rewardTime rewardTime], ylim, 'color', cfg.lickColor, 'LineWidth', 1);
 uistack(ln, 'bottom')
-text(rewardTime(1), ylims(2), 'reward', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
+if ~s.hideTraceText; text(rewardTime(1), ylims(2), 'reward', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom'); end
 
 if ~isempty(whiskerContactTimes)
     ln = plot([whiskerContactTimes whiskerContactTimes]', ylim, 'color', cfg.wiskColor, 'LineWidth', 1);
     uistack(ln, 'bottom')
-    text(whiskerContactTimes(1), ylims(2), 'whisker contact', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom')
+    if ~s.hideTraceText
+        text(whiskerContactTimes(1), ylims(2), 'whisker contact', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom')
+    end
 end
 
 set(gca, 'xlim', xlims, 'YLim', ylims, 'Visible', 'off')
 
+% add title
+if ~isempty(s.title)
+    text(mean(xlims), ylims(1), s.title, ...
+        'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', ...
+        'FontWeight', 'bold', 'Interpreter', 'none')
+end
 
 
 % PSTHS
@@ -104,12 +122,14 @@ set(gca, 'xlim', xlims, 'YLim', ylims, 'Visible', 'off')
 % TODO: add firing rate
 plot(xlims(1) + [0 .5], ylims(1) + [0 0], 'color', 'black', 'LineWidth', 1.5)
 yLims = ylim;
-text(xlims(1)+.1, yLims(1)-diff(yLims)*.05, '.5 second', ...
-    'VerticalAlignment', 'top', 'HorizontalAlignment', 'center')
+if ~s.hideTraceText
+    text(xlims(1)+.1, yLims(1)-diff(yLims)*.05, '.5 second', ...
+        'VerticalAlignment', 'top', 'HorizontalAlignment', 'center')
+end
 
 for i = 1:length(s.psths)
-    subplot(1, ncols, 2+s.showDeviance+i); hold on
-    title(s.psthNames{i})
+    subplot(s.subplotRows, ncols, 2+s.showDeviance+i + ncols*(s.subplotColIdx-1)); hold on
+    if ~s.hideTitles; title(s.psthNames{i}); end
     
     type = responses{s.psths{i}, 'type'};
     resp = responses{s.psths{i}, 'response'}{1};
@@ -156,8 +176,9 @@ for i = 1:length(s.psths)
     
     if ~any(isnan(s.psthxlims(i,:))); xlims = s.psthxlims(i,:); end
     set(gca, 'XLim', xlims, cfg.axArgs{:})
-    xlabel(s.xlabels{i})
+    if ~s.hideX; xlabel(s.xlabels{i}); end
     limitticks
+    if s.hideX; set(gca, 'XTickLabel', []); end
     
     if i==1; ylabel('firing rate'); end
 end
