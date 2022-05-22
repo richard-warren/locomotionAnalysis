@@ -15,9 +15,6 @@ Analyzing a session requires running four neural networks (run tracking, run con
 - `dpkanalysis()` can also run the implementation of deeplabcut within the deepposekit framework by specifying a deeplabcut model
 - the old version of the deeplabcut analysis (for run tracking only) can be run using the `dlcAnalysis(session) `wrapper
 
-#### finish your PhD
-tbd 😕
-
 # what is in...
 
 #### a session folder

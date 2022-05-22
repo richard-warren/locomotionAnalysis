@@ -38,6 +38,7 @@ for i = 1:length(mice)
         unitsPerSession = nan(1, length(sessions));
         for j = 1:length(sessions); unitsPerSession(j) = sum(strcmp(registration.session, sessions{j}));end
         target_nuclei = repelem(target_nuclei, unitsPerSession);
+%         fprintf('%i %i', length(unique(tbl.session))); disp(length(sessions))
         unitInfo{i} = cat(2, table(repmat(mice(i), height(tbl), 1), target_nuclei(:), ...
             'VariableNames', {'mouse', 'nucleus_target'}), tbl);  % add mouse name column
     else
